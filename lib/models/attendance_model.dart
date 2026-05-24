@@ -9,6 +9,9 @@ class AttendanceModel {
   final AttendanceStatus status;
   final bool isFingerprintCheckIn;
   final bool isFingerprintCheckOut;
+  final bool isOnBreak;
+  final DateTime? breakStartTime;
+  final Duration totalBreakDuration;
 
   const AttendanceModel({
     required this.id,
@@ -19,16 +22,65 @@ class AttendanceModel {
     this.checkOut,
     this.isFingerprintCheckIn = false,
     this.isFingerprintCheckOut = false,
+    this.isOnBreak = false,
+    this.breakStartTime,
+    this.totalBreakDuration = Duration.zero,
   });
 
+  AttendanceModel copyWith({
+    String? id,
+    String? employeeId,
+    DateTime? date,
+    DateTime? checkIn,
+    DateTime? checkOut,
+    AttendanceStatus? status,
+    bool? isFingerprintCheckIn,
+    bool? isFingerprintCheckOut,
+    bool? isOnBreak,
+    DateTime? breakStartTime,
+    Duration? totalBreakDuration,
+    bool clearBreakStartTime = false,
+  }) {
+    return AttendanceModel(
+      id: id ?? this.id,
+      employeeId: employeeId ?? this.employeeId,
+      date: date ?? this.date,
+      status: status ?? this.status,
+      checkIn: checkIn ?? this.checkIn,
+      checkOut: checkOut ?? this.checkOut,
+      isFingerprintCheckIn: isFingerprintCheckIn ?? this.isFingerprintCheckIn,
+      isFingerprintCheckOut: isFingerprintCheckOut ?? this.isFingerprintCheckOut,
+      isOnBreak: isOnBreak ?? this.isOnBreak,
+      breakStartTime: clearBreakStartTime ? null : (breakStartTime ?? this.breakStartTime),
+      totalBreakDuration: totalBreakDuration ?? this.totalBreakDuration,
+    );
+  }
+
   Duration? get workingDuration {
-    if (checkIn == null || checkOut == null) return null;
-    return checkOut!.difference(checkIn!);
+    if (checkIn == null) return null;
+    final end = checkOut ?? DateTime.now();
+    final gross = end.difference(checkIn!);
+    final activeBreak = isOnBreak && breakStartTime != null
+        ? DateTime.now().difference(breakStartTime!)
+        : Duration.zero;
+    final net = gross - totalBreakDuration - activeBreak;
+    return net.isNegative ? Duration.zero : net;
+  }
+
+  String get breakDurationLabel {
+    final activeBreak = isOnBreak && breakStartTime != null
+        ? DateTime.now().difference(breakStartTime!)
+        : Duration.zero;
+    final total = totalBreakDuration + activeBreak;
+    if (total == Duration.zero) return '0m';
+    if (total.inHours == 0) return '${total.inMinutes}m';
+    return '${total.inHours}h ${total.inMinutes.remainder(60)}m';
   }
 
   String get workingHoursLabel {
     final wd = workingDuration;
     if (wd == null) return '--';
+    if (wd.inHours == 0) return '${wd.inMinutes}m';
     return '${wd.inHours}h ${wd.inMinutes.remainder(60)}m';
   }
 

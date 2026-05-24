@@ -75,17 +75,43 @@ class AttendanceViewModel extends StateNotifier<AttendanceState> {
   void checkOut({bool viaFingerprint = false}) {
     if (state.todayRecord == null) return;
     final now = DateTime.now();
-    final updated = AttendanceModel(
-      id: state.todayRecord!.id,
-      employeeId: state.todayRecord!.employeeId,
-      date: state.todayRecord!.date,
-      checkIn: state.todayRecord!.checkIn,
+    
+    var today = state.todayRecord!;
+    if (today.isOnBreak && today.breakStartTime != null) {
+      final elapsed = now.difference(today.breakStartTime!);
+      today = today.copyWith(
+        isOnBreak: false,
+        clearBreakStartTime: true,
+        totalBreakDuration: today.totalBreakDuration + elapsed,
+      );
+    }
+
+    final updated = today.copyWith(
       checkOut: now,
-      status: state.todayRecord!.status,
-      isFingerprintCheckIn: state.todayRecord!.isFingerprintCheckIn,
       isFingerprintCheckOut: viaFingerprint,
     );
     state = state.copyWith(todayRecord: updated, isCheckedIn: false);
+  }
+
+  void startBreak() {
+    if (state.todayRecord == null || !state.isCheckedIn) return;
+    final updated = state.todayRecord!.copyWith(
+      isOnBreak: true,
+      breakStartTime: DateTime.now(),
+    );
+    state = state.copyWith(todayRecord: updated);
+  }
+
+  void endBreak() {
+    if (state.todayRecord == null || !state.isCheckedIn || !state.todayRecord!.isOnBreak || state.todayRecord!.breakStartTime == null) return;
+    final now = DateTime.now();
+    final elapsed = now.difference(state.todayRecord!.breakStartTime!);
+    final updated = state.todayRecord!.copyWith(
+      isOnBreak: false,
+      clearBreakStartTime: true,
+      totalBreakDuration: state.todayRecord!.totalBreakDuration + elapsed,
+    );
+    state = state.copyWith(todayRecord: updated);
   }
 
   static List<AttendanceModel> _generateMockHistory() {

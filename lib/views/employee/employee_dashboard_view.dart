@@ -539,7 +539,7 @@ class _QuickActionBubble extends StatelessWidget {
   }
 }
 
-class _TodayPunchCard extends StatelessWidget {
+class _TodayPunchCard extends ConsumerWidget {
   final bool isCheckedIn;
   final dynamic todayRecord;
   final void Function(bool viaFingerprint) onCheckIn;
@@ -580,10 +580,11 @@ class _TodayPunchCard extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final now = DateTime.now();
     final hasCheckIn = todayRecord?.checkIn != null;
     final hasCheckOut = todayRecord?.checkOut != null;
+    final isOnBreak = todayRecord?.isOnBreak ?? false;
 
     return Container(
       padding: const EdgeInsets.all(22),
@@ -613,12 +614,16 @@ class _TodayPunchCard extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: hasCheckOut 
                           ? AppColors.textSecondary 
-                          : (isCheckedIn ? AppColors.success : AppColors.warning),
+                          : (isCheckedIn 
+                              ? (isOnBreak ? AppColors.warning : AppColors.success) 
+                              : AppColors.warning),
                       shape: BoxShape.circle,
                       boxShadow: [
                         if (!hasCheckOut)
                           BoxShadow(
-                            color: isCheckedIn ? AppColors.success : AppColors.warning,
+                            color: isCheckedIn 
+                                ? (isOnBreak ? AppColors.warning : AppColors.success) 
+                                : AppColors.warning,
                             blurRadius: 8,
                             spreadRadius: 1,
                           ),
@@ -632,7 +637,9 @@ class _TodayPunchCard extends StatelessWidget {
                   Text(
                     hasCheckOut 
                         ? 'Shift Completed' 
-                        : (isCheckedIn ? 'Currently Active' : 'Not Checked In'),
+                        : (isCheckedIn 
+                            ? (isOnBreak ? 'Currently on Break' : 'Currently Active') 
+                            : 'Not Checked In'),
                     style: const TextStyle(
                       color: AppColors.textPrimary,
                       fontSize: 13,
@@ -683,11 +690,29 @@ class _TodayPunchCard extends StatelessWidget {
           ),
           if (hasCheckIn && !hasCheckOut) ...[
             const SizedBox(height: 14),
-            _PunchTileHorizontal(
-              label: 'Shift Duration',
-              time: todayRecord!.workingHoursLabel,
-              icon: Icons.timelapse_rounded,
-              color: AppColors.info,
+            Row(
+              children: [
+                Expanded(
+                  child: _PunchTileHorizontal(
+                    label: 'Net Shift Work',
+                    time: todayRecord!.workingHoursLabel,
+                    icon: Icons.timelapse_rounded,
+                    color: AppColors.info,
+                  ),
+                ),
+                if (todayRecord!.totalBreakDuration != Duration.zero || isOnBreak) ...[
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: _PunchTileHorizontal(
+                      label: 'Break Time',
+                      time: todayRecord!.breakDurationLabel,
+                      icon: Icons.coffee_rounded,
+                      color: AppColors.warning,
+                      bgColor: const Color(0xFFFFFBF0),
+                    ),
+                  ),
+                ],
+              ],
             ),
           ] else if (hasCheckIn && hasCheckOut) ...[
             const SizedBox(height: 14),
@@ -700,36 +725,78 @@ class _TodayPunchCard extends StatelessWidget {
           ],
           const SizedBox(height: 22),
           if (!hasCheckOut)
-            SizedBox(
-              width: double.infinity,
-              child: Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: (isCheckedIn ? AppColors.error : AppColors.primary).withValues(alpha: 0.25),
-                      blurRadius: 16,
-                      offset: const Offset(0, 6),
+            Row(
+              children: [
+                if (isCheckedIn) ...[
+                  Expanded(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.warning.withValues(alpha: 0.25),
+                            blurRadius: 16,
+                            offset: const Offset(0, 6),
+                          ),
+                        ],
+                      ),
+                      child: ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.warning,
+                          foregroundColor: Colors.white,
+                          minimumSize: const Size(double.infinity, 50),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16)),
+                          elevation: 0,
+                          shadowColor: Colors.transparent,
+                          textStyle: const TextStyle(
+                              fontSize: 13.5, fontWeight: FontWeight.w800, letterSpacing: 0.5),
+                        ),
+                        icon: Icon(isOnBreak ? Icons.play_arrow_rounded : Icons.pause_rounded, size: 21),
+                        label: Text(isOnBreak ? 'Resume Work' : 'Take Break'),
+                        onPressed: () {
+                          if (isOnBreak) {
+                            ref.read(attendanceViewModelProvider.notifier).endBreak();
+                          } else {
+                            ref.read(attendanceViewModelProvider.notifier).startBreak();
+                          }
+                        },
+                      ),
                     ),
-                  ],
-                ),
-                child: ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: isCheckedIn ? AppColors.error : AppColors.primary,
-                    foregroundColor: Colors.white,
-                    minimumSize: const Size(double.infinity, 50),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16)),
-                    elevation: 0,
-                    shadowColor: Colors.transparent,
-                    textStyle: const TextStyle(
-                        fontSize: 14, fontWeight: FontWeight.w800, letterSpacing: 0.5),
                   ),
-                  icon: const Icon(Icons.fingerprint_rounded, size: 21),
-                  label: Text(isCheckedIn ? 'Check Out (Fingerprint)' : 'Check In (Fingerprint)'),
-                  onPressed: () => _handlePunch(context),
+                  const SizedBox(width: 12),
+                ],
+                Expanded(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: (isCheckedIn ? AppColors.error : AppColors.primary).withValues(alpha: 0.25),
+                          blurRadius: 16,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
+                    ),
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: isCheckedIn ? AppColors.error : AppColors.primary,
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size(double.infinity, 50),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16)),
+                        elevation: 0,
+                        shadowColor: Colors.transparent,
+                        textStyle: const TextStyle(
+                            fontSize: 13.5, fontWeight: FontWeight.w800, letterSpacing: 0.5),
+                      ),
+                      icon: const Icon(Icons.fingerprint_rounded, size: 21),
+                      label: Text(isCheckedIn ? 'Check Out' : 'Check In'),
+                      onPressed: () => _handlePunch(context),
+                    ),
+                  ),
                 ),
-              ),
+              ],
             )
           else
             Container(
@@ -839,12 +906,14 @@ class _PunchTileHorizontal extends StatelessWidget {
   final String time;
   final IconData icon;
   final Color color;
+  final Color? bgColor;
 
   const _PunchTileHorizontal({
     required this.label,
     required this.time,
     required this.icon,
     required this.color,
+    this.bgColor,
   });
 
   @override
@@ -852,9 +921,9 @@ class _PunchTileHorizontal extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        color: const Color(0xFFF3FAF8),
+        color: bgColor ?? const Color(0xFFF3FAF8),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.primary.withValues(alpha: 0.06)),
+        border: Border.all(color: color.withValues(alpha: 0.08)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
