@@ -104,28 +104,27 @@ class _DocumentCard extends StatelessWidget {
                       color: AppColors.textPrimary),
                 ),
                 const SizedBox(height: 4),
-                Row(
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 4,
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
                     Text(
                       doc.typeLabel,
                       style: const TextStyle(
-                          fontSize: 11, color: AppColors.primary),
+                          fontSize: 11, color: AppColors.primary, fontWeight: FontWeight.w600),
                     ),
-                    const SizedBox(width: 8),
                     const Text('•',
                         style: TextStyle(
                             fontSize: 11, color: AppColors.textHint)),
-                    const SizedBox(width: 8),
                     Text(
                       DateFormat('MMM yyyy').format(doc.date),
                       style: const TextStyle(
                           fontSize: 11, color: AppColors.textSecondary),
                     ),
-                    const SizedBox(width: 8),
                     const Text('•',
                         style: TextStyle(
                             fontSize: 11, color: AppColors.textHint)),
-                    const SizedBox(width: 8),
                     Text(
                       doc.fileSize,
                       style: const TextStyle(
@@ -140,7 +139,10 @@ class _DocumentCard extends StatelessWidget {
             icon: const Icon(Icons.download_rounded, color: AppColors.primary),
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Downloading ${doc.title}...')),
+                SnackBar(
+                  content: Text('Downloading ${doc.title}...'),
+                  backgroundColor: AppColors.primary,
+                ),
               );
             },
           ),

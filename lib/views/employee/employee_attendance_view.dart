@@ -243,42 +243,6 @@ class _TodayCard extends ConsumerWidget {
               ],
             ),
           ],
-          const SizedBox(height: 14),
-          if (state.todayRecord?.checkOut == null)
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                icon: Icon(state.isCheckedIn
-                    ? Icons.logout_rounded
-                    : Icons.login_rounded),
-                label: Text(state.isCheckedIn ? 'Check Out' : 'Check In'),
-                onPressed: state.isCheckedIn ? vm.checkOut : vm.checkIn,
-              ),
-            )
-          else
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              decoration: BoxDecoration(
-                color: AppColors.successSurface,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.check_circle_rounded,
-                      color: AppColors.success, size: 16),
-                  SizedBox(width: 6),
-                  Text(
-                    'Attendance Complete',
-                    style: TextStyle(
-                        color: AppColors.success,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14),
-                  ),
-                ],
-              ),
-            ),
         ],
       ),
     );

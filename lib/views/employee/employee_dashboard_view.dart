@@ -562,7 +562,7 @@ class _TodayPunchCard extends ConsumerWidget {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Biometric verification failed. Please try again.'),
-              backgroundColor: AppColors.error,
+              backgroundColor: AppColors.primary,
               behavior: SnackBarBehavior.floating,
             ),
           );

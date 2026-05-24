@@ -24,7 +24,7 @@ class _EmployeeExpensesViewState extends ConsumerState<EmployeeExpensesView> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(next.successMessage!),
-            backgroundColor: AppColors.success,
+            backgroundColor: AppColors.primary,
           ),
         );
         ref.read(expenseViewModelProvider.notifier).clearMessages();

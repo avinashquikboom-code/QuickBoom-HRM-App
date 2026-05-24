@@ -24,7 +24,7 @@ class _EmployeeLeaveViewState extends ConsumerState<EmployeeLeaveView> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(next.successMessage!),
-            backgroundColor: AppColors.success,
+            backgroundColor: AppColors.primary,
           ),
         );
         ref.read(leaveViewModelProvider.notifier).clearMessages();
