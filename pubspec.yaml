@@ -27,12 +27,12 @@ dependencies:
   table_calendar: ^3.1.2
 
   # Media / Uploads
-  image_picker: ^1.1.2
+  image_picker: ^1.1.5
 
   # Utilities
   intl: ^0.19.0
   equatable: ^2.0.5
-  shared_preferences: ^2.2.3
+  shared_preferences: ^2.3.2
   local_auth: ^2.2.0
 
 dev_dependencies:
