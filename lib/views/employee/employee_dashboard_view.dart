@@ -30,95 +30,160 @@ class EmployeeDashboardView extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: CustomScrollView(
+        physics: const BouncingScrollPhysics(),
         slivers: [
-          // ─── Hero Header ───────────────────────────────────────────────
+          // ─── Premium Curved & Glowing Banner ────────────────────────────
           SliverAppBar(
-            expandedHeight: 200,
+            expandedHeight: 220,
             floating: false,
             pinned: true,
             backgroundColor: AppColors.primary,
             automaticallyImplyLeading: false,
             shape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.vertical(bottom: Radius.circular(28)),
+              borderRadius: BorderRadius.vertical(bottom: Radius.circular(32)),
             ),
             flexibleSpace: FlexibleSpaceBar(
               background: ClipRRect(
-                borderRadius: const BorderRadius.vertical(bottom: Radius.circular(28)),
+                borderRadius: const BorderRadius.vertical(bottom: Radius.circular(32)),
                 child: Container(
                   decoration: const BoxDecoration(
                     gradient: AppColors.heroGradient,
                   ),
-                  padding: const EdgeInsets.fromLTRB(20, 60, 20, 20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.end,
+                  child: Stack(
                     children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                      // Ambient light circles inside the hero
+                      Positioned(
+                        right: -30,
+                        top: -20,
+                        child: Container(
+                          width: 140,
+                          height: 140,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white.withValues(alpha: 0.08),
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        left: -50,
+                        bottom: -40,
+                        child: Container(
+                          width: 180,
+                          height: 180,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white.withValues(alpha: 0.06),
+                          ),
+                        ),
+                      ),
+                      // Core greeting text layout
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 85, 20, 20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            Row(
                               children: [
-                                Text(
-                                  '$greeting,',
-                                  style: TextStyle(
-                                    color: Colors.white.withValues(alpha: 0.85),
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w500,
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      // Location capsule indicator
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white.withValues(alpha: 0.15),
+                                          borderRadius: BorderRadius.circular(20),
+                                          border: Border.all(color: Colors.white.withValues(alpha: 0.1), width: 1),
+                                        ),
+                                        child: const Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(Icons.wb_sunny_rounded, color: Colors.amber, size: 13),
+                                            SizedBox(width: 4),
+                                            Text(
+                                              'Mumbai, 28°C',
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 10.5,
+                                                fontWeight: FontWeight.w700,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      const SizedBox(height: 10),
+                                      Text(
+                                        '$greeting,',
+                                        style: TextStyle(
+                                          color: Colors.white.withValues(alpha: 0.85),
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                      Text(
+                                        user.name.split(' ').first,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 28,
+                                          fontWeight: FontWeight.w900,
+                                          letterSpacing: -0.7,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Row(
+                                        children: [
+                                          Icon(Icons.calendar_month_outlined, color: Colors.white.withValues(alpha: 0.75), size: 14),
+                                          const SizedBox(width: 5),
+                                          Text(
+                                            DateFormat('EEEE, d MMMM').format(now),
+                                            style: TextStyle(
+                                              color: Colors.white.withValues(alpha: 0.75),
+                                              fontSize: 12.5,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
                                   ),
                                 ),
-                                Text(
-                                  user.name.split(' ').first,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 26,
-                                    fontWeight: FontWeight.w800,
-                                    letterSpacing: -0.5,
+                                // Glowing avatar panel
+                                Container(
+                                  width: 60,
+                                  height: 60,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.15),
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: Colors.white.withValues(alpha: 0.35),
+                                      width: 2.5,
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: AppColors.primary.withValues(alpha: 0.3),
+                                        blurRadius: 15,
+                                        spreadRadius: 2,
+                                      ),
+                                    ],
                                   ),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  DateFormat('EEEE, d MMMM yyyy').format(now),
-                                  style: TextStyle(
-                                    color: Colors.white.withValues(alpha: 0.75),
-                                    fontSize: 12.5,
-                                    fontWeight: FontWeight.w500,
+                                  child: Center(
+                                    child: Text(
+                                      user.initials,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 21,
+                                        fontWeight: FontWeight.w900,
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ],
                             ),
-                          ),
-                          // Avatar with glowing aura
-                          Container(
-                            width: 52,
-                            height: 52,
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.2),
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                  color: Colors.white.withValues(alpha: 0.4),
-                                  width: 2.5),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.08),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
-                            ),
-                            child: Center(
-                              child: Text(
-                                user.initials,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 19,
-                                  fontWeight: FontWeight.w800,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ],
                   ),
@@ -129,8 +194,8 @@ class EmployeeDashboardView extends ConsumerWidget {
               'QuickBoom HRM',
               style: TextStyle(
                 color: Colors.white.withValues(alpha: 0.95),
-                fontSize: 16.5,
-                fontWeight: FontWeight.w700,
+                fontSize: 17.5,
+                fontWeight: FontWeight.w800,
               ),
             ),
             actions: [
@@ -138,7 +203,7 @@ class EmployeeDashboardView extends ConsumerWidget {
                 alignment: Alignment.center,
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.notifications_outlined, color: Colors.white, size: 24),
+                    icon: const Icon(Icons.notifications_outlined, color: Colors.white, size: 25),
                     onPressed: () {
                       Navigator.push(
                         context,
@@ -149,7 +214,7 @@ class EmployeeDashboardView extends ConsumerWidget {
                   if (notifState.unreadCount > 0)
                     Positioned(
                       right: 8,
-                      top: 12,
+                      top: 10,
                       child: Container(
                         padding: const EdgeInsets.all(4),
                         decoration: const BoxDecoration(
@@ -159,9 +224,10 @@ class EmployeeDashboardView extends ConsumerWidget {
                         child: Text(
                           '${notifState.unreadCount}',
                           style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 9,
-                              fontWeight: FontWeight.w900),
+                            color: Colors.white,
+                            fontSize: 9,
+                            fontWeight: FontWeight.w900,
+                          ),
                         ),
                       ),
                     ),
@@ -172,10 +238,10 @@ class EmployeeDashboardView extends ConsumerWidget {
           ),
 
           SliverPadding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
-                // ─── Today Punch Card ─────────────────────────────────────
+                // ─── Holographic Attendance Punch Card ─────────────────────
                 _TodayPunchCard(
                   isCheckedIn: attendanceState.isCheckedIn,
                   todayRecord: attendanceState.todayRecord,
@@ -183,21 +249,62 @@ class EmployeeDashboardView extends ConsumerWidget {
                       ref.read(attendanceViewModelProvider.notifier).checkIn(viaFingerprint: viaFingerprint),
                   onCheckOut: (viaFingerprint) =>
                       ref.read(attendanceViewModelProvider.notifier).checkOut(viaFingerprint: viaFingerprint),
-                ).animate().fadeIn().slideY(begin: 0.1, end: 0),
+                ).animate().fadeIn().slideY(begin: 0.08, end: 0),
 
-                const SizedBox(height: 16),
+                const SizedBox(height: 24),
 
-                // ─── Leave Balance ────────────────────────────────────────
+                // ─── Premium Quick Action scrolling dock ───────────────────
+                _SectionTitle(title: 'Quick Actions'),
+                const SizedBox(height: 12),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  physics: const BouncingScrollPhysics(),
+                  child: Row(
+                    children: [
+                      _QuickActionBubble(
+                        label: 'Apply Leave',
+                        icon: Icons.event_outlined,
+                        color: AppColors.info,
+                        onTap: () {},
+                      ),
+                      const SizedBox(width: 14),
+                      _QuickActionBubble(
+                        label: 'Expense Claim',
+                        icon: Icons.payments_outlined,
+                        color: AppColors.warning,
+                        onTap: () {},
+                      ),
+                      const SizedBox(width: 14),
+                      _QuickActionBubble(
+                        label: 'Shift Schedule',
+                        icon: Icons.date_range_outlined,
+                        color: AppColors.primary,
+                        onTap: () {},
+                      ),
+                      const SizedBox(width: 14),
+                      _QuickActionBubble(
+                        label: 'Tasks List',
+                        icon: Icons.assignment_turned_in_outlined,
+                        color: AppColors.success,
+                        onTap: () {},
+                      ),
+                    ],
+                  ),
+                ).animate().fadeIn(delay: 50.ms),
+
+                const SizedBox(height: 24),
+
+                // ─── Double-layered Leave Balance Gauges ───────────────────
                 _SectionTitle(title: 'Leave Balance'),
-                const SizedBox(height: 10),
+                const SizedBox(height: 12),
                 LayoutBuilder(
                   builder: (context, constraints) {
                     final width = constraints.maxWidth;
                     final columns = width < 380 ? 2 : (width > 600 ? 4 : 3);
-                    final itemWidth = (width - (columns - 1) * 10) / columns;
+                    final itemWidth = (width - (columns - 1) * 12) / columns;
                     return Wrap(
-                      spacing: 10,
-                      runSpacing: 10,
+                      spacing: 12,
+                      runSpacing: 12,
                       children: [
                         SizedBox(
                           width: itemWidth,
@@ -231,19 +338,19 @@ class EmployeeDashboardView extends ConsumerWidget {
                   },
                 ).animate().fadeIn(delay: 100.ms),
 
-                const SizedBox(height: 20),
+                const SizedBox(height: 24),
 
-                // ─── This Month Attendance ─────────────────────────────────
+                // ─── Monthly Attendance Stats ──────────────────────────────
                 _SectionTitle(title: 'This Month'),
-                const SizedBox(height: 10),
+                const SizedBox(height: 12),
                 LayoutBuilder(
                   builder: (context, constraints) {
                     final width = constraints.maxWidth;
                     final columns = width < 380 ? 2 : (width > 600 ? 4 : 3);
-                    final itemWidth = (width - (columns - 1) * 10) / columns;
+                    final itemWidth = (width - (columns - 1) * 12) / columns;
                     return Wrap(
-                      spacing: 10,
-                      runSpacing: 10,
+                      spacing: 12,
+                      runSpacing: 12,
                       children: [
                         SizedBox(
                           width: itemWidth,
@@ -277,33 +384,32 @@ class EmployeeDashboardView extends ConsumerWidget {
                   },
                 ).animate().fadeIn(delay: 150.ms),
 
-                const SizedBox(height: 20),
+                const SizedBox(height: 24),
 
                 // ─── Recent Leave Requests ─────────────────────────────────
                 if (leaveState.myLeaves.isNotEmpty) ...[
                   _SectionTitle(title: 'Recent Leave Requests'),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 12),
                   ...leaveState.myLeaves.take(2).map(
                         (leave) => Padding(
-                          padding: const EdgeInsets.only(bottom: 10),
+                          padding: const EdgeInsets.only(bottom: 12),
                           child: _LeaveRequestTile(leave: leave),
                         ),
                       ),
+                  const SizedBox(height: 12),
                 ],
 
-                const SizedBox(height: 20),
-
-                // ─── Announcements ─────────────────────────────────────────
-                _SectionTitle(title: 'Announcements'),
-                const SizedBox(height: 10),
+                // ─── Editorial Announcements Feed ──────────────────────────
+                _SectionTitle(title: 'Announcements Feed'),
+                const SizedBox(height: 12),
                 ...announcements.map(
                   (a) => Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
+                    padding: const EdgeInsets.only(bottom: 12),
                     child: _AnnouncementTile(announcement: a),
                   ),
                 ),
 
-                const SizedBox(height: 20),
+                const SizedBox(height: 24),
               ]),
             ),
           ),
@@ -324,29 +430,29 @@ class EmployeeDashboardView extends ConsumerWidget {
     return [
       AnnouncementModel(
         id: 'A1',
-        title: '🎉 Company Picnic Next Week',
+        title: '🎉 Annual Picnic Scheduled',
         description:
-            'Join us for the annual company picnic on Saturday. Venue: City Park, 10 AM onwards.',
+            'Join the crew for the annual company retreat! City Central Park, catered lunch provided. 10 AM onwards.',
         date: now.subtract(const Duration(days: 1)),
-        postedBy: 'Sarah Johnson',
+        postedBy: 'Sarah Johnson (HR)',
         category: AnnouncementCategory.event,
       ),
       AnnouncementModel(
         id: 'A2',
-        title: '📅 Public Holiday Notice',
+        title: '📅 Holiday Closure Announcement',
         description:
-            'Office will remain closed on account of Eid al-Adha. Enjoy the long weekend!',
+            'All corporate offices will remain closed next Friday for Eid al-Adha. Have a safe long weekend!',
         date: now.subtract(const Duration(days: 3)),
-        postedBy: 'Sarah Johnson',
+        postedBy: 'Sarah Johnson (HR)',
         category: AnnouncementCategory.holiday,
       ),
       AnnouncementModel(
         id: 'A3',
-        title: '📋 Updated WFH Policy',
+        title: '📋 WFH Guidelines Updated',
         description:
-            'New work-from-home policy effective June 1st. Please review the updated guidelines.',
+            'The updated remote work framework is now in effect. Please review constraints on core availability hours.',
         date: now.subtract(const Duration(days: 5)),
-        postedBy: 'Sarah Johnson',
+        postedBy: 'Sarah Johnson (HR)',
         category: AnnouncementCategory.policy,
       ),
     ];
@@ -364,10 +470,70 @@ class _SectionTitle extends StatelessWidget {
     return Text(
       title,
       style: const TextStyle(
-        fontSize: 15,
+        fontSize: 15.5,
         fontWeight: FontWeight.w800,
         color: AppColors.textPrimary,
-        letterSpacing: -0.2,
+        letterSpacing: -0.3,
+      ),
+    );
+  }
+}
+
+class _QuickActionBubble extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _QuickActionBubble({
+    required this.label,
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 86,
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: AppColors.cardBorder),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.cardShadow,
+              blurRadius: 8,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: color, size: 22),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: AppColors.textPrimary,
+                fontSize: 10,
+                fontWeight: FontWeight.w800,
+                height: 1.25,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -420,16 +586,16 @@ class _TodayPunchCard extends StatelessWidget {
     final hasCheckOut = todayRecord?.checkOut != null;
 
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppColors.cardBorder),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.1), width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: AppColors.cardShadow,
-            blurRadius: 16,
-            offset: const Offset(0, 8),
+            color: AppColors.primary.withValues(alpha: 0.08),
+            blurRadius: 24,
+            offset: const Offset(0, 12),
           ),
         ],
       ),
@@ -442,18 +608,26 @@ class _TodayPunchCard extends StatelessWidget {
               Row(
                 children: [
                   Container(
-                    width: 8,
-                    height: 8,
+                    width: 9,
+                    height: 9,
                     decoration: BoxDecoration(
                       color: hasCheckOut 
                           ? AppColors.textSecondary 
                           : (isCheckedIn ? AppColors.success : AppColors.warning),
                       shape: BoxShape.circle,
+                      boxShadow: [
+                        if (!hasCheckOut)
+                          BoxShadow(
+                            color: isCheckedIn ? AppColors.success : AppColors.warning,
+                            blurRadius: 8,
+                            spreadRadius: 1,
+                          ),
+                      ],
                     ),
                   )
                       .animate(onPlay: (controller) => controller.repeat(reverse: true))
-                      .scaleXY(begin: 0.7, end: 1.3, duration: 1000.ms)
-                      .fadeIn(duration: 1000.ms),
+                      .scaleXY(begin: 0.75, end: 1.3, duration: 1100.ms)
+                      .fadeIn(duration: 1100.ms),
                   const SizedBox(width: 8),
                   Text(
                     hasCheckOut 
@@ -462,7 +636,7 @@ class _TodayPunchCard extends StatelessWidget {
                     style: const TextStyle(
                       color: AppColors.textPrimary,
                       fontSize: 13,
-                      fontWeight: FontWeight.w700,
+                      fontWeight: FontWeight.w800,
                     ),
                   ),
                 ],
@@ -474,31 +648,31 @@ class _TodayPunchCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  DateFormat('dd MMM').format(now),
+                  DateFormat('dd MMM yyyy').format(now),
                   style: const TextStyle(
                       color: AppColors.primary,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 22),
           Row(
             children: [
               Expanded(
                 child: _PunchTile(
-                  label: 'Check In',
+                  label: 'Check In Time',
                   time: hasCheckIn ? todayRecord!.checkInLabel : '--:--',
                   icon: Icons.login_rounded,
                   color: AppColors.success,
                   isFingerprint: todayRecord?.isFingerprintCheckIn ?? false,
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 14),
               Expanded(
                 child: _PunchTile(
-                  label: 'Check Out',
+                  label: 'Check Out Time',
                   time: hasCheckOut ? todayRecord!.checkOutLabel : '--:--',
                   icon: Icons.logout_rounded,
                   color: hasCheckOut ? AppColors.primary : AppColors.textHint,
@@ -508,15 +682,15 @@ class _TodayPunchCard extends StatelessWidget {
             ],
           ),
           if (hasCheckIn && !hasCheckOut) ...[
-            const SizedBox(height: 12),
+            const SizedBox(height: 14),
             _PunchTileHorizontal(
-              label: 'Working Hours',
+              label: 'Shift Duration',
               time: todayRecord!.workingHoursLabel,
               icon: Icons.timelapse_rounded,
               color: AppColors.info,
             ),
           ] else if (hasCheckIn && hasCheckOut) ...[
-            const SizedBox(height: 12),
+            const SizedBox(height: 14),
             _PunchTileHorizontal(
               label: 'Total Working Hours',
               time: todayRecord!.workingHoursLabel,
@@ -524,32 +698,44 @@ class _TodayPunchCard extends StatelessWidget {
               color: AppColors.success,
             ),
           ],
-          const SizedBox(height: 20),
+          const SizedBox(height: 22),
           if (!hasCheckOut)
             SizedBox(
               width: double.infinity,
-              child: ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: isCheckedIn ? AppColors.error : AppColors.primary,
-                  foregroundColor: Colors.white,
-                  minimumSize: const Size(double.infinity, 48),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16)),
-                  elevation: 0,
-                  shadowColor: Colors.transparent,
-                  textStyle: const TextStyle(
-                      fontSize: 14, fontWeight: FontWeight.w700, letterSpacing: 0.5),
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: (isCheckedIn ? AppColors.error : AppColors.primary).withValues(alpha: 0.25),
+                      blurRadius: 16,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
                 ),
-                icon: const Icon(Icons.fingerprint_rounded, size: 20),
-                label: Text(isCheckedIn ? 'Check Out (Fingerprint)' : 'Check In (Fingerprint)'),
-                onPressed: () => _handlePunch(context),
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: isCheckedIn ? AppColors.error : AppColors.primary,
+                    foregroundColor: Colors.white,
+                    minimumSize: const Size(double.infinity, 50),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16)),
+                    elevation: 0,
+                    shadowColor: Colors.transparent,
+                    textStyle: const TextStyle(
+                        fontSize: 14, fontWeight: FontWeight.w800, letterSpacing: 0.5),
+                  ),
+                  icon: const Icon(Icons.fingerprint_rounded, size: 21),
+                  label: Text(isCheckedIn ? 'Check Out (Fingerprint)' : 'Check In (Fingerprint)'),
+                  onPressed: () => _handlePunch(context),
+                ),
               ),
             )
           else
             Container(
-              padding: const EdgeInsets.symmetric(vertical: 12),
+              padding: const EdgeInsets.symmetric(vertical: 14),
               decoration: BoxDecoration(
-                color: AppColors.success.withValues(alpha: 0.1),
+                color: AppColors.success.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: AppColors.success.withValues(alpha: 0.15)),
               ),
@@ -557,14 +743,14 @@ class _TodayPunchCard extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(Icons.check_circle_rounded,
-                      color: AppColors.success, size: 18),
+                      color: AppColors.success, size: 19),
                   SizedBox(width: 8),
                   Text(
                     'Perfect! Day completed.',
                     style: TextStyle(
                         color: AppColors.success,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700),
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w800),
                   ),
                 ],
               ),
@@ -593,11 +779,11 @@ class _PunchTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: const Color(0xFFF3FAF8),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.primary.withValues(alpha: 0.05)),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.06)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -611,7 +797,7 @@ class _PunchTile extends StatelessWidget {
                 style: const TextStyle(
                   color: AppColors.textSecondary,
                   fontSize: 11,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
             ],
@@ -621,7 +807,7 @@ class _PunchTile extends StatelessWidget {
             time,
             style: const TextStyle(
               color: AppColors.textPrimary,
-              fontSize: 16,
+              fontSize: 17,
               fontWeight: FontWeight.w800,
             ),
           ),
@@ -635,8 +821,8 @@ class _PunchTile extends StatelessWidget {
                   'Biometric Verified',
                   style: TextStyle(
                     color: AppColors.primary,
-                    fontSize: 9,
-                    fontWeight: FontWeight.w700,
+                    fontSize: 8.5,
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
               ],
@@ -664,11 +850,11 @@ class _PunchTileHorizontal extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
         color: const Color(0xFFF3FAF8),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.primary.withValues(alpha: 0.05)),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.06)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -682,7 +868,7 @@ class _PunchTileHorizontal extends StatelessWidget {
                 style: const TextStyle(
                   color: AppColors.textSecondary,
                   fontSize: 12,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
             ],
@@ -719,14 +905,14 @@ class _LeaveBalanceCard extends StatelessWidget {
     final remaining = total - used;
     final ratio = total > 0 ? (remaining / total) : 0.0;
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: AppColors.cardBorder),
         boxShadow: [
           BoxShadow(
-              color: AppColors.cardShadow, blurRadius: 8, offset: const Offset(0, 3)),
+              color: AppColors.cardShadow, blurRadius: 10, offset: const Offset(0, 4)),
         ],
       ),
       child: Column(
@@ -738,11 +924,11 @@ class _LeaveBalanceCard extends StatelessWidget {
               Text(
                 label,
                 style: const TextStyle(
-                    fontSize: 12,
+                    fontSize: 12.5,
                     fontWeight: FontWeight.w800,
                     color: AppColors.textPrimary),
               ),
-              Icon(Icons.event_available_rounded, color: color.withValues(alpha: 0.7), size: 14),
+              Icon(Icons.event_available_rounded, color: color.withValues(alpha: 0.7), size: 15),
             ],
           ),
           const SizedBox(height: 12),
@@ -756,11 +942,11 @@ class _LeaveBalanceCard extends StatelessWidget {
                     Text(
                       '$remaining',
                       style: TextStyle(
-                          fontSize: 20, fontWeight: FontWeight.w800, color: color),
+                          fontSize: 21, fontWeight: FontWeight.w800, color: color),
                     ),
                     Text(
                       'of $total days',
-                      style: const TextStyle(fontSize: 10, color: AppColors.textSecondary, fontWeight: FontWeight.w500),
+                      style: const TextStyle(fontSize: 10, color: AppColors.textSecondary, fontWeight: FontWeight.w600),
                     ),
                   ],
                 ),
@@ -769,13 +955,13 @@ class _LeaveBalanceCard extends StatelessWidget {
                 alignment: Alignment.center,
                 children: [
                   SizedBox(
-                    width: 38,
-                    height: 38,
+                    width: 40,
+                    height: 40,
                     child: CircularProgressIndicator(
                       value: ratio,
                       backgroundColor: color.withValues(alpha: 0.12),
                       color: color,
-                      strokeWidth: 3.5,
+                      strokeWidth: 4.0,
                     ),
                   ),
                   Text(
@@ -812,7 +998,7 @@ class _StatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 18),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(20),
@@ -820,8 +1006,8 @@ class _StatCard extends StatelessWidget {
         boxShadow: [
           BoxShadow(
             color: AppColors.cardShadow,
-            blurRadius: 6,
-            offset: const Offset(0, 2),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
@@ -835,17 +1021,17 @@ class _StatCard extends StatelessWidget {
             ),
             child: Icon(icon, color: color, size: 20),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
           Text(
             value,
             style: const TextStyle(
                 fontSize: 22, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
           ),
-          const SizedBox(height: 2),
+          const SizedBox(height: 3),
           Text(
             label,
             style: const TextStyle(
-                fontSize: 11, color: AppColors.textSecondary, fontWeight: FontWeight.w600),
+                fontSize: 11, color: AppColors.textSecondary, fontWeight: FontWeight.w700),
           ),
         ],
       ),
@@ -877,13 +1063,13 @@ class _LeaveRequestTile extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            width: 42,
-            height: 42,
+            width: 44,
+            height: 44,
             decoration: BoxDecoration(
               color: statusColor.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(14),
             ),
-            child: Icon(Icons.event_note_rounded, color: statusColor, size: 20),
+            child: Icon(Icons.event_note_rounded, color: statusColor, size: 22),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -893,16 +1079,16 @@ class _LeaveRequestTile extends StatelessWidget {
                 Text(
                   leave.typeLabel,
                   style: const TextStyle(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 13.5,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 14,
                       color: AppColors.textPrimary),
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 3),
                 Text(
                   '${leave.daysCount} day(s) · ${DateFormat('dd MMM yyyy').format(leave.fromDate)}',
                   style: const TextStyle(
-                      fontSize: 11.5, color: AppColors.textSecondary, fontWeight: FontWeight.w500),
+                      fontSize: 11.5, color: AppColors.textSecondary, fontWeight: FontWeight.w600),
                 ),
               ],
             ),
@@ -961,7 +1147,7 @@ class _StatusBadge extends StatelessWidget {
       child: Text(
         status.name[0].toUpperCase() + status.name.substring(1),
         style: TextStyle(
-            color: color, fontSize: 10.5, fontWeight: FontWeight.w700),
+            color: color, fontSize: 10.5, fontWeight: FontWeight.w800),
       ),
     );
   }
@@ -975,7 +1161,7 @@ class _AnnouncementTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final catColor = _catColor(announcement.category);
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(20),
@@ -983,8 +1169,8 @@ class _AnnouncementTile extends StatelessWidget {
         boxShadow: [
           BoxShadow(
             color: AppColors.cardShadow,
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
@@ -995,7 +1181,7 @@ class _AnnouncementTile extends StatelessWidget {
             children: [
               Container(
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
                 decoration: BoxDecoration(
                   color: catColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
@@ -1005,32 +1191,64 @@ class _AnnouncementTile extends StatelessWidget {
                   style: TextStyle(
                       color: catColor,
                       fontSize: 10,
-                      fontWeight: FontWeight.w700),
+                      fontWeight: FontWeight.w800),
                 ),
               ),
               const Spacer(),
               Text(
-                DateFormat('dd MMM').format(announcement.date),
+                DateFormat('dd MMM yyyy').format(announcement.date),
                 style: const TextStyle(
-                    fontSize: 11, color: AppColors.textHint, fontWeight: FontWeight.w500),
+                    fontSize: 11, color: AppColors.textHint, fontWeight: FontWeight.w600),
               ),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
           Text(
             announcement.title,
             style: const TextStyle(
-                fontWeight: FontWeight.w700,
-                fontSize: 14,
+                fontWeight: FontWeight.w800,
+                fontSize: 14.5,
                 color: AppColors.textPrimary),
           ),
           const SizedBox(height: 6),
           Text(
             announcement.description,
             style: const TextStyle(
-                fontSize: 12, color: AppColors.textSecondary, height: 1.4),
-            maxLines: 2,
+                fontSize: 12, color: AppColors.textSecondary, height: 1.45),
+            maxLines: 3,
             overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 12),
+          const Divider(color: AppColors.cardBorder, height: 1),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 10,
+                backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                child: const Icon(Icons.person, size: 10, color: AppColors.primary),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                announcement.postedBy,
+                style: const TextStyle(
+                  color: AppColors.textSecondary,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const Spacer(),
+              const Icon(Icons.timer_outlined, size: 11, color: AppColors.textHint),
+              const SizedBox(width: 3),
+              const Text(
+                '2 min read',
+                style: TextStyle(
+                  color: AppColors.textHint,
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
           ),
         ],
       ),
