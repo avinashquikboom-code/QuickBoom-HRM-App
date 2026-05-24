@@ -16,7 +16,7 @@ class HrExpensesView extends ConsumerWidget {
     ref.listen<HrExpenseState>(hrExpenseViewModelProvider, (prev, next) {
       if (next.successMessage != null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(next.successMessage!), backgroundColor: AppColors.success),
+          SnackBar(content: Text(next.successMessage!), backgroundColor: AppColors.primary),
         );
         ref.read(hrExpenseViewModelProvider.notifier).clearMessage();
       }

@@ -39,7 +39,7 @@ class _HrLeaveApprovalViewState extends ConsumerState<HrLeaveApprovalView>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(next.successMessage!),
-            backgroundColor: AppColors.success,
+            backgroundColor: AppColors.primary,
           ),
         );
         ref.read(hrLeaveViewModelProvider.notifier).clearMessage();
