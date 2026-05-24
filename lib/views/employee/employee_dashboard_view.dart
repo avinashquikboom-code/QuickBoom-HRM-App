@@ -179,10 +179,10 @@ class EmployeeDashboardView extends ConsumerWidget {
                 _TodayPunchCard(
                   isCheckedIn: attendanceState.isCheckedIn,
                   todayRecord: attendanceState.todayRecord,
-                  onCheckIn: () =>
-                      ref.read(attendanceViewModelProvider.notifier).checkIn(),
-                  onCheckOut: () =>
-                      ref.read(attendanceViewModelProvider.notifier).checkOut(),
+                  onCheckIn: (viaFingerprint) =>
+                      ref.read(attendanceViewModelProvider.notifier).checkIn(viaFingerprint: viaFingerprint),
+                  onCheckOut: (viaFingerprint) =>
+                      ref.read(attendanceViewModelProvider.notifier).checkOut(viaFingerprint: viaFingerprint),
                 ).animate().fadeIn().slideY(begin: 0.1, end: 0),
 
                 const SizedBox(height: 16),
@@ -376,8 +376,8 @@ class _SectionTitle extends StatelessWidget {
 class _TodayPunchCard extends StatelessWidget {
   final bool isCheckedIn;
   final dynamic todayRecord;
-  final VoidCallback onCheckIn;
-  final VoidCallback onCheckOut;
+  final void Function(bool viaFingerprint) onCheckIn;
+  final void Function(bool viaFingerprint) onCheckOut;
 
   const _TodayPunchCard({
     required this.isCheckedIn,
@@ -388,9 +388,10 @@ class _TodayPunchCard extends StatelessWidget {
 
   Future<void> _handlePunch(BuildContext context) async {
     final hasBio = await BiometricService.isBiometricsAvailable();
+    bool authenticated = false;
     if (hasBio) {
-      final success = await BiometricService.authenticate();
-      if (!success) {
+      authenticated = await BiometricService.authenticate();
+      if (!authenticated) {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -404,10 +405,11 @@ class _TodayPunchCard extends StatelessWidget {
       }
     }
     // Proceed with check-in/out
+    final viaFingerprint = hasBio && authenticated;
     if (isCheckedIn) {
-      onCheckOut();
+      onCheckOut(viaFingerprint);
     } else {
-      onCheckIn();
+      onCheckIn(viaFingerprint);
     }
   }
 
@@ -490,6 +492,7 @@ class _TodayPunchCard extends StatelessWidget {
                   time: hasCheckIn ? todayRecord!.checkInLabel : '--:--',
                   icon: Icons.login_rounded,
                   color: AppColors.success,
+                  isFingerprint: todayRecord?.isFingerprintCheckIn ?? false,
                 ),
               ),
               const SizedBox(width: 12),
@@ -499,6 +502,7 @@ class _TodayPunchCard extends StatelessWidget {
                   time: hasCheckOut ? todayRecord!.checkOutLabel : '--:--',
                   icon: Icons.logout_rounded,
                   color: hasCheckOut ? AppColors.primary : AppColors.textHint,
+                  isFingerprint: todayRecord?.isFingerprintCheckOut ?? false,
                 ),
               ),
             ],
@@ -576,12 +580,14 @@ class _PunchTile extends StatelessWidget {
   final String time;
   final IconData icon;
   final Color color;
+  final bool isFingerprint;
 
   const _PunchTile({
     required this.label,
     required this.time,
     required this.icon,
     required this.color,
+    this.isFingerprint = false,
   });
 
   @override
@@ -619,6 +625,23 @@ class _PunchTile extends StatelessWidget {
               fontWeight: FontWeight.w800,
             ),
           ),
+          if (isFingerprint) ...[
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                const Icon(Icons.fingerprint_rounded, size: 12, color: AppColors.primary),
+                const SizedBox(width: 4),
+                const Text(
+                  'Biometric Verified',
+                  style: TextStyle(
+                    color: AppColors.primary,
+                    fontSize: 9,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );

@@ -7,6 +7,8 @@ class AttendanceModel {
   final DateTime? checkIn;
   final DateTime? checkOut;
   final AttendanceStatus status;
+  final bool isFingerprintCheckIn;
+  final bool isFingerprintCheckOut;
 
   const AttendanceModel({
     required this.id,
@@ -15,6 +17,8 @@ class AttendanceModel {
     required this.status,
     this.checkIn,
     this.checkOut,
+    this.isFingerprintCheckIn = false,
+    this.isFingerprintCheckOut = false,
   });
 
   Duration? get workingDuration {

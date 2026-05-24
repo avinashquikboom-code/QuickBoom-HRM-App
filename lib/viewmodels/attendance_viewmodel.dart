@@ -58,7 +58,7 @@ class AttendanceViewModel extends StateNotifier<AttendanceState> {
   AttendanceViewModel()
     : super(AttendanceState(history: _generateMockHistory()));
 
-  void checkIn() {
+  void checkIn({bool viaFingerprint = false}) {
     final now = DateTime.now();
     final isLate = now.hour > 9 || (now.hour == 9 && now.minute > 15);
     final record = AttendanceModel(
@@ -67,11 +67,12 @@ class AttendanceViewModel extends StateNotifier<AttendanceState> {
       date: DateTime(now.year, now.month, now.day),
       checkIn: now,
       status: isLate ? AttendanceStatus.late : AttendanceStatus.present,
+      isFingerprintCheckIn: viaFingerprint,
     );
     state = state.copyWith(todayRecord: record, isCheckedIn: true);
   }
 
-  void checkOut() {
+  void checkOut({bool viaFingerprint = false}) {
     if (state.todayRecord == null) return;
     final now = DateTime.now();
     final updated = AttendanceModel(
@@ -81,6 +82,8 @@ class AttendanceViewModel extends StateNotifier<AttendanceState> {
       checkIn: state.todayRecord!.checkIn,
       checkOut: now,
       status: state.todayRecord!.status,
+      isFingerprintCheckIn: state.todayRecord!.isFingerprintCheckIn,
+      isFingerprintCheckOut: viaFingerprint,
     );
     state = state.copyWith(todayRecord: updated, isCheckedIn: false);
   }
