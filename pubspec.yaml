@@ -1,0 +1,47 @@
+name: quickboom_hrm
+description: "QuickBoom HRM - Human Resource Management System"
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.12.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # State Management - Riverpod
+  flutter_riverpod: ^2.6.1
+  riverpod_annotation: ^2.6.1
+
+  # UI & Animations
+  cupertino_icons: ^1.0.8
+  google_fonts: ^6.2.1
+  flutter_animate: ^4.5.0
+
+  # Charts & Analytics
+  fl_chart: ^0.69.0
+
+  # Calendar
+  table_calendar: ^3.1.2
+
+  # Media / Uploads
+  image_picker: ^1.1.2
+
+  # Utilities
+  intl: ^0.19.0
+  equatable: ^2.0.5
+  shared_preferences: ^2.2.3
+  local_auth: ^2.2.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  riverpod_generator: ^2.6.1
+  build_runner: ^2.4.13
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
