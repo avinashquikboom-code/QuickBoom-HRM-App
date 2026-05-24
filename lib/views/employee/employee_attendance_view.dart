@@ -102,7 +102,7 @@ class EmployeeAttendanceView extends ConsumerWidget {
                       ),
                     ),
 
-                const SizedBox(height: 20),
+                const SizedBox(height: 110),
               ]),
             ),
           ),

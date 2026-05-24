@@ -111,7 +111,7 @@ class _EmployeeLeaveViewState extends ConsumerState<EmployeeLeaveView> {
                 ),
               ),
 
-            const SizedBox(height: 80),
+            const SizedBox(height: 110),
           ],
         ),
       ),

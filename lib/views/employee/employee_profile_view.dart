@@ -272,7 +272,7 @@ class EmployeeProfileView extends ConsumerWidget {
                     ),
                   ).animate().fadeIn(delay: 500.ms),
 
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 110),
                 ],
               ),
             ),
