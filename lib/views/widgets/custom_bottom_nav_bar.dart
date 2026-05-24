@@ -54,39 +54,19 @@ class CustomBottomNavBar extends StatelessWidget {
               behavior: HitTestBehavior.opaque,
               child: Center(
                 child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 300),
+                  duration: const Duration(milliseconds: 250),
                   curve: Curves.easeInOutCubic,
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                  padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
                     color: isSelected
                         ? AppColors.primary.withValues(alpha: 0.15)
                         : Colors.transparent,
-                    borderRadius: BorderRadius.circular(24),
+                    shape: BoxShape.circle,
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        isSelected ? item.selectedIcon : item.icon,
-                        color: isSelected ? AppColors.primary : AppColors.textHint,
-                        size: 22,
-                      ),
-                      if (isSelected) ...[
-                        const SizedBox(width: 4),
-                        Flexible(
-                          child: Text(
-                            item.label,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: AppColors.primary,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ],
+                  child: Icon(
+                    isSelected ? item.selectedIcon : item.icon,
+                    color: isSelected ? AppColors.primary : AppColors.textHint,
+                    size: 24,
                   ),
                 ),
               ),

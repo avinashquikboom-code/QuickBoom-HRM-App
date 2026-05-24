@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
 import '../../core/constants/app_colors.dart';
 import '../../viewmodels/auth_viewmodel.dart';
@@ -19,86 +20,132 @@ class EmployeeProfileView extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('My Profile'),
+        backgroundColor: AppColors.primary,
+        elevation: 0,
+        title: const Text(
+          'My Profile',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 18),
+        ),
         centerTitle: false,
         actions: [
-          TextButton.icon(
-            icon: const Icon(Icons.logout_rounded,
-                size: 18, color: AppColors.error),
-            label: const Text('Logout',
-                style: TextStyle(color: AppColors.error, fontSize: 13)),
+          IconButton(
+            icon: const Icon(Icons.logout_rounded, color: Colors.white, size: 22),
             onPressed: () => _confirmLogout(context, ref),
           ),
+          const SizedBox(width: 8),
         ],
       ),
       body: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
         child: Column(
           children: [
-            // ─── Profile Header ─────────────────────────────────────────
+            // ─── Immersive Glowing Curved Header ──────────────────────────
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 20),
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 36),
               decoration: const BoxDecoration(
                 gradient: AppColors.heroGradient,
+                borderRadius: BorderRadius.vertical(bottom: Radius.circular(32)),
               ),
-              child: Column(
+              child: Stack(
+                alignment: Alignment.center,
                 children: [
-                  Container(
-                    width: 80,
-                    height: 80,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.4), width: 3),
+                  // Decorative light background rings
+                  Positioned(
+                    right: -20,
+                    top: -10,
+                    child: Container(
+                      width: 120,
+                      height: 120,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white.withValues(alpha: 0.05),
+                      ),
                     ),
-                    child: Center(
-                      child: Text(
-                        user.initials,
+                  ),
+                  Positioned(
+                    left: -30,
+                    bottom: -20,
+                    child: Container(
+                      width: 130,
+                      height: 130,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white.withValues(alpha: 0.05),
+                      ),
+                    ),
+                  ),
+                  Column(
+                    children: [
+                      // Concentric glowing avatar ring
+                      Container(
+                        width: 90,
+                        height: 90,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.15),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.35),
+                            width: 3,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.primary.withValues(alpha: 0.25),
+                              blurRadius: 20,
+                              spreadRadius: 2,
+                            ),
+                          ],
+                        ),
+                        child: Center(
+                          child: Text(
+                            user.initials,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 32,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        ),
+                      ).animate().scale(duration: 500.ms, curve: Curves.easeOutBack),
+                      const SizedBox(height: 16),
+                      Text(
+                        user.name,
                         style: const TextStyle(
                           color: Colors.white,
-                          fontSize: 28,
-                          fontWeight: FontWeight.w700,
+                          fontSize: 22,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: -0.5,
                         ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  Text(
-                    user.name,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    user.designation,
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.8),
-                      fontSize: 14,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.3)),
-                    ),
-                    child: Text(
-                      user.employeeId,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 1.5,
-                      ),
-                    ),
+                      ).animate().fadeIn(delay: 150.ms),
+                      const SizedBox(height: 4),
+                      Text(
+                        user.designation,
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.85),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ).animate().fadeIn(delay: 200.ms),
+                      const SizedBox(height: 14),
+                      // Rounded employee ID badge
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: Colors.white.withValues(alpha: 0.25), width: 1),
+                        ),
+                        child: Text(
+                          user.employeeId,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 1.5,
+                          ),
+                        ),
+                      ).animate().fadeIn(delay: 250.ms),
+                    ],
                   ),
                 ],
               ),
@@ -119,17 +166,17 @@ class EmployeeProfileView extends ConsumerWidget {
                           value: user.name,
                           icon: Icons.badge_outlined),
                       _InfoRow(
-                          label: 'Email',
+                          label: 'Email Address',
                           value: user.email,
                           icon: Icons.email_outlined),
                       _InfoRow(
-                          label: 'Phone',
+                          label: 'Contact Number',
                           value: user.phone,
                           icon: Icons.phone_outlined),
                     ],
-                  ),
+                  ).animate().fadeIn(delay: 100.ms).slideY(begin: 0.05, end: 0),
 
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 16),
 
                   // ─── Employment Info ─────────────────────────────────────
                   _SectionCard(
@@ -145,78 +192,81 @@ class EmployeeProfileView extends ConsumerWidget {
                           value: user.designation,
                           icon: Icons.work_outline_rounded),
                       _InfoRow(
-                          label: 'Joining Date',
-                          value: DateFormat('dd MMMM yyyy')
-                              .format(user.joinDate),
+                          label: 'Date of Joining',
+                          value: DateFormat('dd MMMM yyyy').format(user.joinDate),
                           icon: Icons.calendar_today_outlined),
                       _InfoRow(
-                          label: 'Experience',
-                          value: '${user.yearsOfService}+ years',
+                          label: 'Tenure',
+                          value: '${user.yearsOfService}+ Years of Service',
                           icon: Icons.timeline_rounded),
                     ],
-                  ),
+                  ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.05, end: 0),
 
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 16),
 
                   // ─── Salary Info ─────────────────────────────────────────
                   _SectionCard(
-                    title: 'Salary',
+                    title: 'Compensation',
                     icon: Icons.account_balance_wallet_outlined,
                     children: [
                       _InfoRow(
                         label: 'Monthly CTC',
-                        value:
-                            '₹${NumberFormat('#,##,###').format(user.salary)}',
+                        value: '₹${NumberFormat('#,##,###').format(user.salary)}',
                         icon: Icons.currency_rupee_rounded,
                       ),
                     ],
-                  ),
+                  ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.05, end: 0),
 
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 16),
 
                   // ─── Quick Links ─────────────────────────────────────────
                   _SectionCard(
-                    title: 'Quick Links',
+                    title: 'Quick Access Links',
                     icon: Icons.link_rounded,
                     children: [
                       _ActionRow(
-                        label: 'My Documents',
+                        label: 'My Uploaded Documents',
                         icon: Icons.folder_outlined,
                         onTap: () {
                           Navigator.push(context, MaterialPageRoute(builder: (_) => const EmployeeDocumentsView()));
                         },
                       ),
                       _ActionRow(
-                        label: 'Expense Claims',
+                        label: 'Submit & Track Expenses',
                         icon: Icons.receipt_long_outlined,
                         onTap: () {
                           Navigator.push(context, MaterialPageRoute(builder: (_) => const EmployeeExpensesView()));
                         },
                       ),
                       _ActionRow(
-                        label: 'My Shift Schedule',
+                        label: 'Weekly Shift Schedule',
                         icon: Icons.schedule_rounded,
                         onTap: () {
                           Navigator.push(context, MaterialPageRoute(builder: (_) => const EmployeeShiftView()));
                         },
                       ),
                     ],
-                  ),
+                  ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.05, end: 0),
 
                   const SizedBox(height: 24),
 
-                  // ─── Logout ──────────────────────────────────────────────
-                  OutlinedButton.icon(
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.error,
-                      side: const BorderSide(color: AppColors.error),
+                  // ─── Logout Outlined Button ──────────────────────────────
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.error,
+                        side: BorderSide(color: AppColors.error.withValues(alpha: 0.4), width: 1.5),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      ),
+                      icon: const Icon(Icons.logout_rounded, size: 18),
+                      label: const Text('Logout', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800)),
+                      onPressed: () => _confirmLogout(context, ref),
                     ),
-                    icon: const Icon(Icons.logout_rounded),
-                    label: const Text('Logout'),
-                    onPressed: () => _confirmLogout(context, ref),
-                  ),
+                  ).animate().fadeIn(delay: 500.ms),
 
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 24),
                 ],
               ),
             ),
@@ -230,16 +280,27 @@ class EmployeeProfileView extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Logout'),
-        content: const Text('Are you sure you want to logout?'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text(
+          'Logout Confirmation',
+          style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+        ),
+        content: const Text(
+          'Are you sure you want to securely end your current session?',
+          style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: const Text('Cancel', style: TextStyle(fontWeight: FontWeight.w700)),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.error,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
             onPressed: () {
               ref.read(authViewModelProvider.notifier).logout();
               Navigator.of(context).pushAndRemoveUntil(
@@ -247,7 +308,7 @@ class EmployeeProfileView extends ConsumerWidget {
                 (_) => false,
               );
             },
-            child: const Text('Logout'),
+            child: const Text('End Session', style: TextStyle(fontWeight: FontWeight.w800)),
           ),
         ],
       ),
@@ -271,15 +332,21 @@ class _SectionCard extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(22),
         border: Border.all(color: AppColors.cardBorder),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.cardShadow,
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             child: Row(
               children: [
                 Icon(icon, size: 16, color: AppColors.primary),
@@ -288,14 +355,14 @@ class _SectionCard extends StatelessWidget {
                   title,
                   style: const TextStyle(
                     fontSize: 13,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w800,
                     color: AppColors.textPrimary,
                   ),
                 ),
               ],
             ),
           ),
-          const Divider(height: 1),
+          const Divider(height: 1, color: AppColors.cardBorder),
           ...children,
         ],
       ),
@@ -308,31 +375,30 @@ class _InfoRow extends StatelessWidget {
   final String value;
   final IconData icon;
 
-  const _InfoRow(
-      {required this.label, required this.value, required this.icon});
+  const _InfoRow({
+    required this.label,
+    required this.value,
+    required this.icon,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       child: Row(
         children: [
           Icon(icon, size: 16, color: AppColors.textHint),
           const SizedBox(width: 12),
-          SizedBox(
-            width: 100,
-            child: Text(
-              label,
-              style: const TextStyle(
-                  fontSize: 13, color: AppColors.textSecondary),
-            ),
+          Text(
+            label,
+            style: const TextStyle(fontSize: 12.5, color: AppColors.textSecondary, fontWeight: FontWeight.w600),
           ),
           Expanded(
             child: Text(
               value,
               style: const TextStyle(
                 fontSize: 13,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w800,
                 color: AppColors.textPrimary,
               ),
               overflow: TextOverflow.ellipsis,
@@ -360,24 +426,31 @@ class _ActionRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Row(
           children: [
-            Icon(icon, size: 20, color: AppColors.primary),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.08),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, size: 18, color: AppColors.primary),
+            ),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
                 label,
                 style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w800,
                   color: AppColors.textPrimary,
                 ),
               ),
             ),
-            const Icon(Icons.chevron_right_rounded,
-                size: 20, color: AppColors.textHint),
+            const Icon(Icons.chevron_right_rounded, size: 20, color: AppColors.textHint),
           ],
         ),
       ),
