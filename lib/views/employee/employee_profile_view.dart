@@ -17,24 +17,10 @@ class EmployeeProfileView extends ConsumerWidget {
     final user = ref.watch(authViewModelProvider).currentUser;
     if (user == null) return const Scaffold();
 
+    final statusBarHeight = MediaQuery.of(context).padding.top;
+
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.primary,
-        elevation: 0,
-        title: const Text(
-          'My Profile',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 18),
-        ),
-        centerTitle: false,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout_rounded, color: Colors.white, size: 22),
-            onPressed: () => _confirmLogout(context, ref),
-          ),
-          const SizedBox(width: 8),
-        ],
-      ),
       body: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
         child: Column(
@@ -42,7 +28,7 @@ class EmployeeProfileView extends ConsumerWidget {
             // ─── Immersive Glowing Curved Header ──────────────────────────
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.fromLTRB(20, 24, 20, 36),
+              padding: EdgeInsets.fromLTRB(20, statusBarHeight + 12, 20, 36),
               decoration: const BoxDecoration(
                 gradient: AppColors.heroGradient,
                 borderRadius: BorderRadius.vertical(bottom: Radius.circular(32)),
@@ -77,6 +63,26 @@ class EmployeeProfileView extends ConsumerWidget {
                   ),
                   Column(
                     children: [
+                      // Integrated Premium Header Row
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'My Profile',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 22,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: -0.5,
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.logout_rounded, color: Colors.white, size: 22),
+                            onPressed: () => _confirmLogout(context, ref),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
                       // Concentric glowing avatar ring
                       Container(
                         width: 90,
