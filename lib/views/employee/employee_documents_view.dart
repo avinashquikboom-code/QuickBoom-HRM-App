@@ -28,7 +28,7 @@ class EmployeeDocumentsView extends StatelessWidget {
       ),
       DocumentModel(
         id: 'D003',
-        title: 'QuickBoom Offer Letter',
+        title: 'Offer Letter',
         type: DocumentType.offerLetter,
         date: DateTime(2023, 1, 10),
         fileSize: '2.5 MB',

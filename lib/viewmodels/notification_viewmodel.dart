@@ -111,7 +111,7 @@ class NotificationViewModel extends StateNotifier<NotificationState> {
         id: 'N005',
         title: '🎉 Company Picnic This Saturday!',
         body:
-            'QuickBoom Annual Picnic at City Park on Saturday 10 AM. All employees are invited!',
+            'Annual Picnic at City Park on Saturday 10 AM. All employees are invited!',
         category: NotificationCategory.announcement,
         createdAt: now.subtract(const Duration(days: 1, hours: 2)),
         isRead: true,

@@ -18,13 +18,13 @@ void main() {
   );
   runApp(
     const ProviderScope(
-      child: QuickBoomHrmApp(),
+      child: HrmApp(),
     ),
   );
 }
 
-class QuickBoomHrmApp extends StatelessWidget {
-  const QuickBoomHrmApp({super.key});
+class HrmApp extends StatelessWidget {
+  const HrmApp({super.key});
 
   @override
   Widget build(BuildContext context) {

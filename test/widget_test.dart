@@ -6,7 +6,7 @@ import 'package:quickboom_hrm/main.dart';
 void main() {
   testWidgets('App smoke test', (WidgetTester tester) async {
     await tester.pumpWidget(
-      const ProviderScope(child: QuickBoomHrmApp()),
+      const ProviderScope(child: HrmApp()),
     );
     expect(find.byType(MaterialApp), findsOneWidget);
   });
