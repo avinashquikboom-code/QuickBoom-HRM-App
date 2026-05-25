@@ -107,7 +107,7 @@ class _LoginViewState extends ConsumerState<LoginView> with SingleTickerProvider
                   ).animate().scale(duration: 600.ms, curve: Curves.easeOutBack),
                   const SizedBox(height: 20),
                   const Text(
-                    'QuickBoom',
+                    'HRM',
                     style: TextStyle(
                       color: Color(0xFF14473C),
                       fontSize: 32,

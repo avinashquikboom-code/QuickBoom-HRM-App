@@ -79,7 +79,7 @@ class _SplashViewState extends State<SplashView> {
                 .shimmer(duration: 1000.ms, color: AppColors.primary.withValues(alpha: 0.3)),
             const SizedBox(height: 24),
             const Text(
-              'QuickBoom',
+              'HRM',
               style: TextStyle(
                 color: Color(0xFF14473C),
                 fontSize: 36,

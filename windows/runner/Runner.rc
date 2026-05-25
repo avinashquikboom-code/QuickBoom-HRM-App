@@ -95,7 +95,7 @@ BEGIN
             VALUE "InternalName", "quickboom_hrm" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2026 com.example. All rights reserved." "\0"
             VALUE "OriginalFilename", "quickboom_hrm.exe" "\0"
-            VALUE "ProductName", "quickboom_hrm" "\0"
+            VALUE "ProductName", "HRM" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

@@ -29,7 +29,7 @@ class QuickBoomHrmApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'QuickBoom HRM',
+      title: 'HRM',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       home: const SplashView(),

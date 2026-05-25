@@ -1,6 +1,6 @@
 {
-    "name": "quickboom_hrm",
-    "short_name": "quickboom_hrm",
+    "name": "HRM",
+    "short_name": "HRM",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

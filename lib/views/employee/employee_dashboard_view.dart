@@ -191,7 +191,7 @@ class EmployeeDashboardView extends ConsumerWidget {
               ),
             ),
             title: Text(
-              'QuickBoom HRM',
+              'HRM',
               style: TextStyle(
                 color: Colors.white.withValues(alpha: 0.95),
                 fontSize: 17.5,
