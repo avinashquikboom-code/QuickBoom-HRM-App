@@ -1,5 +1,6 @@
+import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:quickboom_hrm/viewmodels/leave_viewmodel.dart';
+import '../core/services/api_service.dart';
 import '../models/attendance_model.dart';
 
 class AttendanceState {
@@ -7,14 +8,12 @@ class AttendanceState {
   final AttendanceModel? todayRecord;
   final bool isCheckedIn;
   final bool isLoading;
-  final LeaveBalance leaveBalance;
 
   const AttendanceState({
     this.history = const [],
     this.todayRecord,
     this.isCheckedIn = false,
     this.isLoading = false,
-    this.leaveBalance = const LeaveBalance(),
   });
 
   AttendanceState copyWith({
@@ -22,7 +21,6 @@ class AttendanceState {
     AttendanceModel? todayRecord,
     bool? isCheckedIn,
     bool? isLoading,
-    LeaveBalance? leaveBalance,
     bool clearToday = false,
   }) {
     return AttendanceState(
@@ -30,7 +28,6 @@ class AttendanceState {
       todayRecord: clearToday ? null : (todayRecord ?? this.todayRecord),
       isCheckedIn: isCheckedIn ?? this.isCheckedIn,
       isLoading: isLoading ?? this.isLoading,
-      leaveBalance: leaveBalance ?? this.leaveBalance,
     );
   }
 
@@ -55,128 +52,126 @@ class AttendanceState {
 // ─── Attendance ViewModel ────────────────────────────────────────────────────
 
 class AttendanceViewModel extends StateNotifier<AttendanceState> {
-  AttendanceViewModel()
-    : super(AttendanceState(history: _generateMockHistory()));
-
-  void checkIn({bool viaFingerprint = false}) {
-    final now = DateTime.now();
-    final isLate = now.hour > 9 || (now.hour == 9 && now.minute > 15);
-    final record = AttendanceModel(
-      id: 'today_${now.millisecondsSinceEpoch}',
-      employeeId: 'current',
-      date: DateTime(now.year, now.month, now.day),
-      checkIn: now,
-      status: isLate ? AttendanceStatus.late : AttendanceStatus.present,
-      isFingerprintCheckIn: viaFingerprint,
-    );
-    state = state.copyWith(todayRecord: record, isCheckedIn: true);
+  AttendanceViewModel() : super(const AttendanceState()) {
+    fetchAttendanceData();
   }
 
-  void checkOut({bool viaFingerprint = false}) {
-    if (state.todayRecord == null) return;
-    final now = DateTime.now();
-    
-    var today = state.todayRecord!;
-    if (today.isOnBreak && today.breakStartTime != null) {
-      final elapsed = now.difference(today.breakStartTime!);
-      today = today.copyWith(
-        isOnBreak: false,
-        clearBreakStartTime: true,
-        totalBreakDuration: today.totalBreakDuration + elapsed,
+  Future<void> fetchAttendanceData() async {
+    state = state.copyWith(isLoading: true);
+    try {
+      final todayRes = await ApiService.get('/api/employee/attendance/today');
+      final todayData = jsonDecode(todayRes.body);
+      final rawToday = todayData['todayRecord'];
+      final todayRecord = rawToday != null ? _parseRecord(rawToday) : null;
+
+      final historyRes = await ApiService.get('/api/employee/attendance/history');
+      final historyData = jsonDecode(historyRes.body);
+      final List rawHistory = historyData['history'] ?? [];
+      final history = rawHistory.map((h) => _parseRecord(h)).toList();
+
+      state = AttendanceState(
+        todayRecord: todayRecord,
+        isCheckedIn: todayRecord != null && todayRecord.checkIn != null && todayRecord.checkOut == null,
+        history: history,
+        isLoading: false,
       );
+    } catch (_) {
+      state = state.copyWith(isLoading: false);
+    }
+  }
+
+  Future<void> checkIn({bool viaFingerprint = false}) async {
+    state = state.copyWith(isLoading: true);
+    try {
+      await ApiService.post('/api/employee/attendance/check-in', {
+        'latitude': '19.0760',
+        'longitude': '72.8777',
+        'viaFingerprint': viaFingerprint,
+      });
+      await fetchAttendanceData();
+    } catch (_) {
+      state = state.copyWith(isLoading: false);
+    }
+  }
+
+  Future<void> checkOut({bool viaFingerprint = false}) async {
+    state = state.copyWith(isLoading: true);
+    try {
+      await ApiService.post('/api/employee/attendance/check-out', {
+        'viaFingerprint': viaFingerprint,
+      });
+      await fetchAttendanceData();
+    } catch (_) {
+      state = state.copyWith(isLoading: false);
+    }
+  }
+
+  Future<void> startBreak() async {
+    state = state.copyWith(isLoading: true);
+    try {
+      await ApiService.post('/api/employee/attendance/break/start', {});
+      await fetchAttendanceData();
+    } catch (_) {
+      state = state.copyWith(isLoading: false);
+    }
+  }
+
+  Future<void> endBreak() async {
+    state = state.copyWith(isLoading: true);
+    try {
+      await ApiService.post('/api/employee/attendance/break/end', {});
+      await fetchAttendanceData();
+    } catch (_) {
+      state = state.copyWith(isLoading: false);
+    }
+  }
+
+  AttendanceModel _parseRecord(Map<String, dynamic> data) {
+    final rawDate = data['date'];
+    DateTime parsedDate;
+    if (rawDate is String && rawDate.contains('-')) {
+      final parts = rawDate.split('-');
+      parsedDate = DateTime(
+        int.parse(parts[0]),
+        int.parse(parts[1]),
+        int.parse(parts[2]),
+      );
+    } else {
+      parsedDate = DateTime.tryParse(rawDate.toString()) ?? DateTime.now();
     }
 
-    final updated = today.copyWith(
-      checkOut: now,
-      isFingerprintCheckOut: viaFingerprint,
+    return AttendanceModel(
+      id: data['id'].toString(),
+      employeeId: data['employeeId'].toString(),
+      date: parsedDate,
+      status: _parseStatus(data['status']?.toString() ?? 'ABSENT'),
+      checkIn: data['checkIn'] != null ? DateTime.tryParse(data['checkIn'].toString()) : null,
+      checkOut: data['checkOut'] != null ? DateTime.tryParse(data['checkOut'].toString()) : null,
+      isFingerprintCheckIn: data['isFingerprintCheckIn'] ?? false,
+      isFingerprintCheckOut: data['isFingerprintCheckOut'] ?? false,
+      isOnBreak: data['isOnBreak'] ?? false,
+      breakStartTime: data['breakStartTime'] != null ? DateTime.tryParse(data['breakStartTime'].toString()) : null,
+      totalBreakDuration: Duration(seconds: data['totalBreakSeconds'] ?? 0),
     );
-    state = state.copyWith(todayRecord: updated, isCheckedIn: false);
   }
 
-  void startBreak() {
-    if (state.todayRecord == null || !state.isCheckedIn) return;
-    final updated = state.todayRecord!.copyWith(
-      isOnBreak: true,
-      breakStartTime: DateTime.now(),
-    );
-    state = state.copyWith(todayRecord: updated);
-  }
-
-  void endBreak() {
-    if (state.todayRecord == null || !state.isCheckedIn || !state.todayRecord!.isOnBreak || state.todayRecord!.breakStartTime == null) return;
-    final now = DateTime.now();
-    final elapsed = now.difference(state.todayRecord!.breakStartTime!);
-    final updated = state.todayRecord!.copyWith(
-      isOnBreak: false,
-      clearBreakStartTime: true,
-      totalBreakDuration: state.todayRecord!.totalBreakDuration + elapsed,
-    );
-    state = state.copyWith(todayRecord: updated);
-  }
-
-  static List<AttendanceModel> _generateMockHistory() {
-    final List<AttendanceModel> history = [];
-    final now = DateTime.now();
-    final statuses = [
-      AttendanceStatus.present,
-      AttendanceStatus.present,
-      AttendanceStatus.present,
-      AttendanceStatus.late,
-      AttendanceStatus.present,
-      AttendanceStatus.absent,
-      AttendanceStatus.present,
-      AttendanceStatus.halfDay,
-      AttendanceStatus.present,
-      AttendanceStatus.present,
-    ];
-
-    for (int i = 1; i <= 25; i++) {
-      final date = now.subtract(Duration(days: i));
-      if (date.weekday == DateTime.saturday ||
-          date.weekday == DateTime.sunday) {
-        history.add(
-          AttendanceModel(
-            id: 'att_$i',
-            employeeId: 'QB001',
-            date: date,
-            status: AttendanceStatus.weekend,
-          ),
-        );
-      } else {
-        final status = statuses[i % statuses.length];
-        final hasRecord = status != AttendanceStatus.absent;
-        final checkInHour = status == AttendanceStatus.late ? 10 : 9;
-        final checkInMin = status == AttendanceStatus.late ? 30 : 5;
-
-        history.add(
-          AttendanceModel(
-            id: 'att_$i',
-            employeeId: 'QB001',
-            date: date,
-            checkIn: hasRecord
-                ? DateTime(
-                    date.year,
-                    date.month,
-                    date.day,
-                    checkInHour,
-                    checkInMin,
-                  )
-                : null,
-            checkOut: hasRecord
-                ? DateTime(
-                    date.year,
-                    date.month,
-                    date.day,
-                    status == AttendanceStatus.halfDay ? 13 : 18,
-                    0,
-                  )
-                : null,
-            status: status,
-          ),
-        );
-      }
+  AttendanceStatus _parseStatus(String status) {
+    switch (status.toUpperCase()) {
+      case 'PRESENT':
+        return AttendanceStatus.present;
+      case 'ABSENT':
+        return AttendanceStatus.absent;
+      case 'LATE':
+        return AttendanceStatus.late;
+      case 'HALF_DAY':
+        return AttendanceStatus.halfDay;
+      case 'WEEKEND':
+        return AttendanceStatus.weekend;
+      case 'HOLIDAY':
+        return AttendanceStatus.holiday;
+      default:
+        return AttendanceStatus.absent;
     }
-    return history;
   }
 }
 
@@ -184,5 +179,5 @@ class AttendanceViewModel extends StateNotifier<AttendanceState> {
 
 final attendanceViewModelProvider =
     StateNotifierProvider<AttendanceViewModel, AttendanceState>((ref) {
-      return AttendanceViewModel();
-    });
+  return AttendanceViewModel();
+});

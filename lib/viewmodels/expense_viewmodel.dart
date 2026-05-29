@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../core/services/api_service.dart';
 import '../models/expense_model.dart';
 import '../models/user_model.dart';
 
@@ -6,15 +8,17 @@ import '../models/user_model.dart';
 
 class ExpenseState {
   final List<ExpenseModel> myExpenses;
+  final bool isLoading;
   final bool isSubmitting;
-  final String? successMessage;
   final String? errorMessage;
+  final String? successMessage;
 
   const ExpenseState({
     this.myExpenses = const [],
+    this.isLoading = false,
     this.isSubmitting = false,
-    this.successMessage,
     this.errorMessage,
+    this.successMessage,
   });
 
   double get totalSubmitted =>
@@ -23,31 +27,52 @@ class ExpenseState {
       .where((e) =>
           e.status == ExpenseStatus.approved ||
           e.status == ExpenseStatus.reimbursed)
-      .fold(0, (s, e) => s + e.amount);
+      .fold(0.0, (sum, e) => sum + e.amount);
   double get totalPending => myExpenses
       .where((e) => e.status == ExpenseStatus.pending)
-      .fold(0, (s, e) => s + e.amount);
+      .fold(0.0, (sum, e) => sum + e.amount);
 
   ExpenseState copyWith({
     List<ExpenseModel>? myExpenses,
+    bool? isLoading,
     bool? isSubmitting,
-    String? successMessage,
     String? errorMessage,
+    String? successMessage,
     bool clearMessages = false,
   }) {
     return ExpenseState(
       myExpenses: myExpenses ?? this.myExpenses,
+      isLoading: isLoading ?? this.isLoading,
       isSubmitting: isSubmitting ?? this.isSubmitting,
-      successMessage: clearMessages ? null : (successMessage ?? this.successMessage),
       errorMessage: clearMessages ? null : (errorMessage ?? this.errorMessage),
+      successMessage: clearMessages ? null : (successMessage ?? this.successMessage),
     );
   }
 }
 
-// ─── Expense ViewModel (Employee) ─────────────────────────────────────────────
+// ─── Expense ViewModel ────────────────────────────────────────────────────────
 
 class ExpenseViewModel extends StateNotifier<ExpenseState> {
-  ExpenseViewModel() : super(ExpenseState(myExpenses: _generateMockExpenses()));
+  ExpenseViewModel() : super(const ExpenseState()) {
+    fetchExpenses();
+  }
+
+  Future<void> fetchExpenses() async {
+    state = state.copyWith(isLoading: true);
+    try {
+      final res = await ApiService.get('/api/employee/expenses');
+      final data = jsonDecode(res.body);
+      final List rawExpenses = data['expenses'] ?? [];
+      final expenses = rawExpenses.map((e) => _parseExpense(e)).toList();
+
+      state = state.copyWith(
+        myExpenses: expenses,
+        isLoading: false,
+      );
+    } catch (_) {
+      state = state.copyWith(isLoading: false);
+    }
+  }
 
   Future<void> submitExpense({
     required UserModel user,
@@ -58,58 +83,6 @@ class ExpenseViewModel extends StateNotifier<ExpenseState> {
     bool hasReceipt = false,
   }) async {
     state = state.copyWith(isSubmitting: true, clearMessages: true);
-    await Future.delayed(const Duration(milliseconds: 1200));
-
-    final newExpense = ExpenseModel(
-      id: 'EXP${DateTime.now().millisecondsSinceEpoch}',
-      employeeId: user.employeeId,
-      employeeName: user.name,
-      department: user.department,
-      category: category,
-      amount: amount,
-      description: description,
-      date: date,
-      status: ExpenseStatus.pending,
-      submittedOn: DateTime.now(),
-      hasReceipt: hasReceipt,
-    );
-
-    state = ExpenseState(
-      myExpenses: [newExpense, ...state.myExpenses],
-      isSubmitting: false,
-      successMessage: 'Expense submitted successfully!',
-    );
-  }
-
-  void clearMessages() => state = state.copyWith(clearMessages: true);
-
-  static List<ExpenseModel> _generateMockExpenses() {
-    final now = DateTime.now();
-    return [
-      ExpenseModel(
-        id: 'EXP001',
-        employeeId: 'QB001',
-        employeeName: 'Rahul Sharma',
-        department: 'Engineering',
-        category: ExpenseCategory.travel,
-        amount: 1850,
-        description: 'Cab to client office and back',
-        date: now.subtract(const Duration(days: 5)),
-        status: ExpenseStatus.approved,
-        submittedOn: now.subtract(const Duration(days: 5)),
-        reviewedBy: 'Sarah Johnson',
-        reviewNote: 'Approved',
-        hasReceipt: true,
-      ),
-      ExpenseModel(
-        id: 'EXP002',
-        employeeId: 'QB001',
-        employeeName: 'Rahul Sharma',
-        department: 'Engineering',
-        category: ExpenseCategory.food,
-        amount: 620,
-        description: 'Team lunch during sprint planning',
-        date: now.subtract(const Duration(days: 10)),
         status: ExpenseStatus.reimbursed,
         submittedOn: now.subtract(const Duration(days: 10)),
         reviewedBy: 'Sarah Johnson',

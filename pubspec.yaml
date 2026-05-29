@@ -11,6 +11,9 @@ dependencies:
   flutter:
     sdk: flutter
 
+  # Networking
+  http: ^1.2.1
+
   # State Management - Riverpod
   flutter_riverpod: ^2.6.1
   riverpod_annotation: ^2.6.1

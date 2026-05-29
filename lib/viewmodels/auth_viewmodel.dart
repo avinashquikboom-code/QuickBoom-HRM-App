@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../core/services/api_service.dart';
 import '../models/user_model.dart';
 
 // ─── Mock Users ──────────────────────────────────────────────────────────────
@@ -28,66 +30,6 @@ List<UserModel> _buildMockUsers() {
       designation: 'Senior Developer',
       joinDate: DateTime(2022, 3, 10),
       salary: 65000,
-    ),
-    UserModel(
-      id: '3',
-      employeeId: 'QB002',
-      name: 'Priya Patel',
-      email: 'priya.p@company.com',
-      phone: '+91 76543 21098',
-      role: UserRole.employee,
-      department: 'Design',
-      designation: 'UI/UX Designer',
-      joinDate: DateTime(2021, 6, 20),
-      salary: 62000,
-    ),
-    UserModel(
-      id: '4',
-      employeeId: 'QB003',
-      name: 'Amit Kumar',
-      email: 'amit.k@company.com',
-      phone: '+91 65432 10987',
-      role: UserRole.employee,
-      department: 'Engineering',
-      designation: 'Backend Developer',
-      joinDate: DateTime(2023, 1, 5),
-      salary: 70000,
-    ),
-    UserModel(
-      id: '5',
-      employeeId: 'QB004',
-      name: 'Sneha Verma',
-      email: 'sneha.v@company.com',
-      phone: '+91 54321 09876',
-      role: UserRole.employee,
-      department: 'Marketing',
-      designation: 'Marketing Executive',
-      joinDate: DateTime(2022, 8, 15),
-      salary: 55000,
-    ),
-    UserModel(
-      id: '6',
-      employeeId: 'QB005',
-      name: 'Deepak Nair',
-      email: 'deepak.n@company.com',
-      phone: '+91 43210 98765',
-      role: UserRole.employee,
-      department: 'Finance',
-      designation: 'Finance Analyst',
-      joinDate: DateTime(2021, 11, 1),
-      salary: 68000,
-    ),
-    UserModel(
-      id: '7',
-      employeeId: 'QB006',
-      name: 'Kavya Reddy',
-      email: 'kavya.r@company.com',
-      phone: '+91 32109 87654',
-      role: UserRole.employee,
-      department: 'Design',
-      designation: 'Graphic Designer',
-      joinDate: DateTime(2023, 4, 12),
-      salary: 52000,
     ),
   ];
 }
@@ -135,31 +77,49 @@ class AuthViewModel extends StateNotifier<AuthState> {
 
   Future<bool> login(String employeeId, String password) async {
     state = state.copyWith(isLoading: true, clearError: true);
-    await Future.delayed(const Duration(milliseconds: 1500));
 
     try {
-      final user = _allUsers.firstWhere(
-        (u) => u.employeeId.toUpperCase() == employeeId.trim().toUpperCase(),
-        orElse: () => throw Exception('not_found'),
+      // 1. Live login request
+      final loginRes = await ApiService.post('/api/auth/login', {
+        'email': employeeId.trim(),
+        'password': password.trim(),
+      });
+
+      final loginData = jsonDecode(loginRes.body);
+      final token = loginData['token'];
+      await ApiService.saveToken(token);
+
+      // 2. Live profile request
+      final profileRes = await ApiService.get('/api/employee/profile');
+      final profileData = jsonDecode(profileRes.body);
+
+      final emp = profileData['employee'];
+      final prof = profileData['profile'];
+      final uRole = loginData['user']['role'].toString().toUpperCase();
+
+      final parsedUser = UserModel(
+        id: emp['id'].toString(),
+        employeeId: emp['employeeCode'].toString(),
+        name: emp['name'].toString(),
+        email: prof['email'].toString(),
+        phone: prof['phone'].toString(),
+        role: (uRole == 'HR' || uRole == 'SUPER_ADMIN' || uRole == 'ADMIN')
+            ? UserRole.hrManager
+            : UserRole.employee,
+        department: emp['department'].toString(),
+        designation: emp['designation'].toString(),
+        joinDate: DateTime.tryParse(emp['joinDate'].toString()) ?? DateTime.now(),
+        salary: double.tryParse(prof['clearanceLevel'].toString()) != null
+            ? 65000.0 // placeholder salary
+            : 65000.0,
       );
 
-      final validPassword =
-          user.role == UserRole.hrManager ? 'hr123' : 'emp123';
-
-      if (password.trim() != validPassword) {
-        state = state.copyWith(
-          isLoading: false,
-          errorMessage: 'Invalid password. Please try again.',
-        );
-        return false;
-      }
-
-      state = AuthState(currentUser: user);
+      state = AuthState(currentUser: parsedUser);
       return true;
-    } catch (_) {
+    } catch (error) {
       state = state.copyWith(
         isLoading: false,
-        errorMessage: 'Employee ID not found. Please check and retry.',
+        errorMessage: error.toString().replaceAll('Exception: ', ''),
       );
       return false;
     }
@@ -170,6 +130,7 @@ class AuthViewModel extends StateNotifier<AuthState> {
   }
 
   void logout() {
+    ApiService.clearToken();
     state = const AuthState();
   }
 }

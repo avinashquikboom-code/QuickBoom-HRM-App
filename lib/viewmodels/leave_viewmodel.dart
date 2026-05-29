@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../core/services/api_service.dart';
 import '../models/leave_request_model.dart';
 import '../models/user_model.dart';
 
@@ -7,23 +9,25 @@ import '../models/user_model.dart';
 class LeaveBalance {
   final int casualTotal;
   final int casualUsed;
+  final int casualRemaining;
   final int sickTotal;
   final int sickUsed;
+  final int sickRemaining;
   final int earnedTotal;
   final int earnedUsed;
+  final int earnedRemaining;
 
   const LeaveBalance({
     this.casualTotal = 12,
-    this.casualUsed = 3,
+    this.casualUsed = 0,
+    this.casualRemaining = 12,
     this.sickTotal = 10,
-    this.sickUsed = 1,
+    this.sickUsed = 0,
+    this.sickRemaining = 10,
     this.earnedTotal = 15,
-    this.earnedUsed = 5,
+    this.earnedUsed = 0,
+    this.earnedRemaining = 15,
   });
-
-  int get casualRemaining => casualTotal - casualUsed;
-  int get sickRemaining => sickTotal - sickUsed;
-  int get earnedRemaining => earnedTotal - earnedUsed;
 }
 
 // ─── Leave State ──────────────────────────────────────────────────────────────
@@ -69,7 +73,41 @@ class LeaveState {
 // ─── Leave ViewModel (Employee) ────────────────────────────────────────────────
 
 class LeaveViewModel extends StateNotifier<LeaveState> {
-  LeaveViewModel() : super(LeaveState(myLeaves: _generateMockLeaves()));
+  LeaveViewModel() : super(const LeaveState()) {
+    fetchLeaves();
+  }
+
+  Future<void> fetchLeaves() async {
+    state = state.copyWith(isLoading: true);
+    try {
+      final res = await ApiService.get('/api/employee/leaves');
+      final data = jsonDecode(res.body);
+
+      final List rawLeaves = data['leaves'] ?? [];
+      final leaves = rawLeaves.map((l) => _parseLeave(l)).toList();
+
+      final bal = data['balance'];
+      final balance = LeaveBalance(
+        casualTotal: bal['casualTotal'] ?? 12,
+        casualUsed: bal['casualUsed'] ?? 0,
+        casualRemaining: bal['casualRemaining'] ?? 12,
+        sickTotal: bal['sickTotal'] ?? 10,
+        sickUsed: bal['sickUsed'] ?? 0,
+        sickRemaining: bal['sickRemaining'] ?? 10,
+        earnedTotal: bal['earnedTotal'] ?? 15,
+        earnedUsed: bal['earnedUsed'] ?? 0,
+        earnedRemaining: bal['earnedRemaining'] ?? 15,
+      );
+
+      state = state.copyWith(
+        myLeaves: leaves,
+        balance: balance,
+        isLoading: false,
+      );
+    } catch (_) {
+      state = state.copyWith(isLoading: false);
+    }
+  }
 
   Future<void> applyLeave({
     required UserModel user,
@@ -79,91 +117,78 @@ class LeaveViewModel extends StateNotifier<LeaveState> {
     required String reason,
   }) async {
     state = state.copyWith(isSubmitting: true, clearMessages: true);
-    await Future.delayed(const Duration(milliseconds: 1200));
 
-    final newLeave = LeaveRequestModel(
-      id: 'L${DateTime.now().millisecondsSinceEpoch}',
-      employeeId: user.employeeId,
-      employeeName: user.name,
-      department: user.department,
-      type: type,
-      fromDate: fromDate,
-      toDate: toDate,
-      reason: reason,
-      status: LeaveStatus.pending,
-      appliedOn: DateTime.now(),
-    );
+    try {
+      await ApiService.post('/api/employee/leaves', {
+        'type': type.name.toUpperCase(),
+        'fromDate': fromDate.toIso8601String(),
+        'toDate': toDate.toIso8601String(),
+        'reason': reason.trim(),
+      });
 
-    state = LeaveState(
-      myLeaves: [newLeave, ...state.myLeaves],
-      balance: state.balance,
-      isSubmitting: false,
-      successMessage: 'Leave request submitted successfully!',
-    );
+      state = state.copyWith(
+        isSubmitting: false,
+        successMessage: 'Leave request submitted successfully!',
+      );
+
+      await fetchLeaves();
+    } catch (error) {
+      state = state.copyWith(
+        isSubmitting: false,
+        errorMessage: error.toString().replaceAll('Exception: ', ''),
+      );
+    }
   }
 
   void clearMessages() {
     state = state.copyWith(clearMessages: true);
   }
 
-  static List<LeaveRequestModel> _generateMockLeaves() {
-    final now = DateTime.now();
-    return [
-      LeaveRequestModel(
-        id: 'L001',
-        employeeId: 'QB001',
-        employeeName: 'Rahul Sharma',
-        department: 'Engineering',
-        type: LeaveType.casual,
-        fromDate: now.subtract(const Duration(days: 30)),
-        toDate: now.subtract(const Duration(days: 29)),
-        reason: 'Personal work at home',
-        status: LeaveStatus.approved,
-        appliedOn: now.subtract(const Duration(days: 35)),
-        reviewedBy: 'Sarah Johnson',
-        reviewNote: 'Approved',
-      ),
-      LeaveRequestModel(
-        id: 'L002',
-        employeeId: 'QB001',
-        employeeName: 'Rahul Sharma',
-        department: 'Engineering',
-        type: LeaveType.sick,
-        fromDate: now.subtract(const Duration(days: 60)),
-        toDate: now.subtract(const Duration(days: 60)),
-        reason: 'Fever and cold',
-        status: LeaveStatus.approved,
-        appliedOn: now.subtract(const Duration(days: 61)),
-        reviewedBy: 'Sarah Johnson',
-        reviewNote: 'Get well soon',
-      ),
-      LeaveRequestModel(
-        id: 'L003',
-        employeeId: 'QB001',
-        employeeName: 'Rahul Sharma',
-        department: 'Engineering',
-        type: LeaveType.earned,
-        fromDate: now.add(const Duration(days: 10)),
-        toDate: now.add(const Duration(days: 14)),
-        reason: 'Family vacation trip',
-        status: LeaveStatus.pending,
-        appliedOn: now.subtract(const Duration(days: 2)),
-      ),
-      LeaveRequestModel(
-        id: 'L004',
-        employeeId: 'QB001',
-        employeeName: 'Rahul Sharma',
-        department: 'Engineering',
-        type: LeaveType.casual,
-        fromDate: now.subtract(const Duration(days: 10)),
-        toDate: now.subtract(const Duration(days: 10)),
-        reason: 'Bank work',
-        status: LeaveStatus.rejected,
-        appliedOn: now.subtract(const Duration(days: 12)),
-        reviewedBy: 'Sarah Johnson',
-        reviewNote: 'Critical project deadline, please reschedule.',
-      ),
-    ];
+  LeaveRequestModel _parseLeave(Map<String, dynamic> data) {
+    return LeaveRequestModel(
+      id: data['id'].toString(),
+      employeeId: data['employeeId'].toString(),
+      employeeName: data['employeeName'].toString(),
+      department: data['department'].toString(),
+      type: _parseLeaveType(data['type']?.toString() ?? 'CASUAL'),
+      fromDate: DateTime.tryParse(data['fromDate'].toString()) ?? DateTime.now(),
+      toDate: DateTime.tryParse(data['toDate'].toString()) ?? DateTime.now(),
+      reason: data['reason'].toString(),
+      status: _parseLeaveStatus(data['status']?.toString() ?? 'PENDING'),
+      appliedOn: DateTime.tryParse(data['appliedOn'].toString()) ?? DateTime.now(),
+      reviewedBy: data['reviewedBy']?.toString(),
+      reviewNote: data['reviewNote']?.toString(),
+    );
+  }
+
+  LeaveType _parseLeaveType(String type) {
+    switch (type.toUpperCase()) {
+      case 'CASUAL':
+        return LeaveType.casual;
+      case 'SICK':
+        return LeaveType.sick;
+      case 'EARNED':
+        return LeaveType.earned;
+      case 'MATERNITY':
+        return LeaveType.maternity;
+      case 'PATERNITY':
+        return LeaveType.paternity;
+      default:
+        return LeaveType.unpaid;
+    }
+  }
+
+  LeaveStatus _parseLeaveStatus(String status) {
+    switch (status.toUpperCase()) {
+      case 'APPROVED':
+        return LeaveStatus.approved;
+      case 'REJECTED':
+        return LeaveStatus.rejected;
+      case 'CANCELLED':
+        return LeaveStatus.cancelled;
+      default:
+        return LeaveStatus.pending;
+    }
   }
 }
 
