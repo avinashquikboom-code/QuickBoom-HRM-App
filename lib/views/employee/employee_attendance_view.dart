@@ -160,7 +160,6 @@ class _TodayCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final vm = ref.read(attendanceViewModelProvider.notifier);
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(

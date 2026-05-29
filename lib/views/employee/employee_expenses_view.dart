@@ -374,7 +374,7 @@ class _AddExpenseSheetState extends ConsumerState<_AddExpenseSheet> {
                 style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
             const SizedBox(height: 8),
             DropdownButtonFormField<ExpenseCategory>(
-              value: _category,
+              initialValue: _category,
               decoration: const InputDecoration(isDense: true),
               items: ExpenseCategory.values.map((c) {
                 return DropdownMenuItem(

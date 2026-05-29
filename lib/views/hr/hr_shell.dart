@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../core/constants/app_colors.dart';
 import '../widgets/custom_bottom_nav_bar.dart';
 import 'hr_dashboard_view.dart';
 import 'hr_employees_view.dart';

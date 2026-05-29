@@ -29,7 +29,7 @@ class HrShiftsView extends ConsumerWidget {
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               itemCount: state.shifts.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 12),
+              separatorBuilder: (_, _) => const SizedBox(width: 12),
               itemBuilder: (_, i) {
                 final s = state.shifts[i];
                 final color = Color(int.parse(s.color.replaceFirst('#', '0xFF')));

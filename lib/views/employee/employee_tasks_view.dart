@@ -174,7 +174,7 @@ class _TaskList extends ConsumerWidget {
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 110),
       itemCount: tasks.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 12),
+      separatorBuilder: (_, _) => const SizedBox(height: 12),
       itemBuilder: (_, i) {
         return _TaskCard(task: tasks[i])
             .animate()
