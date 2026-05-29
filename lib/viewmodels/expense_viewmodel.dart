@@ -57,6 +57,60 @@ class ExpenseViewModel extends StateNotifier<ExpenseState> {
     fetchExpenses();
   }
 
+  ExpenseModel _parseExpense(Map<String, dynamic> e) {
+    ExpenseCategory category;
+    switch (e['category']?.toString().toLowerCase()) {
+      case 'travel':
+        category = ExpenseCategory.travel;
+        break;
+      case 'food':
+        category = ExpenseCategory.food;
+        break;
+      case 'accommodation':
+        category = ExpenseCategory.accommodation;
+        break;
+      case 'stationery':
+        category = ExpenseCategory.stationery;
+        break;
+      case 'medical':
+        category = ExpenseCategory.medical;
+        break;
+      default:
+        category = ExpenseCategory.other;
+    }
+
+    ExpenseStatus status;
+    switch (e['status']?.toString().toLowerCase()) {
+      case 'approved':
+        status = ExpenseStatus.approved;
+        break;
+      case 'rejected':
+        status = ExpenseStatus.rejected;
+        break;
+      case 'reimbursed':
+        status = ExpenseStatus.reimbursed;
+        break;
+      default:
+        status = ExpenseStatus.pending;
+    }
+
+    return ExpenseModel(
+      id: e['id']?.toString() ?? '',
+      employeeId: e['employeeId']?.toString() ?? '',
+      employeeName: e['employeeName']?.toString() ?? '',
+      department: e['department']?.toString() ?? '',
+      category: category,
+      amount: (e['amount'] as num?)?.toDouble() ?? 0.0,
+      description: e['description']?.toString() ?? '',
+      date: e['date'] != null ? DateTime.parse(e['date']) : DateTime.now(),
+      status: status,
+      submittedOn: e['submittedOn'] != null ? DateTime.parse(e['submittedOn']) : DateTime.now(),
+      reviewedBy: e['reviewedBy']?.toString(),
+      reviewNote: e['reviewNote']?.toString(),
+      hasReceipt: e['hasReceipt'] ?? false,
+    );
+  }
+
   Future<void> fetchExpenses() async {
     state = state.copyWith(isLoading: true);
     try {
@@ -83,41 +137,29 @@ class ExpenseViewModel extends StateNotifier<ExpenseState> {
     bool hasReceipt = false,
   }) async {
     state = state.copyWith(isSubmitting: true, clearMessages: true);
-        status: ExpenseStatus.reimbursed,
-        submittedOn: now.subtract(const Duration(days: 10)),
-        reviewedBy: 'Sarah Johnson',
-        reviewNote: 'Reimbursed via payroll',
-        hasReceipt: true,
-      ),
-      ExpenseModel(
-        id: 'EXP003',
-        employeeId: 'QB001',
-        employeeName: 'Rahul Sharma',
-        department: 'Engineering',
-        category: ExpenseCategory.stationery,
-        amount: 340,
-        description: 'Office supplies — notepads and pens',
-        date: now.subtract(const Duration(days: 2)),
-        status: ExpenseStatus.pending,
-        submittedOn: now.subtract(const Duration(days: 2)),
-        hasReceipt: false,
-      ),
-      ExpenseModel(
-        id: 'EXP004',
-        employeeId: 'QB001',
-        employeeName: 'Rahul Sharma',
-        department: 'Engineering',
-        category: ExpenseCategory.travel,
-        amount: 3200,
-        description: 'Flight ticket to Bangalore for tech conference',
-        date: now.subtract(const Duration(days: 20)),
-        status: ExpenseStatus.rejected,
-        submittedOn: now.subtract(const Duration(days: 20)),
-        reviewedBy: 'Sarah Johnson',
-        reviewNote: 'Policy limit exceeded. Max ₹2500 for domestic travel.',
-        hasReceipt: true,
-      ),
-    ];
+    try {
+      final categoryStr = category.toString().split('.').last; // e.g. "travel"
+      final res = await ApiService.post('/api/employee/expenses', {
+        'category': categoryStr,
+        'amount': amount,
+        'description': description,
+        'date': date.toIso8601String(),
+        'imageBase64': null, // for potential picture receipt base64 data
+      });
+      final data = jsonDecode(res.body);
+      final newExpense = _parseExpense(data['expense']);
+
+      state = state.copyWith(
+        myExpenses: [newExpense, ...state.myExpenses],
+        isSubmitting: false,
+        successMessage: 'Expense filed successfully!',
+      );
+    } catch (e) {
+      state = state.copyWith(
+        isSubmitting: false,
+        errorMessage: e.toString().replaceFirst('Exception: ', ''),
+      );
+    }
   }
 }
 

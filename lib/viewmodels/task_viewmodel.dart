@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../core/services/api_service.dart';
 import '../models/task_model.dart';
 
 // ─── Task State ────────────────────────────────────────────────────────────────
@@ -39,108 +41,98 @@ class TaskState {
 // ─── Task ViewModel (Employee) ─────────────────────────────────────────────────
 
 class TaskViewModel extends StateNotifier<TaskState> {
-  TaskViewModel() : super(TaskState(myTasks: _generateMockTasks()));
+  TaskViewModel() : super(const TaskState()) {
+    fetchTasks();
+  }
+
+  TaskModel _parseTask(Map<String, dynamic> t) {
+    TaskStatus status;
+    switch (t['status']?.toString().toLowerCase()) {
+      case 'todo':
+        status = TaskStatus.todo;
+        break;
+      case 'inprogress':
+        status = TaskStatus.inProgress;
+        break;
+      case 'completed':
+        status = TaskStatus.completed;
+        break;
+      case 'overdue':
+        status = TaskStatus.overdue;
+        break;
+      default:
+        status = TaskStatus.todo;
+    }
+
+    TaskPriority priority;
+    switch (t['priority']?.toString().toLowerCase()) {
+      case 'low':
+        priority = TaskPriority.low;
+        break;
+      case 'medium':
+        priority = TaskPriority.medium;
+        break;
+      case 'high':
+        priority = TaskPriority.high;
+        break;
+      default:
+        priority = TaskPriority.medium;
+    }
+
+    return TaskModel(
+      id: t['id']?.toString() ?? '',
+      title: t['title']?.toString() ?? '',
+      description: t['description']?.toString() ?? '',
+      assignedToId: t['assignedToId']?.toString() ?? '',
+      assignedToName: t['assignedToName']?.toString() ?? '',
+      assignedById: t['assignedById']?.toString() ?? '',
+      assignedByName: t['assignedByName']?.toString() ?? 'Manager',
+      projectName: t['projectName']?.toString() ?? 'General',
+      dueDate: t['dueDate'] != null ? DateTime.parse(t['dueDate']) : DateTime.now(),
+      createdAt: t['createdAt'] != null ? DateTime.parse(t['createdAt']) : DateTime.now(),
+      status: status,
+      priority: priority,
+    );
+  }
+
+  Future<void> fetchTasks() async {
+    state = state.copyWith(isLoading: true);
+    try {
+      final res = await ApiService.get('/api/employee/tasks');
+      final data = jsonDecode(res.body);
+      final List rawTasks = data['tasks'] ?? [];
+      final tasks = rawTasks.map((t) => _parseTask(t)).toList();
+      state = state.copyWith(
+        myTasks: tasks,
+        isLoading: false,
+      );
+    } catch (_) {
+      state = state.copyWith(isLoading: false);
+    }
+  }
 
   Future<void> updateStatus(String taskId, TaskStatus newStatus) async {
     state = state.copyWith(isUpdating: true);
-    await Future.delayed(const Duration(milliseconds: 600));
-    final updated = state.myTasks.map((t) {
-      if (t.id == taskId) return t.copyWith(status: newStatus);
-      return t;
-    }).toList();
-    state = state.copyWith(myTasks: updated, isUpdating: false);
-  }
+    try {
+      String statusStr = 'todo';
+      if (newStatus == TaskStatus.inProgress) {
+        statusStr = 'inProgress';
+      } else if (newStatus == TaskStatus.completed) {
+        statusStr = 'completed';
+      } else if (newStatus == TaskStatus.overdue) {
+        statusStr = 'overdue';
+      }
 
-  static List<TaskModel> _generateMockTasks() {
-    final now = DateTime.now();
-    return [
-      TaskModel(
-        id: 'T001',
-        title: 'Complete Q2 Performance Review',
-        description:
-            'Review and finalize performance metrics for all team members in Q2.',
-        assignedToId: 'QB001',
-        assignedToName: 'Rahul Sharma',
-        assignedById: 'HR001',
-        assignedByName: 'Sarah Johnson',
-        projectName: 'HR Operations',
-        dueDate: now.add(const Duration(days: 3)),
-        createdAt: now.subtract(const Duration(days: 5)),
-        status: TaskStatus.inProgress,
-        priority: TaskPriority.high,
-      ),
-      TaskModel(
-        id: 'T002',
-        title: 'Update API Documentation',
-        description:
-            'Document all new REST endpoints added in the latest sprint.',
-        assignedToId: 'QB001',
-        assignedToName: 'Rahul Sharma',
-        assignedById: 'QB003',
-        assignedByName: 'Amit Kumar',
-        projectName: 'Backend Platform',
-        dueDate: now.add(const Duration(days: 1)),
-        createdAt: now.subtract(const Duration(days: 2)),
-        status: TaskStatus.todo,
-        priority: TaskPriority.medium,
-      ),
-      TaskModel(
-        id: 'T003',
-        title: 'Fix Login Screen Bug',
-        description: 'Resolve the OTP input field validation bug on iOS.',
-        assignedToId: 'QB001',
-        assignedToName: 'Rahul Sharma',
-        assignedById: 'QB003',
-        assignedByName: 'Amit Kumar',
-        projectName: 'Mobile App',
-        dueDate: now.subtract(const Duration(days: 1)),
-        createdAt: now.subtract(const Duration(days: 4)),
-        status: TaskStatus.todo,
-        priority: TaskPriority.high,
-      ),
-      TaskModel(
-        id: 'T004',
-        title: 'Setup CI/CD Pipeline',
-        description: 'Configure GitHub Actions for automated testing and deployment.',
-        assignedToId: 'QB001',
-        assignedToName: 'Rahul Sharma',
-        assignedById: 'QB003',
-        assignedByName: 'Amit Kumar',
-        projectName: 'DevOps',
-        dueDate: now.subtract(const Duration(days: 3)),
-        createdAt: now.subtract(const Duration(days: 10)),
-        status: TaskStatus.completed,
-        priority: TaskPriority.medium,
-      ),
-      TaskModel(
-        id: 'T005',
-        title: 'Prepare Sprint Demo Slides',
-        description: 'Create presentation slides for the upcoming sprint demo.',
-        assignedToId: 'QB001',
-        assignedToName: 'Rahul Sharma',
-        assignedById: 'HR001',
-        assignedByName: 'Sarah Johnson',
-        projectName: 'General',
-        dueDate: now.add(const Duration(days: 7)),
-        createdAt: now.subtract(const Duration(days: 1)),
-        status: TaskStatus.todo,
-        priority: TaskPriority.low,
-      ),
-      TaskModel(
-        id: 'T006',
-        title: 'Code Review — Auth Module',
-        description: 'Review the authentication module PR submitted by Priya.',
-        assignedToId: 'QB001',
-        assignedToName: 'Rahul Sharma',
-        assignedById: 'QB003',
-        assignedByName: 'Amit Kumar',
-        projectName: 'Mobile App',
-        dueDate: now.add(const Duration(days: 2)),
-        createdAt: now,
-        status: TaskStatus.inProgress,
-        priority: TaskPriority.medium,
-      ),
-    ];
+      await ApiService.put('/api/employee/tasks/$taskId', {'status': statusStr});
+
+      final updated = state.myTasks.map((t) {
+        if (t.id == taskId) return t.copyWith(status: newStatus);
+        return t;
+      }).toList();
+      state = state.copyWith(myTasks: updated, isUpdating: false);
+    } catch (_) {
+      state = state.copyWith(isUpdating: false);
+    }
   }
 }
 

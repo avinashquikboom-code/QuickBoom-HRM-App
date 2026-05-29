@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../core/services/api_service.dart';
 import '../models/shift_model.dart';
 
 // ─── Shift State ───────────────────────────────────────────────────────────────
@@ -30,92 +32,61 @@ class ShiftState {
 // ─── Shift ViewModel ──────────────────────────────────────────────────────────
 
 class ShiftViewModel extends StateNotifier<ShiftState> {
-  ShiftViewModel()
-      : super(ShiftState(
-          shifts: _mockShifts,
-          assignments: _mockAssignments,
-        ));
+  ShiftViewModel() : super(const ShiftState()) {
+    fetchShiftAssignment();
+  }
 
-  static final List<ShiftModel> _mockShifts = [
-    const ShiftModel(
-      id: 'SH001',
-      name: 'General Shift',
-      startTime: '09:00',
-      endTime: '18:00',
-      workingDays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
-      graceMinutes: 15,
-      breakMinutes: 60,
-      color: '#3BA38B',
-    ),
-    const ShiftModel(
-      id: 'SH002',
-      name: 'Morning Shift',
-      startTime: '06:00',
-      endTime: '14:00',
-      workingDays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
-      graceMinutes: 10,
-      breakMinutes: 30,
-      color: '#F59E0B',
-    ),
-    const ShiftModel(
-      id: 'SH003',
-      name: 'Evening Shift',
-      startTime: '14:00',
-      endTime: '22:00',
-      workingDays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
-      graceMinutes: 10,
-      breakMinutes: 30,
-      color: '#8B5CF6',
-    ),
-    const ShiftModel(
-      id: 'SH004',
-      name: 'Night Shift',
-      startTime: '22:00',
-      endTime: '06:00',
-      workingDays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
-      graceMinutes: 15,
-      breakMinutes: 60,
-      color: '#1E40AF',
-    ),
-  ];
+  Future<void> fetchShiftAssignment() async {
+    state = state.copyWith(isLoading: true);
+    try {
+      final res = await ApiService.get('/api/employee/shifts');
+      final data = jsonDecode(res.body);
+      final rawAssignment = data['assignment'];
 
-  static final List<EmployeeShiftAssignment> _mockAssignments = [
-    EmployeeShiftAssignment(
-      employeeId: 'QB001',
-      employeeName: 'Rahul Sharma',
-      department: 'Engineering',
-      shift: _mockShifts[0],
-      effectiveFrom: DateTime(2025, 1, 1),
-    ),
-    EmployeeShiftAssignment(
-      employeeId: 'QB002',
-      employeeName: 'Priya Patel',
-      department: 'Design',
-      shift: _mockShifts[0],
-      effectiveFrom: DateTime(2025, 1, 1),
-    ),
-    EmployeeShiftAssignment(
-      employeeId: 'QB003',
-      employeeName: 'Amit Kumar',
-      department: 'Engineering',
-      shift: _mockShifts[1],
-      effectiveFrom: DateTime(2025, 3, 1),
-    ),
-    EmployeeShiftAssignment(
-      employeeId: 'QB004',
-      employeeName: 'Sneha Verma',
-      department: 'Marketing',
-      shift: _mockShifts[0],
-      effectiveFrom: DateTime(2025, 1, 1),
-    ),
-    EmployeeShiftAssignment(
-      employeeId: 'QB005',
-      employeeName: 'Deepak Nair',
-      department: 'Finance',
-      shift: _mockShifts[2],
-      effectiveFrom: DateTime(2025, 4, 1),
-    ),
-  ];
+      if (rawAssignment != null) {
+        final shiftData = rawAssignment['shift'];
+        final workingDaysRaw = shiftData['workingDays'];
+        final List<String> workingDays = workingDaysRaw is List
+            ? workingDaysRaw.map((d) => d.toString()).toList()
+            : [];
+
+        final shift = ShiftModel(
+          id: shiftData['id']?.toString() ?? '',
+          name: shiftData['name']?.toString() ?? '',
+          startTime: shiftData['startTime']?.toString() ?? '09:00',
+          endTime: shiftData['endTime']?.toString() ?? '18:00',
+          workingDays: workingDays,
+          graceMinutes: shiftData['graceMinutes'] as int? ?? 15,
+          breakMinutes: shiftData['breakMinutes'] as int? ?? 60,
+          color: shiftData['color']?.toString() ?? '#3BA38B',
+        );
+
+        final assignment = EmployeeShiftAssignment(
+          employeeId: rawAssignment['employeeId']?.toString() ?? '',
+          employeeName: rawAssignment['employeeName']?.toString() ?? '',
+          department: rawAssignment['department']?.toString() ?? '',
+          shift: shift,
+          effectiveFrom: rawAssignment['effectiveFrom'] != null
+              ? DateTime.parse(rawAssignment['effectiveFrom'])
+              : DateTime.now(),
+        );
+
+        state = state.copyWith(
+          assignments: [assignment],
+          shifts: [shift],
+          isLoading: false,
+        );
+      } else {
+        state = state.copyWith(
+          assignments: [],
+          shifts: [],
+          isLoading: false,
+        );
+      }
+    } catch (_) {
+      state = state.copyWith(isLoading: false);
+    }
+  }
 }
 
 // ─── Providers ────────────────────────────────────────────────────────────────
