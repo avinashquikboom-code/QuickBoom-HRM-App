@@ -161,6 +161,10 @@ class ExpenseViewModel extends StateNotifier<ExpenseState> {
       );
     }
   }
+
+  void clearMessages() {
+    state = state.copyWith(clearMessages: true);
+  }
 }
 
 // ─── Provider ─────────────────────────────────────────────────────────────────
