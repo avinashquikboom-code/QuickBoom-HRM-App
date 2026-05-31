@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/services/api_service.dart';
 import '../models/user_model.dart';
-import 'auth_viewmodel.dart';
 
 // ─── Employee List State ──────────────────────────────────────────────────────
 

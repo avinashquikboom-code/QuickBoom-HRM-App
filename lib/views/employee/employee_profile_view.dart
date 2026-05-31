@@ -15,7 +15,14 @@ class EmployeeProfileView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(authViewModelProvider).currentUser;
-    if (user == null) return const Scaffold();
+    if (user == null) {
+      return const Scaffold(
+        backgroundColor: AppColors.background,
+        body: Center(
+          child: CircularProgressIndicator(color: AppColors.primary),
+        ),
+      );
+    }
 
     final statusBarHeight = MediaQuery.of(context).padding.top;
 

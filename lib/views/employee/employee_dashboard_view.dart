@@ -9,8 +9,13 @@ import '../../viewmodels/auth_viewmodel.dart';
 import '../../viewmodels/attendance_viewmodel.dart';
 import '../../viewmodels/leave_viewmodel.dart';
 import '../../viewmodels/notification_viewmodel.dart';
+import '../../viewmodels/employee_dashboard_viewmodel.dart';
 import '../../core/services/biometric_service.dart';
 import 'notifications_view.dart';
+import 'employee_leave_view.dart';
+import 'employee_expenses_view.dart';
+import 'employee_tasks_view.dart';
+import 'employee_shift_view.dart';
 
 class EmployeeDashboardView extends ConsumerWidget {
   const EmployeeDashboardView({super.key});
@@ -22,10 +27,11 @@ class EmployeeDashboardView extends ConsumerWidget {
     final attendanceState = ref.watch(attendanceViewModelProvider);
     final leaveState = ref.watch(leaveViewModelProvider);
     final notifState = ref.watch(notificationViewModelProvider);
+    final dashboardState = ref.watch(employeeDashboardViewModelProvider);
     final now = DateTime.now();
     final greeting = _greeting();
 
-    final announcements = _mockAnnouncements();
+    final announcements = dashboardState.announcements;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -89,7 +95,7 @@ class EmployeeDashboardView extends ConsumerWidget {
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      // Location capsule indicator
+                                      // Designation pill
                                       Container(
                                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                         decoration: BoxDecoration(
@@ -97,14 +103,14 @@ class EmployeeDashboardView extends ConsumerWidget {
                                           borderRadius: BorderRadius.circular(20),
                                           border: Border.all(color: Colors.white.withValues(alpha: 0.1), width: 1),
                                         ),
-                                        child: const Row(
+                                        child: Row(
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
-                                            Icon(Icons.wb_sunny_rounded, color: Colors.amber, size: 13),
-                                            SizedBox(width: 4),
+                                            const Icon(Icons.badge_outlined, color: Colors.amber, size: 13),
+                                            const SizedBox(width: 4),
                                             Text(
-                                              'Mumbai, 28°C',
-                                              style: TextStyle(
+                                              user.designation,
+                                              style: const TextStyle(
                                                 color: Colors.white,
                                                 fontSize: 10.5,
                                                 fontWeight: FontWeight.w700,
@@ -265,32 +271,79 @@ class EmployeeDashboardView extends ConsumerWidget {
                         label: 'Apply Leave',
                         icon: Icons.event_outlined,
                         color: AppColors.info,
-                        onTap: () {},
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const EmployeeLeaveView()),
+                          );
+                        },
                       ),
                       const SizedBox(width: 14),
                       _QuickActionBubble(
                         label: 'Expense Claim',
                         icon: Icons.payments_outlined,
                         color: AppColors.warning,
-                        onTap: () {},
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const EmployeeExpensesView()),
+                          );
+                        },
                       ),
                       const SizedBox(width: 14),
                       _QuickActionBubble(
                         label: 'Shift Schedule',
                         icon: Icons.date_range_outlined,
                         color: AppColors.primary,
-                        onTap: () {},
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const EmployeeShiftView()),
+                          );
+                        },
                       ),
                       const SizedBox(width: 14),
                       _QuickActionBubble(
                         label: 'Tasks List',
                         icon: Icons.assignment_turned_in_outlined,
                         color: AppColors.success,
-                        onTap: () {},
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const EmployeeTasksView()),
+                          );
+                        },
                       ),
                     ],
                   ),
                 ).animate().fadeIn(delay: 50.ms),
+
+                const SizedBox(height: 24),
+
+                // ─── Task Summary ──────────────────────────────────────────
+                _SectionTitle(title: 'Tasks'),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _SummaryPill(
+                        label: 'Pending',
+                        value: '${dashboardState.stats.pendingTasks}',
+                        icon: Icons.pending_actions_rounded,
+                        color: AppColors.warning,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: _SummaryPill(
+                        label: 'Completed',
+                        value: '${dashboardState.stats.completedTasks}',
+                        icon: Icons.verified_rounded,
+                        color: AppColors.success,
+                      ),
+                    ),
+                  ],
+                ).animate().fadeIn(delay: 80.ms),
 
                 const SizedBox(height: 24),
 
@@ -425,38 +478,6 @@ class EmployeeDashboardView extends ConsumerWidget {
     return 'Good Evening';
   }
 
-  List<AnnouncementModel> _mockAnnouncements() {
-    final now = DateTime.now();
-    return [
-      AnnouncementModel(
-        id: 'A1',
-        title: '🎉 Annual Picnic Scheduled',
-        description:
-            'Join the crew for the annual company retreat! City Central Park, catered lunch provided. 10 AM onwards.',
-        date: now.subtract(const Duration(days: 1)),
-        postedBy: 'Sarah Johnson (HR)',
-        category: AnnouncementCategory.event,
-      ),
-      AnnouncementModel(
-        id: 'A2',
-        title: '📅 Holiday Closure Announcement',
-        description:
-            'All corporate offices will remain closed next Friday for Eid al-Adha. Have a safe long weekend!',
-        date: now.subtract(const Duration(days: 3)),
-        postedBy: 'Sarah Johnson (HR)',
-        category: AnnouncementCategory.holiday,
-      ),
-      AnnouncementModel(
-        id: 'A3',
-        title: '📋 WFH Guidelines Updated',
-        description:
-            'The updated remote work framework is now in effect. Please review constraints on core availability hours.',
-        date: now.subtract(const Duration(days: 5)),
-        postedBy: 'Sarah Johnson (HR)',
-        category: AnnouncementCategory.policy,
-      ),
-    ];
-  }
 }
 
 // ─── Sub Widgets ──────────────────────────────────────────────────────────────
@@ -1334,5 +1355,67 @@ class _AnnouncementTile extends StatelessWidget {
       default:
         return AppColors.primary;
     }
+  }
+}
+
+class _SummaryPill extends StatelessWidget {
+  final String label;
+  final String value;
+  final IconData icon;
+  final Color color;
+
+  const _SummaryPill({
+    required this.label,
+    required this.value,
+    required this.icon,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withValues(alpha: 0.15)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: color, size: 18),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    color: color,
+                  ),
+                ),
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

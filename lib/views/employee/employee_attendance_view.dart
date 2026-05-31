@@ -160,6 +160,10 @@ class _TodayCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final hasCheckIn = state.todayRecord?.checkIn != null;
+    final hasCheckOut = state.todayRecord?.checkOut != null;
+    final isOnBreak = state.todayRecord?.isOnBreak ?? false;
+
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
@@ -242,7 +246,114 @@ class _TodayCard extends ConsumerWidget {
               ],
             ),
           ],
+          const SizedBox(height: 16),
+          const Divider(),
+          const SizedBox(height: 12),
+          // ─── Punch & Break Buttons ────────────────────────────────────
+          if (!hasCheckOut)
+            Row(
+              children: [
+                if (hasCheckIn) ...[
+                  Expanded(
+                    child: _ActionButton(
+                      label: isOnBreak ? 'Resume' : 'Break',
+                      icon: isOnBreak ? Icons.play_arrow_rounded : Icons.coffee_rounded,
+                      color: AppColors.warning,
+                      onTap: () {
+                        if (isOnBreak) {
+                          ref.read(attendanceViewModelProvider.notifier).endBreak();
+                        } else {
+                          ref.read(attendanceViewModelProvider.notifier).startBreak();
+                        }
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                ],
+                Expanded(
+                  child: _ActionButton(
+                    label: hasCheckIn ? 'Punch Out' : 'Punch In',
+                    icon: hasCheckIn ? Icons.logout_rounded : Icons.login_rounded,
+                    color: hasCheckIn ? AppColors.error : AppColors.success,
+                    onTap: () {
+                      if (hasCheckIn) {
+                        ref.read(attendanceViewModelProvider.notifier).checkOut();
+                      } else {
+                        ref.read(attendanceViewModelProvider.notifier).checkIn();
+                      }
+                    },
+                  ),
+                ),
+              ],
+            )
+          else
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              decoration: BoxDecoration(
+                color: AppColors.success.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.verified_rounded, color: AppColors.success, size: 18),
+                  SizedBox(width: 6),
+                  Text(
+                    'Shift Completed',
+                    style: TextStyle(
+                      color: AppColors.success,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
         ],
+      ),
+    );
+  }
+}
+
+class _ActionButton extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _ActionButton({
+    required this.label,
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: color.withValues(alpha: 0.3)),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: color, size: 18),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                color: color,
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

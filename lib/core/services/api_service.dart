@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -10,24 +9,24 @@ class ApiService {
           ? 'https://quickboom-hrm-backend-gjch.onrender.com'
           : 'https://quickboom-hrm-backend-gjch.onrender.com';
 
-  static const String _tokenKey = 'auth_token';
+  static const String tokenKey = 'auth_token';
 
   // Private constructor
   ApiService._();
 
   static Future<String?> getToken() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_tokenKey);
+    return prefs.getString(tokenKey);
   }
 
   static Future<void> saveToken(String token) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_tokenKey, token);
+    await prefs.setString(tokenKey, token);
   }
 
   static Future<void> clearToken() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_tokenKey);
+    await prefs.remove(tokenKey);
   }
 
   static Future<Map<String, String>> _headers() async {

@@ -125,6 +125,40 @@ class AuthViewModel extends StateNotifier<AuthState> {
     }
   }
 
+  Future<bool> restoreSession() async {
+    state = state.copyWith(isLoading: true, clearError: true);
+    try {
+      final profileRes = await ApiService.get('/api/employee/profile');
+      final profileData = jsonDecode(profileRes.body);
+
+      final emp = profileData['employee'];
+      final prof = profileData['profile'];
+      final uRole = (profileData['user']?['role'] ?? 'EMPLOYEE').toString().toUpperCase();
+
+      final parsedUser = UserModel(
+        id: emp['id'].toString(),
+        employeeId: emp['employeeCode'].toString(),
+        name: emp['name'].toString(),
+        email: prof['email'].toString(),
+        phone: prof['phone'].toString(),
+        role: (uRole == 'HR' || uRole == 'SUPER_ADMIN' || uRole == 'ADMIN' || uRole == 'PLATFORM_ADMIN')
+            ? UserRole.hrManager
+            : UserRole.employee,
+        department: emp['department'].toString(),
+        designation: emp['designation'].toString(),
+        joinDate: DateTime.tryParse(emp['joinDate'].toString()) ?? DateTime.now(),
+        salary: 65000.0,
+      );
+
+      state = AuthState(currentUser: parsedUser);
+      return true;
+    } catch (error) {
+      await ApiService.clearToken();
+      state = const AuthState();
+      return false;
+    }
+  }
+
   void clearError() {
     state = state.copyWith(clearError: true);
   }

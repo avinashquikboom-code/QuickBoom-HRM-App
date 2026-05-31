@@ -18,10 +18,9 @@ class LoginView extends ConsumerStatefulWidget {
 
 class _LoginViewState extends ConsumerState<LoginView> with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
-  final _idCtrl = TextEditingController(text: 'QB001');
-  final _passCtrl = TextEditingController(text: 'emp123');
+  final _emailCtrl = TextEditingController();
+  final _passCtrl = TextEditingController();
   bool _obscure = true;
-  bool _isHr = false;
   TabController? _tabController;
 
   @override
@@ -32,9 +31,8 @@ class _LoginViewState extends ConsumerState<LoginView> with SingleTickerProvider
       _tabController!.addListener(() {
         if (!_tabController!.indexIsChanging) return;
         setState(() {
-          _isHr = _tabController!.index == 1;
-          _idCtrl.text = _isHr ? 'HR001' : 'QB001';
-          _passCtrl.text = _isHr ? 'hr123' : 'emp123';
+          _emailCtrl.clear();
+          _passCtrl.clear();
           ref.read(authViewModelProvider.notifier).clearError();
         });
       });
@@ -44,7 +42,7 @@ class _LoginViewState extends ConsumerState<LoginView> with SingleTickerProvider
   @override
   void dispose() {
     _tabController?.dispose();
-    _idCtrl.dispose();
+    _emailCtrl.dispose();
     _passCtrl.dispose();
     super.dispose();
   }
@@ -53,7 +51,7 @@ class _LoginViewState extends ConsumerState<LoginView> with SingleTickerProvider
     if (!(_formKey.currentState?.validate() ?? false)) return;
     final success = await ref
         .read(authViewModelProvider.notifier)
-        .login(_idCtrl.text, _passCtrl.text);
+        .login(_emailCtrl.text, _passCtrl.text);
     if (success && mounted) {
       final user = ref.read(authViewModelProvider).currentUser!;
       Navigator.of(context).pushReplacement(
@@ -190,10 +188,18 @@ class _LoginViewState extends ConsumerState<LoginView> with SingleTickerProvider
 
                               // ─── Inputs ──────────────────────────────────
                               _buildPremiumInput(
-                                controller: _idCtrl,
-                                hint: _isHr ? 'HR ID (e.g. HR001)' : 'Employee ID (e.g. QB001)',
-                                icon: Icons.badge_rounded,
+                                controller: _emailCtrl,
+                                hint: 'Email address',
+                                icon: Icons.email_rounded,
                                 isObscure: false,
+                                keyboardType: TextInputType.emailAddress,
+                                autocorrect: false,
+                                enableSuggestions: false,
+                                validator: (v) {
+                                  if (v == null || v.trim().isEmpty) return 'Email is required';
+                                  if (!v.contains('@')) return 'Enter a valid email';
+                                  return null;
+                                },
                               ).animate().fadeIn(delay: 500.ms).slideX(begin: -0.1, end: 0),
                               const SizedBox(height: 16),
                               _buildPremiumInput(
@@ -201,6 +207,8 @@ class _LoginViewState extends ConsumerState<LoginView> with SingleTickerProvider
                                 hint: 'Password',
                                 icon: Icons.lock_rounded,
                                 isObscure: _obscure,
+                                autocorrect: false,
+                                enableSuggestions: false,
                                 suffix: IconButton(
                                   icon: Icon(
                                     _obscure ? Icons.visibility_off_rounded : Icons.visibility_rounded,
@@ -209,6 +217,11 @@ class _LoginViewState extends ConsumerState<LoginView> with SingleTickerProvider
                                   ),
                                   onPressed: () => setState(() => _obscure = !_obscure),
                                 ),
+                                validator: (v) {
+                                  if (v == null || v.trim().isEmpty) return 'Password is required';
+                                  if (v.length < 6) return 'Password must be at least 6 characters';
+                                  return null;
+                                },
                               ).animate().fadeIn(delay: 600.ms).slideX(begin: 0.1, end: 0),
 
                               // ─── Error Message ───────────────────────────
@@ -289,32 +302,25 @@ class _LoginViewState extends ConsumerState<LoginView> with SingleTickerProvider
 
                   const SizedBox(height: 32),
 
-                  // ─── Demo Info ───────────────────────────────────────────
+                  // ─── Biometric Hint ──────────────────────────────────────
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: Colors.white.withValues(alpha: 0.5),
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(color: AppColors.primary.withValues(alpha: 0.15)),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.primary.withValues(alpha: 0.04),
-                          blurRadius: 15,
-                          offset: const Offset(0, 5),
-                        ),
-                      ],
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.info_outline_rounded, color: AppColors.primary, size: 16),
+                        const Icon(Icons.fingerprint_rounded, color: AppColors.primary, size: 16),
                         const SizedBox(width: 8),
                         Text(
-                          'Demo: HR001 (HR) | QB001 (Emp)',
+                          'Biometric login available after first sign-in',
                           style: TextStyle(
-                            color: const Color(0xFF14473C),
+                            color: const Color(0xFF4A6B63),
                             fontSize: 12,
-                            fontWeight: FontWeight.w600,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
                       ],
@@ -335,12 +341,18 @@ class _LoginViewState extends ConsumerState<LoginView> with SingleTickerProvider
     required IconData icon,
     required bool isObscure,
     Widget? suffix,
+    TextInputType keyboardType = TextInputType.text,
+    String? Function(String?)? validator,
+    bool autocorrect = true,
+    bool enableSuggestions = true,
   }) {
     return TextFormField(
       controller: controller,
       obscureText: isObscure,
+      keyboardType: keyboardType,
+      autocorrect: autocorrect,
+      enableSuggestions: enableSuggestions,
       style: const TextStyle(color: Color(0xFF14473C), fontSize: 15, fontWeight: FontWeight.w600),
-      textCapitalization: TextCapitalization.characters,
       decoration: InputDecoration(
         hintText: hint,
         hintStyle: const TextStyle(color: Color(0xFF7CA69E), fontSize: 14, fontWeight: FontWeight.w500),
@@ -366,7 +378,7 @@ class _LoginViewState extends ConsumerState<LoginView> with SingleTickerProvider
           borderSide: BorderSide(color: AppColors.error.withValues(alpha: 0.8), width: 1),
         ),
       ),
-      validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null,
+      validator: validator,
       onChanged: (_) => ref.read(authViewModelProvider.notifier).clearError(),
     );
   }

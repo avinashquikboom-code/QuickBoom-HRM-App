@@ -37,13 +37,6 @@ class _EmployeeLeaveViewState extends ConsumerState<EmployeeLeaveView> {
         title: const Text('My Leave'),
         centerTitle: false,
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showApplyLeaveSheet(context),
-        backgroundColor: AppColors.primary,
-        icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text('Apply Leave',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
-      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
