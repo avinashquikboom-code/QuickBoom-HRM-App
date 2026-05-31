@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../core/services/api_service.dart';
 import '../models/leave_request_model.dart';
 
 // ─── HR Leave State ────────────────────────────────────────────────────────────
@@ -37,139 +39,115 @@ class HrLeaveState {
 // ─── HR Leave ViewModel ────────────────────────────────────────────────────────
 
 class HrLeaveViewModel extends StateNotifier<HrLeaveState> {
-  HrLeaveViewModel() : super(HrLeaveState(allLeaves: _generateMockLeaves()));
+  HrLeaveViewModel() : super(const HrLeaveState()) {
+    fetchLeaves();
+  }
+
+  Future<void> fetchLeaves() async {
+    try {
+      final res = await ApiService.get('/api/hr/leaves');
+      final data = jsonDecode(res.body);
+      final List rawLeaves = data['leaves'] ?? [];
+      final leaves = rawLeaves.map((l) => _parseLeave(l)).toList();
+
+      state = state.copyWith(allLeaves: leaves);
+    } catch (_) {
+      state = state.copyWith(allLeaves: []);
+    }
+  }
 
   Future<void> approveLeave(String leaveId, String reviewerName) async {
     state = state.copyWith(isProcessing: true, clearMessage: true);
-    await Future.delayed(const Duration(milliseconds: 800));
+    try {
+      await ApiService.post('/api/hr/leaves/$leaveId/approve', {
+        'reviewerName': reviewerName,
+        'reviewNote': 'Approved',
+      });
 
-    final updated = state.allLeaves.map((l) {
-      if (l.id == leaveId) {
-        return l.copyWith(
-          status: LeaveStatus.approved,
-          reviewedBy: reviewerName,
-          reviewNote: 'Approved',
-        );
-      }
-      return l;
-    }).toList();
-
-    state = state.copyWith(
-      allLeaves: updated,
-      isProcessing: false,
-      successMessage: 'Leave approved successfully.',
-    );
+      await fetchLeaves();
+      state = state.copyWith(
+        isProcessing: false,
+        successMessage: 'Leave approved successfully.',
+      );
+    } catch (error) {
+      state = state.copyWith(
+        isProcessing: false,
+        successMessage: error.toString().replaceAll('Exception: ', ''),
+      );
+    }
   }
 
   Future<void> rejectLeave(
       String leaveId, String reviewerName, String note) async {
     state = state.copyWith(isProcessing: true, clearMessage: true);
-    await Future.delayed(const Duration(milliseconds: 800));
+    try {
+      await ApiService.post('/api/hr/leaves/$leaveId/reject', {
+        'reviewerName': reviewerName,
+        'reviewNote': note.isEmpty ? 'Rejected' : note,
+      });
 
-    final updated = state.allLeaves.map((l) {
-      if (l.id == leaveId) {
-        return l.copyWith(
-          status: LeaveStatus.rejected,
-          reviewedBy: reviewerName,
-          reviewNote: note.isEmpty ? 'Rejected' : note,
-        );
-      }
-      return l;
-    }).toList();
-
-    state = state.copyWith(
-      allLeaves: updated,
-      isProcessing: false,
-      successMessage: 'Leave rejected.',
-    );
+      await fetchLeaves();
+      state = state.copyWith(
+        isProcessing: false,
+        successMessage: 'Leave rejected.',
+      );
+    } catch (error) {
+      state = state.copyWith(
+        isProcessing: false,
+        successMessage: error.toString().replaceAll('Exception: ', ''),
+      );
+    }
   }
 
   void clearMessage() {
     state = state.copyWith(clearMessage: true);
   }
 
-  static List<LeaveRequestModel> _generateMockLeaves() {
-    final now = DateTime.now();
-    return [
-      LeaveRequestModel(
-        id: 'HL001',
-        employeeId: 'QB001',
-        employeeName: 'Rahul Sharma',
-        department: 'Engineering',
-        type: LeaveType.earned,
-        fromDate: now.add(const Duration(days: 10)),
-        toDate: now.add(const Duration(days: 14)),
-        reason: 'Family vacation trip',
-        status: LeaveStatus.pending,
-        appliedOn: now.subtract(const Duration(days: 2)),
-      ),
-      LeaveRequestModel(
-        id: 'HL002',
-        employeeId: 'QB002',
-        employeeName: 'Priya Patel',
-        department: 'Design',
-        type: LeaveType.sick,
-        fromDate: now.add(const Duration(days: 2)),
-        toDate: now.add(const Duration(days: 3)),
-        reason: 'Not feeling well, doctor visit',
-        status: LeaveStatus.pending,
-        appliedOn: now.subtract(const Duration(days: 1)),
-      ),
-      LeaveRequestModel(
-        id: 'HL003',
-        employeeId: 'QB004',
-        employeeName: 'Sneha Verma',
-        department: 'Marketing',
-        type: LeaveType.casual,
-        fromDate: now.add(const Duration(days: 5)),
-        toDate: now.add(const Duration(days: 5)),
-        reason: 'Personal work',
-        status: LeaveStatus.pending,
-        appliedOn: now,
-      ),
-      LeaveRequestModel(
-        id: 'HL004',
-        employeeId: 'QB003',
-        employeeName: 'Amit Kumar',
-        department: 'Engineering',
-        type: LeaveType.casual,
-        fromDate: now.subtract(const Duration(days: 10)),
-        toDate: now.subtract(const Duration(days: 9)),
-        reason: 'Home renovation',
-        status: LeaveStatus.approved,
-        appliedOn: now.subtract(const Duration(days: 15)),
-        reviewedBy: 'Sarah Johnson',
-        reviewNote: 'Approved',
-      ),
-      LeaveRequestModel(
-        id: 'HL005',
-        employeeId: 'QB005',
-        employeeName: 'Deepak Nair',
-        department: 'Finance',
-        type: LeaveType.sick,
-        fromDate: now.subtract(const Duration(days: 5)),
-        toDate: now.subtract(const Duration(days: 5)),
-        reason: 'Flu symptoms',
-        status: LeaveStatus.approved,
-        appliedOn: now.subtract(const Duration(days: 6)),
-        reviewedBy: 'Sarah Johnson',
-        reviewNote: 'Take rest',
-      ),
-      LeaveRequestModel(
-        id: 'HL006',
-        employeeId: 'QB006',
-        employeeName: 'Kavya Reddy',
-        department: 'Design',
-        type: LeaveType.earned,
-        fromDate: now.subtract(const Duration(days: 20)),
-        toDate: now.subtract(const Duration(days: 16)),
-        reason: 'Wedding anniversary trip',
-        status: LeaveStatus.rejected,
-        appliedOn: now.subtract(const Duration(days: 25)),
-        reviewedBy: 'Sarah Johnson',
-        reviewNote: 'Product launch week, please reschedule.',
-      ),
-    ];
+  LeaveRequestModel _parseLeave(Map<String, dynamic> data) {
+    return LeaveRequestModel(
+      id: data['id'].toString(),
+      employeeId: data['employeeId'].toString(),
+      employeeName: data['employeeName'].toString(),
+      department: data['department'].toString(),
+      type: _parseLeaveType(data['type']?.toString() ?? 'CASUAL'),
+      fromDate: DateTime.tryParse(data['fromDate'].toString()) ?? DateTime.now(),
+      toDate: DateTime.tryParse(data['toDate'].toString()) ?? DateTime.now(),
+      reason: data['reason'].toString(),
+      status: _parseLeaveStatus(data['status']?.toString() ?? 'PENDING'),
+      appliedOn: DateTime.tryParse(data['appliedOn'].toString()) ?? DateTime.now(),
+      reviewedBy: data['reviewedBy']?.toString(),
+      reviewNote: data['reviewNote']?.toString(),
+    );
+  }
+
+  LeaveType _parseLeaveType(String type) {
+    switch (type.toUpperCase()) {
+      case 'CASUAL':
+        return LeaveType.casual;
+      case 'SICK':
+        return LeaveType.sick;
+      case 'EARNED':
+        return LeaveType.earned;
+      case 'MATERNITY':
+        return LeaveType.maternity;
+      case 'PATERNITY':
+        return LeaveType.paternity;
+      default:
+        return LeaveType.unpaid;
+    }
+  }
+
+  LeaveStatus _parseLeaveStatus(String status) {
+    switch (status.toUpperCase()) {
+      case 'APPROVED':
+        return LeaveStatus.approved;
+      case 'REJECTED':
+        return LeaveStatus.rejected;
+      case 'CANCELLED':
+        return LeaveStatus.cancelled;
+      default:
+        return LeaveStatus.pending;
+    }
   }
 }
 

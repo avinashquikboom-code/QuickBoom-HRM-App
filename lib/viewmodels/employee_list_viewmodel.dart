@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../core/services/api_service.dart';
 import '../models/user_model.dart';
 import 'auth_viewmodel.dart';
 
@@ -57,11 +59,23 @@ class EmployeeListState {
 // ─── Employee List ViewModel (HR) ─────────────────────────────────────────────
 
 class EmployeeListViewModel extends StateNotifier<EmployeeListState> {
-  EmployeeListViewModel(List<UserModel> employees)
-      : super(EmployeeListState(
-          employees:
-              employees.where((e) => e.role == UserRole.employee).toList(),
-        ));
+  EmployeeListViewModel() : super(const EmployeeListState()) {
+    fetchEmployees();
+  }
+
+  Future<void> fetchEmployees() async {
+    state = state.copyWith(isLoading: true);
+    try {
+      final res = await ApiService.get('/api/hr/employees');
+      final data = jsonDecode(res.body);
+      final List rawEmployees = data['employees'] ?? [];
+      final employees = rawEmployees.map((e) => _parseEmployee(e)).toList();
+
+      state = state.copyWith(employees: employees, isLoading: false);
+    } catch (_) {
+      state = state.copyWith(isLoading: false);
+    }
+  }
 
   void updateSearch(String query) {
     state = state.copyWith(searchQuery: query);
@@ -78,12 +92,26 @@ class EmployeeListViewModel extends StateNotifier<EmployeeListState> {
   void clearSearch() {
     state = state.copyWith(searchQuery: '');
   }
+
+  UserModel _parseEmployee(Map<String, dynamic> e) {
+    return UserModel(
+      id: e['id']?.toString() ?? '',
+      employeeId: e['employeeCode']?.toString() ?? e['employeeId']?.toString() ?? '',
+      name: e['name']?.toString() ?? '',
+      email: e['email']?.toString() ?? '',
+      phone: e['phone']?.toString() ?? '',
+      role: UserRole.employee,
+      department: e['department']?.toString() ?? '',
+      designation: e['designation']?.toString() ?? '',
+      joinDate: e['joinDate'] != null ? DateTime.tryParse(e['joinDate'].toString()) ?? DateTime.now() : DateTime.now(),
+      salary: (e['salary'] as num?)?.toDouble() ?? 0.0,
+    );
+  }
 }
 
 // ─── Provider ─────────────────────────────────────────────────────────────────
 
 final employeeListViewModelProvider =
     StateNotifierProvider<EmployeeListViewModel, EmployeeListState>((ref) {
-  final authVm = ref.read(authViewModelProvider.notifier);
-  return EmployeeListViewModel(authVm.allUsers);
+  return EmployeeListViewModel();
 });

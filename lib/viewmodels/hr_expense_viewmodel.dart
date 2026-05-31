@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../core/services/api_service.dart';
 import '../models/expense_model.dart';
 
 // ─── HR Expense State ─────────────────────────────────────────────────────────
@@ -45,128 +47,120 @@ class HrExpenseState {
 // ─── HR Expense ViewModel ─────────────────────────────────────────────────────
 
 class HrExpenseViewModel extends StateNotifier<HrExpenseState> {
-  HrExpenseViewModel()
-      : super(HrExpenseState(allExpenses: _generateMockExpenses()));
+  HrExpenseViewModel() : super(const HrExpenseState()) {
+    fetchExpenses();
+  }
+
+  Future<void> fetchExpenses() async {
+    try {
+      final res = await ApiService.get('/api/hr/expenses');
+      final data = jsonDecode(res.body);
+      final List rawExpenses = data['expenses'] ?? [];
+      final expenses = rawExpenses.map((e) => _parseExpense(e)).toList();
+
+      state = state.copyWith(allExpenses: expenses);
+    } catch (_) {
+      state = state.copyWith(allExpenses: []);
+    }
+  }
 
   Future<void> approveExpense(String expenseId, String reviewerName) async {
     state = state.copyWith(isProcessing: true, clearMessage: true);
-    await Future.delayed(const Duration(milliseconds: 700));
+    try {
+      await ApiService.post('/api/hr/expenses/$expenseId/approve', {
+        'reviewerName': reviewerName,
+        'reviewNote': 'Approved',
+      });
 
-    final updated = state.allExpenses.map((e) {
-      if (e.id == expenseId) {
-        return e.copyWith(
-          status: ExpenseStatus.approved,
-          reviewedBy: reviewerName,
-          reviewNote: 'Approved',
-        );
-      }
-      return e;
-    }).toList();
-
-    state = state.copyWith(
-      allExpenses: updated,
-      isProcessing: false,
-      successMessage: 'Expense approved successfully.',
-    );
+      await fetchExpenses();
+      state = state.copyWith(
+        isProcessing: false,
+        successMessage: 'Expense approved successfully.',
+      );
+    } catch (error) {
+      state = state.copyWith(
+        isProcessing: false,
+        successMessage: error.toString().replaceAll('Exception: ', ''),
+      );
+    }
   }
 
   Future<void> rejectExpense(
       String expenseId, String reviewerName, String note) async {
     state = state.copyWith(isProcessing: true, clearMessage: true);
-    await Future.delayed(const Duration(milliseconds: 700));
+    try {
+      await ApiService.post('/api/hr/expenses/$expenseId/reject', {
+        'reviewerName': reviewerName,
+        'reviewNote': note.isEmpty ? 'Rejected' : note,
+      });
 
-    final updated = state.allExpenses.map((e) {
-      if (e.id == expenseId) {
-        return e.copyWith(
-          status: ExpenseStatus.rejected,
-          reviewedBy: reviewerName,
-          reviewNote: note.isEmpty ? 'Rejected' : note,
-        );
-      }
-      return e;
-    }).toList();
-
-    state = state.copyWith(
-      allExpenses: updated,
-      isProcessing: false,
-      successMessage: 'Expense rejected.',
-    );
+      await fetchExpenses();
+      state = state.copyWith(
+        isProcessing: false,
+        successMessage: 'Expense rejected.',
+      );
+    } catch (error) {
+      state = state.copyWith(
+        isProcessing: false,
+        successMessage: error.toString().replaceAll('Exception: ', ''),
+      );
+    }
   }
 
   void clearMessage() => state = state.copyWith(clearMessage: true);
 
-  static List<ExpenseModel> _generateMockExpenses() {
-    final now = DateTime.now();
-    return [
-      ExpenseModel(
-        id: 'EXP001',
-        employeeId: 'QB001',
-        employeeName: 'Rahul Sharma',
-        department: 'Engineering',
-        category: ExpenseCategory.travel,
-        amount: 1850,
-        description: 'Cab to client office and back',
-        date: now.subtract(const Duration(days: 5)),
-        status: ExpenseStatus.approved,
-        submittedOn: now.subtract(const Duration(days: 5)),
-        reviewedBy: 'Sarah Johnson',
-        reviewNote: 'Approved',
-        hasReceipt: true,
-      ),
-      ExpenseModel(
-        id: 'EXP002',
-        employeeId: 'QB002',
-        employeeName: 'Priya Patel',
-        department: 'Design',
-        category: ExpenseCategory.stationery,
-        amount: 780,
-        description: 'Design tools and notebook',
-        date: now.subtract(const Duration(days: 3)),
-        status: ExpenseStatus.pending,
-        submittedOn: now.subtract(const Duration(days: 3)),
-        hasReceipt: true,
-      ),
-      ExpenseModel(
-        id: 'EXP003',
-        employeeId: 'QB001',
-        employeeName: 'Rahul Sharma',
-        department: 'Engineering',
-        category: ExpenseCategory.stationery,
-        amount: 340,
-        description: 'Office supplies',
-        date: now.subtract(const Duration(days: 2)),
-        status: ExpenseStatus.pending,
-        submittedOn: now.subtract(const Duration(days: 2)),
-        hasReceipt: false,
-      ),
-      ExpenseModel(
-        id: 'EXP004',
-        employeeId: 'QB004',
-        employeeName: 'Sneha Verma',
-        department: 'Marketing',
-        category: ExpenseCategory.travel,
-        amount: 2100,
-        description: 'Client meeting travel expenses',
-        date: now.subtract(const Duration(days: 1)),
-        status: ExpenseStatus.pending,
-        submittedOn: now.subtract(const Duration(days: 1)),
-        hasReceipt: true,
-      ),
-      ExpenseModel(
-        id: 'EXP005',
-        employeeId: 'QB005',
-        employeeName: 'Deepak Nair',
-        department: 'Finance',
-        category: ExpenseCategory.food,
-        amount: 950,
-        description: 'Team dinner after quarterly review',
-        date: now.subtract(const Duration(days: 7)),
-        status: ExpenseStatus.reimbursed,
-        submittedOn: now.subtract(const Duration(days: 7)),
-        reviewedBy: 'Sarah Johnson',
-        hasReceipt: true,
-      ),
-    ];
+  ExpenseModel _parseExpense(Map<String, dynamic> e) {
+    ExpenseCategory category;
+    switch (e['category']?.toString().toLowerCase()) {
+      case 'travel':
+        category = ExpenseCategory.travel;
+        break;
+      case 'food':
+        category = ExpenseCategory.food;
+        break;
+      case 'accommodation':
+        category = ExpenseCategory.accommodation;
+        break;
+      case 'stationery':
+        category = ExpenseCategory.stationery;
+        break;
+      case 'medical':
+        category = ExpenseCategory.medical;
+        break;
+      default:
+        category = ExpenseCategory.other;
+    }
+
+    ExpenseStatus status;
+    switch (e['status']?.toString().toLowerCase()) {
+      case 'approved':
+        status = ExpenseStatus.approved;
+        break;
+      case 'rejected':
+        status = ExpenseStatus.rejected;
+        break;
+      case 'reimbursed':
+        status = ExpenseStatus.reimbursed;
+        break;
+      default:
+        status = ExpenseStatus.pending;
+    }
+
+    return ExpenseModel(
+      id: e['id']?.toString() ?? '',
+      employeeId: e['employeeId']?.toString() ?? '',
+      employeeName: e['employeeName']?.toString() ?? '',
+      department: e['department']?.toString() ?? '',
+      category: category,
+      amount: (e['amount'] as num?)?.toDouble() ?? 0.0,
+      description: e['description']?.toString() ?? '',
+      date: e['date'] != null ? DateTime.parse(e['date']) : DateTime.now(),
+      status: status,
+      submittedOn: e['submittedOn'] != null ? DateTime.parse(e['submittedOn']) : DateTime.now(),
+      reviewedBy: e['reviewedBy']?.toString(),
+      reviewNote: e['reviewNote']?.toString(),
+      hasReceipt: e['hasReceipt'] ?? false,
+    );
   }
 }
 
