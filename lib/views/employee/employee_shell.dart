@@ -4,7 +4,6 @@ import '../widgets/custom_bottom_nav_bar.dart';
 import 'employee_dashboard_view.dart';
 import 'employee_attendance_view.dart';
 import 'employee_leave_view.dart';
-import 'employee_tasks_view.dart';
 import 'employee_profile_view.dart';
 
 class EmployeeShell extends ConsumerStatefulWidget {
@@ -21,7 +20,6 @@ class _EmployeeShellState extends ConsumerState<EmployeeShell> {
     EmployeeDashboardView(),
     EmployeeAttendanceView(),
     EmployeeLeaveView(),
-    EmployeeTasksView(),
     EmployeeProfileView(),
   ];
 
@@ -51,11 +49,6 @@ class _EmployeeShellState extends ConsumerState<EmployeeShell> {
             icon: Icons.event_note_outlined,
             selectedIcon: Icons.event_note_rounded,
             label: 'Leave',
-          ),
-          CustomBottomNavBarItem(
-            icon: Icons.assignment_outlined,
-            selectedIcon: Icons.assignment_rounded,
-            label: 'Tasks',
           ),
           CustomBottomNavBarItem(
             icon: Icons.person_outline_rounded,

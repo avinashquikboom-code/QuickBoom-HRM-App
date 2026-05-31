@@ -13,7 +13,6 @@ import '../../viewmodels/employee_dashboard_viewmodel.dart';
 import '../../core/services/biometric_service.dart';
 import 'notifications_view.dart';
 import 'employee_expenses_view.dart';
-import 'employee_tasks_view.dart';
 import 'employee_shift_view.dart';
 
 class EmployeeDashboardView extends ConsumerWidget {
@@ -289,48 +288,9 @@ class EmployeeDashboardView extends ConsumerWidget {
                           );
                         },
                       ),
-                      const SizedBox(width: 14),
-                      _QuickActionBubble(
-                        label: 'Tasks List',
-                        icon: Icons.assignment_turned_in_outlined,
-                        color: AppColors.success,
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (_) => const EmployeeTasksView()),
-                          );
-                        },
-                      ),
                     ],
                   ),
                 ).animate().fadeIn(delay: 50.ms),
-
-                const SizedBox(height: 24),
-
-                // ─── Task Summary ──────────────────────────────────────────
-                _SectionTitle(title: 'Tasks'),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _SummaryPill(
-                        label: 'Pending',
-                        value: '${dashboardState.stats.pendingTasks}',
-                        icon: Icons.pending_actions_rounded,
-                        color: AppColors.warning,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: _SummaryPill(
-                        label: 'Completed',
-                        value: '${dashboardState.stats.completedTasks}',
-                        icon: Icons.verified_rounded,
-                        color: AppColors.success,
-                      ),
-                    ),
-                  ],
-                ).animate().fadeIn(delay: 80.ms),
 
                 const SizedBox(height: 24),
 

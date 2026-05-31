@@ -4,7 +4,6 @@ import '../widgets/custom_bottom_nav_bar.dart';
 import 'hr_dashboard_view.dart';
 import 'hr_employees_view.dart';
 import 'hr_leave_approval_view.dart';
-import 'hr_tasks_view.dart';
 import 'hr_payroll_view.dart';
 
 class HrShell extends ConsumerStatefulWidget {
@@ -21,7 +20,6 @@ class _HrShellState extends ConsumerState<HrShell> {
     HrDashboardView(),
     HrEmployeesView(),
     HrLeaveApprovalView(),
-    HrTasksView(),
     HrPayrollView(),
   ];
 
@@ -51,11 +49,6 @@ class _HrShellState extends ConsumerState<HrShell> {
             icon: Icons.event_note_outlined,
             selectedIcon: Icons.event_note_rounded,
             label: 'Leaves',
-          ),
-          CustomBottomNavBarItem(
-            icon: Icons.assignment_outlined,
-            selectedIcon: Icons.assignment_rounded,
-            label: 'Tasks',
           ),
           CustomBottomNavBarItem(
             icon: Icons.payments_outlined,
