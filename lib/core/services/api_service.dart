@@ -7,10 +7,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 class ApiService {
   static final String _baseUrl =
       kIsWeb
-          ? 'http://localhost:5003'
-          : Platform.isAndroid
-              ? 'http://10.0.2.2:5003'
-              : 'http://localhost:5003';
+          ? 'https://quickboom-hrm-backend-gjch.onrender.com'
+          : 'https://quickboom-hrm-backend-gjch.onrender.com';
 
   static const String _tokenKey = 'auth_token';
 
