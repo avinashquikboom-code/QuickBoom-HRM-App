@@ -4,24 +4,24 @@ import 'package:intl/intl.dart';
 import '../../core/constants/app_colors.dart';
 import '../../models/user_model.dart';
 import '../../viewmodels/employee_list_viewmodel.dart';
+import '../../viewmodels/hr_payroll_viewmodel.dart';
 
 class HrPayrollView extends ConsumerWidget {
   const HrPayrollView({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(employeeListViewModelProvider);
-    final employees = state.employees;
+    final payrollState = ref.watch(hrPayrollViewModelProvider);
+    final employeeState = ref.watch(employeeListViewModelProvider);
+    final employees = employeeState.employees;
+    final stats = payrollState.stats;
 
-    final totalPayroll =
-        employees.fold<double>(0, (sum, e) => sum + e.salary);
+    final totalPayroll = stats.totalMonthlyPayroll;
+    final avgSalary = stats.averageSalary;
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: const Text('Payroll'),
-        centerTitle: false,
-      ),
+      appBar: AppBar(title: const Text('Payroll'), centerTitle: false),
       body: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 110),
         child: Column(
@@ -59,14 +59,12 @@ class HrPayrollView extends ConsumerWidget {
                     children: [
                       _PayrollStat(
                         label: 'Employees',
-                        value: '${employees.length}',
+                        value: '${stats.totalEmployees}',
                       ),
                       const SizedBox(width: 24),
                       _PayrollStat(
                         label: 'Avg Salary',
-                        value: employees.isEmpty
-                            ? '₹0'
-                            : '₹${NumberFormat('#,##,###').format(totalPayroll / employees.length)}',
+                        value: '₹${NumberFormat('#,##,###').format(avgSalary)}',
                       ),
                     ],
                   ),
@@ -79,9 +77,10 @@ class HrPayrollView extends ConsumerWidget {
             const Text(
               'Employee Salaries',
               style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary),
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
+              ),
             ),
             const SizedBox(height: 10),
 
@@ -89,8 +88,10 @@ class HrPayrollView extends ConsumerWidget {
               const Center(
                 child: Padding(
                   padding: EdgeInsets.all(40),
-                  child: Text('No employees found.',
-                      style: TextStyle(color: AppColors.textSecondary)),
+                  child: Text(
+                    'No employees found.',
+                    style: TextStyle(color: AppColors.textSecondary),
+                  ),
                 ),
               )
             else
@@ -121,14 +122,17 @@ class _PayrollStat extends StatelessWidget {
         Text(
           value,
           style: const TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.w700),
+            color: Colors.white,
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+          ),
         ),
         Text(
           label,
           style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.7), fontSize: 11),
+            color: Colors.white.withValues(alpha: 0.7),
+            fontSize: 11,
+          ),
         ),
       ],
     );
@@ -149,9 +153,10 @@ class _SalaryCard extends StatelessWidget {
         border: Border.all(color: AppColors.cardBorder),
         boxShadow: [
           BoxShadow(
-              color: AppColors.cardShadow,
-              blurRadius: 6,
-              offset: const Offset(0, 2)),
+            color: AppColors.cardShadow,
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
         ],
       ),
       child: Row(
@@ -167,9 +172,10 @@ class _SalaryCard extends StatelessWidget {
               child: Text(
                 employee.initials,
                 style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700),
+                  color: Colors.white,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
           ),
@@ -181,15 +187,18 @@ class _SalaryCard extends StatelessWidget {
                 Text(
                   employee.name,
                   style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                      color: AppColors.textPrimary),
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                    color: AppColors.textPrimary,
+                  ),
                   overflow: TextOverflow.ellipsis,
                 ),
                 Text(
                   '${employee.designation} · ${employee.department}',
                   style: const TextStyle(
-                      fontSize: 11, color: AppColors.textSecondary),
+                    fontSize: 11,
+                    color: AppColors.textSecondary,
+                  ),
                   overflow: TextOverflow.ellipsis,
                 ),
               ],
@@ -202,19 +211,18 @@ class _SalaryCard extends StatelessWidget {
               Text(
                 '₹${NumberFormat('#,##,###').format(employee.salary)}',
                 style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.primary),
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.primary,
+                ),
               ),
               const Text(
                 '/month',
-                style: TextStyle(
-                    fontSize: 10, color: AppColors.textHint),
+                style: TextStyle(fontSize: 10, color: AppColors.textHint),
               ),
               const SizedBox(height: 4),
               Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 8, vertical: 3),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                   color: AppColors.successSurface,
                   borderRadius: BorderRadius.circular(6),
@@ -222,9 +230,10 @@ class _SalaryCard extends StatelessWidget {
                 child: const Text(
                   'Paid',
                   style: TextStyle(
-                      color: AppColors.success,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600),
+                    color: AppColors.success,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ],

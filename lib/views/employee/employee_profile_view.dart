@@ -4,6 +4,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
 import '../../core/constants/app_colors.dart';
 import '../../viewmodels/auth_viewmodel.dart';
+import '../../viewmodels/profile_viewmodel.dart';
 import '../auth/login_view.dart';
 import 'employee_documents_view.dart';
 import 'employee_expenses_view.dart';
@@ -14,12 +15,39 @@ class EmployeeProfileView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final user = ref.watch(authViewModelProvider).currentUser;
-    if (user == null) {
+    final profileState = ref.watch(profileViewModelProvider);
+    final user = profileState.user;
+
+    if (profileState.isLoading) {
       return const Scaffold(
         backgroundColor: AppColors.background,
         body: Center(
           child: CircularProgressIndicator(color: AppColors.primary),
+        ),
+      );
+    }
+
+    if (user == null) {
+      return Scaffold(
+        backgroundColor: AppColors.background,
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline, size: 48, color: AppColors.error),
+              const SizedBox(height: 16),
+              Text(
+                profileState.errorMessage ?? 'Failed to load profile',
+                style: const TextStyle(color: AppColors.textSecondary),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () =>
+                    ref.read(profileViewModelProvider.notifier).fetchProfile(),
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
         ),
       );
     }
@@ -53,14 +81,20 @@ class EmployeeProfileView extends ConsumerWidget {
             ),
             actions: [
               IconButton(
-                icon: const Icon(Icons.logout_rounded, color: Colors.white, size: 22),
+                icon: const Icon(
+                  Icons.logout_rounded,
+                  color: Colors.white,
+                  size: 22,
+                ),
                 onPressed: () => _confirmLogout(context, ref),
               ),
               const SizedBox(width: 8),
             ],
             flexibleSpace: FlexibleSpaceBar(
               background: ClipRRect(
-                borderRadius: const BorderRadius.vertical(bottom: Radius.circular(32)),
+                borderRadius: const BorderRadius.vertical(
+                  bottom: Radius.circular(32),
+                ),
                 child: Container(
                   decoration: const BoxDecoration(
                     gradient: AppColors.heroGradient,
@@ -111,7 +145,9 @@ class EmployeeProfileView extends ConsumerWidget {
                                 ),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: AppColors.primary.withValues(alpha: 0.25),
+                                    color: AppColors.primary.withValues(
+                                      alpha: 0.25,
+                                    ),
                                     blurRadius: 20,
                                     spreadRadius: 2,
                                   ),
@@ -127,7 +163,10 @@ class EmployeeProfileView extends ConsumerWidget {
                                   ),
                                 ),
                               ),
-                            ).animate().scale(duration: 500.ms, curve: Curves.easeOutBack),
+                            ).animate().scale(
+                              duration: 500.ms,
+                              curve: Curves.easeOutBack,
+                            ),
                             const SizedBox(height: 12),
                             Text(
                               user.name,
@@ -150,11 +189,17 @@ class EmployeeProfileView extends ConsumerWidget {
                             const SizedBox(height: 10),
                             // Rounded employee ID badge
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 5,
+                              ),
                               decoration: BoxDecoration(
                                 color: Colors.white.withValues(alpha: 0.15),
                                 borderRadius: BorderRadius.circular(20),
-                                border: Border.all(color: Colors.white.withValues(alpha: 0.25), width: 1),
+                                border: Border.all(
+                                  color: Colors.white.withValues(alpha: 0.25),
+                                  width: 1,
+                                ),
                               ),
                               child: Text(
                                 user.employeeId,
@@ -187,17 +232,20 @@ class EmployeeProfileView extends ConsumerWidget {
                   icon: Icons.person_outline_rounded,
                   children: [
                     _InfoRow(
-                        label: 'Full Name',
-                        value: user.name,
-                        icon: Icons.badge_outlined),
+                      label: 'Full Name',
+                      value: user.name,
+                      icon: Icons.badge_outlined,
+                    ),
                     _InfoRow(
-                        label: 'Email Address',
-                        value: user.email,
-                        icon: Icons.email_outlined),
+                      label: 'Email Address',
+                      value: user.email,
+                      icon: Icons.email_outlined,
+                    ),
                     _InfoRow(
-                        label: 'Contact Number',
-                        value: user.phone,
-                        icon: Icons.phone_outlined),
+                      label: 'Contact Number',
+                      value: user.phone,
+                      icon: Icons.phone_outlined,
+                    ),
                   ],
                 ).animate().fadeIn(delay: 100.ms).slideY(begin: 0.05, end: 0),
 
@@ -209,21 +257,25 @@ class EmployeeProfileView extends ConsumerWidget {
                   icon: Icons.work_outline_rounded,
                   children: [
                     _InfoRow(
-                        label: 'Department',
-                        value: user.department,
-                        icon: Icons.business_outlined),
+                      label: 'Department',
+                      value: user.department,
+                      icon: Icons.business_outlined,
+                    ),
                     _InfoRow(
-                        label: 'Designation',
-                        value: user.designation,
-                        icon: Icons.work_outline_rounded),
+                      label: 'Designation',
+                      value: user.designation,
+                      icon: Icons.work_outline_rounded,
+                    ),
                     _InfoRow(
-                        label: 'Date of Joining',
-                        value: DateFormat('dd MMMM yyyy').format(user.joinDate),
-                        icon: Icons.calendar_today_outlined),
+                      label: 'Date of Joining',
+                      value: DateFormat('dd MMMM yyyy').format(user.joinDate),
+                      icon: Icons.calendar_today_outlined,
+                    ),
                     _InfoRow(
-                        label: 'Tenure',
-                        value: '${user.yearsOfService}+ Years of Service',
-                        icon: Icons.timeline_rounded),
+                      label: 'Tenure',
+                      value: '${user.yearsOfService}+ Years of Service',
+                      icon: Icons.timeline_rounded,
+                    ),
                   ],
                 ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.05, end: 0),
 
@@ -253,21 +305,36 @@ class EmployeeProfileView extends ConsumerWidget {
                       label: 'My Uploaded Documents',
                       icon: Icons.folder_outlined,
                       onTap: () {
-                        Navigator.push(context, MaterialPageRoute(builder: (_) => const EmployeeDocumentsView()));
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const EmployeeDocumentsView(),
+                          ),
+                        );
                       },
                     ),
                     _ActionRow(
                       label: 'Submit & Track Expenses',
                       icon: Icons.receipt_long_outlined,
                       onTap: () {
-                        Navigator.push(context, MaterialPageRoute(builder: (_) => const EmployeeExpensesView()));
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const EmployeeExpensesView(),
+                          ),
+                        );
                       },
                     ),
                     _ActionRow(
                       label: 'Weekly Shift Schedule',
                       icon: Icons.schedule_rounded,
                       onTap: () {
-                        Navigator.push(context, MaterialPageRoute(builder: (_) => const EmployeeShiftView()));
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const EmployeeShiftView(),
+                          ),
+                        );
                       },
                     ),
                   ],
@@ -281,12 +348,23 @@ class EmployeeProfileView extends ConsumerWidget {
                   child: OutlinedButton.icon(
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.error,
-                      side: BorderSide(color: AppColors.error.withValues(alpha: 0.4), width: 1.5),
+                      side: BorderSide(
+                        color: AppColors.error.withValues(alpha: 0.4),
+                        width: 1.5,
+                      ),
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
                     ),
                     icon: const Icon(Icons.logout_rounded, size: 18),
-                    label: const Text('Logout', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800)),
+                    label: const Text(
+                      'Logout',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
                     onPressed: () => _confirmLogout(context, ref),
                   ),
                 ).animate().fadeIn(delay: 500.ms),
@@ -314,14 +392,19 @@ class EmployeeProfileView extends ConsumerWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel', style: TextStyle(fontWeight: FontWeight.w700)),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(fontWeight: FontWeight.w700),
+            ),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.error,
               foregroundColor: Colors.white,
               elevation: 0,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
             onPressed: () {
               ref.read(authViewModelProvider.notifier).logout();
@@ -330,7 +413,10 @@ class EmployeeProfileView extends ConsumerWidget {
                 (_) => false,
               );
             },
-            child: const Text('End Session', style: TextStyle(fontWeight: FontWeight.w800)),
+            child: const Text(
+              'End Session',
+              style: TextStyle(fontWeight: FontWeight.w800),
+            ),
           ),
         ],
       ),
@@ -413,7 +499,11 @@ class _InfoRow extends StatelessWidget {
           const SizedBox(width: 12),
           Text(
             label,
-            style: const TextStyle(fontSize: 12.5, color: AppColors.textSecondary, fontWeight: FontWeight.w600),
+            style: const TextStyle(
+              fontSize: 12.5,
+              color: AppColors.textSecondary,
+              fontWeight: FontWeight.w600,
+            ),
           ),
           Expanded(
             child: Text(
@@ -472,7 +562,11 @@ class _ActionRow extends StatelessWidget {
                 ),
               ),
             ),
-            const Icon(Icons.chevron_right_rounded, size: 20, color: AppColors.textHint),
+            const Icon(
+              Icons.chevron_right_rounded,
+              size: 20,
+              color: AppColors.textHint,
+            ),
           ],
         ),
       ),

@@ -7,6 +7,7 @@ import '../../models/leave_request_model.dart';
 import '../../viewmodels/auth_viewmodel.dart';
 import '../../viewmodels/employee_list_viewmodel.dart';
 import '../../viewmodels/hr_leave_viewmodel.dart';
+import '../../viewmodels/hr_dashboard_viewmodel.dart';
 import '../auth/login_view.dart';
 import 'hr_reports_view.dart';
 import 'hr_expenses_view.dart';
@@ -19,25 +20,24 @@ class HrDashboardView extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(authViewModelProvider).currentUser;
     if (user == null) return const Scaffold();
+    final dashboardState = ref.watch(hrDashboardViewModelProvider);
     final employeeState = ref.watch(employeeListViewModelProvider);
     final hrLeaveState = ref.watch(hrLeaveViewModelProvider);
     final now = DateTime.now();
 
-    final totalEmployees = employeeState.employees.length;
-    final pendingLeaves = hrLeaveState.pendingLeaves.length;
-    // Mock present count
-    final presentToday = (totalEmployees * 0.85).round();
+    final stats = dashboardState.stats;
+    final totalEmployees = stats.totalEmployees;
+    final presentToday = stats.presentToday;
+    final pendingLeaves = stats.pendingLeaves;
+    final attendanceRate = stats.attendanceRate;
     final onLeave = hrLeaveState.allLeaves
-        .where((l) =>
-            l.status == LeaveStatus.approved &&
-            !l.fromDate.isAfter(now) &&
-            !l.toDate.isBefore(now))
+        .where(
+          (l) =>
+              l.status == LeaveStatus.approved &&
+              !l.fromDate.isAfter(now) &&
+              !l.toDate.isBefore(now),
+        )
         .length;
-
-    // Calculate dynamic attendance rate percentage
-    final attendanceRate = totalEmployees > 0 
-        ? ((presentToday / totalEmployees) * 100).round() 
-        : 0;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -56,8 +56,11 @@ class HrDashboardView extends ConsumerWidget {
             ),
             actions: [
               IconButton(
-                icon: const Icon(Icons.notifications_outlined,
-                    color: Colors.white, size: 25),
+                icon: const Icon(
+                  Icons.notifications_outlined,
+                  color: Colors.white,
+                  size: 25,
+                ),
                 onPressed: () {},
               ),
               PopupMenuButton<String>(
@@ -76,11 +79,19 @@ class HrDashboardView extends ConsumerWidget {
                     value: 'logout',
                     child: Row(
                       children: [
-                        Icon(Icons.logout_rounded,
-                            size: 16, color: AppColors.error),
+                        Icon(
+                          Icons.logout_rounded,
+                          size: 16,
+                          color: AppColors.error,
+                        ),
                         SizedBox(width: 8),
-                        Text('Logout',
-                            style: TextStyle(color: AppColors.error, fontWeight: FontWeight.w700)),
+                        Text(
+                          'Logout',
+                          style: TextStyle(
+                            color: AppColors.error,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -89,7 +100,9 @@ class HrDashboardView extends ConsumerWidget {
             ],
             flexibleSpace: FlexibleSpaceBar(
               background: ClipRRect(
-                borderRadius: const BorderRadius.vertical(bottom: Radius.circular(32)),
+                borderRadius: const BorderRadius.vertical(
+                  bottom: Radius.circular(32),
+                ),
                 child: Container(
                   decoration: const BoxDecoration(
                     gradient: AppColors.heroGradient,
@@ -131,20 +144,37 @@ class HrDashboardView extends ConsumerWidget {
                               children: [
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       // Weather/Status capsule paring
                                       Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 10,
+                                          vertical: 4,
+                                        ),
                                         decoration: BoxDecoration(
-                                          color: Colors.white.withValues(alpha: 0.15),
-                                          borderRadius: BorderRadius.circular(20),
-                                          border: Border.all(color: Colors.white.withValues(alpha: 0.1), width: 1),
+                                          color: Colors.white.withValues(
+                                            alpha: 0.15,
+                                          ),
+                                          borderRadius: BorderRadius.circular(
+                                            20,
+                                          ),
+                                          border: Border.all(
+                                            color: Colors.white.withValues(
+                                              alpha: 0.1,
+                                            ),
+                                            width: 1,
+                                          ),
                                         ),
                                         child: Row(
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
-                                            const Icon(Icons.trending_up_rounded, color: AppColors.success, size: 14),
+                                            const Icon(
+                                              Icons.trending_up_rounded,
+                                              color: AppColors.success,
+                                              size: 14,
+                                            ),
                                             const SizedBox(width: 4),
                                             Text(
                                               '📈 $attendanceRate% Active Today',
@@ -172,7 +202,9 @@ class HrDashboardView extends ConsumerWidget {
                                       Text(
                                         DateFormat('EEEE, d MMMM').format(now),
                                         style: TextStyle(
-                                          color: Colors.white.withValues(alpha: 0.75),
+                                          color: Colors.white.withValues(
+                                            alpha: 0.75,
+                                          ),
                                           fontSize: 12.5,
                                           fontWeight: FontWeight.w600,
                                         ),
@@ -188,11 +220,16 @@ class HrDashboardView extends ConsumerWidget {
                                     color: Colors.white.withValues(alpha: 0.18),
                                     shape: BoxShape.circle,
                                     border: Border.all(
-                                        color: Colors.white.withValues(alpha: 0.35),
-                                        width: 2.5),
+                                      color: Colors.white.withValues(
+                                        alpha: 0.35,
+                                      ),
+                                      width: 2.5,
+                                    ),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: Colors.black.withValues(alpha: 0.1),
+                                        color: Colors.black.withValues(
+                                          alpha: 0.1,
+                                        ),
                                         blurRadius: 10,
                                         offset: const Offset(0, 4),
                                       ),
@@ -202,9 +239,10 @@ class HrDashboardView extends ConsumerWidget {
                                     child: Text(
                                       user.initials,
                                       style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 19,
-                                          fontWeight: FontWeight.w900),
+                                        color: Colors.white,
+                                        fontSize: 19,
+                                        fontWeight: FontWeight.w900,
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -261,7 +299,9 @@ class HrDashboardView extends ConsumerWidget {
                             icon: Icons.check_circle_rounded,
                             color: AppColors.success,
                             bgColor: AppColors.successSurface,
-                            ratio: totalEmployees > 0 ? (presentToday / totalEmployees) : 0.0,
+                            ratio: totalEmployees > 0
+                                ? (presentToday / totalEmployees)
+                                : 0.0,
                           ),
                         ),
                         SizedBox(
@@ -272,7 +312,9 @@ class HrDashboardView extends ConsumerWidget {
                             icon: Icons.event_busy_rounded,
                             color: AppColors.warning,
                             bgColor: AppColors.warningSurface,
-                            ratio: totalEmployees > 0 ? (onLeave / totalEmployees) : 0.0,
+                            ratio: totalEmployees > 0
+                                ? (onLeave / totalEmployees)
+                                : 0.0,
                           ),
                         ),
                         SizedBox(
@@ -283,7 +325,12 @@ class HrDashboardView extends ConsumerWidget {
                             icon: Icons.pending_actions_rounded,
                             color: AppColors.error,
                             bgColor: AppColors.errorSurface,
-                            ratio: totalEmployees > 0 ? (pendingLeaves / totalEmployees).clamp(0.0, 1.0) : 0.0,
+                            ratio: totalEmployees > 0
+                                ? (pendingLeaves / totalEmployees).clamp(
+                                    0.0,
+                                    1.0,
+                                  )
+                                : 0.0,
                           ),
                         ),
                       ],
@@ -297,9 +344,10 @@ class HrDashboardView extends ConsumerWidget {
                 const Text(
                   'Quick Action Panel',
                   style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.textPrimary),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.textPrimary,
+                  ),
                 ),
                 const SizedBox(height: 12),
                 Row(
@@ -311,7 +359,12 @@ class HrDashboardView extends ConsumerWidget {
                         icon: Icons.analytics_outlined,
                         color: AppColors.primary,
                         onTap: () {
-                          Navigator.push(context, MaterialPageRoute(builder: (_) => const HrReportsView()));
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const HrReportsView(),
+                            ),
+                          );
                         },
                       ),
                     ),
@@ -322,7 +375,12 @@ class HrDashboardView extends ConsumerWidget {
                         icon: Icons.receipt_long_outlined,
                         color: AppColors.warning,
                         onTap: () {
-                          Navigator.push(context, MaterialPageRoute(builder: (_) => const HrExpensesView()));
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const HrExpensesView(),
+                            ),
+                          );
                         },
                       ),
                     ),
@@ -333,7 +391,12 @@ class HrDashboardView extends ConsumerWidget {
                         icon: Icons.schedule_rounded,
                         color: AppColors.info,
                         onTap: () {
-                          Navigator.push(context, MaterialPageRoute(builder: (_) => const HrShiftsView()));
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const HrShiftsView(),
+                            ),
+                          );
                         },
                       ),
                     ),
@@ -346,9 +409,10 @@ class HrDashboardView extends ConsumerWidget {
                 const Text(
                   'Department Breakdown',
                   style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.textPrimary),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.textPrimary,
+                  ),
                 ),
                 const SizedBox(height: 12),
                 _DepartmentOverview(employees: employeeState.employees),
@@ -362,13 +426,17 @@ class HrDashboardView extends ConsumerWidget {
                     const Text(
                       'Pending Leave Approvals',
                       style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.textPrimary),
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.textPrimary,
+                      ),
                     ),
                     if (pendingLeaves > 0)
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           color: AppColors.errorSurface,
                           borderRadius: BorderRadius.circular(20),
@@ -376,9 +444,10 @@ class HrDashboardView extends ConsumerWidget {
                         child: Text(
                           '$pendingLeaves Actionable',
                           style: const TextStyle(
-                              color: AppColors.error,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w800),
+                            color: AppColors.error,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                          ),
                         ),
                       ),
                   ],
@@ -391,26 +460,34 @@ class HrDashboardView extends ConsumerWidget {
                     decoration: BoxDecoration(
                       color: AppColors.successSurface,
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: AppColors.success.withValues(alpha: 0.15)),
+                      border: Border.all(
+                        color: AppColors.success.withValues(alpha: 0.15),
+                      ),
                     ),
                     child: const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.check_circle_rounded,
-                            color: AppColors.success, size: 20),
+                        Icon(
+                          Icons.check_circle_rounded,
+                          color: AppColors.success,
+                          size: 20,
+                        ),
                         SizedBox(width: 8),
                         Text(
                           'Brilliant! All leaves reviewed.',
                           style: TextStyle(
-                              color: AppColors.success,
-                              fontSize: 13.5,
-                              fontWeight: FontWeight.w800),
+                            color: AppColors.success,
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w800,
+                          ),
                         ),
                       ],
                     ),
                   )
                 else
-                  ...hrLeaveState.pendingLeaves.take(3).map(
+                  ...hrLeaveState.pendingLeaves
+                      .take(3)
+                      .map(
                         (leave) => Padding(
                           padding: const EdgeInsets.only(bottom: 12),
                           child: _PendingLeaveCard(leave: leave),
@@ -493,16 +570,20 @@ class _StatCard extends StatelessWidget {
           Text(
             value,
             style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.w900,
-                color: AppColors.textPrimary,
-                letterSpacing: -0.5),
+              fontSize: 22,
+              fontWeight: FontWeight.w900,
+              color: AppColors.textPrimary,
+              letterSpacing: -0.5,
+            ),
           ),
           const SizedBox(height: 2),
           Text(
             label,
             style: const TextStyle(
-                fontSize: 10.5, color: AppColors.textSecondary, fontWeight: FontWeight.w700),
+              fontSize: 10.5,
+              color: AppColors.textSecondary,
+              fontWeight: FontWeight.w700,
+            ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
@@ -567,14 +648,18 @@ class _DepartmentOverview extends StatelessWidget {
                     Text(
                       dept,
                       style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.textPrimary),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.textPrimary,
+                      ),
                     ),
                     Text(
                       '$count Staff (${(progress * 100).round()}%)',
                       style: const TextStyle(
-                          fontSize: 11.5, color: AppColors.textSecondary, fontWeight: FontWeight.w700),
+                        fontSize: 11.5,
+                        color: AppColors.textSecondary,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ],
                 ),
@@ -634,15 +719,19 @@ class _PendingLeaveCard extends ConsumerWidget {
                 decoration: BoxDecoration(
                   color: AppColors.warning.withValues(alpha: 0.08),
                   shape: BoxShape.circle,
-                  border: Border.all(color: AppColors.warning.withValues(alpha: 0.15), width: 1.5),
+                  border: Border.all(
+                    color: AppColors.warning.withValues(alpha: 0.15),
+                    width: 1.5,
+                  ),
                 ),
                 child: Center(
                   child: Text(
                     leave.employeeName.substring(0, 1),
                     style: const TextStyle(
-                        color: AppColors.warning,
-                        fontWeight: FontWeight.w900,
-                        fontSize: 18),
+                      color: AppColors.warning,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 18,
+                    ),
                   ),
                 ),
               ),
@@ -654,23 +743,30 @@ class _PendingLeaveCard extends ConsumerWidget {
                     Text(
                       leave.employeeName,
                       style: const TextStyle(
-                          fontWeight: FontWeight.w800,
-                          fontSize: 14.5,
-                          color: AppColors.textPrimary),
+                        fontWeight: FontWeight.w800,
+                        fontSize: 14.5,
+                        color: AppColors.textPrimary,
+                      ),
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 3),
                     Text(
                       '${leave.typeLabel} · ${leave.daysCount} day(s)',
                       style: const TextStyle(
-                          fontSize: 11.5, color: AppColors.textSecondary, fontWeight: FontWeight.w600),
+                        fontSize: 11.5,
+                        color: AppColors.textSecondary,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ],
                 ),
               ),
               // Category tag status pill
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 5,
+                ),
                 decoration: BoxDecoration(
                   color: AppColors.warningSurface,
                   borderRadius: BorderRadius.circular(20),
@@ -678,9 +774,10 @@ class _PendingLeaveCard extends ConsumerWidget {
                 child: const Text(
                   'Pending',
                   style: TextStyle(
-                      color: AppColors.warning,
-                      fontSize: 10.5,
-                      fontWeight: FontWeight.w800),
+                    color: AppColors.warning,
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
               ),
             ],
@@ -714,13 +811,22 @@ class _PendingLeaveCard extends ConsumerWidget {
                 child: OutlinedButton.icon(
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppColors.error,
-                    side: BorderSide(color: AppColors.error.withValues(alpha: 0.35)),
+                    side: BorderSide(
+                      color: AppColors.error.withValues(alpha: 0.35),
+                    ),
                     minimumSize: const Size(0, 40),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                   icon: const Icon(Icons.cancel_outlined, size: 16),
-                  label: const Text('Reject', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800)),
-                  onPressed: () => ref.read(hrLeaveViewModelProvider.notifier).rejectLeave(leave.id, reviewerName, 'Rejected'),
+                  label: const Text(
+                    'Reject',
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
+                  ),
+                  onPressed: () => ref
+                      .read(hrLeaveViewModelProvider.notifier)
+                      .rejectLeave(leave.id, reviewerName, 'Rejected'),
                 ),
               ),
               const SizedBox(width: 12),
@@ -730,12 +836,22 @@ class _PendingLeaveCard extends ConsumerWidget {
                     backgroundColor: AppColors.success,
                     foregroundColor: Colors.white,
                     minimumSize: const Size(0, 40),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                     elevation: 0,
                   ),
-                  icon: const Icon(Icons.check_circle_outline_rounded, size: 16),
-                  label: const Text('Approve', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800)),
-                  onPressed: () => ref.read(hrLeaveViewModelProvider.notifier).approveLeave(leave.id, reviewerName),
+                  icon: const Icon(
+                    Icons.check_circle_outline_rounded,
+                    size: 16,
+                  ),
+                  label: const Text(
+                    'Approve',
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
+                  ),
+                  onPressed: () => ref
+                      .read(hrLeaveViewModelProvider.notifier)
+                      .approveLeave(leave.id, reviewerName),
                 ),
               ),
             ],
