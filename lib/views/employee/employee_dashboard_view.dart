@@ -12,7 +12,6 @@ import '../../viewmodels/notification_viewmodel.dart';
 import '../../viewmodels/employee_dashboard_viewmodel.dart';
 import '../../core/services/biometric_service.dart';
 import 'notifications_view.dart';
-import 'employee_leave_view.dart';
 import 'employee_expenses_view.dart';
 import 'employee_tasks_view.dart';
 import 'employee_shift_view.dart';
@@ -267,18 +266,6 @@ class EmployeeDashboardView extends ConsumerWidget {
                   physics: const BouncingScrollPhysics(),
                   child: Row(
                     children: [
-                      _QuickActionBubble(
-                        label: 'Apply Leave',
-                        icon: Icons.event_outlined,
-                        color: AppColors.info,
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (_) => const EmployeeLeaveView()),
-                          );
-                        },
-                      ),
-                      const SizedBox(width: 14),
                       _QuickActionBubble(
                         label: 'Expense Claim',
                         icon: Icons.payments_outlined,

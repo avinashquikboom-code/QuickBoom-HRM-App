@@ -111,14 +111,6 @@ class _EmployeeLeaveViewState extends ConsumerState<EmployeeLeaveView> {
     );
   }
 
-  void _showApplyLeaveSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => _ApplyLeaveSheet(),
-    );
-  }
 }
 
 // ─── Balance Card ─────────────────────────────────────────────────────────────
