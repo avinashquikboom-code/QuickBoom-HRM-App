@@ -82,6 +82,11 @@ class ApiService {
           message = data['message'];
         }
       } catch (_) {}
+      // Log the error details for visibility during debugging
+      if (kDebugMode) {
+        debugPrint('❌ API Error: $message');
+        debugPrint('Response Body: ${response.body}');
+      }
       throw Exception(message);
     }
   }
