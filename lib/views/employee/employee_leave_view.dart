@@ -33,19 +33,19 @@ class _EmployeeLeaveViewState extends ConsumerState<EmployeeLeaveView> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: const Text('My Leave'),
-        centerTitle: false,
-      ),
+      appBar: AppBar(title: const Text('My Leave'), centerTitle: false),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showApplyLeaveSheet(context),
         backgroundColor: AppColors.primary,
         icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text('Apply Leave',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+        label: const Text(
+          'Apply Leave',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+        ),
       ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16).copyWith(bottom: 180),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -53,9 +53,10 @@ class _EmployeeLeaveViewState extends ConsumerState<EmployeeLeaveView> {
             const Text(
               'Leave Balance',
               style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary),
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
+              ),
             ),
             const SizedBox(height: 10),
             Row(
@@ -95,9 +96,10 @@ class _EmployeeLeaveViewState extends ConsumerState<EmployeeLeaveView> {
             const Text(
               'Leave History',
               style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary),
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
+              ),
             ),
             const SizedBox(height: 10),
 
@@ -159,15 +161,19 @@ class _BalanceCard extends StatelessWidget {
           Text(
             label,
             style: const TextStyle(
-                fontSize: 11,
-                color: AppColors.textSecondary,
-                fontWeight: FontWeight.w500),
+              fontSize: 11,
+              color: AppColors.textSecondary,
+              fontWeight: FontWeight.w500,
+            ),
           ),
           const SizedBox(height: 8),
           Text(
             '$remaining',
             style: TextStyle(
-                fontSize: 24, fontWeight: FontWeight.w700, color: color),
+              fontSize: 24,
+              fontWeight: FontWeight.w700,
+              color: color,
+            ),
           ),
           Text(
             'of $total days',
@@ -208,9 +214,10 @@ class _LeaveCard extends StatelessWidget {
         border: Border.all(color: AppColors.cardBorder),
         boxShadow: [
           BoxShadow(
-              color: AppColors.cardShadow,
-              blurRadius: 6,
-              offset: const Offset(0, 2)),
+            color: AppColors.cardShadow,
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
         ],
       ),
       child: Column(
@@ -219,8 +226,10 @@ class _LeaveCard extends StatelessWidget {
           Row(
             children: [
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: AppColors.primarySurface,
                   borderRadius: BorderRadius.circular(8),
@@ -228,15 +237,18 @@ class _LeaveCard extends StatelessWidget {
                 child: Text(
                   leave.typeLabel,
                   style: const TextStyle(
-                      color: AppColors.primary,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600),
+                    color: AppColors.primary,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
               const Spacer(),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: statusBg,
                   borderRadius: BorderRadius.circular(20),
@@ -244,9 +256,10 @@ class _LeaveCard extends StatelessWidget {
                 child: Text(
                   leave.statusLabel,
                   style: TextStyle(
-                      color: statusColor,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600),
+                    color: statusColor,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ],
@@ -254,15 +267,19 @@ class _LeaveCard extends StatelessWidget {
           const SizedBox(height: 12),
           Row(
             children: [
-              const Icon(Icons.calendar_today_outlined,
-                  size: 13, color: AppColors.textSecondary),
+              const Icon(
+                Icons.calendar_today_outlined,
+                size: 13,
+                color: AppColors.textSecondary,
+              ),
               const SizedBox(width: 6),
               Text(
                 '${DateFormat('dd MMM yyyy').format(leave.fromDate)} → ${DateFormat('dd MMM yyyy').format(leave.toDate)}',
                 style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.textPrimary),
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.textPrimary,
+                ),
               ),
               const Spacer(),
               Container(
@@ -274,9 +291,10 @@ class _LeaveCard extends StatelessWidget {
                 child: Text(
                   '${leave.daysCount}d',
                   style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
                 ),
               ),
             ],
@@ -284,11 +302,15 @@ class _LeaveCard extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             leave.reason,
-            style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+            style: const TextStyle(
+              fontSize: 12,
+              color: AppColors.textSecondary,
+            ),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
-          if (leave.reviewNote != null && leave.status != LeaveStatus.pending) ...[
+          if (leave.reviewNote != null &&
+              leave.status != LeaveStatus.pending) ...[
             const SizedBox(height: 8),
             const Divider(),
             const SizedBox(height: 4),
@@ -306,9 +328,10 @@ class _LeaveCard extends StatelessWidget {
                   child: Text(
                     '${leave.reviewedBy ?? "HR"}: ${leave.reviewNote}',
                     style: TextStyle(
-                        fontSize: 11,
-                        color: statusColor,
-                        fontWeight: FontWeight.w500),
+                      fontSize: 11,
+                      color: statusColor,
+                      fontWeight: FontWeight.w500,
+                    ),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
@@ -375,8 +398,7 @@ class _ApplyLeaveSheetState extends ConsumerState<_ApplyLeaveSheet> {
       lastDate: DateTime.now().add(const Duration(days: 365)),
       builder: (ctx, child) => Theme(
         data: Theme.of(ctx).copyWith(
-          colorScheme:
-              const ColorScheme.light(primary: AppColors.primary),
+          colorScheme: const ColorScheme.light(primary: AppColors.primary),
         ),
         child: child!,
       ),
@@ -402,7 +424,9 @@ class _ApplyLeaveSheetState extends ConsumerState<_ApplyLeaveSheet> {
       return;
     }
     final user = ref.read(authViewModelProvider).currentUser!;
-    await ref.read(leaveViewModelProvider.notifier).applyLeave(
+    await ref
+        .read(leaveViewModelProvider.notifier)
+        .applyLeave(
           user: user,
           type: _selectedType,
           fromDate: _fromDate!,
@@ -456,18 +480,22 @@ class _ApplyLeaveSheetState extends ConsumerState<_ApplyLeaveSheet> {
             const Text(
               'Apply for Leave',
               style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary),
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
+              ),
             ),
             const SizedBox(height: 16),
 
             // Leave Type
-            const Text('Leave Type',
-                style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary)),
+            const Text(
+              'Leave Type',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+              ),
+            ),
             const SizedBox(height: 8),
             SizedBox(
               height: 38,
@@ -488,8 +516,7 @@ class _ApplyLeaveSheetState extends ConsumerState<_ApplyLeaveSheet> {
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
                       ),
-                      onSelected: (_) =>
-                          setState(() => _selectedType = t),
+                      onSelected: (_) => setState(() => _selectedType = t),
                     ),
                   );
                 }).toList(),
@@ -522,11 +549,14 @@ class _ApplyLeaveSheetState extends ConsumerState<_ApplyLeaveSheet> {
             const SizedBox(height: 14),
 
             // Reason
-            const Text('Reason',
-                style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary)),
+            const Text(
+              'Reason',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+              ),
+            ),
             const SizedBox(height: 8),
             TextFormField(
               controller: _reasonCtrl,
@@ -534,10 +564,9 @@ class _ApplyLeaveSheetState extends ConsumerState<_ApplyLeaveSheet> {
               decoration: const InputDecoration(
                 hintText: 'Describe the reason for your leave...',
               ),
-              validator: (v) =>
-                  (v == null || v.trim().length < 5)
-                      ? 'Please enter a reason (min 5 characters)'
-                      : null,
+              validator: (v) => (v == null || v.trim().length < 5)
+                  ? 'Please enter a reason (min 5 characters)'
+                  : null,
             ),
 
             const SizedBox(height: 20),
@@ -549,7 +578,9 @@ class _ApplyLeaveSheetState extends ConsumerState<_ApplyLeaveSheet> {
                       height: 20,
                       width: 20,
                       child: CircularProgressIndicator(
-                          strokeWidth: 2, color: Colors.white),
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
                     )
                   : const Text('Submit Request'),
             ),
@@ -565,8 +596,11 @@ class _DateButton extends StatelessWidget {
   final DateTime? date;
   final VoidCallback onTap;
 
-  const _DateButton(
-      {required this.label, required this.date, required this.onTap});
+  const _DateButton({
+    required this.label,
+    required this.date,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -578,8 +612,9 @@ class _DateButton extends StatelessWidget {
           color: AppColors.surface,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-              color: date != null ? AppColors.primary : AppColors.inputBorder,
-              width: date != null ? 1.5 : 1),
+            color: date != null ? AppColors.primary : AppColors.inputBorder,
+            width: date != null ? 1.5 : 1,
+          ),
         ),
         child: Row(
           children: [
@@ -592,19 +627,22 @@ class _DateButton extends StatelessWidget {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label,
-                    style: const TextStyle(
-                        fontSize: 10, color: AppColors.textHint)),
                 Text(
-                  date != null
-                      ? DateFormat('dd MMM').format(date!)
-                      : 'Select',
+                  label,
+                  style: const TextStyle(
+                    fontSize: 10,
+                    color: AppColors.textHint,
+                  ),
+                ),
+                Text(
+                  date != null ? DateFormat('dd MMM').format(date!) : 'Select',
                   style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: date != null
-                          ? AppColors.textPrimary
-                          : AppColors.textHint),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: date != null
+                        ? AppColors.textPrimary
+                        : AppColors.textHint,
+                  ),
                 ),
               ],
             ),
@@ -625,13 +663,15 @@ class _EmptyState extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 40),
         child: Column(
           children: [
-            Icon(Icons.event_note_outlined,
-                size: 48, color: AppColors.textHint.withValues(alpha: 0.5)),
+            Icon(
+              Icons.event_note_outlined,
+              size: 48,
+              color: AppColors.textHint.withValues(alpha: 0.5),
+            ),
             const SizedBox(height: 12),
             const Text(
               'No leave requests yet',
-              style:
-                  TextStyle(color: AppColors.textSecondary, fontSize: 14),
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
             ),
           ],
         ),
