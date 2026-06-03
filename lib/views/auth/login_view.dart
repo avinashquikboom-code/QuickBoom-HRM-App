@@ -230,9 +230,15 @@ class _LoginViewState extends ConsumerState<LoginView> with SingleTickerProvider
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                                   decoration: BoxDecoration(
-                                    color: AppColors.error.withValues(alpha: 0.2),
+                                    color: AppColors.error,
                                     borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(color: AppColors.error.withValues(alpha: 0.5)),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: AppColors.error.withValues(alpha: 0.3),
+                                        blurRadius: 10,
+                                        offset: const Offset(0, 4),
+                                      ),
+                                    ],
                                   ),
                                   child: Row(
                                     children: [
@@ -241,7 +247,11 @@ class _LoginViewState extends ConsumerState<LoginView> with SingleTickerProvider
                                       Expanded(
                                         child: Text(
                                           authState.errorMessage!,
-                                          style: const TextStyle(color: Colors.white, fontSize: 13),
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w600,
+                                          ),
                                         ),
                                       ),
                                     ],
