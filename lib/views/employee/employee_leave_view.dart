@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:remixicon/remixicon.dart';
 import '../../core/constants/app_colors.dart';
 import '../../models/leave_request_model.dart';
 import '../../viewmodels/auth_viewmodel.dart';
@@ -33,12 +34,25 @@ class _EmployeeLeaveViewState extends ConsumerState<EmployeeLeaveView> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(title: const Text('My Leave'), centerTitle: false),
+      appBar: AppBar(
+        backgroundColor: AppColors.background,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        centerTitle: false,
+        title: const Text(
+          'My Leave',
+          style: TextStyle(
+            color: AppColors.textPrimary,
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+      ),
       resizeToAvoidBottomInset: false,
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showApplyLeaveSheet(context),
         backgroundColor: AppColors.primary,
-        icon: const Icon(Icons.add, color: Colors.white),
+        icon: Icon(RemixIcons.add_line, color: Colors.white),
         label: const Text(
           'Apply Leave',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
@@ -268,8 +282,8 @@ class _LeaveCard extends StatelessWidget {
           const SizedBox(height: 12),
           Row(
             children: [
-              const Icon(
-                Icons.calendar_today_outlined,
+              Icon(
+                RemixIcons.calendar_event_line,
                 size: 13,
                 color: AppColors.textSecondary,
               ),
@@ -319,8 +333,8 @@ class _LeaveCard extends StatelessWidget {
               children: [
                 Icon(
                   leave.status == LeaveStatus.approved
-                      ? Icons.check_circle_outline
-                      : Icons.info_outline,
+                      ? RemixIcons.checkbox_circle_line
+                      : RemixIcons.information_line,
                   size: 13,
                   color: statusColor,
                 ),
@@ -620,7 +634,7 @@ class _DateButton extends StatelessWidget {
         child: Row(
           children: [
             Icon(
-              Icons.calendar_today_outlined,
+              RemixIcons.calendar_event_line,
               size: 15,
               color: date != null ? AppColors.primary : AppColors.textHint,
             ),
@@ -665,7 +679,7 @@ class _EmptyState extends StatelessWidget {
         child: Column(
           children: [
             Icon(
-              Icons.event_note_outlined,
+              RemixIcons.calendar_todo_line,
               size: 48,
               color: AppColors.textHint.withValues(alpha: 0.5),
             ),

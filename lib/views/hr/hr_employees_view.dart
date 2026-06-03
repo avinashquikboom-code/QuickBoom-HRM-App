@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:remixicon/remixicon.dart';
 import '../../core/constants/app_colors.dart';
 import '../../models/user_model.dart';
 import '../../viewmodels/employee_list_viewmodel.dart';
@@ -16,8 +17,18 @@ class HrEmployeesView extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Employees'),
+        backgroundColor: AppColors.background,
+        elevation: 0,
+        scrolledUnderElevation: 0,
         centerTitle: false,
+        title: const Text(
+          'Employees',
+          style: TextStyle(
+            color: AppColors.textPrimary,
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(60),
           child: Padding(
@@ -26,10 +37,10 @@ class HrEmployeesView extends ConsumerWidget {
               onChanged: vm.updateSearch,
               decoration: InputDecoration(
                 hintText: 'Search by name, ID or designation...',
-                prefixIcon: const Icon(Icons.search_rounded),
+                prefixIcon: Icon(RemixIcons.search_line),
                 suffixIcon: state.searchQuery.isNotEmpty
                     ? IconButton(
-                        icon: const Icon(Icons.clear_rounded),
+                        icon: Icon(RemixIcons.close_line),
                         onPressed: vm.clearSearch,
                       )
                     : null,
@@ -83,14 +94,14 @@ class HrEmployeesView extends ConsumerWidget {
           // ─── Employee List ────────────────────────────────────────────
           Expanded(
             child: state.filteredEmployees.isEmpty
-                ? const Center(
+                ? Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.people_outline,
+                        Icon(RemixIcons.group_line,
                             size: 48, color: AppColors.textHint),
-                        SizedBox(height: 12),
-                        Text('No employees found',
+                        const SizedBox(height: 12),
+                        const Text('No employees found',
                             style: TextStyle(
                                 color: AppColors.textSecondary,
                                 fontSize: 14)),
@@ -225,7 +236,7 @@ class _EmployeeCard extends StatelessWidget {
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right_rounded,
+            Icon(RemixIcons.arrow_right_s_line,
                 color: AppColors.textHint, size: 20),
           ],
         ),
@@ -353,24 +364,24 @@ class _EmployeeDetailSheet extends StatelessWidget {
             child: Column(
               children: [
                 _DetailRow(
-                    icon: Icons.email_outlined,
+                    icon: RemixIcons.mail_line,
                     label: 'Email',
                     value: employee.email),
                 _DetailRow(
-                    icon: Icons.phone_outlined,
+                    icon: RemixIcons.phone_line,
                     label: 'Phone',
                     value: employee.phone),
                 _DetailRow(
-                    icon: Icons.business_outlined,
+                    icon: RemixIcons.briefcase_line,
                     label: 'Department',
                     value: employee.department),
                 _DetailRow(
-                    icon: Icons.calendar_today_outlined,
+                    icon: RemixIcons.calendar_event_line,
                     label: 'Joined',
                     value: DateFormat('dd MMM yyyy')
                         .format(employee.joinDate)),
                 _DetailRow(
-                    icon: Icons.currency_rupee_rounded,
+                    icon: RemixIcons.money_rupee_circle_line,
                     label: 'Salary',
                     value:
                         '₹${NumberFormat('#,##,###').format(employee.salary)}/mo'),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
+import 'package:remixicon/remixicon.dart';
 import '../../core/constants/app_colors.dart';
 import '../../viewmodels/auth_viewmodel.dart';
 import '../../viewmodels/profile_viewmodel.dart';
@@ -34,7 +35,7 @@ class EmployeeProfileView extends ConsumerWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.error_outline, size: 48, color: AppColors.error),
+              Icon(RemixIcons.error_warning_line, size: 48, color: AppColors.error),
               const SizedBox(height: 16),
               Text(
                 profileState.errorMessage ?? 'Failed to load profile',
@@ -52,199 +53,149 @@ class EmployeeProfileView extends ConsumerWidget {
       );
     }
 
-    final statusBarHeight = MediaQuery.of(context).padding.top;
-
     return Scaffold(
       backgroundColor: AppColors.background,
+      appBar: AppBar(
+        backgroundColor: AppColors.background,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        automaticallyImplyLeading: false,
+        title: const Text(
+          'My Profile',
+          style: TextStyle(
+            color: AppColors.textPrimary,
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        actions: [
+          IconButton(
+            icon: Icon(
+              RemixIcons.logout_box_line,
+              color: AppColors.error,
+              size: 20,
+            ),
+            onPressed: () => _confirmLogout(context, ref),
+          ),
+          const SizedBox(width: 8),
+        ],
+      ),
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
         slivers: [
-          // ─── Immersive Glowing Curved Header (Pinned SliverAppBar) ──────
-          SliverAppBar(
-            expandedHeight: 300,
-            pinned: true,
-            floating: false,
-            backgroundColor: AppColors.primary,
-            automaticallyImplyLeading: false,
-            shape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.vertical(bottom: Radius.circular(32)),
-            ),
-            elevation: 0,
-            title: const Text(
-              'My Profile',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w900,
-                fontSize: 20,
-                letterSpacing: -0.5,
-              ),
-            ),
-            actions: [
-              IconButton(
-                icon: const Icon(
-                  Icons.logout_rounded,
-                  color: Colors.white,
-                  size: 22,
-                ),
-                onPressed: () => _confirmLogout(context, ref),
-              ),
-              const SizedBox(width: 8),
-            ],
-            flexibleSpace: FlexibleSpaceBar(
-              background: ClipRRect(
-                borderRadius: const BorderRadius.vertical(
-                  bottom: Radius.circular(32),
-                ),
-                child: Container(
-                  decoration: const BoxDecoration(
-                    gradient: AppColors.heroGradient,
-                  ),
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      // Decorative light background rings
-                      Positioned(
-                        right: -20,
-                        top: 20,
-                        child: Container(
-                          width: 120,
-                          height: 120,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.white.withValues(alpha: 0.05),
-                          ),
-                        ),
-                      ),
-                      Positioned(
-                        left: -30,
-                        bottom: -10,
-                        child: Container(
-                          width: 130,
-                          height: 130,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.white.withValues(alpha: 0.05),
-                          ),
-                        ),
-                      ),
-                      Padding(
-                        padding: EdgeInsets.only(top: statusBarHeight + 50),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            // Concentric glowing avatar ring
-                            Container(
-                              width: 90,
-                              height: 90,
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.15),
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: Colors.white.withValues(alpha: 0.35),
-                                  width: 3,
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: AppColors.primary.withValues(
-                                      alpha: 0.25,
-                                    ),
-                                    blurRadius: 20,
-                                    spreadRadius: 2,
-                                  ),
-                                ],
-                              ),
-                              child: Center(
-                                child: Text(
-                                  user.initials,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 32,
-                                    fontWeight: FontWeight.w900,
-                                  ),
-                                ),
-                              ),
-                            ).animate().scale(
-                              duration: 500.ms,
-                              curve: Curves.easeOutBack,
-                            ),
-                            const SizedBox(height: 12),
-                            Text(
-                              user.name,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 20,
-                                fontWeight: FontWeight.w900,
-                                letterSpacing: -0.5,
-                              ),
-                            ).animate().fadeIn(delay: 150.ms),
-                            const SizedBox(height: 4),
-                            Text(
-                              user.designation,
-                              style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.85),
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ).animate().fadeIn(delay: 200.ms),
-                            const SizedBox(height: 10),
-                            // Rounded employee ID badge
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 14,
-                                vertical: 5,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.15),
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(
-                                  color: Colors.white.withValues(alpha: 0.25),
-                                  width: 1,
-                                ),
-                              ),
-                              child: Text(
-                                user.employeeId,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w800,
-                                  letterSpacing: 1.5,
-                                ),
-                              ),
-                            ).animate().fadeIn(delay: 250.ms),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-
-          // ─── Profile Cards & Sections ────────────────────────────────────
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 110),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
+                // ─── Profile Header Card ─────────────────────────────────
+                Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.primary.withValues(alpha: 0.05),
+                        blurRadius: 16,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 90,
+                        height: 90,
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withValues(alpha: 0.1),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: AppColors.primary.withValues(alpha: 0.2),
+                            width: 3,
+                          ),
+                        ),
+                        child: Center(
+                          child: Text(
+                            user.initials,
+                            style: const TextStyle(
+                              color: AppColors.primary,
+                              fontSize: 32,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        ),
+                      ).animate().scale(
+                        duration: 500.ms,
+                        curve: Curves.easeOutBack,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        user.name,
+                        style: const TextStyle(
+                          color: AppColors.textPrimary,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.5,
+                        ),
+                      ).animate().fadeIn(delay: 150.ms),
+                      const SizedBox(height: 4),
+                      Text(
+                        user.designation,
+                        style: const TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ).animate().fadeIn(delay: 200.ms),
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.background,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: AppColors.textHint.withValues(alpha: 0.15),
+                            width: 1,
+                          ),
+                        ),
+                        child: Text(
+                          user.employeeId,
+                          style: const TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 1.5,
+                          ),
+                        ),
+                      ).animate().fadeIn(delay: 250.ms),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
                 // ─── Personal Info ───────────────────────────────────────
                 _SectionCard(
                   title: 'Personal Information',
-                  icon: Icons.person_outline_rounded,
+                  icon: RemixIcons.user_3_line,
                   children: [
                     _InfoRow(
                       label: 'Full Name',
                       value: user.name,
-                      icon: Icons.badge_outlined,
+                      icon: RemixIcons.profile_line,
                     ),
                     _InfoRow(
                       label: 'Email Address',
                       value: user.email,
-                      icon: Icons.email_outlined,
+                      icon: RemixIcons.mail_line,
                     ),
                     _InfoRow(
                       label: 'Contact Number',
                       value: user.phone,
-                      icon: Icons.phone_outlined,
+                      icon: RemixIcons.phone_line,
                     ),
                   ],
                 ).animate().fadeIn(delay: 100.ms).slideY(begin: 0.05, end: 0),
@@ -254,27 +205,27 @@ class EmployeeProfileView extends ConsumerWidget {
                 // ─── Employment Info ─────────────────────────────────────
                 _SectionCard(
                   title: 'Employment Details',
-                  icon: Icons.work_outline_rounded,
+                  icon: RemixIcons.briefcase_line,
                   children: [
                     _InfoRow(
                       label: 'Department',
                       value: user.department,
-                      icon: Icons.business_outlined,
+                      icon: RemixIcons.government_line,
                     ),
                     _InfoRow(
                       label: 'Designation',
                       value: user.designation,
-                      icon: Icons.work_outline_rounded,
+                      icon: RemixIcons.briefcase_line,
                     ),
                     _InfoRow(
                       label: 'Date of Joining',
                       value: DateFormat('dd MMMM yyyy').format(user.joinDate),
-                      icon: Icons.calendar_today_outlined,
+                      icon: RemixIcons.calendar_event_line,
                     ),
                     _InfoRow(
                       label: 'Tenure',
                       value: '${user.yearsOfService}+ Years of Service',
-                      icon: Icons.timeline_rounded,
+                      icon: RemixIcons.pulse_line,
                     ),
                   ],
                 ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.05, end: 0),
@@ -284,12 +235,12 @@ class EmployeeProfileView extends ConsumerWidget {
                 // ─── Salary Info ─────────────────────────────────────────
                 _SectionCard(
                   title: 'Compensation',
-                  icon: Icons.account_balance_wallet_outlined,
+                  icon: RemixIcons.wallet_line,
                   children: [
                     _InfoRow(
                       label: 'Monthly CTC',
                       value: '₹${NumberFormat('#,##,###').format(user.salary)}',
-                      icon: Icons.currency_rupee_rounded,
+                      icon: RemixIcons.money_rupee_circle_line,
                     ),
                   ],
                 ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.05, end: 0),
@@ -299,11 +250,11 @@ class EmployeeProfileView extends ConsumerWidget {
                 // ─── Quick Links ─────────────────────────────────────────
                 _SectionCard(
                   title: 'Quick Access Links',
-                  icon: Icons.link_rounded,
+                  icon: RemixIcons.link_m,
                   children: [
                     _ActionRow(
                       label: 'My Uploaded Documents',
-                      icon: Icons.folder_outlined,
+                      icon: RemixIcons.folder_open_line,
                       onTap: () {
                         Navigator.push(
                           context,
@@ -315,7 +266,7 @@ class EmployeeProfileView extends ConsumerWidget {
                     ),
                     _ActionRow(
                       label: 'Submit & Track Expenses',
-                      icon: Icons.receipt_long_outlined,
+                      icon: RemixIcons.bill_line,
                       onTap: () {
                         Navigator.push(
                           context,
@@ -327,7 +278,7 @@ class EmployeeProfileView extends ConsumerWidget {
                     ),
                     _ActionRow(
                       label: 'Weekly Shift Schedule',
-                      icon: Icons.schedule_rounded,
+                      icon: RemixIcons.time_line,
                       onTap: () {
                         Navigator.push(
                           context,
@@ -357,7 +308,7 @@ class EmployeeProfileView extends ConsumerWidget {
                         borderRadius: BorderRadius.circular(16),
                       ),
                     ),
-                    icon: const Icon(Icons.logout_rounded, size: 18),
+                    icon: Icon(RemixIcons.logout_box_line, size: 18),
                     label: const Text(
                       'Logout',
                       style: TextStyle(
@@ -562,8 +513,8 @@ class _ActionRow extends StatelessWidget {
                 ),
               ),
             ),
-            const Icon(
-              Icons.chevron_right_rounded,
+            Icon(
+              RemixIcons.arrow_right_s_line,
               size: 20,
               color: AppColors.textHint,
             ),

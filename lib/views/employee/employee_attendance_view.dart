@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:remixicon/remixicon.dart';
 import '../../core/constants/app_colors.dart';
 import '../../models/attendance_model.dart';
 import '../../viewmodels/attendance_viewmodel.dart';
@@ -15,8 +16,18 @@ class EmployeeAttendanceView extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('My Attendance'),
+        backgroundColor: AppColors.background,
+        elevation: 0,
+        scrolledUnderElevation: 0,
         centerTitle: false,
+        title: const Text(
+          'My Attendance',
+          style: TextStyle(
+            color: AppColors.textPrimary,
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
       ),
       body: CustomScrollView(
         slivers: [
@@ -32,7 +43,7 @@ class EmployeeAttendanceView extends ConsumerWidget {
                         label: 'Present',
                         count: state.presentCount,
                         color: AppColors.success,
-                        icon: Icons.check_circle_rounded,
+                        icon: RemixIcons.checkbox_circle_line,
                       ),
                     ),
                     const SizedBox(width: 10),
@@ -41,7 +52,7 @@ class EmployeeAttendanceView extends ConsumerWidget {
                         label: 'Absent',
                         count: state.absentCount,
                         color: AppColors.error,
-                        icon: Icons.cancel_rounded,
+                        icon: RemixIcons.close_circle_line,
                       ),
                     ),
                     const SizedBox(width: 10),
@@ -50,7 +61,7 @@ class EmployeeAttendanceView extends ConsumerWidget {
                         label: 'Late',
                         count: state.lateCount,
                         color: AppColors.warning,
-                        icon: Icons.schedule_rounded,
+                        icon: RemixIcons.time_line,
                       ),
                     ),
                     const SizedBox(width: 10),
@@ -59,7 +70,7 @@ class EmployeeAttendanceView extends ConsumerWidget {
                         label: 'Half Day',
                         count: state.halfDayCount,
                         color: AppColors.info,
-                        icon: Icons.sunny_snowing,
+                        icon: RemixIcons.sun_line,
                       ),
                     ),
                   ],
@@ -233,7 +244,7 @@ class _TodayCard extends ConsumerWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.timelapse_rounded,
+                Icon(RemixIcons.time_line,
                     size: 16, color: AppColors.primary),
                 const SizedBox(width: 6),
                 Text(
@@ -257,7 +268,7 @@ class _TodayCard extends ConsumerWidget {
                   Expanded(
                     child: _ActionButton(
                       label: isOnBreak ? 'Resume' : 'Break',
-                      icon: isOnBreak ? Icons.play_arrow_rounded : Icons.coffee_rounded,
+                      icon: isOnBreak ? RemixIcons.play_line : RemixIcons.cup_line,
                       color: AppColors.warning,
                       onTap: () {
                         if (isOnBreak) {
@@ -273,7 +284,7 @@ class _TodayCard extends ConsumerWidget {
                 Expanded(
                   child: _ActionButton(
                     label: hasCheckIn ? 'Punch Out' : 'Punch In',
-                    icon: hasCheckIn ? Icons.logout_rounded : Icons.login_rounded,
+                    icon: hasCheckIn ? RemixIcons.logout_box_line : RemixIcons.login_box_line,
                     color: hasCheckIn ? AppColors.error : AppColors.success,
                     onTap: () {
                       if (hasCheckIn) {
@@ -293,12 +304,12 @@ class _TodayCard extends ConsumerWidget {
                 color: AppColors.success.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Row(
+              child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.verified_rounded, color: AppColors.success, size: 18),
-                  SizedBox(width: 6),
-                  Text(
+                  Icon(RemixIcons.checkbox_circle_line, color: AppColors.success, size: 18),
+                  const SizedBox(width: 6),
+                  const Text(
                     'Shift Completed',
                     style: TextStyle(
                       color: AppColors.success,

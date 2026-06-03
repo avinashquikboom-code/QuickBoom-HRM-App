@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:remixicon/remixicon.dart';
 import '../../core/constants/app_colors.dart';
 import 'employee_dashboard_view.dart';
 import 'employee_attendance_view.dart';
@@ -39,25 +40,25 @@ class _EmployeeShellState extends ConsumerState<EmployeeShell> {
         unselectedItemColor: AppColors.textHint,
         selectedFontSize: 12,
         unselectedFontSize: 11,
-        items: const [
+        items: [
           BottomNavigationBarItem(
-            icon: Icon(Icons.dashboard_outlined),
-            activeIcon: Icon(Icons.dashboard_rounded),
+            icon: Icon(RemixIcons.home_3_line),
+            activeIcon: Icon(RemixIcons.home_3_fill),
             label: 'Home',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.access_time_outlined),
-            activeIcon: Icon(Icons.access_time_filled_rounded),
+            icon: Icon(RemixIcons.time_line),
+            activeIcon: Icon(RemixIcons.time_fill),
             label: 'Attend',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.event_note_outlined),
-            activeIcon: Icon(Icons.event_note_rounded),
+            icon: Icon(RemixIcons.calendar_todo_line),
+            activeIcon: Icon(RemixIcons.calendar_todo_fill),
             label: 'Leave',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline_rounded),
-            activeIcon: Icon(Icons.person_rounded),
+            icon: Icon(RemixIcons.user_3_line),
+            activeIcon: Icon(RemixIcons.user_3_fill),
             label: 'Profile',
           ),
         ],

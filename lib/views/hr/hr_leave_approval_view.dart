@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:remixicon/remixicon.dart';
 import '../../core/constants/app_colors.dart';
 import '../../models/leave_request_model.dart';
 import '../../viewmodels/auth_viewmodel.dart';
@@ -49,8 +50,18 @@ class _HrLeaveApprovalViewState extends ConsumerState<HrLeaveApprovalView>
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Leave Management'),
+        backgroundColor: AppColors.background,
+        elevation: 0,
+        scrolledUnderElevation: 0,
         centerTitle: false,
+        title: const Text(
+          'Leave Management',
+          style: TextStyle(
+            color: AppColors.textPrimary,
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
         bottom: TabBar(
           controller: _tabController,
           indicatorColor: AppColors.primary,
@@ -139,8 +150,8 @@ class _LeaveList extends ConsumerWidget {
             children: [
               Icon(
                 isPending
-                    ? Icons.check_circle_outline_rounded
-                    : Icons.assignment_outlined,
+                    ? RemixIcons.checkbox_circle_line
+                    : RemixIcons.file_list_line,
                 size: 56,
                 color: AppColors.textHint.withValues(alpha: 0.5),
               ),
@@ -195,51 +206,55 @@ class _LeaveList extends ConsumerWidget {
 
     await showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Row(
-          children: [
-            Icon(Icons.cancel_outlined, color: AppColors.error, size: 20),
-            SizedBox(width: 8),
-            Text('Reject Leave'),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              'Provide a reason for rejection (optional):',
-              style: TextStyle(
-                  fontSize: 13, color: AppColors.textSecondary),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: noteCtrl,
-              maxLines: 3,
-              decoration: const InputDecoration(
-                hintText: 'e.g. Project deadline, reschedule...',
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+      builder: (ctx) => _buildDialog(ctx, ref, leaveId, noteCtrl, reviewer),
+    );
+  }
+
+  Widget _buildDialog(BuildContext ctx, WidgetRef ref, String leaveId, TextEditingController noteCtrl, String reviewer) {
+    return AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      title: Row(
+        children: [
+          Icon(RemixIcons.close_circle_line, color: AppColors.error, size: 20),
+          const SizedBox(width: 8),
+          const Text('Reject Leave'),
+        ],
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text(
+            'Provide a reason for rejection (optional):',
+            style: TextStyle(
+                fontSize: 13, color: AppColors.textSecondary),
           ),
-          ElevatedButton(
-            style:
-                ElevatedButton.styleFrom(backgroundColor: AppColors.error),
-            onPressed: () async {
-              Navigator.pop(ctx);
-              await ref
-                  .read(hrLeaveViewModelProvider.notifier)
-                  .rejectLeave(leaveId, reviewer, noteCtrl.text.trim());
-            },
-            child: const Text('Reject'),
+          const SizedBox(height: 12),
+          TextField(
+            controller: noteCtrl,
+            maxLines: 3,
+            decoration: const InputDecoration(
+              hintText: 'e.g. Project deadline, reschedule...',
+            ),
           ),
         ],
       ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(ctx),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          style:
+              ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+          onPressed: () async {
+            Navigator.pop(ctx);
+            await ref
+                .read(hrLeaveViewModelProvider.notifier)
+                .rejectLeave(leaveId, reviewer, noteCtrl.text.trim());
+          },
+          child: const Text('Reject'),
+        ),
+      ],
     );
   }
 }
@@ -358,13 +373,13 @@ class _LeaveCard extends StatelessWidget {
                 Row(
                   children: [
                     _DetailChip(
-                      icon: Icons.event_note_rounded,
+                      icon: RemixIcons.file_list_3_line,
                       text: leave.typeLabel,
                       color: AppColors.primary,
                     ),
                     const SizedBox(width: 8),
                     _DetailChip(
-                      icon: Icons.calendar_today_outlined,
+                      icon: RemixIcons.calendar_todo_line,
                       text: '${leave.daysCount} day(s)',
                       color: AppColors.info,
                     ),
@@ -373,7 +388,7 @@ class _LeaveCard extends StatelessWidget {
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    const Icon(Icons.date_range_outlined,
+                    Icon(RemixIcons.calendar_2_line,
                         size: 13, color: AppColors.textSecondary),
                     const SizedBox(width: 6),
                     Text(
@@ -387,7 +402,7 @@ class _LeaveCard extends StatelessWidget {
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.comment_outlined,
+                    Icon(RemixIcons.chat_3_line,
                         size: 13, color: AppColors.textSecondary),
                     const SizedBox(width: 6),
                     Expanded(
@@ -416,8 +431,8 @@ class _LeaveCard extends StatelessWidget {
                       children: [
                         Icon(
                           leave.status == LeaveStatus.approved
-                              ? Icons.check_circle_outline
-                              : Icons.info_outline,
+                              ? RemixIcons.checkbox_circle_line
+                              : RemixIcons.information_line,
                           size: 13,
                           color: statusColor,
                         ),
@@ -456,7 +471,7 @@ class _LeaveCard extends StatelessWidget {
                         minimumSize: const Size(0, 40),
                         padding: const EdgeInsets.symmetric(vertical: 8),
                       ),
-                      icon: const Icon(Icons.cancel_outlined, size: 16),
+                      icon: Icon(RemixIcons.close_circle_line, size: 16),
                       label: const Text('Reject',
                           style: TextStyle(fontSize: 13)),
                       onPressed: isProcessing ? null : onReject,
@@ -470,7 +485,7 @@ class _LeaveCard extends StatelessWidget {
                         minimumSize: const Size(0, 40),
                         padding: const EdgeInsets.symmetric(vertical: 8),
                       ),
-                      icon: const Icon(Icons.check_circle_outline,
+                      icon: Icon(RemixIcons.checkbox_circle_line,
                           size: 16, color: Colors.white),
                       label: const Text('Approve',
                           style: TextStyle(

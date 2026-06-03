@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:remixicon/remixicon.dart';
 import '../widgets/custom_bottom_nav_bar.dart';
 import 'hr_dashboard_view.dart';
 import 'hr_employees_view.dart';
@@ -34,25 +35,25 @@ class _HrShellState extends ConsumerState<HrShell> {
       bottomNavigationBar: CustomBottomNavBar(
         selectedIndex: _currentIndex,
         onItemSelected: (i) => setState(() => _currentIndex = i),
-        items: const [
+        items: [
           CustomBottomNavBarItem(
-            icon: Icons.dashboard_outlined,
-            selectedIcon: Icons.dashboard_rounded,
+            icon: RemixIcons.dashboard_line,
+            selectedIcon: RemixIcons.dashboard_fill,
             label: 'Home',
           ),
           CustomBottomNavBarItem(
-            icon: Icons.people_outline_rounded,
-            selectedIcon: Icons.people_rounded,
+            icon: RemixIcons.group_line,
+            selectedIcon: RemixIcons.group_fill,
             label: 'Staff',
           ),
           CustomBottomNavBarItem(
-            icon: Icons.event_note_outlined,
-            selectedIcon: Icons.event_note_rounded,
+            icon: RemixIcons.calendar_event_line,
+            selectedIcon: RemixIcons.calendar_event_fill,
             label: 'Leaves',
           ),
           CustomBottomNavBarItem(
-            icon: Icons.payments_outlined,
-            selectedIcon: Icons.payments_rounded,
+            icon: RemixIcons.wallet_3_line,
+            selectedIcon: RemixIcons.wallet_3_fill,
             label: 'Payroll',
           ),
         ],

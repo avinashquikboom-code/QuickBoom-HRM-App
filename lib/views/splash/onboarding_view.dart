@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:remixicon/remixicon.dart';
 import '../../core/constants/app_colors.dart';
 import '../auth/login_view.dart';
 import '../widgets/premium_animated_background.dart';
@@ -28,17 +29,17 @@ class _OnboardingViewState extends State<OnboardingView> {
     OnboardingSlide(
       title: 'Seamless Attendance',
       description: 'Check in and out effortlessly with just a single tap. Track your daily hours in real time.',
-      icon: Icons.access_time_filled_rounded,
+      icon: RemixIcons.time_fill,
     ),
     OnboardingSlide(
       title: 'Manage Leaves Easily',
       description: 'Apply for leaves, check balances, and track approval status all from one unified dashboard.',
-      icon: Icons.event_available_rounded,
+      icon: RemixIcons.calendar_check_fill,
     ),
     OnboardingSlide(
       title: 'Team Collaboration',
       description: 'Stay connected with instant announcements, task tracking, and transparent HR communications.',
-      icon: Icons.groups_rounded,
+      icon: RemixIcons.group_fill,
     ),
   ];
 
@@ -216,8 +217,8 @@ class _OnboardingViewState extends State<OnboardingView> {
                                   fontSize: 16,
                                 ),
                               )
-                            : const Icon(
-                                Icons.arrow_forward_rounded,
+                            : Icon(
+                                RemixIcons.arrow_right_line,
                                 color: Colors.white,
                               ),
                       ),

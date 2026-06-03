@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:remixicon/remixicon.dart';
 import '../../core/constants/app_colors.dart';
 import '../../models/expense_model.dart';
 import '../../viewmodels/auth_viewmodel.dart';
@@ -34,13 +35,23 @@ class _EmployeeExpensesViewState extends ConsumerState<EmployeeExpensesView> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('My Expenses'),
+        backgroundColor: AppColors.background,
+        elevation: 0,
+        scrolledUnderElevation: 0,
         centerTitle: false,
+        title: const Text(
+          'My Expenses',
+          style: TextStyle(
+            color: AppColors.textPrimary,
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showAddExpenseSheet(context),
         backgroundColor: AppColors.primary,
-        icon: const Icon(Icons.add, color: Colors.white),
+        icon: Icon(RemixIcons.add_line, color: Colors.white),
         label: const Text('Claim Expense',
             style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
       ),
@@ -232,7 +243,7 @@ class _ExpenseCard extends StatelessWidget {
               Row(
                 children: [
                   if (expense.hasReceipt) ...[
-                    const Icon(Icons.receipt_long_outlined,
+                    Icon(RemixIcons.bill_line,
                         size: 14, color: AppColors.info),
                     const SizedBox(width: 8),
                   ],
@@ -276,17 +287,17 @@ class _ExpenseCard extends StatelessWidget {
   IconData _categoryIcon(ExpenseCategory c) {
     switch (c) {
       case ExpenseCategory.travel:
-        return Icons.flight_takeoff_rounded;
+        return RemixIcons.plane_line;
       case ExpenseCategory.food:
-        return Icons.restaurant_rounded;
+        return RemixIcons.restaurant_line;
       case ExpenseCategory.accommodation:
-        return Icons.hotel_rounded;
+        return RemixIcons.hotel_bed_line;
       case ExpenseCategory.stationery:
-        return Icons.edit_rounded;
+        return RemixIcons.edit_box_line;
       case ExpenseCategory.medical:
-        return Icons.medical_services_rounded;
+        return RemixIcons.first_aid_kit_line;
       case ExpenseCategory.other:
-        return Icons.receipt_long_rounded;
+        return RemixIcons.bill_line;
     }
   }
 }
@@ -413,7 +424,7 @@ class _AddExpenseSheetState extends ConsumerState<_AddExpenseSheet> {
             // Date
             Row(
               children: [
-                const Icon(Icons.calendar_today, size: 16, color: AppColors.primary),
+                Icon(RemixIcons.calendar_event_line, size: 16, color: AppColors.primary),
                 const SizedBox(width: 8),
                 Text(DateFormat('dd MMM yyyy').format(_date)),
                 const Spacer(),

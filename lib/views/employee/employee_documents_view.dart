@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:remixicon/remixicon.dart';
 import '../../core/constants/app_colors.dart';
 import '../../models/document_model.dart';
 
@@ -52,8 +53,18 @@ class EmployeeDocumentsView extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('My Documents'),
+        backgroundColor: AppColors.background,
+        elevation: 0,
+        scrolledUnderElevation: 0,
         centerTitle: false,
+        title: const Text(
+          'My Documents',
+          style: TextStyle(
+            color: AppColors.textPrimary,
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
       ),
       body: ListView.separated(
         padding: const EdgeInsets.all(16),
@@ -136,7 +147,7 @@ class _DocumentCard extends StatelessWidget {
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.download_rounded, color: AppColors.primary),
+            icon: Icon(RemixIcons.download_line, color: AppColors.primary),
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(

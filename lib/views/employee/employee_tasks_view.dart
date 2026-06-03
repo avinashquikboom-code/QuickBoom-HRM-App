@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:remixicon/remixicon.dart';
 import 'package:intl/intl.dart';
 import '../../core/constants/app_colors.dart';
 import '../../models/task_model.dart';
@@ -36,8 +37,18 @@ class _EmployeeTasksViewState extends ConsumerState<EmployeeTasksView>
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('My Tasks'),
+        backgroundColor: AppColors.background,
+        elevation: 0,
+        scrolledUnderElevation: 0,
         centerTitle: false,
+        title: const Text(
+          'My Tasks',
+          style: TextStyle(
+            color: AppColors.textPrimary,
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 14),
@@ -87,7 +98,7 @@ class _EmployeeTasksViewState extends ConsumerState<EmployeeTasksView>
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               child: Row(
                 children: [
-                  const Icon(Icons.warning_amber_rounded,
+                  Icon(RemixIcons.error_warning_line,
                       color: AppColors.error, size: 16),
                   const SizedBox(width: 8),
                   Text(
@@ -160,7 +171,7 @@ class _TaskList extends ConsumerWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.task_alt_rounded,
+            Icon(RemixIcons.checkbox_circle_line,
                 size: 52, color: AppColors.textHint.withValues(alpha: 0.4)),
             const SizedBox(height: 12),
             const Text('No tasks here',
@@ -255,7 +266,7 @@ class _TaskCard extends ConsumerWidget {
                       const SizedBox(height: 6),
                       Row(
                         children: [
-                          const Icon(Icons.folder_outlined,
+                          Icon(RemixIcons.folder_open_line,
                               size: 12, color: AppColors.textHint),
                           const SizedBox(width: 4),
                           Text(
@@ -264,7 +275,7 @@ class _TaskCard extends ConsumerWidget {
                                 fontSize: 11, color: AppColors.textSecondary),
                           ),
                           const SizedBox(width: 12),
-                          const Icon(Icons.person_outline_rounded,
+                          Icon(RemixIcons.user_3_line,
                               size: 12, color: AppColors.textHint),
                           const SizedBox(width: 4),
                           Expanded(
@@ -306,7 +317,7 @@ class _TaskCard extends ConsumerWidget {
                           const Spacer(),
                           // Due Date
                           Icon(
-                            Icons.event_rounded,
+                           RemixIcons.calendar_event_line,
                             size: 12,
                             color: task.isOverdue
                                 ? AppColors.error
@@ -337,7 +348,7 @@ class _TaskCard extends ConsumerWidget {
                             if (task.status == TaskStatus.todo)
                               _QuickAction(
                                 label: 'Start',
-                                icon: Icons.play_arrow_rounded,
+                                 icon: RemixIcons.play_line,
                                 color: AppColors.info,
                                 onTap: () => ref
                                     .read(taskViewModelProvider.notifier)
@@ -347,7 +358,7 @@ class _TaskCard extends ConsumerWidget {
                             if (task.status == TaskStatus.inProgress) ...[
                               _QuickAction(
                                 label: 'Done',
-                                icon: Icons.check_rounded,
+                                 icon: RemixIcons.check_line,
                                 color: AppColors.success,
                                 onTap: () => ref
                                     .read(taskViewModelProvider.notifier)
@@ -357,7 +368,7 @@ class _TaskCard extends ConsumerWidget {
                               const SizedBox(width: 8),
                               _QuickAction(
                                 label: 'Pause',
-                                icon: Icons.pause_rounded,
+                                 icon: RemixIcons.pause_line,
                                 color: AppColors.warning,
                                 onTap: () => ref
                                     .read(taskViewModelProvider.notifier)
@@ -547,19 +558,19 @@ class _TaskDetailSheet extends StatelessWidget {
           const Divider(),
           const SizedBox(height: 12),
           _DetailRow(
-              icon: Icons.folder_outlined,
+              icon: RemixIcons.folder_open_line,
               label: 'Project',
               value: task.projectName),
           _DetailRow(
-              icon: Icons.person_outline_rounded,
+              icon: RemixIcons.user_3_line,
               label: 'Assigned by',
               value: task.assignedByName),
           _DetailRow(
-              icon: Icons.event_rounded,
+              icon: RemixIcons.calendar_event_line,
               label: 'Due Date',
               value: DateFormat('dd MMM yyyy').format(task.dueDate)),
           _DetailRow(
-              icon: Icons.schedule_rounded,
+              icon: RemixIcons.time_line,
               label: 'Created',
               value: DateFormat('dd MMM yyyy').format(task.createdAt)),
           const SizedBox(height: 16),
@@ -567,7 +578,7 @@ class _TaskDetailSheet extends StatelessWidget {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                icon: const Icon(Icons.check_circle_outline,
+                icon: Icon(RemixIcons.checkbox_circle_line,
                     color: Colors.white),
                 label: const Text('Mark as Complete'),
                 style: ElevatedButton.styleFrom(

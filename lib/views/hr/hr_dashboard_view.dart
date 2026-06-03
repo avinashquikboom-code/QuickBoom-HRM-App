@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
+import 'package:remixicon/remixicon.dart';
 import '../../core/constants/app_colors.dart';
 import '../../models/leave_request_model.dart';
 import '../../viewmodels/auth_viewmodel.dart';
@@ -29,7 +30,6 @@ class HrDashboardView extends ConsumerWidget {
     final totalEmployees = stats.totalEmployees;
     final presentToday = stats.presentToday;
     final pendingLeaves = stats.pendingLeaves;
-    final attendanceRate = stats.attendanceRate;
     final onLeave = hrLeaveState.allLeaves
         .where(
           (l) =>
@@ -44,27 +44,26 @@ class HrDashboardView extends ConsumerWidget {
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
         slivers: [
-          // ─── Executive Analytics Curved Bar ─────────────────────────────
+          // ─── Compact Redesigned Executive App Bar ──────────────────────────
           SliverAppBar(
-            expandedHeight: 200,
+            expandedHeight: 76,
             pinned: true,
             floating: false,
-            backgroundColor: AppColors.primaryDark,
+            backgroundColor: AppColors.background,
+            elevation: 0,
+            scrolledUnderElevation: 0,
             automaticallyImplyLeading: false,
-            shape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.vertical(bottom: Radius.circular(32)),
-            ),
             actions: [
               IconButton(
-                icon: const Icon(
-                  Icons.notifications_outlined,
-                  color: Colors.white,
-                  size: 25,
+                icon: Icon(
+                  RemixIcons.notification_3_line,
+                  color: AppColors.textPrimary,
+                  size: 20,
                 ),
                 onPressed: () {},
               ),
               PopupMenuButton<String>(
-                icon: const Icon(Icons.more_vert, color: Colors.white),
+                icon: Icon(RemixIcons.more_2_fill, color: AppColors.textPrimary),
                 onSelected: (v) {
                   if (v == 'logout') {
                     ref.read(authViewModelProvider.notifier).logout();
@@ -75,17 +74,17 @@ class HrDashboardView extends ConsumerWidget {
                   }
                 },
                 itemBuilder: (_) => [
-                  const PopupMenuItem(
+                  PopupMenuItem(
                     value: 'logout',
                     child: Row(
                       children: [
                         Icon(
-                          Icons.logout_rounded,
+                          RemixIcons.logout_box_line,
                           size: 16,
                           color: AppColors.error,
                         ),
-                        SizedBox(width: 8),
-                        Text(
+                        const SizedBox(width: 8),
+                        const Text(
                           'Logout',
                           style: TextStyle(
                             color: AppColors.error,
@@ -97,171 +96,59 @@ class HrDashboardView extends ConsumerWidget {
                   ),
                 ],
               ),
+              const SizedBox(width: 8),
             ],
             flexibleSpace: FlexibleSpaceBar(
-              background: ClipRRect(
-                borderRadius: const BorderRadius.vertical(
-                  bottom: Radius.circular(32),
-                ),
-                child: Container(
-                  decoration: const BoxDecoration(
-                    gradient: AppColors.heroGradient,
-                  ),
-                  child: Stack(
-                    children: [
-                      // Ambient design elements
-                      Positioned(
-                        right: -10,
-                        top: -30,
-                        child: Container(
-                          width: 150,
-                          height: 150,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.white.withValues(alpha: 0.08),
+              background: Container(
+                color: AppColors.background,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Center(
+                        child: Text(
+                          user.initials,
+                          style: const TextStyle(
+                            color: AppColors.primary,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800,
                           ),
                         ),
                       ),
-                      Positioned(
-                        left: -40,
-                        bottom: -30,
-                        child: Container(
-                          width: 170,
-                          height: 170,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.white.withValues(alpha: 0.06),
-                          ),
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 85, 20, 20),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      // Weather/Status capsule paring
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 10,
-                                          vertical: 4,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: Colors.white.withValues(
-                                            alpha: 0.15,
-                                          ),
-                                          borderRadius: BorderRadius.circular(
-                                            20,
-                                          ),
-                                          border: Border.all(
-                                            color: Colors.white.withValues(
-                                              alpha: 0.1,
-                                            ),
-                                            width: 1,
-                                          ),
-                                        ),
-                                        child: Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            const Icon(
-                                              Icons.trending_up_rounded,
-                                              color: AppColors.success,
-                                              size: 14,
-                                            ),
-                                            const SizedBox(width: 4),
-                                            Text(
-                                              '📈 $attendanceRate% Active Today',
-                                              style: const TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 10.5,
-                                                fontWeight: FontWeight.w800,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      const SizedBox(height: 10),
-                                      Text(
-                                        'Hello, ${user.name.split(' ').first}!',
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 24,
-                                          fontWeight: FontWeight.w900,
-                                          letterSpacing: -0.6,
-                                        ),
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        DateFormat('EEEE, d MMMM').format(now),
-                                        style: TextStyle(
-                                          color: Colors.white.withValues(
-                                            alpha: 0.75,
-                                          ),
-                                          fontSize: 12.5,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                // Glowing executive initials badge
-                                Container(
-                                  width: 54,
-                                  height: 54,
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withValues(alpha: 0.18),
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: Colors.white.withValues(
-                                        alpha: 0.35,
-                                      ),
-                                      width: 2.5,
-                                    ),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withValues(
-                                          alpha: 0.1,
-                                        ),
-                                        blurRadius: 10,
-                                        offset: const Offset(0, 4),
-                                      ),
-                                    ],
-                                  ),
-                                  child: Center(
-                                    child: Text(
-                                      user.initials,
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 19,
-                                        fontWeight: FontWeight.w900,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Hello, ${user.name.split(' ').first}!',
+                            style: const TextStyle(
+                              color: AppColors.textPrimary,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
                             ),
-                          ],
-                        ),
+                          ),
+                          Text(
+                            DateFormat('EEEE, d MMMM').format(now),
+                            style: const TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ),
-            ),
-            title: Text(
-              'HR Administrative Console',
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.95),
-                fontSize: 17,
-                fontWeight: FontWeight.w800,
               ),
             ),
           ),
@@ -285,7 +172,7 @@ class HrDashboardView extends ConsumerWidget {
                           child: _StatCard(
                             label: 'Total Employees',
                             value: '$totalEmployees',
-                            icon: Icons.people_rounded,
+                            icon: RemixIcons.group_line,
                             color: AppColors.primary,
                             bgColor: AppColors.primarySurface,
                             ratio: 1.0,
@@ -296,7 +183,7 @@ class HrDashboardView extends ConsumerWidget {
                           child: _StatCard(
                             label: 'Present Today',
                             value: '$presentToday',
-                            icon: Icons.check_circle_rounded,
+                            icon: RemixIcons.checkbox_circle_line,
                             color: AppColors.success,
                             bgColor: AppColors.successSurface,
                             ratio: totalEmployees > 0
@@ -309,7 +196,7 @@ class HrDashboardView extends ConsumerWidget {
                           child: _StatCard(
                             label: 'On Leave',
                             value: '$onLeave',
-                            icon: Icons.event_busy_rounded,
+                            icon: RemixIcons.calendar_close_line,
                             color: AppColors.warning,
                             bgColor: AppColors.warningSurface,
                             ratio: totalEmployees > 0
@@ -322,7 +209,7 @@ class HrDashboardView extends ConsumerWidget {
                           child: _StatCard(
                             label: 'Pending Leaves',
                             value: '$pendingLeaves',
-                            icon: Icons.pending_actions_rounded,
+                            icon: RemixIcons.time_line,
                             color: AppColors.error,
                             bgColor: AppColors.errorSurface,
                             ratio: totalEmployees > 0
@@ -356,7 +243,7 @@ class HrDashboardView extends ConsumerWidget {
                     Expanded(
                       child: _QuickActionBtn(
                         label: 'Reports Feed',
-                        icon: Icons.analytics_outlined,
+                        icon: RemixIcons.bar_chart_2_line,
                         color: AppColors.primary,
                         onTap: () {
                           Navigator.push(
@@ -372,7 +259,7 @@ class HrDashboardView extends ConsumerWidget {
                     Expanded(
                       child: _QuickActionBtn(
                         label: 'Expense Claims',
-                        icon: Icons.receipt_long_outlined,
+                        icon: RemixIcons.bill_line,
                         color: AppColors.warning,
                         onTap: () {
                           Navigator.push(
@@ -388,7 +275,7 @@ class HrDashboardView extends ConsumerWidget {
                     Expanded(
                       child: _QuickActionBtn(
                         label: 'Shift Rosters',
-                        icon: Icons.schedule_rounded,
+                        icon: RemixIcons.time_line,
                         color: AppColors.info,
                         onTap: () {
                           Navigator.push(
@@ -464,16 +351,16 @@ class HrDashboardView extends ConsumerWidget {
                         color: AppColors.success.withValues(alpha: 0.15),
                       ),
                     ),
-                    child: const Row(
+                    child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(
-                          Icons.check_circle_rounded,
+                          RemixIcons.checkbox_circle_line,
                           color: AppColors.success,
                           size: 20,
                         ),
-                        SizedBox(width: 8),
-                        Text(
+                        const SizedBox(width: 8),
+                        const Text(
                           'Brilliant! All leaves reviewed.',
                           style: TextStyle(
                             color: AppColors.success,
@@ -819,7 +706,7 @@ class _PendingLeaveCard extends ConsumerWidget {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  icon: const Icon(Icons.cancel_outlined, size: 16),
+                  icon: Icon(RemixIcons.close_circle_line, size: 16),
                   label: const Text(
                     'Reject',
                     style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
@@ -841,8 +728,8 @@ class _PendingLeaveCard extends ConsumerWidget {
                     ),
                     elevation: 0,
                   ),
-                  icon: const Icon(
-                    Icons.check_circle_outline_rounded,
+                  icon: Icon(
+                    RemixIcons.checkbox_circle_line,
                     size: 16,
                   ),
                   label: const Text(

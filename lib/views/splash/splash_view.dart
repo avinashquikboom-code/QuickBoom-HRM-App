@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:remixicon/remixicon.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/constants/app_colors.dart';
@@ -107,8 +108,8 @@ class _SplashViewState extends ConsumerState<SplashView> {
                   ),
                 ],
               ),
-              child: const Icon(
-                Icons.corporate_fare_rounded,
+              child: Icon(
+                RemixIcons.building_line,
                 color: AppColors.primary,
                 size: 50,
               ),

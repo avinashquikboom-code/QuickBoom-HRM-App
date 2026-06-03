@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/app_colors.dart';
+import 'package:remixicon/remixicon.dart';
 import '../../models/notification_model.dart';
 import '../../viewmodels/notification_viewmodel.dart';
 
@@ -14,8 +15,18 @@ class NotificationsView extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Notifications'),
+        backgroundColor: AppColors.background,
+        elevation: 0,
+        scrolledUnderElevation: 0,
         centerTitle: false,
+        title: const Text(
+          'Notifications',
+          style: TextStyle(
+            color: AppColors.textPrimary,
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
         actions: [
           if (state.unreadCount > 0)
             TextButton(
@@ -145,13 +156,13 @@ class _NotificationTile extends ConsumerWidget {
 
   IconData _categoryIcon(NotificationCategory c) {
     switch (c) {
-      case NotificationCategory.leave: return Icons.event_note_rounded;
-      case NotificationCategory.task: return Icons.assignment_rounded;
-      case NotificationCategory.expense: return Icons.account_balance_wallet_rounded;
-      case NotificationCategory.attendance: return Icons.access_time_rounded;
-      case NotificationCategory.announcement: return Icons.campaign_rounded;
-      case NotificationCategory.payroll: return Icons.payments_rounded;
-      case NotificationCategory.general: return Icons.notifications_rounded;
+      case NotificationCategory.leave: return RemixIcons.calendar_todo_line;
+      case NotificationCategory.task: return RemixIcons.task_line;
+      case NotificationCategory.expense: return RemixIcons.wallet_line;
+      case NotificationCategory.attendance: return RemixIcons.time_line;
+      case NotificationCategory.announcement: return RemixIcons.megaphone_line;
+      case NotificationCategory.payroll: return RemixIcons.bank_card_line;
+      case NotificationCategory.general: return RemixIcons.notification_line;
     }
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:remixicon/remixicon.dart';
 import '../../core/constants/app_colors.dart';
 import '../../models/task_model.dart';
 import '../../viewmodels/hr_task_viewmodel.dart';
@@ -20,13 +21,23 @@ class _HrTasksViewState extends ConsumerState<HrTasksView> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Task Management'),
+        backgroundColor: AppColors.background,
+        elevation: 0,
+        scrolledUnderElevation: 0,
         centerTitle: false,
+        title: const Text(
+          'Task Management',
+          style: TextStyle(
+            color: AppColors.textPrimary,
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {},
         backgroundColor: AppColors.primary,
-        icon: const Icon(Icons.add, color: Colors.white),
+        icon: Icon(RemixIcons.add_line, color: Colors.white),
         label: const Text('Assign Task', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
       ),
       body: SingleChildScrollView(
@@ -149,11 +160,11 @@ class _HrTaskCard extends StatelessWidget {
           const SizedBox(height: 8),
           Row(
             children: [
-              const Icon(Icons.person_outline_rounded, size: 14, color: AppColors.textHint),
+              Icon(RemixIcons.user_3_line, size: 14, color: AppColors.textHint),
               const SizedBox(width: 6),
               Text(task.assignedToName, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
               const Spacer(),
-              const Icon(Icons.event_rounded, size: 14, color: AppColors.textHint),
+              Icon(RemixIcons.calendar_event_line, size: 14, color: AppColors.textHint),
               const SizedBox(width: 6),
               Text(
                 DateFormat('dd MMM').format(task.dueDate),

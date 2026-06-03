@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:remixicon/remixicon.dart';
 import '../../core/constants/app_colors.dart';
 import '../../models/expense_model.dart';
 import '../../viewmodels/hr_expense_viewmodel.dart';
@@ -25,8 +26,18 @@ class HrExpensesView extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Expense Approval'),
+        backgroundColor: AppColors.background,
+        elevation: 0,
+        scrolledUnderElevation: 0,
         centerTitle: false,
+        title: const Text(
+          'Expense Approval',
+          style: TextStyle(
+            color: AppColors.textPrimary,
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
       ),
       body: CustomScrollView(
         slivers: [
@@ -176,13 +187,13 @@ class _HrExpenseCard extends ConsumerWidget {
                 Row(
                   children: [
                     _ActionButton(
-                      icon: Icons.close_rounded,
+                      icon: RemixIcons.close_line,
                       color: AppColors.error,
                       onTap: () => _reject(context, ref),
                     ),
                     const SizedBox(width: 8),
                     _ActionButton(
-                      icon: Icons.check_rounded,
+                      icon: RemixIcons.check_line,
                       color: AppColors.success,
                       onTap: () {
                         final hrName = ref.read(authViewModelProvider).currentUser!.name;

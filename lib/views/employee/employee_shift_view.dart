@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/app_colors.dart';
+import 'package:remixicon/remixicon.dart';
 import '../../viewmodels/shift_viewmodel.dart';
 import '../../viewmodels/auth_viewmodel.dart';
 
@@ -17,8 +18,18 @@ class EmployeeShiftView extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('My Shift Schedule'),
+        backgroundColor: AppColors.background,
+        elevation: 0,
+        scrolledUnderElevation: 0,
         centerTitle: false,
+        title: const Text(
+          'My Shift Schedule',
+          style: TextStyle(
+            color: AppColors.textPrimary,
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -87,7 +98,7 @@ class EmployeeShiftView extends ConsumerWidget {
                     const SizedBox(height: 16),
                     Row(
                       children: [
-                        const Icon(Icons.access_time_rounded, color: Colors.white, size: 18),
+                        Icon(RemixIcons.time_line, color: Colors.white, size: 18),
                         const SizedBox(width: 8),
                         Text(
                           myAssignment.shift.timingLabel,
@@ -98,7 +109,7 @@ class EmployeeShiftView extends ConsumerWidget {
                     const SizedBox(height: 8),
                     Row(
                       children: [
-                        const Icon(Icons.event_available_rounded, color: Colors.white, size: 18),
+                        Icon(RemixIcons.calendar_event_line, color: Colors.white, size: 18),
                         const SizedBox(width: 8),
                         Text(
                           myAssignment.shift.daysLabel,
@@ -188,9 +199,9 @@ class _GuidelineRow extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Padding(
-          padding: EdgeInsets.only(top: 4, right: 8),
-          child: Icon(Icons.circle, size: 6, color: AppColors.textHint),
+        Padding(
+          padding: const EdgeInsets.only(top: 4, right: 8),
+          child: Icon(RemixIcons.checkbox_blank_circle_fill, size: 6, color: AppColors.textHint),
         ),
         Expanded(
           child: Text(text, style: const TextStyle(fontSize: 13, color: AppColors.textSecondary, height: 1.4)),

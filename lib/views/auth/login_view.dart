@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:remixicon/remixicon.dart';
 import '../../core/constants/app_colors.dart';
 import '../../viewmodels/auth_viewmodel.dart';
 import '../../models/user_model.dart';
@@ -97,8 +98,8 @@ class _LoginViewState extends ConsumerState<LoginView> with SingleTickerProvider
                         ),
                       ],
                     ),
-                    child: const Icon(
-                      Icons.corporate_fare_rounded,
+                    child: Icon(
+                      RemixIcons.building_line,
                       color: AppColors.primary,
                       size: 40,
                     ),
@@ -190,7 +191,7 @@ class _LoginViewState extends ConsumerState<LoginView> with SingleTickerProvider
                               _buildPremiumInput(
                                 controller: _emailCtrl,
                                 hint: 'Email address',
-                                icon: Icons.email_rounded,
+                                icon: RemixIcons.mail_line,
                                 isObscure: false,
                                 keyboardType: TextInputType.emailAddress,
                                 autocorrect: false,
@@ -205,13 +206,13 @@ class _LoginViewState extends ConsumerState<LoginView> with SingleTickerProvider
                               _buildPremiumInput(
                                 controller: _passCtrl,
                                 hint: 'Password',
-                                icon: Icons.lock_rounded,
+                                icon: RemixIcons.lock_line,
                                 isObscure: _obscure,
                                 autocorrect: false,
                                 enableSuggestions: false,
                                 suffix: IconButton(
                                   icon: Icon(
-                                    _obscure ? Icons.visibility_off_rounded : Icons.visibility_rounded,
+                                    _obscure ? RemixIcons.eye_off_line : RemixIcons.eye_line,
                                     color: AppColors.primary.withValues(alpha: 0.6),
                                     size: 20,
                                   ),
@@ -242,7 +243,7 @@ class _LoginViewState extends ConsumerState<LoginView> with SingleTickerProvider
                                   ),
                                   child: Row(
                                     children: [
-                                      const Icon(Icons.error_outline_rounded, color: Colors.white, size: 18),
+                                      Icon(RemixIcons.error_warning_line, color: Colors.white, size: 18),
                                       const SizedBox(width: 10),
                                       Expanded(
                                         child: Text(
@@ -323,7 +324,7 @@ class _LoginViewState extends ConsumerState<LoginView> with SingleTickerProvider
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.fingerprint_rounded, color: AppColors.primary, size: 16),
+                        Icon(RemixIcons.fingerprint_line, color: AppColors.primary, size: 16),
                         const SizedBox(width: 8),
                         Text(
                           'Biometric login available after first sign-in',

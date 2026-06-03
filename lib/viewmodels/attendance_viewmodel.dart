@@ -92,7 +92,7 @@ class AttendanceViewModel extends StateNotifier<AttendanceState> {
     }
   }
 
-  Future<void> checkIn() async {
+  Future<bool> checkIn({bool viaFingerprint = false}) async {
     state = state.copyWith(isLoading: true);
     try {
       // Get current location (in real app, you'd use geolocator)
@@ -104,20 +104,23 @@ class AttendanceViewModel extends StateNotifier<AttendanceState> {
       final response = await ApiService.post('/api/mobile/attendance/punch-in', {
         'latitude': 19.0760, // Mumbai coordinates
         'longitude': 72.8777,
-        'notes': 'Punched in via mobile app',
+        'notes': viaFingerprint ? 'Punched in via Fingerprint' : 'Punched in via mobile app',
         'clientTimestamp': currentTime.toUtc().toIso8601String(),
         'timezone': currentTime.timeZoneName,
+        'isFingerprint': viaFingerprint,
       });
       
       debugPrint('✅ Punch-in API response: ${response.body}');
       await fetchAttendanceData();
+      return true;
     } catch (e) {
       debugPrint('❌ Punch-in error: $e');
       state = state.copyWith(isLoading: false);
+      return false;
     }
   }
 
-  Future<void> checkOut() async {
+  Future<bool> checkOut({bool viaFingerprint = false}) async {
     state = state.copyWith(isLoading: true);
     try {
       // Get current location and time
@@ -129,16 +132,19 @@ class AttendanceViewModel extends StateNotifier<AttendanceState> {
       final response = await ApiService.post('/api/mobile/attendance/punch-out', {
         'latitude': 19.0760, // Mumbai coordinates
         'longitude': 72.8777,
-        'notes': 'Punched out via mobile app',
+        'notes': viaFingerprint ? 'Punched out via Fingerprint' : 'Punched out via mobile app',
         'clientTimestamp': currentTime.toUtc().toIso8601String(),
         'timezone': currentTime.timeZoneName,
+        'isFingerprint': viaFingerprint,
       });
       
       debugPrint('✅ Punch-out API response: ${response.body}');
       await fetchAttendanceData();
+      return true;
     } catch (e) {
       debugPrint('❌ Punch-out error: $e');
       state = state.copyWith(isLoading: false);
+      return false;
     }
   }
 

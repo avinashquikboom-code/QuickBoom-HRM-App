@@ -37,6 +37,7 @@ dependencies:
   equatable: ^2.0.5
   shared_preferences: ^2.3.2
   local_auth: ^2.2.0
+  remixicon: ^4.9.3
 
 dev_dependencies:
   flutter_test:
