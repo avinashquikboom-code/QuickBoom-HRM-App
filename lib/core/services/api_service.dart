@@ -86,8 +86,8 @@ class ApiLogger {
 class ApiService {
   static final String _baseUrl =
       kIsWeb
-          ? 'http://localhost:5003'
-          : 'http://localhost:5003';
+          ? 'https://quickboom-hrm-backend-gjch.onrender.com'
+          : 'https://quickboom-hrm-backend-gjch.onrender.com';
 
   static const String tokenKey = 'auth_token';
 
