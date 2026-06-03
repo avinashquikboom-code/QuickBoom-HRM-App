@@ -105,7 +105,7 @@ class AttendanceViewModel extends StateNotifier<AttendanceState> {
         'latitude': 19.0760, // Mumbai coordinates
         'longitude': 72.8777,
         'notes': 'Punched in via mobile app',
-        'clientTimestamp': currentTime.toIso8601String(),
+        'clientTimestamp': currentTime.toUtc().toIso8601String(),
         'timezone': currentTime.timeZoneName,
       });
       
@@ -130,7 +130,7 @@ class AttendanceViewModel extends StateNotifier<AttendanceState> {
         'latitude': 19.0760, // Mumbai coordinates
         'longitude': 72.8777,
         'notes': 'Punched out via mobile app',
-        'clientTimestamp': currentTime.toIso8601String(),
+        'clientTimestamp': currentTime.toUtc().toIso8601String(),
         'timezone': currentTime.timeZoneName,
       });
       
@@ -193,10 +193,10 @@ class AttendanceViewModel extends StateNotifier<AttendanceState> {
       employeeId: data['employeeId'].toString(),
       date: parsedDate,
       status: _parseStatus(data['status']?.toString() ?? 'ABSENT'),
-      checkIn: data['checkIn'] != null ? DateTime.tryParse(data['checkIn'].toString()) : null,
-      checkOut: data['checkOut'] != null ? DateTime.tryParse(data['checkOut'].toString()) : null,
+      checkIn: data['checkIn'] != null ? DateTime.tryParse(data['checkIn'].toString())?.toLocal() : null,
+      checkOut: data['checkOut'] != null ? DateTime.tryParse(data['checkOut'].toString())?.toLocal() : null,
       isOnBreak: data['isOnBreak'] ?? false,
-      breakStartTime: data['breakStartTime'] != null ? DateTime.tryParse(data['breakStartTime'].toString()) : null,
+      breakStartTime: data['breakStartTime'] != null ? DateTime.tryParse(data['breakStartTime'].toString())?.toLocal() : null,
       totalBreakDuration: Duration(seconds: data['totalBreakSeconds'] ?? 0),
     );
   }
