@@ -6,6 +6,23 @@ import 'views/splash/splash_view.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Print HR credentials to console for easy access
+  print('🔐 HR MOBILE LOGIN CREDENTIALS:');
+  print('═══════════════════════════════════════');
+  print('📧 HR Email: hr@hrm.com');
+  print('🔑 HR Password: 123456');
+  print('👤 HR Name: Priya Sharma');
+  print('═══════════════════════════════════════');
+  print('📧 Employee Email: employee@hrm.com');
+  print('🔑 Employee Password: employee123');
+  print('👤 Employee Name: Rahul Verma');
+  print('═══════════════════════════════════════');
+  print('📧 Admin Email: admin@hr.com');
+  print('🔑 Admin Password: 123456');
+  print('👤 Admin Name: Super Admin');
+  print('═══════════════════════════════════════');
+  
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,

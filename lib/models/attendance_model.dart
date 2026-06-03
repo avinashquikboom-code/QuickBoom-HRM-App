@@ -7,8 +7,6 @@ class AttendanceModel {
   final DateTime? checkIn;
   final DateTime? checkOut;
   final AttendanceStatus status;
-  final bool isFingerprintCheckIn;
-  final bool isFingerprintCheckOut;
   final bool isOnBreak;
   final DateTime? breakStartTime;
   final Duration totalBreakDuration;
@@ -20,8 +18,6 @@ class AttendanceModel {
     required this.status,
     this.checkIn,
     this.checkOut,
-    this.isFingerprintCheckIn = false,
-    this.isFingerprintCheckOut = false,
     this.isOnBreak = false,
     this.breakStartTime,
     this.totalBreakDuration = Duration.zero,
@@ -34,8 +30,6 @@ class AttendanceModel {
     DateTime? checkIn,
     DateTime? checkOut,
     AttendanceStatus? status,
-    bool? isFingerprintCheckIn,
-    bool? isFingerprintCheckOut,
     bool? isOnBreak,
     DateTime? breakStartTime,
     Duration? totalBreakDuration,
@@ -48,8 +42,6 @@ class AttendanceModel {
       status: status ?? this.status,
       checkIn: checkIn ?? this.checkIn,
       checkOut: checkOut ?? this.checkOut,
-      isFingerprintCheckIn: isFingerprintCheckIn ?? this.isFingerprintCheckIn,
-      isFingerprintCheckOut: isFingerprintCheckOut ?? this.isFingerprintCheckOut,
       isOnBreak: isOnBreak ?? this.isOnBreak,
       breakStartTime: clearBreakStartTime ? null : (breakStartTime ?? this.breakStartTime),
       totalBreakDuration: totalBreakDuration ?? this.totalBreakDuration,

@@ -34,6 +34,7 @@ class _EmployeeLeaveViewState extends ConsumerState<EmployeeLeaveView> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(title: const Text('My Leave'), centerTitle: false),
+      resizeToAvoidBottomInset: false,
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showApplyLeaveSheet(context),
         backgroundColor: AppColors.primary,

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/services/api_service.dart';
 import '../models/attendance_model.dart';
@@ -59,14 +60,22 @@ class AttendanceViewModel extends StateNotifier<AttendanceState> {
   Future<void> fetchAttendanceData() async {
     state = state.copyWith(isLoading: true);
     try {
-      final todayRes = await ApiService.get('/api/employee/attendance/today');
+      debugPrint('🔄 Fetching attendance data...');
+      
+      // Use the new mobile API endpoint for today's attendance
+      final todayRes = await ApiService.get('/api/mobile/attendance/today');
       final todayData = jsonDecode(todayRes.body);
-      final rawToday = todayData['todayRecord'];
+      debugPrint('📊 Today\'s attendance response: ${todayRes.body}');
+      
+      final rawToday = todayData['data'];
       final todayRecord = rawToday != null ? _parseRecord(rawToday) : null;
-
-      final historyRes = await ApiService.get('/api/employee/attendance/history');
+      
+      // Use the new mobile API endpoint for history
+      final historyRes = await ApiService.get('/api/mobile/attendance/history?limit=30');
       final historyData = jsonDecode(historyRes.body);
-      final List rawHistory = historyData['history'] ?? [];
+      debugPrint('📚 History response: ${historyRes.body}');
+      
+      final List rawHistory = historyData['data']?['attendances'] ?? [];
       final history = rawHistory.map((h) => _parseRecord(h)).toList();
 
       state = AttendanceState(
@@ -75,33 +84,60 @@ class AttendanceViewModel extends StateNotifier<AttendanceState> {
         history: history,
         isLoading: false,
       );
-    } catch (_) {
+      
+      debugPrint('✅ Attendance data updated successfully');
+    } catch (e) {
+      debugPrint('❌ Error fetching attendance data: $e');
       state = state.copyWith(isLoading: false);
     }
   }
 
-  Future<void> checkIn({bool viaFingerprint = false}) async {
+  Future<void> checkIn() async {
     state = state.copyWith(isLoading: true);
     try {
-      await ApiService.post('/api/employee/attendance/check-in', {
-        'latitude': '19.0760',
-        'longitude': '72.8777',
-        'viaFingerprint': viaFingerprint,
+      // Get current location (in real app, you'd use geolocator)
+      final currentTime = DateTime.now();
+      debugPrint('🕒 LOCAL TIME BEFORE API CALL: ${currentTime.toIso8601String()}');
+      debugPrint('🌍 TIMEZONE: ${currentTime.timeZoneName} (${currentTime.timeZoneOffset})');
+      
+      // Use the new mobile API endpoint with proper location
+      final response = await ApiService.post('/api/mobile/attendance/punch-in', {
+        'latitude': 19.0760, // Mumbai coordinates
+        'longitude': 72.8777,
+        'notes': 'Punched in via mobile app',
+        'clientTimestamp': currentTime.toIso8601String(),
+        'timezone': currentTime.timeZoneName,
       });
+      
+      debugPrint('✅ Punch-in API response: ${response.body}');
       await fetchAttendanceData();
-    } catch (_) {
+    } catch (e) {
+      debugPrint('❌ Punch-in error: $e');
       state = state.copyWith(isLoading: false);
     }
   }
 
-  Future<void> checkOut({bool viaFingerprint = false}) async {
+  Future<void> checkOut() async {
     state = state.copyWith(isLoading: true);
     try {
-      await ApiService.post('/api/employee/attendance/check-out', {
-        'viaFingerprint': viaFingerprint,
+      // Get current location and time
+      final currentTime = DateTime.now();
+      debugPrint('🕒 LOCAL TIME BEFORE API CALL: ${currentTime.toIso8601String()}');
+      debugPrint('🌍 TIMEZONE: ${currentTime.timeZoneName} (${currentTime.timeZoneOffset})');
+      
+      // Use the new mobile API endpoint
+      final response = await ApiService.post('/api/mobile/attendance/punch-out', {
+        'latitude': 19.0760, // Mumbai coordinates
+        'longitude': 72.8777,
+        'notes': 'Punched out via mobile app',
+        'clientTimestamp': currentTime.toIso8601String(),
+        'timezone': currentTime.timeZoneName,
       });
+      
+      debugPrint('✅ Punch-out API response: ${response.body}');
       await fetchAttendanceData();
-    } catch (_) {
+    } catch (e) {
+      debugPrint('❌ Punch-out error: $e');
       state = state.copyWith(isLoading: false);
     }
   }
@@ -109,9 +145,15 @@ class AttendanceViewModel extends StateNotifier<AttendanceState> {
   Future<void> startBreak() async {
     state = state.copyWith(isLoading: true);
     try {
-      await ApiService.post('/api/employee/attendance/break/start', {});
+      debugPrint('☕ Starting break...');
+      
+      // Use the new mobile API endpoint for starting break
+      final response = await ApiService.post('/api/mobile/attendance/break/start', {});
+      debugPrint('✅ Break start response: ${response.body}');
+      
       await fetchAttendanceData();
-    } catch (_) {
+    } catch (e) {
+      debugPrint('❌ Start break error: $e');
       state = state.copyWith(isLoading: false);
     }
   }
@@ -119,9 +161,15 @@ class AttendanceViewModel extends StateNotifier<AttendanceState> {
   Future<void> endBreak() async {
     state = state.copyWith(isLoading: true);
     try {
-      await ApiService.post('/api/employee/attendance/break/end', {});
+      debugPrint('🔄 Ending break...');
+      
+      // Use the new mobile API endpoint for ending break
+      final response = await ApiService.post('/api/mobile/attendance/break/end', {});
+      debugPrint('✅ Break end response: ${response.body}');
+      
       await fetchAttendanceData();
-    } catch (_) {
+    } catch (e) {
+      debugPrint('❌ End break error: $e');
       state = state.copyWith(isLoading: false);
     }
   }
@@ -147,8 +195,6 @@ class AttendanceViewModel extends StateNotifier<AttendanceState> {
       status: _parseStatus(data['status']?.toString() ?? 'ABSENT'),
       checkIn: data['checkIn'] != null ? DateTime.tryParse(data['checkIn'].toString()) : null,
       checkOut: data['checkOut'] != null ? DateTime.tryParse(data['checkOut'].toString()) : null,
-      isFingerprintCheckIn: data['isFingerprintCheckIn'] ?? false,
-      isFingerprintCheckOut: data['isFingerprintCheckOut'] ?? false,
       isOnBreak: data['isOnBreak'] ?? false,
       breakStartTime: data['breakStartTime'] != null ? DateTime.tryParse(data['breakStartTime'].toString()) : null,
       totalBreakDuration: Duration(seconds: data['totalBreakSeconds'] ?? 0),

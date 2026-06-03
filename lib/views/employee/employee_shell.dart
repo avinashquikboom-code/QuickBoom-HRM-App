@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../widgets/custom_bottom_nav_bar.dart';
+import '../../core/constants/app_colors.dart';
 import 'employee_dashboard_view.dart';
 import 'employee_attendance_view.dart';
 import 'employee_leave_view.dart';
@@ -26,33 +26,38 @@ class _EmployeeShellState extends ConsumerState<EmployeeShell> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBody: true,
       body: IndexedStack(
         index: _currentIndex,
         children: _pages,
       ),
-      bottomNavigationBar: CustomBottomNavBar(
-        selectedIndex: _currentIndex,
-        onItemSelected: (i) => setState(() => _currentIndex = i),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _currentIndex,
+        onTap: (index) => setState(() => _currentIndex = index),
+        type: BottomNavigationBarType.fixed,
+        backgroundColor: AppColors.background,
+        selectedItemColor: AppColors.primary,
+        unselectedItemColor: AppColors.textHint,
+        selectedFontSize: 12,
+        unselectedFontSize: 11,
         items: const [
-          CustomBottomNavBarItem(
-            icon: Icons.dashboard_outlined,
-            selectedIcon: Icons.dashboard_rounded,
+          BottomNavigationBarItem(
+            icon: Icon(Icons.dashboard_outlined),
+            activeIcon: Icon(Icons.dashboard_rounded),
             label: 'Home',
           ),
-          CustomBottomNavBarItem(
-            icon: Icons.access_time_outlined,
-            selectedIcon: Icons.access_time_filled_rounded,
+          BottomNavigationBarItem(
+            icon: Icon(Icons.access_time_outlined),
+            activeIcon: Icon(Icons.access_time_filled_rounded),
             label: 'Attend',
           ),
-          CustomBottomNavBarItem(
-            icon: Icons.event_note_outlined,
-            selectedIcon: Icons.event_note_rounded,
+          BottomNavigationBarItem(
+            icon: Icon(Icons.event_note_outlined),
+            activeIcon: Icon(Icons.event_note_rounded),
             label: 'Leave',
           ),
-          CustomBottomNavBarItem(
-            icon: Icons.person_outline_rounded,
-            selectedIcon: Icons.person_rounded,
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person_outline_rounded),
+            activeIcon: Icon(Icons.person_rounded),
             label: 'Profile',
           ),
         ],

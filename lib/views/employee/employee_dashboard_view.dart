@@ -10,7 +10,6 @@ import '../../viewmodels/attendance_viewmodel.dart';
 import '../../viewmodels/leave_viewmodel.dart';
 import '../../viewmodels/notification_viewmodel.dart';
 import '../../viewmodels/employee_dashboard_viewmodel.dart';
-import '../../core/services/biometric_service.dart';
 import 'notifications_view.dart';
 import 'employee_expenses_view.dart';
 import 'employee_shift_view.dart';
@@ -242,17 +241,22 @@ class EmployeeDashboardView extends ConsumerWidget {
           ),
 
           SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+            padding: const EdgeInsets.only(
+              left: 16,
+              right: 16,
+              top: 20,
+              bottom: 80, // Reduced padding since no FAB
+            ),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
                 // ─── Holographic Attendance Punch Card ─────────────────────
                 _TodayPunchCard(
                   isCheckedIn: attendanceState.isCheckedIn,
                   todayRecord: attendanceState.todayRecord,
-                  onCheckIn: (viaFingerprint) =>
-                      ref.read(attendanceViewModelProvider.notifier).checkIn(viaFingerprint: viaFingerprint),
-                  onCheckOut: (viaFingerprint) =>
-                      ref.read(attendanceViewModelProvider.notifier).checkOut(viaFingerprint: viaFingerprint),
+                  onCheckIn: () =>
+                      ref.read(attendanceViewModelProvider.notifier).checkIn(),
+                  onCheckOut: () =>
+                      ref.read(attendanceViewModelProvider.notifier).checkOut(),
                 ).animate().fadeIn().slideY(begin: 0.08, end: 0),
 
                 const SizedBox(height: 24),
@@ -510,8 +514,8 @@ class _QuickActionBubble extends StatelessWidget {
 class _TodayPunchCard extends ConsumerWidget {
   final bool isCheckedIn;
   final dynamic todayRecord;
-  final void Function(bool viaFingerprint) onCheckIn;
-  final void Function(bool viaFingerprint) onCheckOut;
+  final VoidCallback onCheckIn;
+  final VoidCallback onCheckOut;
 
   const _TodayPunchCard({
     required this.isCheckedIn,
@@ -521,29 +525,11 @@ class _TodayPunchCard extends ConsumerWidget {
   });
 
   Future<void> _handlePunch(BuildContext context) async {
-    final hasBio = await BiometricService.isBiometricsAvailable();
-    bool authenticated = false;
-    if (hasBio) {
-      authenticated = await BiometricService.authenticate();
-      if (!authenticated) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Biometric verification failed. Please try again.'),
-              backgroundColor: AppColors.primary,
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-        }
-        return;
-      }
-    }
-    // Proceed with check-in/out
-    final viaFingerprint = hasBio && authenticated;
+    // Proceed with check-in/out without biometric authentication
     if (isCheckedIn) {
-      onCheckOut(viaFingerprint);
+      onCheckOut();
     } else {
-      onCheckIn(viaFingerprint);
+      onCheckIn();
     }
   }
 
@@ -641,7 +627,6 @@ class _TodayPunchCard extends ConsumerWidget {
                   time: hasCheckIn ? todayRecord!.checkInLabel : '--:--',
                   icon: Icons.login_rounded,
                   color: AppColors.success,
-                  isFingerprint: todayRecord?.isFingerprintCheckIn ?? false,
                 ),
               ),
               const SizedBox(width: 14),
@@ -651,7 +636,6 @@ class _TodayPunchCard extends ConsumerWidget {
                   time: hasCheckOut ? todayRecord!.checkOutLabel : '--:--',
                   icon: Icons.logout_rounded,
                   color: hasCheckOut ? AppColors.primary : AppColors.textHint,
-                  isFingerprint: todayRecord?.isFingerprintCheckOut ?? false,
                 ),
               ),
             ],
@@ -758,7 +742,7 @@ class _TodayPunchCard extends ConsumerWidget {
                         textStyle: const TextStyle(
                             fontSize: 13.5, fontWeight: FontWeight.w800, letterSpacing: 0.5),
                       ),
-                      icon: const Icon(Icons.fingerprint_rounded, size: 21),
+                      icon: Icon(isCheckedIn ? Icons.logout_rounded : Icons.login_rounded, size: 21),
                       label: Text(isCheckedIn ? 'Check Out' : 'Check In'),
                       onPressed: () => _handlePunch(context),
                     ),
@@ -801,14 +785,12 @@ class _PunchTile extends StatelessWidget {
   final String time;
   final IconData icon;
   final Color color;
-  final bool isFingerprint;
 
   const _PunchTile({
     required this.label,
     required this.time,
     required this.icon,
     required this.color,
-    this.isFingerprint = false,
   });
 
   @override
@@ -846,23 +828,6 @@ class _PunchTile extends StatelessWidget {
               fontWeight: FontWeight.w800,
             ),
           ),
-          if (isFingerprint) ...[
-            const SizedBox(height: 4),
-            Row(
-              children: [
-                const Icon(Icons.fingerprint_rounded, size: 12, color: AppColors.primary),
-                const SizedBox(width: 4),
-                const Text(
-                  'Biometric Verified',
-                  style: TextStyle(
-                    color: AppColors.primary,
-                    fontSize: 8.5,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ],
-            ),
-          ],
         ],
       ),
     );
