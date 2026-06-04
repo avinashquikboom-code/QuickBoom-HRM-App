@@ -1,54 +1,30 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:remixicon/remixicon.dart';
 import '../../core/constants/app_colors.dart';
 import '../../models/document_model.dart';
+import '../../viewmodels/document_viewmodel.dart';
 
-class EmployeeDocumentsView extends StatelessWidget {
+class EmployeeDocumentsView extends ConsumerWidget {
   const EmployeeDocumentsView({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    // Mock data for documents
-    final docs = [
-      DocumentModel(
-        id: 'D001',
-        title: 'April 2025 Payslip',
-        type: DocumentType.payslip,
-        date: DateTime(2025, 4, 30),
-        fileSize: '1.2 MB',
-        period: 'April 2025',
-      ),
-      DocumentModel(
-        id: 'D002',
-        title: 'March 2025 Payslip',
-        type: DocumentType.payslip,
-        date: DateTime(2025, 3, 31),
-        fileSize: '1.1 MB',
-        period: 'March 2025',
-      ),
-      DocumentModel(
-        id: 'D003',
-        title: 'Offer Letter',
-        type: DocumentType.offerLetter,
-        date: DateTime(2023, 1, 10),
-        fileSize: '2.5 MB',
-      ),
-      DocumentModel(
-        id: 'D004',
-        title: 'Employee Handbook 2025',
-        type: DocumentType.policy,
-        date: DateTime(2025, 1, 1),
-        fileSize: '8.4 MB',
-      ),
-      DocumentModel(
-        id: 'D005',
-        title: 'IT Asset Policy',
-        type: DocumentType.policy,
-        date: DateTime(2024, 6, 15),
-        fileSize: '3.1 MB',
-      ),
-    ];
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(documentViewModelProvider);
+    final vm = ref.read(documentViewModelProvider.notifier);
+
+    // Show error snackbar if error message changes
+    ref.listen<DocumentState>(documentViewModelProvider, (previous, next) {
+      if (next.errorMessage != null && next.errorMessage != previous?.errorMessage && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(next.errorMessage!),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    });
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -65,20 +41,84 @@ class EmployeeDocumentsView extends StatelessWidget {
             fontWeight: FontWeight.w800,
           ),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(RemixIcons.refresh_line, color: AppColors.textPrimary),
+            onPressed: vm.fetchDocuments,
+          ),
+        ],
       ),
-      body: ListView.separated(
-        padding: const EdgeInsets.all(16),
-        itemCount: docs.length,
-        separatorBuilder: (_, _) => const SizedBox(height: 12),
-        itemBuilder: (_, i) => _DocumentCard(doc: docs[i]),
-      ),
+      body: state.isLoading
+          ? const Center(
+              child: CircularProgressIndicator(color: AppColors.primary),
+            )
+          : state.documents.isEmpty
+              ? const Center(
+                  child: Text(
+                    'No documents found.',
+                    style: TextStyle(color: AppColors.textSecondary),
+                  ),
+                )
+              : RefreshIndicator(
+                  onRefresh: vm.fetchDocuments,
+                  color: AppColors.primary,
+                  child: ListView.separated(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: state.documents.length,
+                    separatorBuilder: (_, _) => const SizedBox(height: 12),
+                    itemBuilder: (_, i) => _DocumentCard(
+                      doc: state.documents[i],
+                      onDownload: () async {
+                        final isPayslip = state.documents[i].type == DocumentType.payslip;
+                        final isStatic = state.documents[i].id.startsWith('static-');
+                        
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(isPayslip && !isStatic 
+                                ? 'Generating and downloading ${state.documents[i].title}...' 
+                                : 'Downloading ${state.documents[i].title}...'),
+                            backgroundColor: AppColors.primary,
+                          ),
+                        );
+
+                        if (isPayslip && !isStatic) {
+                          final success = await vm.downloadPayslip(state.documents[i].id);
+                          if (!success && context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(state.errorMessage ?? 'Failed to download payslip.'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
+                        } else {
+                          // Static demo/mock download
+                          await Future.delayed(const Duration(seconds: 1));
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('${state.documents[i].title} downloaded successfully.'),
+                                backgroundColor: Colors.green,
+                              ),
+                            );
+                          }
+                        }
+                      },
+                    ),
+                  ),
+                ),
     );
   }
 }
 
 class _DocumentCard extends StatelessWidget {
   final DocumentModel doc;
-  const _DocumentCard({required this.doc});
+  final VoidCallback onDownload;
+  
+  const _DocumentCard({
+    required this.doc,
+    required this.onDownload,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -147,15 +187,8 @@ class _DocumentCard extends StatelessWidget {
             ),
           ),
           IconButton(
-            icon: Icon(RemixIcons.download_line, color: AppColors.primary),
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Downloading ${doc.title}...'),
-                  backgroundColor: AppColors.primary,
-                ),
-              );
-            },
+            icon: const Icon(RemixIcons.download_line, color: AppColors.primary),
+            onPressed: onDownload,
           ),
         ],
       ),

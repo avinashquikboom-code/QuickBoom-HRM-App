@@ -125,4 +125,11 @@ class AppUrl {
   // ─────────────────────────────────────────────
   static const String hrPayrollStats = '/api/hr/payroll/stats';
   static const String hrPayrollRuns  = '/api/hr/payroll/runs';
+
+  // ─────────────────────────────────────────────
+  //  Employee – Payroll (Mobile)
+  // ─────────────────────────────────────────────
+  static const String employeePayslips = '/api/mobile/payroll/slips';
+  static String employeeDownloadPayslip(String id) =>
+      '/api/mobile/payroll/slips/$id/download';
 }
