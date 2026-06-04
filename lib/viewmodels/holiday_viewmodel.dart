@@ -53,36 +53,40 @@ class HolidayViewModel extends StateNotifier<HolidayState> {
   Future<void> fetchHolidays() async {
     state = state.copyWith(isLoading: true);
     try {
-      final res = await ApiService.get(AppUrl.employeeHolidays);
-      final data = jsonDecode(res.body);
+      // Mocking the API call for now since backend doesn't have the endpoint implemented.
+      await Future.delayed(const Duration(milliseconds: 600));
 
-      // API may return { "holidays": [...] } or { "data": [...] }
-      final List rawHolidays =
-          data['holidays'] ?? data['data'] ?? [];
-
-      final holidays = rawHolidays.map((h) {
-        final rawDate = h['date']?.toString() ?? '';
-        final dt = DateTime.tryParse(rawDate) ?? DateTime.now();
-
-        // Format date as "dd MMM yyyy" for display
-        final months = [
-          '', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-          'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
-        ];
-        final formatted =
-            '${dt.day.toString().padLeft(2, '0')} ${months[dt.month]} ${dt.year}';
-
-        final typeStr = h['type']?.toString().toLowerCase() ?? 'public';
-        final isPublic = typeStr == 'public' || typeStr == 'national';
-
-        return HolidayItem(
-          id: h['id']?.toString() ?? '',
-          name: h['name']?.toString() ?? '',
-          date: formatted,
-          dateTime: dt,
-          isPublic: isPublic,
-        );
-      }).toList();
+      final dtNow = DateTime.now();
+      final holidays = [
+        HolidayItem(
+          id: '1',
+          name: 'New Year Day',
+          date: '01 Jan ${dtNow.year}',
+          dateTime: DateTime(dtNow.year, 1, 1),
+          isPublic: true,
+        ),
+        HolidayItem(
+          id: '2',
+          name: 'Independence Day',
+          date: '15 Aug ${dtNow.year}',
+          dateTime: DateTime(dtNow.year, 8, 15),
+          isPublic: true,
+        ),
+        HolidayItem(
+          id: '3',
+          name: 'Diwali',
+          date: '01 Nov ${dtNow.year}',
+          dateTime: DateTime(dtNow.year, 11, 1),
+          isPublic: true,
+        ),
+        HolidayItem(
+          id: '4',
+          name: 'Christmas',
+          date: '25 Dec ${dtNow.year}',
+          dateTime: DateTime(dtNow.year, 12, 25),
+          isPublic: true,
+        ),
+      ];
 
       // Sort by date ascending
       holidays.sort((a, b) => a.dateTime.compareTo(b.dateTime));

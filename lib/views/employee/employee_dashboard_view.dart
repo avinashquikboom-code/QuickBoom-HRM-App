@@ -15,8 +15,22 @@ import 'notifications_view.dart';
 import 'employee_expenses_view.dart';
 import 'employee_shift_view.dart';
 import 'package:remixicon/remixicon.dart';
+import 'package:geolocator/geolocator.dart';
 
-final geofenceSimulatedProvider = StateProvider<bool>((ref) => true);
+final geofenceProvider = FutureProvider<bool>((ref) async {
+  bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+  if (!serviceEnabled) return false;
+
+  LocationPermission permission = await Geolocator.checkPermission();
+  if (permission == LocationPermission.denied) {
+    permission = await Geolocator.requestPermission();
+    if (permission == LocationPermission.denied) return false;
+  }
+  
+  if (permission == LocationPermission.deniedForever) return false;
+
+  return true;
+});
 
 
 class EmployeeDashboardView extends ConsumerWidget {
@@ -623,7 +637,8 @@ class _TodayPunchCard extends ConsumerWidget {
     final hasCheckIn = todayRecord?.checkIn != null;
     final hasCheckOut = todayRecord?.checkOut != null;
     final isOnBreak = todayRecord?.isOnBreak ?? false;
-    final isInRadius = ref.watch(geofenceSimulatedProvider);
+    final isInRadiusAsync = ref.watch(geofenceProvider);
+    final isInRadius = isInRadiusAsync.value ?? false;
 
     Color scannerColor;
     String statusText;
@@ -726,7 +741,7 @@ class _TodayPunchCard extends ConsumerWidget {
                 children: [
                   if (!hasCheckOut && !isCheckedIn) ...[
                     Text(
-                      isInRadius ? 'In Radius' : 'Outside',
+                      isInRadius ? 'Location Verified' : 'Location Required',
                       style: TextStyle(
                         fontSize: 10.5,
                         fontWeight: FontWeight.w800,
@@ -734,21 +749,12 @@ class _TodayPunchCard extends ConsumerWidget {
                       ),
                     ),
                     const SizedBox(width: 6),
-                    SizedBox(
-                      height: 20,
-                      width: 32,
-                      child: FittedBox(
-                        fit: BoxFit.contain,
-                        child: Switch(
-                          value: isInRadius,
-                          activeThumbColor: AppColors.success,
-                          activeTrackColor: AppColors.success.withValues(alpha: 0.2),
-                          inactiveThumbColor: Colors.orange,
-                          inactiveTrackColor: Colors.orange.withValues(alpha: 0.2),
-                          onChanged: (val) {
-                            ref.read(geofenceSimulatedProvider.notifier).state = val;
-                          },
-                        ),
+                    GestureDetector(
+                      onTap: () => ref.invalidate(geofenceProvider),
+                      child: Icon(
+                        isInRadius ? RemixIcons.map_pin_user_fill : RemixIcons.refresh_line, 
+                        size: 16, 
+                        color: isInRadius ? AppColors.success : Colors.orange,
                       ),
                     ),
                     const SizedBox(width: 10),

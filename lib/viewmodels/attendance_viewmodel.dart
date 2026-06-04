@@ -105,6 +105,10 @@ class AttendanceViewModel extends StateNotifier<AttendanceState> {
       final position = await _getCurrentPosition();
       debugPrint('📍 GPS Position: lat=${position?.latitude}, lon=${position?.longitude}');
 
+      if (position == null && !kDebugMode) {
+        throw Exception('Location is required. Please enable GPS to punch in.');
+      }
+
       final response = await ApiService.post(AppUrl.attendancePunchIn, {
         'latitude': position?.latitude ?? 0.0,
         'longitude': position?.longitude ?? 0.0,
@@ -134,6 +138,10 @@ class AttendanceViewModel extends StateNotifier<AttendanceState> {
       // Fetch real GPS coordinates
       final position = await _getCurrentPosition();
       debugPrint('📍 GPS Position: lat=${position?.latitude}, lon=${position?.longitude}');
+
+      if (position == null && !kDebugMode) {
+        throw Exception('Location is required. Please enable GPS to punch out.');
+      }
 
       final response = await ApiService.post(AppUrl.attendancePunchOut, {
         'latitude': position?.latitude ?? 0.0,
@@ -236,6 +244,8 @@ class AttendanceViewModel extends StateNotifier<AttendanceState> {
       parsedDate = DateTime.tryParse(rawDate.toString()) ?? DateTime.now();
     }
 
+    final officeData = data['office'];
+
     return AttendanceModel(
       id: data['id'].toString(),
       employeeId: data['employeeId'].toString(),
@@ -246,6 +256,8 @@ class AttendanceViewModel extends StateNotifier<AttendanceState> {
       isOnBreak: data['isOnBreak'] ?? false,
       breakStartTime: data['breakStartTime'] != null ? DateTime.tryParse(data['breakStartTime'].toString())?.toLocal() : null,
       totalBreakDuration: Duration(seconds: data['totalBreakSeconds'] ?? 0),
+      officeLat: officeData?['latitude'] != null ? (officeData['latitude'] as num).toDouble() : null,
+      officeLon: officeData?['longitude'] != null ? (officeData['longitude'] as num).toDouble() : null,
     );
   }
 

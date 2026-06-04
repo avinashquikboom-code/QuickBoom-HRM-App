@@ -10,6 +10,8 @@ class AttendanceModel {
   final bool isOnBreak;
   final DateTime? breakStartTime;
   final Duration totalBreakDuration;
+  final double? officeLat;
+  final double? officeLon;
 
   const AttendanceModel({
     required this.id,
@@ -21,6 +23,8 @@ class AttendanceModel {
     this.isOnBreak = false,
     this.breakStartTime,
     this.totalBreakDuration = Duration.zero,
+    this.officeLat,
+    this.officeLon,
   });
 
   AttendanceModel copyWith({
@@ -34,6 +38,8 @@ class AttendanceModel {
     DateTime? breakStartTime,
     Duration? totalBreakDuration,
     bool clearBreakStartTime = false,
+    double? officeLat,
+    double? officeLon,
   }) {
     return AttendanceModel(
       id: id ?? this.id,
@@ -45,6 +51,8 @@ class AttendanceModel {
       isOnBreak: isOnBreak ?? this.isOnBreak,
       breakStartTime: clearBreakStartTime ? null : (breakStartTime ?? this.breakStartTime),
       totalBreakDuration: totalBreakDuration ?? this.totalBreakDuration,
+      officeLat: officeLat ?? this.officeLat,
+      officeLon: officeLon ?? this.officeLon,
     );
   }
 

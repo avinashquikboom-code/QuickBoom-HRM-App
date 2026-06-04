@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:developer' as dev;
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:quickboom_hrm/core/constants/app_url.dart';
@@ -6,21 +7,28 @@ import 'storage_service.dart';
 
 // Enhanced logging utility
 class ApiLogger {
+  static const String _reset = '\x1B[0m';
+  static const String _red = '\x1B[31m';
+  static const String _green = '\x1B[32m';
+  static const String _yellow = '\x1B[33m';
+  static const String _cyan = '\x1B[36m';
+
   static void logRequest(String method, String path, {Map<String, dynamic>? body}) {
     if (kDebugMode) {
-      debugPrint('🚀 API Request: $method $path');
+      dev.log('$_cyan🚀 API Request: $method $path$_reset', name: 'API');
       if (body != null) {
-        debugPrint('📤 Request Body: ${jsonEncode(body)}');
+        dev.log('$_cyan📤 Request Body: ${jsonEncode(body)}$_reset', name: 'API');
       }
-      debugPrint('⏰ Timestamp: ${DateTime.now().toIso8601String()}');
+      dev.log('$_cyan⏰ Timestamp: ${DateTime.now().toIso8601String()}$_reset', name: 'API');
     }
   }
 
   static void logResponse(String method, String path, int statusCode, String responseBody) {
     if (kDebugMode) {
-      debugPrint('📥 API Response: $method $path - Status: $statusCode');
-      debugPrint('📄 Response Body: $responseBody');
-      debugPrint('⏰ Response Timestamp: ${DateTime.now().toIso8601String()}');
+      final color = statusCode >= 200 && statusCode < 300 ? _green : _red;
+      dev.log('$color📥 API Response: $method $path - Status: $statusCode$_reset', name: 'API');
+      dev.log('$color📄 Response Body: $responseBody$_reset', name: 'API');
+      dev.log('$color⏰ Response Timestamp: ${DateTime.now().toIso8601String()}$_reset', name: 'API');
       
       // Special logging for punch endpoints
       if (path.contains('punch-in') || path.contains('punch-out')) {
@@ -31,55 +39,55 @@ class ApiLogger {
 
   static void _logPunchResponse(String method, String path, int statusCode, String responseBody) {
     if (kDebugMode) {
-      debugPrint('🕒 PUNCH OPERATION DETECTED:');
-      debugPrint('   Method: $method');
-      debugPrint('   Endpoint: $path');
-      debugPrint('   Status Code: $statusCode');
+      dev.log('$_yellow🕒 PUNCH OPERATION DETECTED:$_reset', name: 'API_PUNCH');
+      dev.log('$_yellow   Method: $method$_reset', name: 'API_PUNCH');
+      dev.log('$_yellow   Endpoint: $path$_reset', name: 'API_PUNCH');
+      dev.log('$_yellow   Status Code: $statusCode$_reset', name: 'API_PUNCH');
       
       try {
         final data = jsonDecode(responseBody);
         if (data is Map) {
           if (data['success'] == true) {
-            debugPrint('   ✅ Punch SUCCESS');
+            dev.log('$_green   ✅ Punch SUCCESS$_reset', name: 'API_PUNCH');
             if (data['data'] != null) {
               final punchData = data['data'];
-              debugPrint('   📍 Punch Data: ${jsonEncode(punchData)}');
+              dev.log('$_green   📍 Punch Data: ${jsonEncode(punchData)}$_reset', name: 'API_PUNCH');
               
               // Log specific punch times
               if (punchData['checkInTime'] != null) {
-                debugPrint('   🟢 Check-in Time: ${punchData['checkInTime']}');
+                dev.log('$_green   🟢 Check-in Time: ${punchData['checkInTime']}$_reset', name: 'API_PUNCH');
               }
               if (punchData['checkOutTime'] != null) {
-                debugPrint('   🔴 Check-out Time: ${punchData['checkOutTime']}');
+                dev.log('$_green   🔴 Check-out Time: ${punchData['checkOutTime']}$_reset', name: 'API_PUNCH');
               }
               if (punchData['workDuration'] != null) {
-                debugPrint('   ⏱️ Work Duration: ${jsonEncode(punchData['workDuration'])}');
+                dev.log('$_green   ⏱️ Work Duration: ${jsonEncode(punchData['workDuration'])}$_reset', name: 'API_PUNCH');
               }
             }
           } else {
-            debugPrint('   ❌ Punch FAILED: ${data['message']}');
+            dev.log('$_red   ❌ Punch FAILED: ${data['message']}$_reset', name: 'API_PUNCH');
             if (data['errorCode'] != null) {
-              debugPrint('   🔍 Error Code: ${data['errorCode']}');
+              dev.log('$_red   🔍 Error Code: ${data['errorCode']}$_reset', name: 'API_PUNCH');
             }
           }
         }
       } catch (e) {
-        debugPrint('   ⚠️ Failed to parse punch response: $e');
+        dev.log('$_red   ⚠️ Failed to parse punch response: $e$_reset', name: 'API_PUNCH');
       }
     }
   }
 
   static void logError(String method, String path, String error, {int? statusCode, String? responseBody}) {
     if (kDebugMode) {
-      debugPrint('💥 API Error: $method $path');
-      debugPrint('🔥 Error: $error');
+      dev.log('$_red💥 API Error: $method $path$_reset', name: 'API_ERROR');
+      dev.log('$_red🔥 Error: $error$_reset', name: 'API_ERROR');
       if (statusCode != null) {
-        debugPrint('📊 Status Code: $statusCode');
+        dev.log('$_red📊 Status Code: $statusCode$_reset', name: 'API_ERROR');
       }
       if (responseBody != null) {
-        debugPrint('📄 Error Response: $responseBody');
+        dev.log('$_red📄 Error Response: $responseBody$_reset', name: 'API_ERROR');
       }
-      debugPrint('⏰ Error Timestamp: ${DateTime.now().toIso8601String()}');
+      dev.log('$_red⏰ Error Timestamp: ${DateTime.now().toIso8601String()}$_reset', name: 'API_ERROR');
     }
   }
 }
