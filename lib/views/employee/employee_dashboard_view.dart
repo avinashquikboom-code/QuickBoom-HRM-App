@@ -14,7 +14,6 @@ import '../../viewmodels/holiday_viewmodel.dart';
 import 'notifications_view.dart';
 import 'employee_expenses_view.dart';
 import 'employee_shift_view.dart';
-import '../../core/services/biometric_service.dart';
 import 'package:remixicon/remixicon.dart';
 
 final geofenceSimulatedProvider = StateProvider<bool>((ref) => true);
@@ -596,51 +595,9 @@ class _TodayPunchCard extends ConsumerWidget {
       return;
     }
 
-    final isAvailable = await BiometricService.isBiometricsAvailable();
-    if (!isAvailable) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                Icon(RemixIcons.close_circle_line, color: Colors.white),
-                const SizedBox(width: 10),
-                const Text('Biometric authentication not enrolled or available.'),
-              ],
-            ),
-            backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          ),
-        );
-      }
-      return;
-    }
-    
-    final authenticated = await BiometricService.authenticate();
-    if (!authenticated) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                Icon(RemixIcons.error_warning_line, color: Colors.white),
-                const SizedBox(width: 10),
-                const Text('Biometric verification failed.'),
-              ],
-            ),
-            backgroundColor: AppColors.warning,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          ),
-        );
-      }
-      return;
-    }
-
     final success = isCheckedIn
-        ? await ref.read(attendanceViewModelProvider.notifier).checkOut(viaFingerprint: true)
-        : await ref.read(attendanceViewModelProvider.notifier).checkIn(viaFingerprint: true);
+        ? await ref.read(attendanceViewModelProvider.notifier).checkOut(viaFingerprint: false)
+        : await ref.read(attendanceViewModelProvider.notifier).checkIn(viaFingerprint: false);
 
     if (success && context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -680,15 +637,15 @@ class _TodayPunchCard extends ConsumerWidget {
       showScanBeam = false;
     } else if (isCheckedIn) {
       scannerColor = AppColors.error;
-      statusText = 'Scan Fingerprint to Punch Out';
+      statusText = 'Tap to Punch Out';
       isInteractive = true;
-      showScanBeam = true;
+      showScanBeam = false;
     } else {
       if (isInRadius) {
         scannerColor = AppColors.success;
-        statusText = 'Scan Fingerprint to Punch In';
+        statusText = 'Tap to Punch In';
         isInteractive = true;
-        showScanBeam = true;
+        showScanBeam = false;
       } else {
         scannerColor = Colors.orange;
         statusText = 'Outside Geofence';
@@ -717,47 +674,53 @@ class _TodayPunchCard extends ConsumerWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Container(
-                    width: 10,
-                    height: 10,
-                    decoration: BoxDecoration(
-                      color: hasCheckOut 
-                          ? AppColors.textSecondary 
-                          : (isCheckedIn 
-                              ? (isOnBreak ? AppColors.warning : AppColors.success) 
-                              : AppColors.warning),
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        if (!hasCheckOut)
-                          BoxShadow(
-                            color: isCheckedIn 
+              Expanded(
+                child: Row(
+                  children: [
+                    Container(
+                      width: 10,
+                      height: 10,
+                      decoration: BoxDecoration(
+                        color: hasCheckOut 
+                            ? AppColors.textSecondary 
+                            : (isCheckedIn 
                                 ? (isOnBreak ? AppColors.warning : AppColors.success) 
-                                : AppColors.warning,
-                            blurRadius: 8,
-                            spreadRadius: 2,
-                          ),
-                      ],
+                                : AppColors.warning),
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          if (!hasCheckOut)
+                            BoxShadow(
+                              color: isCheckedIn 
+                                  ? (isOnBreak ? AppColors.warning : AppColors.success) 
+                                  : AppColors.warning,
+                              blurRadius: 8,
+                              spreadRadius: 2,
+                            ),
+                        ],
+                      ),
+                    )
+                        .animate(onPlay: (controller) => controller.repeat(reverse: true))
+                        .scaleXY(begin: 0.75, end: 1.25, duration: 1100.ms)
+                        .fadeIn(duration: 1100.ms),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        hasCheckOut 
+                            ? 'Shift Completed' 
+                            : (isCheckedIn 
+                                ? (isOnBreak ? 'Currently on Break' : 'Currently Active') 
+                                : 'Not Checked In'),
+                        style: const TextStyle(
+                          color: AppColors.textPrimary,
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w800,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
-                  )
-                      .animate(onPlay: (controller) => controller.repeat(reverse: true))
-                      .scaleXY(begin: 0.75, end: 1.25, duration: 1100.ms)
-                      .fadeIn(duration: 1100.ms),
-                  const SizedBox(width: 8),
-                  Text(
-                    hasCheckOut 
-                        ? 'Shift Completed' 
-                        : (isCheckedIn 
-                            ? (isOnBreak ? 'Currently on Break' : 'Currently Active') 
-                            : 'Not Checked In'),
-                    style: const TextStyle(
-                      color: AppColors.textPrimary,
-                      fontSize: 13.5,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
               Row(
                 children: [
@@ -915,7 +878,7 @@ class _TodayPunchCard extends ConsumerWidget {
                               .fadeIn(duration: 600.ms)
                               .fadeOut(delay: 600.ms, duration: 600.ms),
                         Icon(
-                          RemixIcons.fingerprint_line,
+                          RemixIcons.focus_3_line,
                           color: scannerColor.withValues(alpha: isInteractive ? 1.0 : 0.4),
                           size: 70,
                         ),
