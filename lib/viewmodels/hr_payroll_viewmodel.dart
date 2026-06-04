@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/services/api_service.dart';
+import '../core/constants/app_url.dart';
 
 // ─── HR Payroll Stats ─────────────────────────────────────────────────────────
 
@@ -95,7 +96,7 @@ class HRPayrollViewModel extends StateNotifier<HRPayrollState> {
 
   Future<void> fetchPayrollStats() async {
     try {
-      final res = await ApiService.get('/api/hr/payroll/stats');
+      final res = await ApiService.get(AppUrl.hrPayrollStats);
       final data = jsonDecode(res.body);
 
       final statsData = data['data'];
@@ -118,7 +119,7 @@ class HRPayrollViewModel extends StateNotifier<HRPayrollState> {
 
   Future<void> fetchPayrollRuns() async {
     try {
-      final res = await ApiService.get('/api/hr/payroll/runs');
+      final res = await ApiService.get(AppUrl.hrPayrollRuns);
       final data = jsonDecode(res.body);
 
       final runs = (data['payrollRuns'] as List?)

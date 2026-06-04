@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/services/api_service.dart';
+import '../core/constants/app_url.dart';
 import '../models/leave_request_model.dart';
 import '../models/user_model.dart';
 
@@ -80,7 +81,7 @@ class LeaveViewModel extends StateNotifier<LeaveState> {
   Future<void> fetchLeaves() async {
     state = state.copyWith(isLoading: true);
     try {
-      final res = await ApiService.get('/api/employee/leaves');
+      final res = await ApiService.get(AppUrl.employeeLeaves);
       final data = jsonDecode(res.body);
 
       final List rawLeaves = data['leaves'] ?? [];
@@ -119,7 +120,7 @@ class LeaveViewModel extends StateNotifier<LeaveState> {
     state = state.copyWith(isSubmitting: true, clearMessages: true);
 
     try {
-      await ApiService.post('/api/employee/leaves', {
+      await ApiService.post(AppUrl.employeeLeaves, {
         'type': type.name.toUpperCase(),
         'fromDate': fromDate.toIso8601String(),
         'toDate': toDate.toIso8601String(),

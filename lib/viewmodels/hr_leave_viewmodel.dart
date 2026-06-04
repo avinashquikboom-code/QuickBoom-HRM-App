@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/services/api_service.dart';
+import '../core/constants/app_url.dart';
 import '../models/leave_request_model.dart';
 
 // ─── HR Leave State ────────────────────────────────────────────────────────────
@@ -45,7 +46,7 @@ class HrLeaveViewModel extends StateNotifier<HrLeaveState> {
 
   Future<void> fetchLeaves() async {
     try {
-      final res = await ApiService.get('/api/hr/leaves');
+      final res = await ApiService.get(AppUrl.hrLeaves);
       final data = jsonDecode(res.body);
       final List rawLeaves = data['leaves'] ?? [];
       final leaves = rawLeaves.map((l) => _parseLeave(l)).toList();
@@ -59,7 +60,7 @@ class HrLeaveViewModel extends StateNotifier<HrLeaveState> {
   Future<void> approveLeave(String leaveId, String reviewerName) async {
     state = state.copyWith(isProcessing: true, clearMessage: true);
     try {
-      await ApiService.post('/api/hr/leaves/$leaveId/approve', {
+      await ApiService.post(AppUrl.hrApproveLeave(leaveId), {
         'reviewerName': reviewerName,
         'reviewNote': 'Approved',
       });
@@ -81,7 +82,7 @@ class HrLeaveViewModel extends StateNotifier<HrLeaveState> {
       String leaveId, String reviewerName, String note) async {
     state = state.copyWith(isProcessing: true, clearMessage: true);
     try {
-      await ApiService.post('/api/hr/leaves/$leaveId/reject', {
+      await ApiService.post(AppUrl.hrRejectLeave(leaveId), {
         'reviewerName': reviewerName,
         'reviewNote': note.isEmpty ? 'Rejected' : note,
       });

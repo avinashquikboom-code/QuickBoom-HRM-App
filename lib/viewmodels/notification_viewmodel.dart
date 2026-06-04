@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/services/api_service.dart';
+import '../core/constants/app_url.dart';
 import '../models/notification_model.dart';
 
 // ─── Notification State ────────────────────────────────────────────────────────
@@ -90,7 +91,7 @@ class NotificationViewModel extends StateNotifier<NotificationState> {
   Future<void> fetchNotifications() async {
     state = state.copyWith(isLoading: true);
     try {
-      final res = await ApiService.get('/api/employee/notifications');
+      final res = await ApiService.get(AppUrl.employeeNotifications);
       final data = jsonDecode(res.body);
       final List rawNotifs = data['notifications'] ?? [];
       final notifications = rawNotifs.map((n) => _parseNotification(n)).toList();
@@ -106,7 +107,7 @@ class NotificationViewModel extends StateNotifier<NotificationState> {
 
   Future<void> markAsRead(String id) async {
     try {
-      await ApiService.put('/api/employee/notifications/$id/read', {});
+      await ApiService.put(AppUrl.employeeNotificationRead(id), {});
       final updated = state.notifications.map((n) {
         if (n.id == id) return n.copyWith(isRead: true);
         return n;
@@ -117,7 +118,7 @@ class NotificationViewModel extends StateNotifier<NotificationState> {
 
   Future<void> markAllAsRead() async {
     try {
-      await ApiService.put('/api/employee/notifications/read-all', {});
+      await ApiService.put(AppUrl.employeeNotificationsReadAll, {});
       final updated = state.notifications
           .map((n) => n.copyWith(isRead: true))
           .toList();

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/services/api_service.dart';
+import '../core/constants/app_url.dart';
 import '../models/user_model.dart';
 
 // ─── Mock Users ──────────────────────────────────────────────────────────────
@@ -80,7 +81,7 @@ class AuthViewModel extends StateNotifier<AuthState> {
 
     try {
       // 1. Live login request
-      final loginRes = await ApiService.post('/api/auth/login', {
+      final loginRes = await ApiService.post(AppUrl.login, {
         'email': employeeId.trim(),
         'password': password.trim(),
       });
@@ -90,7 +91,7 @@ class AuthViewModel extends StateNotifier<AuthState> {
       await ApiService.saveToken(token);
 
       // 2. Live profile request
-      final profileRes = await ApiService.get('/api/employee/profile');
+      final profileRes = await ApiService.get(AppUrl.employeeProfile);
       final profileData = jsonDecode(profileRes.body);
 
       final emp = profileData['employee'];
@@ -128,7 +129,7 @@ class AuthViewModel extends StateNotifier<AuthState> {
   Future<bool> restoreSession() async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
-      final profileRes = await ApiService.get('/api/employee/profile');
+      final profileRes = await ApiService.get(AppUrl.employeeProfile);
       final profileData = jsonDecode(profileRes.body);
 
       final emp = profileData['employee'];

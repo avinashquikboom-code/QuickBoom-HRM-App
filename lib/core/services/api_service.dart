@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:quickboom_hrm/core/constants/app_url.dart';
 
 // Enhanced logging utility
 class ApiLogger {
@@ -84,10 +85,7 @@ class ApiLogger {
 }
 
 class ApiService {
-  static final String _baseUrl =
-      kIsWeb
-          ? 'https://quickboom-hrm-backend-gjch.onrender.com'
-          : 'https://quickboom-hrm-backend-gjch.onrender.com';
+  static final String _baseUrl = AppUrl.baseUrl;
 
   static const String tokenKey = 'auth_token';
 

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/services/api_service.dart';
+import '../core/constants/app_url.dart';
 import '../models/announcement_model.dart';
 
 // ─── Dashboard Stats ───────────────────────────────────────────────────────────
@@ -66,7 +67,7 @@ class EmployeeDashboardViewModel extends StateNotifier<EmployeeDashboardState> {
   Future<void> fetchDashboard() async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
-      final res = await ApiService.get('/api/employee/dashboard/stats');
+      final res = await ApiService.get(AppUrl.employeeDashboardStats);
       final data = jsonDecode(res.body);
 
       final statsData = data['stats'];

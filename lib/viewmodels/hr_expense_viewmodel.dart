@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/services/api_service.dart';
+import '../core/constants/app_url.dart';
 import '../models/expense_model.dart';
 
 // ─── HR Expense State ─────────────────────────────────────────────────────────
@@ -53,7 +54,7 @@ class HrExpenseViewModel extends StateNotifier<HrExpenseState> {
 
   Future<void> fetchExpenses() async {
     try {
-      final res = await ApiService.get('/api/hr/expenses');
+      final res = await ApiService.get(AppUrl.hrExpenses);
       final data = jsonDecode(res.body);
       final List rawExpenses = data['expenses'] ?? [];
       final expenses = rawExpenses.map((e) => _parseExpense(e)).toList();
@@ -67,7 +68,7 @@ class HrExpenseViewModel extends StateNotifier<HrExpenseState> {
   Future<void> approveExpense(String expenseId, String reviewerName) async {
     state = state.copyWith(isProcessing: true, clearMessage: true);
     try {
-      await ApiService.post('/api/hr/expenses/$expenseId/approve', {
+      await ApiService.post(AppUrl.hrApproveExpense(expenseId), {
         'reviewerName': reviewerName,
         'reviewNote': 'Approved',
       });
@@ -89,7 +90,7 @@ class HrExpenseViewModel extends StateNotifier<HrExpenseState> {
       String expenseId, String reviewerName, String note) async {
     state = state.copyWith(isProcessing: true, clearMessage: true);
     try {
-      await ApiService.post('/api/hr/expenses/$expenseId/reject', {
+      await ApiService.post(AppUrl.hrRejectExpense(expenseId), {
         'reviewerName': reviewerName,
         'reviewNote': note.isEmpty ? 'Rejected' : note,
       });

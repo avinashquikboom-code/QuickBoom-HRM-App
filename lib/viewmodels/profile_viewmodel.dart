@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/services/api_service.dart';
+import '../core/constants/app_url.dart';
 import '../models/user_model.dart';
 
 // ─── Profile State ──────────────────────────────────────────────────────────────
@@ -48,7 +49,7 @@ class ProfileViewModel extends StateNotifier<ProfileState> {
   Future<void> fetchProfile() async {
     state = state.copyWith(isLoading: true, clearMessages: true);
     try {
-      final res = await ApiService.get('/api/employee/profile');
+      final res = await ApiService.get(AppUrl.employeeProfile);
       final data = jsonDecode(res.body);
 
       final emp = data['employee'];
@@ -86,7 +87,7 @@ class ProfileViewModel extends StateNotifier<ProfileState> {
   }) async {
     state = state.copyWith(isUpdating: true, clearMessages: true);
     try {
-      await ApiService.put('/api/employee/profile', {
+      await ApiService.put(AppUrl.employeeProfile, {
         'fullName': fullName.trim(),
         'phone': phone.trim(),
         'bio': bio?.trim() ?? '',
@@ -108,7 +109,7 @@ class ProfileViewModel extends StateNotifier<ProfileState> {
   Future<void> uploadAvatar(String imageBase64) async {
     state = state.copyWith(isUpdating: true, clearMessages: true);
     try {
-      await ApiService.put('/api/employee/avatar', {
+      await ApiService.put(AppUrl.employeeAvatar, {
         'imageBase64': imageBase64,
       });
 
@@ -128,7 +129,7 @@ class ProfileViewModel extends StateNotifier<ProfileState> {
   Future<void> removeAvatar() async {
     state = state.copyWith(isUpdating: true, clearMessages: true);
     try {
-      await ApiService.delete('/api/employee/avatar');
+      await ApiService.delete(AppUrl.employeeAvatar);
 
       await fetchProfile();
       state = state.copyWith(

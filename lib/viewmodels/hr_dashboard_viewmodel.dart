@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/services/api_service.dart';
+import '../core/constants/app_url.dart';
 
 // ─── HR Dashboard Stats ────────────────────────────────────────────────────────
 
@@ -90,7 +91,7 @@ class HRDashboardViewModel extends StateNotifier<HRDashboardState> {
   Future<void> fetchDashboardStats() async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
-      final res = await ApiService.get('/api/hr/stats');
+      final res = await ApiService.get(AppUrl.hrStats);
       final data = jsonDecode(res.body);
 
       final statsData = data['data'];

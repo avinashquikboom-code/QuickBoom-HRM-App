@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/services/api_service.dart';
+import '../core/constants/app_url.dart';
 import '../models/task_model.dart';
 
 // ─── HR Task State ─────────────────────────────────────────────────────────────
@@ -56,7 +57,7 @@ class HrTaskViewModel extends StateNotifier<HrTaskState> {
   Future<void> fetchTasks() async {
     state = state.copyWith(isLoading: true);
     try {
-      final res = await ApiService.get('/api/hr/tasks');
+      final res = await ApiService.get(AppUrl.hrTasks);
       final data = jsonDecode(res.body);
       final List rawTasks = data['tasks'] ?? [];
       final tasks = rawTasks.map((t) => _parseTask(t)).toList();
@@ -87,7 +88,7 @@ class HrTaskViewModel extends StateNotifier<HrTaskState> {
         priorityStr = 'low';
       }
 
-      await ApiService.post('/api/hr/tasks', {
+      await ApiService.post(AppUrl.hrTasks, {
         'title': title,
         'description': description,
         'assignedToId': assignedToId,

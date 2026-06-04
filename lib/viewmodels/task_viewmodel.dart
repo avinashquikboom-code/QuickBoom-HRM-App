@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/services/api_service.dart';
+import '../core/constants/app_url.dart';
 import '../models/task_model.dart';
 
 // ─── Task State ────────────────────────────────────────────────────────────────
@@ -98,7 +99,7 @@ class TaskViewModel extends StateNotifier<TaskState> {
   Future<void> fetchTasks() async {
     state = state.copyWith(isLoading: true);
     try {
-      final res = await ApiService.get('/api/employee/tasks');
+      final res = await ApiService.get(AppUrl.employeeTasks);
       final data = jsonDecode(res.body);
       final List rawTasks = data['tasks'] ?? [];
       final tasks = rawTasks.map((t) => _parseTask(t)).toList();
@@ -123,7 +124,7 @@ class TaskViewModel extends StateNotifier<TaskState> {
         statusStr = 'overdue';
       }
 
-      await ApiService.put('/api/employee/tasks/$taskId', {'status': statusStr});
+      await ApiService.put(AppUrl.employeeTaskById(taskId), {'status': statusStr});
 
       final updated = state.myTasks.map((t) {
         if (t.id == taskId) return t.copyWith(status: newStatus);

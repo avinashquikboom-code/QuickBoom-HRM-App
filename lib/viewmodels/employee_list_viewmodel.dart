@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/services/api_service.dart';
+import '../core/constants/app_url.dart';
 import '../models/user_model.dart';
 
 // ─── Employee List State ──────────────────────────────────────────────────────
@@ -65,7 +66,7 @@ class EmployeeListViewModel extends StateNotifier<EmployeeListState> {
   Future<void> fetchEmployees() async {
     state = state.copyWith(isLoading: true);
     try {
-      final res = await ApiService.get('/api/hr/employees');
+      final res = await ApiService.get(AppUrl.hrEmployees);
       final data = jsonDecode(res.body);
       final List rawEmployees = data['employees'] ?? [];
       final employees = rawEmployees.map((e) => _parseEmployee(e)).toList();

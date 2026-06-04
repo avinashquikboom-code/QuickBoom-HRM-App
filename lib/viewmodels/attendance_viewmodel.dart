@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/services/api_service.dart';
+import '../core/constants/app_url.dart';
 import '../models/attendance_model.dart';
 
 class AttendanceState {
@@ -63,7 +64,7 @@ class AttendanceViewModel extends StateNotifier<AttendanceState> {
       debugPrint('🔄 Fetching attendance data...');
       
       // Use the new mobile API endpoint for today's attendance
-      final todayRes = await ApiService.get('/api/mobile/attendance/today');
+      final todayRes = await ApiService.get(AppUrl.attendanceToday);
       final todayData = jsonDecode(todayRes.body);
       debugPrint('📊 Today\'s attendance response: ${todayRes.body}');
       
@@ -71,7 +72,7 @@ class AttendanceViewModel extends StateNotifier<AttendanceState> {
       final todayRecord = rawToday != null ? _parseRecord(rawToday) : null;
       
       // Use the new mobile API endpoint for history
-      final historyRes = await ApiService.get('/api/mobile/attendance/history?limit=30');
+      final historyRes = await ApiService.get(AppUrl.attendanceHistory);
       final historyData = jsonDecode(historyRes.body);
       debugPrint('📚 History response: ${historyRes.body}');
       
@@ -101,7 +102,7 @@ class AttendanceViewModel extends StateNotifier<AttendanceState> {
       debugPrint('🌍 TIMEZONE: ${currentTime.timeZoneName} (${currentTime.timeZoneOffset})');
       
       // Use the new mobile API endpoint with proper location
-      final response = await ApiService.post('/api/mobile/attendance/punch-in', {
+      final response = await ApiService.post(AppUrl.attendancePunchIn, {
         'latitude': 19.0760, // Mumbai coordinates
         'longitude': 72.8777,
         'notes': viaFingerprint ? 'Punched in via Fingerprint' : 'Punched in via mobile app',
@@ -129,7 +130,7 @@ class AttendanceViewModel extends StateNotifier<AttendanceState> {
       debugPrint('🌍 TIMEZONE: ${currentTime.timeZoneName} (${currentTime.timeZoneOffset})');
       
       // Use the new mobile API endpoint
-      final response = await ApiService.post('/api/mobile/attendance/punch-out', {
+      final response = await ApiService.post(AppUrl.attendancePunchOut, {
         'latitude': 19.0760, // Mumbai coordinates
         'longitude': 72.8777,
         'notes': viaFingerprint ? 'Punched out via Fingerprint' : 'Punched out via mobile app',
@@ -154,7 +155,7 @@ class AttendanceViewModel extends StateNotifier<AttendanceState> {
       debugPrint('☕ Starting break...');
       
       // Use the new mobile API endpoint for starting break
-      final response = await ApiService.post('/api/mobile/attendance/break/start', {});
+      final response = await ApiService.post(AppUrl.attendanceBreakStart, {});
       debugPrint('✅ Break start response: ${response.body}');
       
       await fetchAttendanceData();
@@ -170,7 +171,7 @@ class AttendanceViewModel extends StateNotifier<AttendanceState> {
       debugPrint('🔄 Ending break...');
       
       // Use the new mobile API endpoint for ending break
-      final response = await ApiService.post('/api/mobile/attendance/break/end', {});
+      final response = await ApiService.post(AppUrl.attendanceBreakEnd, {});
       debugPrint('✅ Break end response: ${response.body}');
       
       await fetchAttendanceData();

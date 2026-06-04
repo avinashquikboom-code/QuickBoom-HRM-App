@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/services/api_service.dart';
+import '../core/constants/app_url.dart';
 import '../models/expense_model.dart';
 import '../models/user_model.dart';
 
@@ -114,7 +115,7 @@ class ExpenseViewModel extends StateNotifier<ExpenseState> {
   Future<void> fetchExpenses() async {
     state = state.copyWith(isLoading: true);
     try {
-      final res = await ApiService.get('/api/employee/expenses');
+      final res = await ApiService.get(AppUrl.employeeExpenses);
       final data = jsonDecode(res.body);
       final List rawExpenses = data['expenses'] ?? [];
       final expenses = rawExpenses.map((e) => _parseExpense(e)).toList();
@@ -139,7 +140,7 @@ class ExpenseViewModel extends StateNotifier<ExpenseState> {
     state = state.copyWith(isSubmitting: true, clearMessages: true);
     try {
       final categoryStr = category.toString().split('.').last; // e.g. "travel"
-      final res = await ApiService.post('/api/employee/expenses', {
+      final res = await ApiService.post(AppUrl.employeeExpenses, {
         'category': categoryStr,
         'amount': amount,
         'description': description,
