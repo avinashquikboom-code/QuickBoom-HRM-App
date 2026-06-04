@@ -82,6 +82,7 @@ class AppUrl {
   //  HR – Dashboard
   // ─────────────────────────────────────────────
   static const String hrStats = '/api/hr/stats';
+  static const String hrTodayAttendance = '/api/admin/attendance/today';
 
   // ─────────────────────────────────────────────
   //  HR – Employees

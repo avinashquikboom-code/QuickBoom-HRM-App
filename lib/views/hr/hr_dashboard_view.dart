@@ -13,6 +13,7 @@ import '../auth/login_view.dart';
 import 'hr_reports_view.dart';
 import 'hr_expenses_view.dart';
 import 'hr_shifts_view.dart';
+import 'hr_attendance_view.dart';
 
 class HrDashboardView extends ConsumerWidget {
   const HrDashboardView({super.key});
@@ -237,55 +238,65 @@ class HrDashboardView extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(height: 12),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                GridView.count(
+                  crossAxisCount: 2,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 12,
+                  childAspectRatio: 1.5,
                   children: [
-                    Expanded(
-                      child: _QuickActionBtn(
-                        label: 'Reports Feed',
-                        icon: RemixIcons.bar_chart_2_line,
-                        color: AppColors.primary,
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const HrReportsView(),
-                            ),
-                          );
-                        },
-                      ),
+                    _QuickActionBtn(
+                      label: 'Reports Feed',
+                      icon: RemixIcons.bar_chart_2_line,
+                      color: AppColors.primary,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const HrReportsView(),
+                          ),
+                        );
+                      },
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _QuickActionBtn(
-                        label: 'Expense Claims',
-                        icon: RemixIcons.bill_line,
-                        color: AppColors.warning,
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const HrExpensesView(),
-                            ),
-                          );
-                        },
-                      ),
+                    _QuickActionBtn(
+                      label: 'Attendance Logs',
+                      icon: RemixIcons.checkbox_circle_line,
+                      color: AppColors.success,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const HrAttendanceView(),
+                          ),
+                        );
+                      },
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _QuickActionBtn(
-                        label: 'Shift Rosters',
-                        icon: RemixIcons.time_line,
-                        color: AppColors.info,
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const HrShiftsView(),
-                            ),
-                          );
-                        },
-                      ),
+                    _QuickActionBtn(
+                      label: 'Expense Claims',
+                      icon: RemixIcons.bill_line,
+                      color: AppColors.warning,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const HrExpensesView(),
+                          ),
+                        );
+                      },
+                    ),
+                    _QuickActionBtn(
+                      label: 'Shift Rosters',
+                      icon: RemixIcons.time_line,
+                      color: AppColors.info,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const HrShiftsView(),
+                          ),
+                        );
+                      },
                     ),
                   ],
                 ),

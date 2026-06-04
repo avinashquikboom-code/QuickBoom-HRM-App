@@ -72,15 +72,26 @@ class AttendanceModel {
         ? DateTime.now().difference(breakStartTime!)
         : Duration.zero;
     final total = totalBreakDuration + activeBreak;
-    if (total == Duration.zero) return '0m';
-    if (total.inHours == 0) return '${total.inMinutes}m';
+    if (total == Duration.zero) return '0s';
+    if (total.inHours == 0) {
+      if (total.inMinutes == 0) {
+        return '${total.inSeconds}s';
+      }
+      return '${total.inMinutes}m ${total.inSeconds.remainder(60)}s';
+    }
     return '${total.inHours}h ${total.inMinutes.remainder(60)}m';
   }
 
   String get workingHoursLabel {
     final wd = workingDuration;
     if (wd == null) return '--';
-    if (wd.inHours == 0) return '${wd.inMinutes}m';
+    if (wd == Duration.zero) return '0s';
+    if (wd.inHours == 0) {
+      if (wd.inMinutes == 0) {
+        return '${wd.inSeconds}s';
+      }
+      return '${wd.inMinutes}m ${wd.inSeconds.remainder(60)}s';
+    }
     return '${wd.inHours}h ${wd.inMinutes.remainder(60)}m';
   }
 

@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
@@ -436,43 +438,182 @@ class EmployeeDashboardView extends ConsumerWidget {
                 // ─── Monthly Attendance Stats ──────────────────────────────
                 _SectionTitle(title: 'This Month'),
                 const SizedBox(height: 12),
-                LayoutBuilder(
-                  builder: (context, constraints) {
-                    final width = constraints.maxWidth;
-                    final columns = width < 380 ? 2 : (width > 600 ? 4 : 3);
-                    final itemWidth = (width - (columns - 1) * 12) / columns;
-                    return Wrap(
-                      spacing: 12,
-                      runSpacing: 12,
-                      children: [
-                        SizedBox(
-                          width: itemWidth,
-                          child: _StatCard(
-                            label: 'Present',
-                            value: '${attendanceState.presentCount}',
-                            icon: RemixIcons.checkbox_circle_line,
-                            color: AppColors.success,
+                Builder(
+                  builder: (context) {
+                    final totalPresent = attendanceState.presentCount;
+                    final totalAbsent = attendanceState.absentCount;
+                    final totalLate = attendanceState.lateCount;
+                    final totalDays = totalPresent + totalAbsent + totalLate;
+                    final attendanceRate = totalDays > 0 ? (totalPresent / totalDays * 100).round() : 100;
+
+                    return Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        borderRadius: BorderRadius.circular(28),
+                        border: Border.all(color: AppColors.cardBorder, width: 1.5),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.primary.withValues(alpha: 0.04),
+                            blurRadius: 20,
+                            offset: const Offset(0, 10),
                           ),
-                        ),
-                        SizedBox(
-                          width: itemWidth,
-                          child: _StatCard(
-                            label: 'Absent',
-                            value: '${attendanceState.absentCount}',
-                            icon: RemixIcons.close_circle_line,
-                            color: AppColors.error,
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    DateFormat('MMMM yyyy').format(DateTime.now()),
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: AppColors.textSecondary,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  const Text(
+                                    'Monthly Health',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w800,
+                                      color: AppColors.textPrimary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: (attendanceRate >= 90 ? AppColors.success : (attendanceRate >= 75 ? AppColors.warning : AppColors.error)).withValues(alpha: 0.08),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: (attendanceRate >= 90 ? AppColors.success : (attendanceRate >= 75 ? AppColors.warning : AppColors.error)).withValues(alpha: 0.15),
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      attendanceRate >= 90 
+                                          ? RemixIcons.checkbox_circle_line 
+                                          : (attendanceRate >= 75 ? RemixIcons.error_warning_line : RemixIcons.close_circle_line),
+                                      size: 14,
+                                      color: attendanceRate >= 90 ? AppColors.success : (attendanceRate >= 75 ? AppColors.warning : AppColors.error),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      '$attendanceRate% Attendance',
+                                      style: TextStyle(
+                                        fontSize: 11.5,
+                                        fontWeight: FontWeight.w800,
+                                        color: attendanceRate >= 90 ? AppColors.success : (attendanceRate >= 75 ? AppColors.warning : AppColors.error),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ),
-                        ),
-                        SizedBox(
-                          width: itemWidth,
-                          child: _StatCard(
-                            label: 'Late',
-                            value: '${attendanceState.lateCount}',
-                            icon: RemixIcons.time_line,
-                            color: AppColors.warning,
+                          const SizedBox(height: 20),
+                          if (totalDays > 0) ...[
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(10),
+                              child: Container(
+                                height: 10,
+                                width: double.infinity,
+                                color: AppColors.background,
+                                child: Row(
+                                  children: [
+                                    if (totalPresent > 0)
+                                      Expanded(
+                                        flex: totalPresent,
+                                        child: Container(
+                                          decoration: const BoxDecoration(
+                                            color: AppColors.success,
+                                            gradient: LinearGradient(
+                                              colors: [Color(0xFF4ADE80), AppColors.success],
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    if (totalLate > 0)
+                                      Expanded(
+                                        flex: totalLate,
+                                        child: Container(
+                                          decoration: const BoxDecoration(
+                                            color: AppColors.warning,
+                                            gradient: LinearGradient(
+                                              colors: [Color(0xFFFBBF24), AppColors.warning],
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    if (totalAbsent > 0)
+                                      Expanded(
+                                        flex: totalAbsent,
+                                        child: Container(
+                                          decoration: const BoxDecoration(
+                                            color: AppColors.error,
+                                            gradient: LinearGradient(
+                                              colors: [Color(0xFFF87171), AppColors.error],
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ] else ...[
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(10),
+                              child: Container(
+                                height: 10,
+                                width: double.infinity,
+                                color: AppColors.divider,
+                              ),
+                            ),
+                          ],
+                          const SizedBox(height: 20),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _MonthlyDetailChip(
+                                  label: 'Present',
+                                  count: totalPresent,
+                                  color: AppColors.success,
+                                  icon: RemixIcons.checkbox_circle_line,
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: _MonthlyDetailChip(
+                                  label: 'Late',
+                                  count: totalLate,
+                                  color: AppColors.warning,
+                                  icon: RemixIcons.time_line,
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: _MonthlyDetailChip(
+                                  label: 'Absent',
+                                  count: totalAbsent,
+                                  color: AppColors.error,
+                                  icon: RemixIcons.close_circle_line,
+                                ),
+                              ),
+                            ],
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     );
                   },
                 ).animate().fadeIn(delay: 150.ms),
@@ -594,7 +735,7 @@ class _QuickActionBubble extends StatelessWidget {
   }
 }
 
-class _TodayPunchCard extends ConsumerWidget {
+class _TodayPunchCard extends ConsumerStatefulWidget {
   final bool isCheckedIn;
   final dynamic todayRecord;
 
@@ -603,8 +744,47 @@ class _TodayPunchCard extends ConsumerWidget {
     required this.todayRecord,
   });
 
-  Future<void> _handlePunch(BuildContext context, WidgetRef ref, {required bool isInRadius}) async {
-    if (!isCheckedIn && !isInRadius) {
+  @override
+  ConsumerState<_TodayPunchCard> createState() => _TodayPunchCardState();
+}
+
+class _TodayPunchCardState extends ConsumerState<_TodayPunchCard> {
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _startTimerIfNeeded();
+  }
+
+  @override
+  void didUpdateWidget(covariant _TodayPunchCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _startTimerIfNeeded();
+  }
+
+  void _startTimerIfNeeded() {
+    final needsTimer = widget.isCheckedIn || (widget.todayRecord?.isOnBreak ?? false);
+    if (needsTimer) {
+      _timer ??= Timer.periodic(const Duration(seconds: 1), (timer) {
+        if (mounted) {
+          setState(() {});
+        }
+      });
+    } else {
+      _timer?.cancel();
+      _timer = null;
+    }
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _handlePunch(BuildContext context, {required bool isInRadius}) async {
+    if (!widget.isCheckedIn && !isInRadius) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Row(
@@ -622,7 +802,7 @@ class _TodayPunchCard extends ConsumerWidget {
       return;
     }
 
-    final success = isCheckedIn
+    final success = widget.isCheckedIn
         ? await ref.read(attendanceViewModelProvider.notifier).checkOut(viaFingerprint: false)
         : await ref.read(attendanceViewModelProvider.notifier).checkIn(viaFingerprint: false);
 
@@ -633,7 +813,7 @@ class _TodayPunchCard extends ConsumerWidget {
             children: [
               Icon(RemixIcons.checkbox_circle_line, color: Colors.white),
               const SizedBox(width: 10),
-              Expanded(child: Text(isCheckedIn ? 'Checked out successfully!' : 'Checked in successfully!')),
+              Expanded(child: Text(widget.isCheckedIn ? 'Checked out successfully!' : 'Checked in successfully!')),
             ],
           ),
           backgroundColor: AppColors.success,
@@ -645,40 +825,35 @@ class _TodayPunchCard extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final now = DateTime.now();
-    final hasCheckIn = todayRecord?.checkIn != null;
-    final hasCheckOut = todayRecord?.checkOut != null;
-    final isOnBreak = todayRecord?.isOnBreak ?? false;
+    final hasCheckIn = widget.todayRecord?.checkIn != null;
+    final hasCheckOut = widget.todayRecord?.checkOut != null;
+    final isOnBreak = widget.todayRecord?.isOnBreak ?? false;
     final isInRadiusAsync = ref.watch(geofenceProvider);
     final isInRadius = isInRadiusAsync.value ?? false;
 
     Color scannerColor;
     String statusText;
     bool isInteractive = false;
-    bool showScanBeam = false;
 
     if (hasCheckOut) {
       scannerColor = Colors.grey;
       statusText = 'Shift Completed';
       isInteractive = false;
-      showScanBeam = false;
-    } else if (isCheckedIn) {
+    } else if (widget.isCheckedIn) {
       scannerColor = AppColors.error;
       statusText = 'Tap to Punch Out';
       isInteractive = true;
-      showScanBeam = false;
     } else {
       if (isInRadius) {
         scannerColor = AppColors.success;
         statusText = 'Tap to Punch In';
         isInteractive = true;
-        showScanBeam = false;
       } else {
         scannerColor = Colors.orange;
         statusText = 'Outside Geofence';
         isInteractive = false;
-        showScanBeam = false;
       }
     }
 
@@ -711,14 +886,14 @@ class _TodayPunchCard extends ConsumerWidget {
                       decoration: BoxDecoration(
                         color: hasCheckOut 
                             ? AppColors.textSecondary 
-                            : (isCheckedIn 
+                            : (widget.isCheckedIn 
                                 ? (isOnBreak ? AppColors.warning : AppColors.success) 
                                 : AppColors.warning),
                         shape: BoxShape.circle,
                         boxShadow: [
                           if (!hasCheckOut)
                             BoxShadow(
-                              color: isCheckedIn 
+                              color: widget.isCheckedIn 
                                   ? (isOnBreak ? AppColors.warning : AppColors.success) 
                                   : AppColors.warning,
                               blurRadius: 8,
@@ -735,7 +910,7 @@ class _TodayPunchCard extends ConsumerWidget {
                       child: Text(
                         hasCheckOut 
                             ? 'Shift Completed' 
-                            : (isCheckedIn 
+                            : (widget.isCheckedIn 
                                 ? (isOnBreak ? 'Currently on Break' : 'Currently Active') 
                                 : 'Not Checked In'),
                         style: const TextStyle(
@@ -752,7 +927,7 @@ class _TodayPunchCard extends ConsumerWidget {
               ),
               Row(
                 children: [
-                  if (!hasCheckOut && !isCheckedIn) ...[
+                  if (!hasCheckOut && !widget.isCheckedIn) ...[
                     Text(
                       isInRadius ? 'Location Verified' : 'Location Required',
                       style: TextStyle(
@@ -797,7 +972,7 @@ class _TodayPunchCard extends ConsumerWidget {
               Expanded(
                 child: _PunchTile(
                   label: 'Check In Time',
-                  time: hasCheckIn ? todayRecord!.checkInLabel : '--:--',
+                  time: hasCheckIn ? widget.todayRecord!.checkInLabel : '--:--',
                   icon: RemixIcons.login_box_line,
                   color: AppColors.success,
                 ),
@@ -806,7 +981,7 @@ class _TodayPunchCard extends ConsumerWidget {
               Expanded(
                 child: _PunchTile(
                   label: 'Check Out Time',
-                  time: hasCheckOut ? todayRecord!.checkOutLabel : '--:--',
+                  time: hasCheckOut ? widget.todayRecord!.checkOutLabel : '--:--',
                   icon: RemixIcons.logout_box_line,
                   color: hasCheckOut ? AppColors.primary : AppColors.textHint,
                 ),
@@ -820,17 +995,17 @@ class _TodayPunchCard extends ConsumerWidget {
                 Expanded(
                   child: _PunchTileHorizontal(
                     label: 'Net Shift Work',
-                    time: todayRecord!.workingHoursLabel,
+                    time: widget.todayRecord!.workingHoursLabel,
                     icon: RemixIcons.time_line,
                     color: AppColors.info,
                   ),
                 ),
-                if (todayRecord!.totalBreakDuration != Duration.zero || isOnBreak) ...[
+                if (widget.todayRecord!.totalBreakDuration != Duration.zero || isOnBreak) ...[
                   const SizedBox(width: 14),
                   Expanded(
                     child: _PunchTileHorizontal(
                       label: 'Break Time',
-                      time: todayRecord!.breakDurationLabel,
+                      time: widget.todayRecord!.breakDurationLabel,
                       icon: RemixIcons.cup_line,
                       color: AppColors.warning,
                       bgColor: const Color(0xFFFFFBF0),
@@ -843,103 +1018,25 @@ class _TodayPunchCard extends ConsumerWidget {
             const SizedBox(height: 14),
             _PunchTileHorizontal(
               label: 'Total Working Hours',
-              time: todayRecord!.workingHoursLabel,
+              time: widget.todayRecord!.workingHoursLabel,
               icon: RemixIcons.checkbox_circle_line,
               color: AppColors.success,
             ),
           ],
           const SizedBox(height: 24),
           Center(
-            child: Column(
-              children: [
-                GestureDetector(
-                  onTap: isInteractive 
-                      ? () => _handlePunch(context, ref, isInRadius: isInRadius)
-                      : (!isCheckedIn && !isInRadius)
-                          ? () => _handlePunch(context, ref, isInRadius: false)
-                          : null,
-                  child: Container(
-                    width: 120,
-                    height: 120,
-                    decoration: BoxDecoration(
-                      color: scannerColor.withValues(alpha: 0.08),
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: scannerColor.withValues(alpha: isInteractive ? 1.0 : 0.4),
-                        width: 2.5,
-                      ),
-                      boxShadow: [
-                        if (isInteractive)
-                          BoxShadow(
-                            color: scannerColor.withValues(alpha: 0.25),
-                            blurRadius: 20,
-                            spreadRadius: 2,
-                          ),
-                      ],
-                    ),
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        if (isInteractive)
-                          Container(
-                            width: 100,
-                            height: 100,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: scannerColor.withValues(alpha: 0.2),
-                                width: 2,
-                              ),
-                            ),
-                          )
-                              .animate(onPlay: (controller) => controller.repeat(reverse: true))
-                              .scaleXY(begin: 1.0, end: 1.25, duration: 1200.ms)
-                              .fadeIn(duration: 600.ms)
-                              .fadeOut(delay: 600.ms, duration: 600.ms),
-                        Icon(
-                          RemixIcons.focus_3_line,
-                          color: scannerColor.withValues(alpha: isInteractive ? 1.0 : 0.4),
-                          size: 70,
-                        ),
-                        if (showScanBeam)
-                          Positioned(
-                            top: 25,
-                            child: Container(
-                              width: 80,
-                              height: 3,
-                              decoration: BoxDecoration(
-                                color: scannerColor.withValues(alpha: 0.9),
-                                borderRadius: BorderRadius.circular(2),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: scannerColor,
-                                    blurRadius: 8,
-                                    spreadRadius: 1.5,
-                                  ),
-                                ],
-                              ),
-                            )
-                                .animate(onPlay: (controller) => controller.repeat(reverse: true))
-                                .moveY(begin: 0, end: 68, duration: 1500.ms, curve: Curves.easeInOut),
-                          ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  statusText,
-                  style: TextStyle(
-                    color: scannerColor.withValues(alpha: isInteractive ? 1.0 : 0.6),
-                    fontSize: 14.5,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.2,
-                  ),
-                ),
-              ],
+            child: _PremiumPunchButton(
+              isInteractive: isInteractive,
+              isCheckedIn: widget.isCheckedIn,
+              isInRadius: isInRadius,
+              scannerColor: scannerColor,
+              statusText: statusText,
+              onPunchTriggered: () {
+                _handlePunch(context, isInRadius: isInRadius);
+              },
             ),
           ),
-          if (isCheckedIn && !hasCheckOut) ...[
+          if (widget.isCheckedIn && !hasCheckOut) ...[
             const SizedBox(height: 18),
             Center(
               child: SizedBox(
@@ -990,6 +1087,325 @@ class _TodayPunchCard extends ConsumerWidget {
           ],
         ],
       ),
+    );
+  }
+}
+
+class _PremiumPunchButton extends StatefulWidget {
+  final bool isInteractive;
+  final bool isCheckedIn;
+  final bool isInRadius;
+  final Color scannerColor;
+  final String statusText;
+  final VoidCallback onPunchTriggered;
+
+  const _PremiumPunchButton({
+    required this.isInteractive,
+    required this.isCheckedIn,
+    required this.isInRadius,
+    required this.scannerColor,
+    required this.statusText,
+    required this.onPunchTriggered,
+  });
+
+  @override
+  State<_PremiumPunchButton> createState() => _PremiumPunchButtonState();
+}
+
+class _PremiumPunchButtonState extends State<_PremiumPunchButton> with TickerProviderStateMixin {
+  late AnimationController _holdController;
+  late AnimationController _laserController;
+  late AnimationController _rippleController;
+  bool _isPressing = false;
+  DateTime? _lastHapticTime;
+
+  @override
+  void initState() {
+    super.initState();
+    _holdController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    );
+
+    _laserController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    )..repeat(reverse: true);
+
+    _rippleController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2000),
+    )..repeat();
+
+    _holdController.addListener(() {
+      if (_holdController.value > 0.0) {
+        final now = DateTime.now();
+        if (_lastHapticTime == null || now.difference(_lastHapticTime!) > const Duration(milliseconds: 120)) {
+          _lastHapticTime = now;
+          HapticFeedback.selectionClick();
+        }
+      }
+    });
+
+    _holdController.addStatusListener((status) {
+      if (status == AnimationStatus.completed) {
+        _onHoldComplete();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _holdController.dispose();
+    _laserController.dispose();
+    _rippleController.dispose();
+    super.dispose();
+  }
+
+  void _onHoldComplete() {
+    _holdController.reset();
+    setState(() {
+      _isPressing = false;
+    });
+    HapticFeedback.heavyImpact();
+    widget.onPunchTriggered();
+  }
+
+  void _handleTapDown(TapDownDetails details) {
+    if (!widget.isInteractive) return;
+    setState(() {
+      _isPressing = true;
+    });
+    _holdController.forward();
+  }
+
+  void _handleTapUp(TapUpDetails details) {
+    _cancelHold();
+  }
+
+  void _handleTapCancel() {
+    _cancelHold();
+  }
+
+  void _cancelHold() {
+    if (_isPressing) {
+      setState(() {
+        _isPressing = false;
+      });
+      if (_holdController.value < 1.0) {
+        _holdController.reverse(from: _holdController.value);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scannerColor = widget.scannerColor;
+    final isInteractive = widget.isInteractive;
+    final rippleColor = scannerColor.withValues(alpha: _isPressing ? 0.15 : 0.08);
+
+    return Column(
+      children: [
+        GestureDetector(
+          onTapDown: _handleTapDown,
+          onTapUp: _handleTapUp,
+          onTapCancel: _handleTapCancel,
+          onTap: (!isInteractive && !widget.isCheckedIn && !widget.isInRadius)
+              ? widget.onPunchTriggered
+              : null,
+          child: AnimatedScale(
+            scale: _isPressing ? 0.95 : 1.0,
+            duration: const Duration(milliseconds: 150),
+            curve: Curves.easeOutCubic,
+            child: SizedBox(
+              width: 180,
+              height: 180,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  // 1. Concentric Ripples (Breathe animation)
+                  ...List.generate(3, (index) {
+                    final delay = index * 0.33;
+                    return AnimatedBuilder(
+                      animation: _rippleController,
+                      builder: (context, child) {
+                        double progress = (_rippleController.value + delay) % 1.0;
+                        double size = 120 + (progress * 50);
+                        double opacity = (1.0 - progress) * (isInteractive ? 0.6 : 0.2);
+                        return Container(
+                          width: size,
+                          height: size,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.transparent,
+                            border: Border.all(
+                              color: rippleColor.withValues(alpha: opacity),
+                              width: 1.5,
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  }),
+
+                  // 2. Main Outer Container
+                  Container(
+                    width: 120,
+                    height: 120,
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: scannerColor.withValues(alpha: _isPressing ? 0.3 : 0.12),
+                          blurRadius: _isPressing ? 25 : 16,
+                          spreadRadius: _isPressing ? 4 : 0,
+                          offset: const Offset(0, 4),
+                        ),
+                        BoxShadow(
+                          color: Colors.white,
+                          blurRadius: 10,
+                          spreadRadius: -4,
+                          offset: const Offset(0, -4),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // 3. Inner Metallic / Gradient surface
+                  Container(
+                    width: 108,
+                    height: 108,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(
+                        colors: [
+                          AppColors.surface,
+                          scannerColor.withValues(alpha: 0.05),
+                          scannerColor.withValues(alpha: 0.15),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      border: Border.all(
+                        color: scannerColor.withValues(alpha: isInteractive ? 0.3 : 0.15),
+                        width: 1.5,
+                      ),
+                    ),
+                  ),
+
+                  // 4. Circular Progress Indicator (holds the tap duration)
+                  Positioned.fill(
+                    child: Align(
+                      alignment: Alignment.center,
+                      child: SizedBox(
+                        width: 112,
+                        height: 112,
+                        child: AnimatedBuilder(
+                          animation: _holdController,
+                          builder: (context, child) {
+                            return CircularProgressIndicator(
+                              value: _holdController.value,
+                              strokeWidth: 4.5,
+                              backgroundColor: Colors.transparent,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                _holdController.value > 0.0 ? scannerColor : Colors.transparent,
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // 5. Biometric scanner area (Icon, Beam, Scanner Glow)
+                  SizedBox(
+                    width: 100,
+                    height: 100,
+                    child: ClipOval(
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          // Holographic Glow inside
+                          AnimatedBuilder(
+                            animation: _holdController,
+                            builder: (context, child) {
+                              return Container(
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: scannerColor.withValues(
+                                    alpha: 0.02 + (_holdController.value * 0.12),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+
+                          // The central Icon
+                          AnimatedBuilder(
+                            animation: _holdController,
+                            builder: (context, child) {
+                              double scale = 1.0 + (_holdController.value * 0.1);
+                              return Transform.scale(
+                                scale: scale,
+                                child: Icon(
+                                  widget.isCheckedIn ? RemixIcons.fingerprint_line : RemixIcons.fingerprint_fill,
+                                  color: scannerColor.withValues(
+                                    alpha: isInteractive ? 0.95 : 0.45,
+                                  ),
+                                  size: 52,
+                                ),
+                              );
+                            },
+                          ),
+
+                          // Laser sweep beam (only active when pressing/interactive)
+                          if (isInteractive && _isPressing)
+                            AnimatedBuilder(
+                              animation: _laserController,
+                              builder: (context, child) {
+                                double topPosition = 15 + (_laserController.value * 70); // Sweeps 15 to 85 px
+                                return Positioned(
+                                  top: topPosition,
+                                  left: 15,
+                                  right: 15,
+                                  child: Container(
+                                    height: 3,
+                                    decoration: BoxDecoration(
+                                      color: scannerColor,
+                                      borderRadius: BorderRadius.circular(1.5),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: scannerColor.withValues(alpha: 0.8),
+                                          blurRadius: 6,
+                                          spreadRadius: 2,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 20),
+        Text(
+          widget.statusText,
+          style: TextStyle(
+            color: scannerColor.withValues(alpha: isInteractive ? 1.0 : 0.6),
+            fontSize: 14.5,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 0.2,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -1248,61 +1664,58 @@ class _LeaveBalanceCard extends StatelessWidget {
   }
 }
 
-class _StatCard extends StatelessWidget {
-  final String label;
-  final String value;
-  final IconData icon;
-  final Color color;
 
-  const _StatCard({
+class _MonthlyDetailChip extends StatelessWidget {
+  final String label;
+  final int count;
+  final Color color;
+  final IconData icon;
+
+  const _MonthlyDetailChip({
     required this.label,
-    required this.value,
-    required this.icon,
+    required this.count,
     required this.color,
+    required this.icon,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 18),
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: AppColors.cardBorder),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.cardShadow,
-            blurRadius: 8,
-            offset: const Offset(0, 3),
-          ),
-        ],
+        color: color.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: color.withValues(alpha: 0.12),
+          width: 1,
+        ),
       ),
       child: Column(
         children: [
           Container(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
               color: color.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
-            child: Icon(icon, color: color, size: 20),
+            child: Icon(icon, color: color, size: 16),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
           Text(
-            value,
-            style: const TextStyle(
-              fontSize: 24,
+            '$count',
+            style: TextStyle(
+              fontSize: 18,
               fontWeight: FontWeight.w900,
-              color: AppColors.textPrimary,
+              color: color,
             ),
           ),
-          const SizedBox(height: 3),
+          const SizedBox(height: 2),
           Text(
             label,
             style: const TextStyle(
-              fontSize: 11,
+              fontSize: 10.5,
               color: AppColors.textSecondary,
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w800,
             ),
           ),
         ],

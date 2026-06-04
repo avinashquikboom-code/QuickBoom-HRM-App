@@ -64,8 +64,11 @@ class AttendanceViewModel extends StateNotifier<AttendanceState> {
     try {
       debugPrint('🔄 Fetching attendance data...');
       
-      // Use the new mobile API endpoint for today's attendance
-      final todayRes = await ApiService.get(AppUrl.attendanceToday);
+      // Use the new mobile API endpoint for today's attendance with clientTimestamp and timezone query params
+      final currentTime = DateTime.now();
+      final todayRes = await ApiService.get(
+        '${AppUrl.attendanceToday}?clientTimestamp=${Uri.encodeComponent(currentTime.toUtc().toIso8601String())}&timezone=${Uri.encodeComponent(currentTime.timeZoneName)}',
+      );
       final todayData = jsonDecode(todayRes.body);
       debugPrint('📊 Today\'s attendance response: ${todayRes.body}');
       
@@ -202,9 +205,23 @@ class AttendanceViewModel extends StateNotifier<AttendanceState> {
     state = state.copyWith(isLoading: true);
     try {
       debugPrint('☕ Starting break...');
+      final currentTime = DateTime.now();
+      debugPrint('🕒 LOCAL TIME BEFORE API CALL: ${currentTime.toIso8601String()}');
       
+      final position = await _getCurrentPosition();
+      debugPrint('📍 GPS Position: lat=${position?.latitude}, lon=${position?.longitude}');
+
+      if (position == null && !kDebugMode) {
+        throw Exception('Location is required. Please enable GPS to start break.');
+      }
+
       // Use the new mobile API endpoint for starting break
-      final response = await ApiService.post(AppUrl.attendanceBreakStart, {});
+      final response = await ApiService.post(AppUrl.attendanceBreakStart, {
+        'latitude': position?.latitude ?? 0.0,
+        'longitude': position?.longitude ?? 0.0,
+        'clientTimestamp': currentTime.toUtc().toIso8601String(),
+        'timezone': currentTime.timeZoneName,
+      });
       debugPrint('✅ Break start response: ${response.body}');
       
       await fetchAttendanceData();
@@ -218,9 +235,23 @@ class AttendanceViewModel extends StateNotifier<AttendanceState> {
     state = state.copyWith(isLoading: true);
     try {
       debugPrint('🔄 Ending break...');
+      final currentTime = DateTime.now();
+      debugPrint('🕒 LOCAL TIME BEFORE API CALL: ${currentTime.toIso8601String()}');
       
+      final position = await _getCurrentPosition();
+      debugPrint('📍 GPS Position: lat=${position?.latitude}, lon=${position?.longitude}');
+
+      if (position == null && !kDebugMode) {
+        throw Exception('Location is required. Please enable GPS to end break.');
+      }
+
       // Use the new mobile API endpoint for ending break
-      final response = await ApiService.post(AppUrl.attendanceBreakEnd, {});
+      final response = await ApiService.post(AppUrl.attendanceBreakEnd, {
+        'latitude': position?.latitude ?? 0.0,
+        'longitude': position?.longitude ?? 0.0,
+        'clientTimestamp': currentTime.toUtc().toIso8601String(),
+        'timezone': currentTime.timeZoneName,
+      });
       debugPrint('✅ Break end response: ${response.body}');
       
       await fetchAttendanceData();
