@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:remixicon/remixicon.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/services/storage_service.dart';
+import '../../core/utils/app_responsive.dart';
 import '../auth/login_view.dart';
 import '../widgets/premium_animated_background.dart';
 
@@ -44,12 +45,7 @@ class _OnboardingViewState extends State<OnboardingView> {
   ];
 
   Future<void> _finishOnboarding() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('hasSeenOnboarding', true);
-    } catch (e) {
-      debugPrint('Error saving onboarding preference: $e');
-    }
+    await StorageService.markOnboardingSeen();
     if (!mounted) return;
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(builder: (_) => const LoginView()),
@@ -75,6 +71,7 @@ class _OnboardingViewState extends State<OnboardingView> {
 
   @override
   Widget build(BuildContext context) {
+    final r = AppResponsive.of(context);
     return Scaffold(
       extendBodyBehindAppBar: true,
       body: PremiumAnimatedBackground(
@@ -83,16 +80,17 @@ class _OnboardingViewState extends State<OnboardingView> {
             children: [
               // ─── Skip Button ──────────────────────────────
               Positioned(
-                top: 10,
-                right: 20,
+                top: r.h(10),
+                right: r.w(20),
                 child: TextButton(
                   onPressed: _finishOnboarding,
-                  child: const Text(
+                  child: Text(
                     'SKIP',
                     style: TextStyle(
                       color: AppColors.primary,
                       fontWeight: FontWeight.w800,
                       letterSpacing: 1,
+                      fontSize: r.sp(14),
                     ),
                   ),
                 ).animate().fadeIn(delay: 500.ms),
@@ -107,13 +105,13 @@ class _OnboardingViewState extends State<OnboardingView> {
                   final slide = _slides[index];
                   // Using Glassmorphism for the content block
                   return Padding(
-                    padding: const EdgeInsets.all(32.0),
+                    padding: EdgeInsets.all(r.w(32)),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Container(
-                          width: 200,
-                          height: 200,
+                          width: r.w(200),
+                          height: r.w(200),
                           decoration: BoxDecoration(
                             color: Colors.white,
                             shape: BoxShape.circle,
@@ -132,27 +130,27 @@ class _OnboardingViewState extends State<OnboardingView> {
                           child: Icon(
                             slide.icon,
                             color: AppColors.primary,
-                            size: 80,
+                            size: r.w(80),
                           ),
                         ).animate(key: ValueKey('img_$index')).scale(duration: 500.ms, curve: Curves.easeOutBack),
-                        const SizedBox(height: 50),
+                        SizedBox(height: r.h(50)),
                         Text(
                           slide.title,
                           textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            color: Color(0xFF14473C),
-                            fontSize: 28,
+                          style: TextStyle(
+                            color: const Color(0xFF14473C),
+                            fontSize: r.sp(28),
                             fontWeight: FontWeight.w800,
                             letterSpacing: -0.5,
                           ),
                         ).animate(key: ValueKey('title_$index')).fadeIn(delay: 200.ms).slideY(begin: 0.3, end: 0),
-                        const SizedBox(height: 16),
+                        SizedBox(height: r.h(16)),
                         Text(
                           slide.description,
                           textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            color: Color(0xFF4A6B63),
-                            fontSize: 16,
+                          style: TextStyle(
+                            color: const Color(0xFF4A6B63),
+                            fontSize: r.sp(16),
                             height: 1.5,
                           ),
                         ).animate(key: ValueKey('desc_$index')).fadeIn(delay: 350.ms),
@@ -164,9 +162,9 @@ class _OnboardingViewState extends State<OnboardingView> {
 
               // ─── Bottom Controls ──────────────────────────
               Positioned(
-                bottom: 40,
-                left: 32,
-                right: 32,
+                bottom: r.h(40),
+                left: r.w(32),
+                right: r.w(32),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -176,9 +174,9 @@ class _OnboardingViewState extends State<OnboardingView> {
                         _slides.length,
                         (index) => AnimatedContainer(
                           duration: const Duration(milliseconds: 300),
-                          margin: const EdgeInsets.only(right: 8),
-                          height: 8,
-                          width: _currentPage == index ? 24 : 8,
+                          margin: EdgeInsets.only(right: r.w(8)),
+                          height: r.h(8),
+                          width: _currentPage == index ? r.w(24) : r.w(8),
                           decoration: BoxDecoration(
                             color: _currentPage == index
                                 ? AppColors.primary
@@ -194,12 +192,12 @@ class _OnboardingViewState extends State<OnboardingView> {
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 300),
                         padding: EdgeInsets.symmetric(
-                          horizontal: _currentPage == _slides.length - 1 ? 24 : 16,
-                          vertical: 16,
+                          horizontal: _currentPage == _slides.length - 1 ? r.w(24) : r.w(16),
+                          vertical: r.h(16),
                         ),
                         decoration: BoxDecoration(
                           color: AppColors.primary,
-                          borderRadius: BorderRadius.circular(30),
+                          borderRadius: BorderRadius.circular(r.w(30)),
                           boxShadow: [
                             BoxShadow(
                               color: AppColors.primary.withValues(alpha: 0.4),
@@ -209,17 +207,18 @@ class _OnboardingViewState extends State<OnboardingView> {
                           ],
                         ),
                         child: _currentPage == _slides.length - 1
-                            ? const Text(
+                            ? Text(
                                 'Get Started',
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.w700,
-                                  fontSize: 16,
+                                  fontSize: r.sp(16),
                                 ),
                               )
                             : Icon(
                                 RemixIcons.arrow_right_line,
                                 color: Colors.white,
+                                size: r.w(24),
                               ),
                       ),
                     ),

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geolocator/geolocator.dart';
 import '../core/services/api_service.dart';
 import '../core/constants/app_url.dart';
 import '../models/attendance_model.dart';
@@ -96,21 +97,23 @@ class AttendanceViewModel extends StateNotifier<AttendanceState> {
   Future<bool> checkIn({bool viaFingerprint = false}) async {
     state = state.copyWith(isLoading: true);
     try {
-      // Get current location (in real app, you'd use geolocator)
       final currentTime = DateTime.now();
       debugPrint('🕒 LOCAL TIME BEFORE API CALL: ${currentTime.toIso8601String()}');
       debugPrint('🌍 TIMEZONE: ${currentTime.timeZoneName} (${currentTime.timeZoneOffset})');
-      
-      // Use the new mobile API endpoint with proper location
+
+      // Fetch real GPS coordinates
+      final position = await _getCurrentPosition();
+      debugPrint('📍 GPS Position: lat=${position?.latitude}, lon=${position?.longitude}');
+
       final response = await ApiService.post(AppUrl.attendancePunchIn, {
-        'latitude': 19.0760, // Mumbai coordinates
-        'longitude': 72.8777,
+        'latitude': position?.latitude ?? 0.0,
+        'longitude': position?.longitude ?? 0.0,
         'notes': viaFingerprint ? 'Punched in via Fingerprint' : 'Punched in via mobile app',
         'clientTimestamp': currentTime.toUtc().toIso8601String(),
         'timezone': currentTime.timeZoneName,
         'isFingerprint': viaFingerprint,
       });
-      
+
       debugPrint('✅ Punch-in API response: ${response.body}');
       await fetchAttendanceData();
       return true;
@@ -124,21 +127,23 @@ class AttendanceViewModel extends StateNotifier<AttendanceState> {
   Future<bool> checkOut({bool viaFingerprint = false}) async {
     state = state.copyWith(isLoading: true);
     try {
-      // Get current location and time
       final currentTime = DateTime.now();
       debugPrint('🕒 LOCAL TIME BEFORE API CALL: ${currentTime.toIso8601String()}');
       debugPrint('🌍 TIMEZONE: ${currentTime.timeZoneName} (${currentTime.timeZoneOffset})');
-      
-      // Use the new mobile API endpoint
+
+      // Fetch real GPS coordinates
+      final position = await _getCurrentPosition();
+      debugPrint('📍 GPS Position: lat=${position?.latitude}, lon=${position?.longitude}');
+
       final response = await ApiService.post(AppUrl.attendancePunchOut, {
-        'latitude': 19.0760, // Mumbai coordinates
-        'longitude': 72.8777,
+        'latitude': position?.latitude ?? 0.0,
+        'longitude': position?.longitude ?? 0.0,
         'notes': viaFingerprint ? 'Punched out via Fingerprint' : 'Punched out via mobile app',
         'clientTimestamp': currentTime.toUtc().toIso8601String(),
         'timezone': currentTime.timeZoneName,
         'isFingerprint': viaFingerprint,
       });
-      
+
       debugPrint('✅ Punch-out API response: ${response.body}');
       await fetchAttendanceData();
       return true;
@@ -146,6 +151,42 @@ class AttendanceViewModel extends StateNotifier<AttendanceState> {
       debugPrint('❌ Punch-out error: $e');
       state = state.copyWith(isLoading: false);
       return false;
+    }
+  }
+
+  /// Returns the device's current GPS position, requesting permission if needed.
+  /// Returns null if location is unavailable or permission is denied.
+  Future<Position?> _getCurrentPosition() async {
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        debugPrint('⚠️ Location services are disabled.');
+        return null;
+      }
+
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          debugPrint('⚠️ Location permission denied.');
+          return null;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        debugPrint('⚠️ Location permission permanently denied.');
+        return null;
+      }
+
+      return await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 10),
+        ),
+      );
+    } catch (e) {
+      debugPrint('⚠️ Could not get GPS position: $e');
+      return null;
     }
   }
 

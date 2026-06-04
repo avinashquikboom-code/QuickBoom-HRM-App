@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:remixicon/remixicon.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/utils/app_responsive.dart';
 import '../../viewmodels/auth_viewmodel.dart';
 import '../../models/user_model.dart';
 import '../employee/employee_shell.dart';
@@ -68,6 +69,7 @@ class _LoginViewState extends ConsumerState<LoginView> with SingleTickerProvider
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authViewModelProvider);
+    final r = AppResponsive.of(context);
 
     return Scaffold(
       extendBodyBehindAppBar: true,
@@ -75,14 +77,17 @@ class _LoginViewState extends ConsumerState<LoginView> with SingleTickerProvider
         child: SafeArea(
           child: Center(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+              padding: EdgeInsets.symmetric(
+                horizontal: r.w(24),
+                vertical: r.h(20),
+              ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   // ─── Logo & Header ─────────────────────────────────────────
                   Container(
-                    width: 80,
-                    height: 80,
+                    width: r.w(80),
+                    height: r.w(80),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       shape: BoxShape.circle,
@@ -101,38 +106,38 @@ class _LoginViewState extends ConsumerState<LoginView> with SingleTickerProvider
                     child: Icon(
                       RemixIcons.building_line,
                       color: AppColors.primary,
-                      size: 40,
+                      size: r.w(40),
                     ),
                   ).animate().scale(duration: 600.ms, curve: Curves.easeOutBack),
-                  const SizedBox(height: 20),
-                  const Text(
+                  SizedBox(height: r.h(20)),
+                  Text(
                     'HRM',
                     style: TextStyle(
-                      color: Color(0xFF14473C),
-                      fontSize: 32,
+                      color: const Color(0xFF14473C),
+                      fontSize: r.sp(32),
                       fontWeight: FontWeight.w800,
                       letterSpacing: -1,
                     ),
                   ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.3, end: 0),
-                  const SizedBox(height: 4),
-                  const Text(
+                  SizedBox(height: r.h(4)),
+                  Text(
                     'Elevate your workspace',
                     style: TextStyle(
-                      color: Color(0xFF4A6B63),
-                      fontSize: 15,
+                      color: const Color(0xFF4A6B63),
+                      fontSize: r.sp(15),
                       fontWeight: FontWeight.w500,
                       letterSpacing: 0.5,
                     ),
                   ).animate().fadeIn(delay: 300.ms),
-                  const SizedBox(height: 40),
+                  SizedBox(height: r.h(40)),
 
                   // ─── Glassmorphism Card ──────────────────────────────────
                   ClipRRect(
-                    borderRadius: BorderRadius.circular(32),
+                    borderRadius: BorderRadius.circular(r.w(32)),
                     child: BackdropFilter(
                       filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
                       child: Container(
-                        padding: const EdgeInsets.all(32),
+                        padding: r.cardPadding,
                         decoration: BoxDecoration(
                           color: Colors.white.withValues(alpha: 0.65),
                           borderRadius: BorderRadius.circular(32),
@@ -155,19 +160,19 @@ class _LoginViewState extends ConsumerState<LoginView> with SingleTickerProvider
                             children: [
                               // ─── Tabs ────────────────────────────────────
                               Container(
-                                height: 50,
+                                height: r.h(50),
                                 decoration: BoxDecoration(
                                   color: const Color(0xFFE8F3F1),
-                                  borderRadius: BorderRadius.circular(16),
+                                  borderRadius: BorderRadius.circular(r.w(16)),
                                 ),
-                                padding: const EdgeInsets.all(4),
+                                padding: EdgeInsets.all(r.w(4)),
                                 child: TabBar(
                                   controller: _tabController,
                                   indicatorSize: TabBarIndicatorSize.tab,
                                   dividerColor: Colors.transparent,
                                   indicator: BoxDecoration(
                                     color: Colors.white,
-                                    borderRadius: BorderRadius.circular(12),
+                                    borderRadius: BorderRadius.circular(r.w(12)),
                                     boxShadow: [
                                       BoxShadow(
                                         color: AppColors.primary.withValues(alpha: 0.08),
@@ -178,17 +183,18 @@ class _LoginViewState extends ConsumerState<LoginView> with SingleTickerProvider
                                   ),
                                   labelColor: AppColors.primary,
                                   unselectedLabelColor: const Color(0xFF4A6B63),
-                                  labelStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                                  labelStyle: TextStyle(fontWeight: FontWeight.w800, fontSize: r.sp(13)),
                                   tabs: const [
                                     Tab(text: 'Employee'),
                                     Tab(text: 'HR Manager'),
                                   ],
                                 ),
                               ).animate().fadeIn(delay: 400.ms),
-                              const SizedBox(height: 32),
+                              SizedBox(height: r.h(32)),
 
                               // ─── Inputs ──────────────────────────────────
                               _buildPremiumInput(
+                                r: r,
                                 controller: _emailCtrl,
                                 hint: 'Email address',
                                 icon: RemixIcons.mail_line,
@@ -202,8 +208,9 @@ class _LoginViewState extends ConsumerState<LoginView> with SingleTickerProvider
                                   return null;
                                 },
                               ).animate().fadeIn(delay: 500.ms).slideX(begin: -0.1, end: 0),
-                              const SizedBox(height: 16),
+                              SizedBox(height: r.h(16)),
                               _buildPremiumInput(
+                                r: r,
                                 controller: _passCtrl,
                                 hint: 'Password',
                                 icon: RemixIcons.lock_line,
@@ -265,7 +272,7 @@ class _LoginViewState extends ConsumerState<LoginView> with SingleTickerProvider
                               // ─── Sign In Button ──────────────────────────
                               Container(
                                 decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(16),
+                                  borderRadius: BorderRadius.circular(r.w(16)),
                                   boxShadow: [
                                     BoxShadow(
                                       color: AppColors.primary.withValues(alpha: 0.4),
@@ -279,25 +286,25 @@ class _LoginViewState extends ConsumerState<LoginView> with SingleTickerProvider
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: AppColors.primary,
                                     foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(vertical: 18),
+                                    padding: EdgeInsets.symmetric(vertical: r.h(18)),
                                     shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(16),
+                                      borderRadius: BorderRadius.circular(r.w(16)),
                                     ),
                                     elevation: 0,
                                   ),
                                   child: authState.isLoading
-                                      ? const SizedBox(
-                                          height: 20,
-                                          width: 20,
-                                          child: CircularProgressIndicator(
+                                      ? SizedBox(
+                                          height: r.w(20),
+                                          width: r.w(20),
+                                          child: const CircularProgressIndicator(
                                             strokeWidth: 2.5,
                                             color: Colors.white,
                                           ),
                                         )
-                                      : const Text(
+                                      : Text(
                                           'Sign In',
                                           style: TextStyle(
-                                            fontSize: 16,
+                                            fontSize: r.sp(16),
                                             fontWeight: FontWeight.w700,
                                             letterSpacing: 1,
                                           ),
@@ -311,26 +318,29 @@ class _LoginViewState extends ConsumerState<LoginView> with SingleTickerProvider
                     ),
                   ),
 
-                  const SizedBox(height: 32),
+                  SizedBox(height: r.h(32)),
 
                   // ─── Biometric Hint ──────────────────────────────────────
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: r.w(20),
+                      vertical: r.h(12),
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.5),
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(r.w(20)),
                       border: Border.all(color: AppColors.primary.withValues(alpha: 0.15)),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(RemixIcons.fingerprint_line, color: AppColors.primary, size: 16),
-                        const SizedBox(width: 8),
+                        Icon(RemixIcons.fingerprint_line, color: AppColors.primary, size: r.w(16)),
+                        SizedBox(width: r.w(8)),
                         Text(
                           'Biometric login available after first sign-in',
                           style: TextStyle(
                             color: const Color(0xFF4A6B63),
-                            fontSize: 12,
+                            fontSize: r.sp(12),
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -347,6 +357,7 @@ class _LoginViewState extends ConsumerState<LoginView> with SingleTickerProvider
   }
 
   Widget _buildPremiumInput({
+    required AppResponsive r,
     required TextEditingController controller,
     required String hint,
     required IconData icon,
@@ -363,29 +374,40 @@ class _LoginViewState extends ConsumerState<LoginView> with SingleTickerProvider
       keyboardType: keyboardType,
       autocorrect: autocorrect,
       enableSuggestions: enableSuggestions,
-      style: const TextStyle(color: Color(0xFF14473C), fontSize: 15, fontWeight: FontWeight.w600),
+      style: TextStyle(
+        color: const Color(0xFF14473C),
+        fontSize: r.sp(15),
+        fontWeight: FontWeight.w600,
+      ),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: const TextStyle(color: Color(0xFF7CA69E), fontSize: 14, fontWeight: FontWeight.w500),
+        hintStyle: TextStyle(
+          color: const Color(0xFF7CA69E),
+          fontSize: r.sp(14),
+          fontWeight: FontWeight.w500,
+        ),
         filled: true,
         fillColor: const Color(0xFFF3FAF8),
-        prefixIcon: Icon(icon, color: AppColors.primary.withValues(alpha: 0.8), size: 20),
+        prefixIcon: Icon(icon, color: AppColors.primary.withValues(alpha: 0.8), size: r.w(20)),
         suffixIcon: suffix,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+        contentPadding: EdgeInsets.symmetric(
+          horizontal: r.w(20),
+          vertical: r.h(18),
+        ),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(r.w(16)),
           borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(r.w(16)),
           borderSide: BorderSide(color: AppColors.primary.withValues(alpha: 0.1), width: 1),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(r.w(16)),
           borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(r.w(16)),
           borderSide: BorderSide(color: AppColors.error.withValues(alpha: 0.8), width: 1),
         ),
       ),

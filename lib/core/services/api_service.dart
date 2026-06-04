@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:quickboom_hrm/core/constants/app_url.dart';
+import 'storage_service.dart';
 
 // Enhanced logging utility
 class ApiLogger {
@@ -87,25 +87,16 @@ class ApiLogger {
 class ApiService {
   static final String _baseUrl = AppUrl.baseUrl;
 
-  static const String tokenKey = 'auth_token';
+  static const String tokenKey = StorageService.tokenKeyPublic;
 
   // Private constructor
   ApiService._();
 
-  static Future<String?> getToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(tokenKey);
-  }
+  static Future<String?> getToken() => StorageService.getToken();
 
-  static Future<void> saveToken(String token) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(tokenKey, token);
-  }
+  static Future<void> saveToken(String token) => StorageService.saveToken(token);
 
-  static Future<void> clearToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(tokenKey);
-  }
+  static Future<void> clearToken() => StorageService.clearToken();
 
   static Future<Map<String, String>> _headers() async {
     final headers = {

@@ -4,37 +4,6 @@ import '../core/services/api_service.dart';
 import '../core/constants/app_url.dart';
 import '../models/user_model.dart';
 
-// ─── Mock Users ──────────────────────────────────────────────────────────────
-
-List<UserModel> _buildMockUsers() {
-  return [
-    UserModel(
-      id: '1',
-      employeeId: 'HR001',
-      name: 'Sarah Johnson',
-      email: 'sarah.j@company.com',
-      phone: '+91 98765 43210',
-      role: UserRole.hrManager,
-      department: 'Human Resources',
-      designation: 'HR Manager',
-      joinDate: DateTime(2020, 1, 15),
-      salary: 85000,
-    ),
-    UserModel(
-      id: '2',
-      employeeId: 'QB001',
-      name: 'Rahul Sharma',
-      email: 'rahul.s@company.com',
-      phone: '+91 87654 32109',
-      role: UserRole.employee,
-      department: 'Engineering',
-      designation: 'Senior Developer',
-      joinDate: DateTime(2022, 3, 10),
-      salary: 65000,
-    ),
-  ];
-}
-
 // ─── Auth State ──────────────────────────────────────────────────────────────
 
 class AuthState {
@@ -68,13 +37,6 @@ class AuthState {
 
 class AuthViewModel extends StateNotifier<AuthState> {
   AuthViewModel() : super(const AuthState());
-
-  final List<UserModel> _allUsers = _buildMockUsers();
-
-  List<UserModel> get allUsers => _allUsers;
-
-  List<UserModel> get allEmployees =>
-      _allUsers.where((u) => u.role == UserRole.employee).toList();
 
   Future<bool> login(String employeeId, String password) async {
     state = state.copyWith(isLoading: true, clearError: true);
@@ -110,9 +72,8 @@ class AuthViewModel extends StateNotifier<AuthState> {
         department: emp['department'].toString(),
         designation: emp['designation'].toString(),
         joinDate: DateTime.tryParse(emp['joinDate'].toString()) ?? DateTime.now(),
-        salary: double.tryParse(prof['clearanceLevel'].toString()) != null
-            ? 65000.0 // placeholder salary
-            : 65000.0,
+        salary: (prof['salary'] as num?)?.toDouble() ??
+            (emp['salary'] as num?)?.toDouble() ?? 0.0,
       );
 
       state = AuthState(currentUser: parsedUser);
@@ -148,7 +109,8 @@ class AuthViewModel extends StateNotifier<AuthState> {
         department: emp['department'].toString(),
         designation: emp['designation'].toString(),
         joinDate: DateTime.tryParse(emp['joinDate'].toString()) ?? DateTime.now(),
-        salary: 65000.0,
+        salary: (prof['salary'] as num?)?.toDouble() ??
+            (emp['salary'] as num?)?.toDouble() ?? 0.0,
       );
 
       state = AuthState(currentUser: parsedUser);

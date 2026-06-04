@@ -68,7 +68,8 @@ class ProfileViewModel extends StateNotifier<ProfileState> {
         department: emp['department'].toString(),
         designation: emp['designation'].toString(),
         joinDate: DateTime.tryParse(emp['joinDate'].toString()) ?? DateTime.now(),
-        salary: 65000.0,
+        salary: (prof['salary'] as num?)?.toDouble() ??
+            (emp['salary'] as num?)?.toDouble() ?? 0.0,
       );
 
       state = state.copyWith(user: parsedUser, isLoading: false);

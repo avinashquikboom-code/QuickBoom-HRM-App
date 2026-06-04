@@ -10,6 +10,7 @@ import '../../viewmodels/attendance_viewmodel.dart';
 import '../../viewmodels/leave_viewmodel.dart';
 import '../../viewmodels/notification_viewmodel.dart';
 import '../../viewmodels/employee_dashboard_viewmodel.dart';
+import '../../viewmodels/holiday_viewmodel.dart';
 import 'notifications_view.dart';
 import 'employee_expenses_view.dart';
 import 'employee_shift_view.dart';
@@ -18,25 +19,6 @@ import 'package:remixicon/remixicon.dart';
 
 final geofenceSimulatedProvider = StateProvider<bool>((ref) => true);
 
-class _HolidayItem {
-  final String name;
-  final String date;
-  final bool isPublic;
-
-  const _HolidayItem({required this.name, required this.date, required this.isPublic});
-}
-
-final _upcomingHolidays = const [
-  _HolidayItem(name: 'Republic Day', date: '26 Jan 2026', isPublic: true),
-  _HolidayItem(name: 'Mahashivratri', date: '15 Feb 2026', isPublic: true),
-  _HolidayItem(name: 'Holi Festival', date: '03 Mar 2026', isPublic: true),
-  _HolidayItem(name: 'Company Foundation Day', date: '12 Apr 2026', isPublic: false),
-  _HolidayItem(name: 'Good Friday', date: '17 Apr 2026', isPublic: true),
-  _HolidayItem(name: 'Annual Company Picnic', date: '22 Nov 2026', isPublic: false),
-  _HolidayItem(name: 'Diwali Break', date: '12 Nov 2026', isPublic: true),
-  _HolidayItem(name: 'Christmas Eve', date: '24 Dec 2026', isPublic: false),
-  _HolidayItem(name: 'Christmas Day', date: '25 Dec 2026', isPublic: true),
-];
 
 class EmployeeDashboardView extends ConsumerWidget {
   const EmployeeDashboardView({super.key});
@@ -49,6 +31,7 @@ class EmployeeDashboardView extends ConsumerWidget {
     final leaveState = ref.watch(leaveViewModelProvider);
     final notifState = ref.watch(notificationViewModelProvider);
     final dashboardState = ref.watch(employeeDashboardViewModelProvider);
+    final holidayState = ref.watch(holidayViewModelProvider);
     final announcements = dashboardState.announcements;
     final now = DateTime.now();
 
@@ -312,87 +295,116 @@ class EmployeeDashboardView extends ConsumerWidget {
                 // ─── Upcoming Holidays Calendar ──────────────────────────────
                 _SectionTitle(title: 'Holidays Calendar'),
                 const SizedBox(height: 12),
-                SizedBox(
-                  height: 96,
-                  child: ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    physics: const BouncingScrollPhysics(),
-                    itemCount: _upcomingHolidays.length,
-                    itemBuilder: (context, index) {
-                      final item = _upcomingHolidays[index];
-                      return Container(
-                        width: 190,
-                        margin: const EdgeInsets.only(right: 14),
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: AppColors.surface,
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: AppColors.cardBorder),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.cardShadow,
-                              blurRadius: 8,
-                              offset: const Offset(0, 3),
-                            ),
-                          ],
+                holidayState.isLoading
+                    ? const Center(
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(vertical: 32),
+                          child: CircularProgressIndicator(color: AppColors.primary),
                         ),
-                        child: Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(10),
-                              decoration: BoxDecoration(
-                                color: (item.isPublic ? AppColors.info : AppColors.primary).withValues(alpha: 0.08),
-                                borderRadius: BorderRadius.circular(14),
-                              ),
-                              child: Icon(
-                                item.isPublic ? RemixIcons.global_line : RemixIcons.building_4_line,
-                                color: item.isPublic ? AppColors.info : AppColors.primary,
-                                size: 20,
+                      )
+                    : holidayState.holidays.isEmpty
+                        ? Container(
+                            padding: const EdgeInsets.all(24),
+                            decoration: BoxDecoration(
+                              color: AppColors.surface,
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(color: AppColors.cardBorder),
+                            ),
+                            child: const Center(
+                              child: Text(
+                                'No upcoming holidays',
+                                style: TextStyle(
+                                  color: AppColors.textHint,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                             ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    item.name,
-                                    style: const TextStyle(
-                                      color: AppColors.textPrimary,
-                                      fontSize: 12.5,
-                                      fontWeight: FontWeight.w800,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
+                          )
+                        : SizedBox(
+                            height: 96,
+                            child: ListView.builder(
+                              scrollDirection: Axis.horizontal,
+                              physics: const BouncingScrollPhysics(),
+                              itemCount: holidayState.holidays.length,
+                              itemBuilder: (context, index) {
+                                final item = holidayState.holidays[index];
+                                return Container(
+                                  width: 190,
+                                  margin: const EdgeInsets.only(right: 14),
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.surface,
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(color: AppColors.cardBorder),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: AppColors.cardShadow,
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 3),
+                                      ),
+                                    ],
                                   ),
-                                  const SizedBox(height: 3),
-                                  Text(
-                                    item.date,
-                                    style: const TextStyle(
-                                      color: AppColors.textHint,
-                                      fontSize: 10.5,
-                                      fontWeight: FontWeight.w600,
-                                    ),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.all(10),
+                                        decoration: BoxDecoration(
+                                          color: (item.isPublic ? AppColors.info : AppColors.primary)
+                                              .withValues(alpha: 0.08),
+                                          borderRadius: BorderRadius.circular(14),
+                                        ),
+                                        child: Icon(
+                                          item.isPublic
+                                              ? RemixIcons.global_line
+                                              : RemixIcons.building_4_line,
+                                          color: item.isPublic ? AppColors.info : AppColors.primary,
+                                          size: 20,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 10),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            Text(
+                                              item.name,
+                                              style: const TextStyle(
+                                                color: AppColors.textPrimary,
+                                                fontSize: 12.5,
+                                                fontWeight: FontWeight.w800,
+                                              ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                            const SizedBox(height: 3),
+                                            Text(
+                                              item.date,
+                                              style: const TextStyle(
+                                                color: AppColors.textHint,
+                                                fontSize: 10.5,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              item.isPublic ? 'Public Holiday' : 'Company Holiday',
+                                              style: TextStyle(
+                                                color: item.isPublic ? AppColors.info : AppColors.primary,
+                                                fontSize: 9,
+                                                fontWeight: FontWeight.w800,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    item.isPublic ? 'Public Holiday' : 'Company Holiday',
-                                    style: TextStyle(
-                                      color: item.isPublic ? AppColors.info : AppColors.primary,
-                                      fontSize: 9,
-                                      fontWeight: FontWeight.w800,
-                                    ),
-                                  ),
-                                ],
-                              ),
+                                );
+                              },
                             ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
-                ).animate().fadeIn(delay: 120.ms),
+                          ),
 
                 const SizedBox(height: 24),
 

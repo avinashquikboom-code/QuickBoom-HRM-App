@@ -10,7 +10,7 @@ class AppUrl {
   //  Base
   // ─────────────────────────────────────────────
   static const String baseUrl =
-      'https://quickboom-hrm-backend-gjch.onrender.com';
+      'https://quickboom-hrm-backend.onrender.com';
 
   // ─────────────────────────────────────────────
   //  Auth
@@ -72,6 +72,11 @@ class AppUrl {
   //  Employee – Shifts
   // ─────────────────────────────────────────────
   static const String employeeShifts = '/api/employee/shifts';
+
+  // ─────────────────────────────────────────────
+  //  Employee – Holidays
+  // ─────────────────────────────────────────────
+  static const String employeeHolidays = '/api/employee/holidays';
 
   // ─────────────────────────────────────────────
   //  HR – Dashboard
