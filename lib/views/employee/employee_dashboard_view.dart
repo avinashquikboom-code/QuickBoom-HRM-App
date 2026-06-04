@@ -50,9 +50,21 @@ class EmployeeDashboardView extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: CustomScrollView(
-        physics: const BouncingScrollPhysics(),
-        slivers: [
+      body: RefreshIndicator(
+        onRefresh: () async {
+          await Future.wait([
+            ref.read(attendanceViewModelProvider.notifier).fetchAttendanceData(),
+            ref.read(leaveViewModelProvider.notifier).fetchLeaves(),
+            ref.read(notificationViewModelProvider.notifier).fetchNotifications(),
+            ref.read(employeeDashboardViewModelProvider.notifier).fetchDashboard(),
+            ref.read(holidayViewModelProvider.notifier).fetchHolidays(),
+          ]);
+        },
+        color: AppColors.primary,
+        backgroundColor: AppColors.surface,
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+          slivers: [
           // ─── Premium Curved & Glowing Banner ────────────────────────────
           SliverAppBar(
             pinned: true,
@@ -496,6 +508,7 @@ class EmployeeDashboardView extends ConsumerWidget {
           ),
         ],
       ),
+      ),
     );
   }
 }
@@ -598,7 +611,7 @@ class _TodayPunchCard extends ConsumerWidget {
             children: [
               Icon(RemixIcons.error_warning_line, color: Colors.white),
               const SizedBox(width: 10),
-              const Text('Punch blocked: You are outside the office geofence.'),
+              const Expanded(child: Text('Punch blocked: You are outside the office geofence.')),
             ],
           ),
           backgroundColor: Colors.orange,
@@ -620,7 +633,7 @@ class _TodayPunchCard extends ConsumerWidget {
             children: [
               Icon(RemixIcons.checkbox_circle_line, color: Colors.white),
               const SizedBox(width: 10),
-              Text(isCheckedIn ? 'Checked out successfully!' : 'Checked in successfully!'),
+              Expanded(child: Text(isCheckedIn ? 'Checked out successfully!' : 'Checked in successfully!')),
             ],
           ),
           backgroundColor: AppColors.success,

@@ -38,27 +38,43 @@ class NotificationsView extends ConsumerWidget {
         ],
       ),
       body: state.notifications.isEmpty
-          ? const Center(
-              child: Text('No notifications', style: TextStyle(color: AppColors.textSecondary)),
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text('No notifications', style: TextStyle(color: AppColors.textSecondary)),
+                  const SizedBox(height: 16),
+                  TextButton(
+                    onPressed: () => ref.read(notificationViewModelProvider.notifier).fetchNotifications(),
+                    child: const Text('Refresh'),
+                  )
+                ],
+              ),
             )
-          : ListView(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              children: [
-                if (state.todayNotifications.isNotEmpty) ...[
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    child: Text('Today', style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
-                  ),
-                  ...state.todayNotifications.map((n) => _NotificationTile(notification: n)),
+          : RefreshIndicator(
+              onRefresh: () async {
+                await ref.read(notificationViewModelProvider.notifier).fetchNotifications();
+              },
+              child: ListView(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                physics: const AlwaysScrollableScrollPhysics(),
+                children: [
+                  if (state.todayNotifications.isNotEmpty) ...[
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      child: Text('Today', style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+                    ),
+                    ...state.todayNotifications.map((n) => _NotificationTile(notification: n)),
+                  ],
+                  if (state.olderNotifications.isNotEmpty) ...[
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      child: Text('Earlier', style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+                    ),
+                    ...state.olderNotifications.map((n) => _NotificationTile(notification: n)),
+                  ],
                 ],
-                if (state.olderNotifications.isNotEmpty) ...[
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    child: Text('Earlier', style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
-                  ),
-                  ...state.olderNotifications.map((n) => _NotificationTile(notification: n)),
-                ],
-              ],
+              ),
             ),
     );
   }
@@ -74,6 +90,12 @@ class _NotificationTile extends ConsumerWidget {
       onTap: () {
         if (!notification.isRead) {
           ref.read(notificationViewModelProvider.notifier).markAsRead(notification.id);
+        }
+        
+        if (notification.actionType != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Opening ${notification.actionType}...')),
+          );
         }
       },
       child: Container(
