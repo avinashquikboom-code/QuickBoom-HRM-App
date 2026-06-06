@@ -4,7 +4,6 @@ import 'package:intl/intl.dart';
 import 'package:remixicon/remixicon.dart';
 import '../../core/constants/app_colors.dart';
 import '../../models/leave_request_model.dart';
-import '../../models/user_model.dart';
 import '../../viewmodels/auth_viewmodel.dart';
 import '../../viewmodels/hr_leave_viewmodel.dart';
 import '../../viewmodels/leave_viewmodel.dart';
