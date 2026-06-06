@@ -112,15 +112,24 @@ class LeaveViewModel extends StateNotifier<LeaveState> {
   }
 
   Future<void> downloadLeaveReport({String employeeName = 'Employee'}) async {
-    try {
-      // Ensure we have the latest balance & history before building the PDF.
-      if (state.myLeaves.isEmpty) {
-        await fetchLeaves();
-      }
+    // Ensure we have the latest balance & history before building the PDF.
+    if (state.myLeaves.isEmpty) {
+      await fetchLeaves();
+    }
 
+    // Only approved leaves are included in the downloadable report.
+    final approvedLeaves = state.myLeaves
+        .where((l) => l.status == LeaveStatus.approved)
+        .toList();
+
+    if (approvedLeaves.isEmpty) {
+      throw Exception('No approved leaves available to download.');
+    }
+
+    try {
       await LeaveReportPdfService.generateAndShare(
         balance: state.balance,
-        leaves: state.myLeaves,
+        leaves: approvedLeaves,
         employeeName: employeeName,
       );
     } catch (error) {
