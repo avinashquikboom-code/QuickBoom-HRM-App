@@ -307,7 +307,7 @@ class _TodayCardState extends ConsumerState<_TodayCard> {
     final hasCheckIn = widget.state.todayRecord?.checkIn != null;
     final hasCheckOut = widget.state.todayRecord?.checkOut != null;
     if (hasCheckIn && !hasCheckOut) {
-      _timer ??= Timer.periodic(const Duration(seconds: 1), (timer) {
+      _timer ??= Timer.periodic(const Duration(seconds: 5), (timer) {
         if (mounted) {
           setState(() {});
         }

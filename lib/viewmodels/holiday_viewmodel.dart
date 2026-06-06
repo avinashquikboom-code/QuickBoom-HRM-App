@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/services/api_service.dart';
 import '../core/constants/app_url.dart';
@@ -53,46 +54,24 @@ class HolidayViewModel extends StateNotifier<HolidayState> {
   Future<void> fetchHolidays() async {
     state = state.copyWith(isLoading: true);
     try {
-      // Mocking the API call for now since backend doesn't have the endpoint implemented.
-      await Future.delayed(const Duration(milliseconds: 600));
-
-      final dtNow = DateTime.now();
-      final holidays = [
-        HolidayItem(
-          id: '1',
-          name: 'New Year Day',
-          date: '01 Jan ${dtNow.year}',
-          dateTime: DateTime(dtNow.year, 1, 1),
-          isPublic: true,
-        ),
-        HolidayItem(
-          id: '2',
-          name: 'Independence Day',
-          date: '15 Aug ${dtNow.year}',
-          dateTime: DateTime(dtNow.year, 8, 15),
-          isPublic: true,
-        ),
-        HolidayItem(
-          id: '3',
-          name: 'Diwali',
-          date: '01 Nov ${dtNow.year}',
-          dateTime: DateTime(dtNow.year, 11, 1),
-          isPublic: true,
-        ),
-        HolidayItem(
-          id: '4',
-          name: 'Christmas',
-          date: '25 Dec ${dtNow.year}',
-          dateTime: DateTime(dtNow.year, 12, 25),
-          isPublic: true,
-        ),
-      ];
+      final response = await ApiService.get(AppUrl.employeeHolidays);
+      final data = jsonDecode(response.body);
+      
+      final List rawHolidays = data['holidays'] ?? [];
+      final holidays = rawHolidays.map((h) => HolidayItem(
+        id: h['id']?.toString() ?? '',
+        name: h['name']?.toString() ?? '',
+        date: h['date']?.toString() ?? '',
+        dateTime: DateTime.tryParse(h['date'].toString()) ?? DateTime.now(),
+        isPublic: h['isPublic'] ?? true,
+      )).toList();
 
       // Sort by date ascending
       holidays.sort((a, b) => a.dateTime.compareTo(b.dateTime));
 
       state = state.copyWith(holidays: holidays, isLoading: false);
-    } catch (_) {
+    } catch (e) {
+      debugPrint('Error fetching holidays: $e');
       state = state.copyWith(isLoading: false);
     }
   }

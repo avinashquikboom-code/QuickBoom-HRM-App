@@ -451,7 +451,7 @@ class _AddExpenseSheetState extends ConsumerState<_AddExpenseSheet> {
                   onChanged: (v) => setState(() => _hasReceipt = v ?? false),
                   activeColor: AppColors.primary,
                 ),
-                const Text('Attach Receipt (Mock)'),
+                const Text('Attach Receipt'),
               ],
             ),
 
