@@ -36,70 +36,64 @@ class DocumentViewModel extends StateNotifier<DocumentState> {
     fetchDocuments();
   }
 
-  final List<DocumentModel> _staticDocs = [
-    DocumentModel(
-      id: 'static-offer-letter',
-      title: 'Offer Letter',
-      type: DocumentType.offerLetter,
-      date: DateTime(2025, 1, 10),
-      fileSize: '2.5 MB',
-    ),
-    DocumentModel(
-      id: 'static-policy-handbook',
-      title: 'Employee Handbook 2026',
-      type: DocumentType.policy,
-      date: DateTime(2026, 1, 1),
-      fileSize: '8.4 MB',
-    ),
-    DocumentModel(
-      id: 'static-policy-it',
-      title: 'IT Asset Policy',
-      type: DocumentType.policy,
-      date: DateTime(2025, 6, 15),
-      fileSize: '3.1 MB',
-    ),
-  ];
-
+  
   Future<void> fetchDocuments() async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
-      debugPrint('🔄 Fetching payslips from backend...');
-      final response = await ApiService.get(AppUrl.employeePayslips);
-      final responseData = jsonDecode(response.body);
+      debugPrint('🔄 Fetching documents from backend...');
+      final response = await ApiService.get(AppUrl.employeeDocuments);
+      final data = jsonDecode(response.body);
 
-      final List rawPayslips = responseData['data'] ?? [];
+      final List rawDocuments = data['documents'] ?? [];
       
-      final List<DocumentModel> fetchedPayslips = rawPayslips.map((p) {
-        final monthNames = [
-          'January', 'February', 'March', 'April', 'May', 'June',
-          'July', 'August', 'September', 'October', 'November', 'December'
-        ];
-        final monthVal = p['month'] as int? ?? 1;
-        final yearVal = p['year'] as int? ?? 2026;
-        final monthIndex = (monthVal >= 1 && monthVal <= 12) ? monthVal - 1 : 0;
-        final monthName = monthNames[monthIndex];
-        final netSalary = p['netSalary'] as num? ?? 0;
+      final List<DocumentModel> documents = rawDocuments.map((doc) {
+        // Parse document type
+        DocumentType docType;
+        switch ((doc['type'] ?? 'other').toString().toLowerCase()) {
+          case 'payslip':
+            docType = DocumentType.payslip;
+            break;
+          case 'offer_letter':
+            docType = DocumentType.offerLetter;
+            break;
+          case 'policy':
+            docType = DocumentType.policy;
+            break;
+          case 'certificate':
+            docType = DocumentType.certificate;
+            break;
+          case 'other':
+          default:
+            docType = DocumentType.other;
+            break;
+        }
+
+        // Parse date
+        DateTime docDate;
+        try {
+          docDate = DateTime.parse(doc['date'].toString());
+        } catch (e) {
+          docDate = DateTime.now();
+        }
 
         return DocumentModel(
-          id: p['id'].toString(),
-          title: '$monthName $yearVal Payslip',
-          type: DocumentType.payslip,
-          date: DateTime.tryParse(p['createdAt']?.toString() ?? '') ?? DateTime(yearVal, monthVal, 1),
-          fileSize: '₹${netSalary.toStringAsFixed(0)}',
-          period: '$monthName $yearVal',
+          id: doc['id']?.toString() ?? '',
+          title: doc['title']?.toString() ?? 'Unknown Document',
+          type: docType,
+          date: docDate,
+          fileSize: doc['fileSize']?.toString() ?? 'Unknown size',
+          period: doc['period'] ?? '',
         );
       }).toList();
 
-      final allDocs = [...fetchedPayslips, ..._staticDocs];
-
       state = DocumentState(
-        documents: allDocs,
+        documents: documents,
         isLoading: false,
       );
     } catch (e) {
       debugPrint('❌ Error fetching documents: $e');
       state = DocumentState(
-        documents: _staticDocs,
+        documents: [],
         isLoading: false,
         errorMessage: e.toString().replaceAll('Exception: ', ''),
       );

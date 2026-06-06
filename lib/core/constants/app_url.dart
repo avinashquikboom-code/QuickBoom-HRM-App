@@ -81,6 +81,11 @@ class AppUrl {
   static const String employeeHolidays = '/api/employee/holidays';
 
   // ─────────────────────────────────────────────
+  //  Employee – Documents
+  // ─────────────────────────────────────────────
+  static const String employeeDocuments = '/api/employee/documents';
+
+  // ─────────────────────────────────────────────
   //  HR – Dashboard
   // ─────────────────────────────────────────────
   static const String hrStats = '/api/hr/stats';
