@@ -4,8 +4,10 @@ import 'package:intl/intl.dart';
 import 'package:remixicon/remixicon.dart';
 import '../../core/constants/app_colors.dart';
 import '../../models/leave_request_model.dart';
+import '../../models/user_model.dart';
 import '../../viewmodels/auth_viewmodel.dart';
 import '../../viewmodels/hr_leave_viewmodel.dart';
+import '../../viewmodels/leave_viewmodel.dart';
 
 class HrLeaveApprovalView extends ConsumerStatefulWidget {
   const HrLeaveApprovalView({super.key});
@@ -49,6 +51,15 @@ class _HrLeaveApprovalViewState extends ConsumerState<HrLeaveApprovalView>
         );
       }
     }
+  }
+
+  void _showApplyLeaveSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _ApplyLeaveSheet(),
+    );
   }
 
   @override
@@ -128,6 +139,16 @@ class _HrLeaveApprovalViewState extends ConsumerState<HrLeaveApprovalView>
           ],
         ),
       ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _showApplyLeaveSheet(context),
+        backgroundColor: AppColors.primary,
+        icon: Icon(RemixIcons.add_line, color: Colors.white),
+        label: const Text(
+          'Apply Leave',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+        ),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       body: TabBarView(
         controller: _tabController,
         children: [
@@ -584,6 +605,277 @@ class _DetailChip extends StatelessWidget {
                 color: color, fontSize: 11, fontWeight: FontWeight.w600),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ─── Apply Leave Bottom Sheet for HR ─────────────────────────────────────────────────
+
+class _ApplyLeaveSheet extends ConsumerStatefulWidget {
+  @override
+  ConsumerState<_ApplyLeaveSheet> createState() => _ApplyLeaveSheetState();
+}
+
+class _ApplyLeaveSheetState extends ConsumerState<_ApplyLeaveSheet> {
+  LeaveType _selectedType = LeaveType.casual;
+  DateTime? _fromDate;
+  DateTime? _toDate;
+  final _reasonCtrl = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+
+  @override
+  void dispose() {
+    _reasonCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickDate(bool isFrom) async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now().add(const Duration(days: 1)),
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+      builder: (ctx, child) => Theme(
+        data: Theme.of(ctx).copyWith(
+          colorScheme: const ColorScheme.light(primary: AppColors.primary),
+        ),
+        child: child!,
+      ),
+    );
+    if (picked != null) {
+      setState(() {
+        if (isFrom) {
+          _fromDate = picked;
+          if (_toDate != null && _toDate!.isBefore(picked)) _toDate = picked;
+        } else {
+          _toDate = picked;
+        }
+      });
+    }
+  }
+
+  Future<void> _submit() async {
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+    if (_fromDate == null || _toDate == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select leave dates')),
+      );
+      return;
+    }
+    final user = ref.read(authViewModelProvider).currentUser!;
+    await ref
+        .read(leaveViewModelProvider.notifier)
+        .applyLeave(
+          user: user,
+          type: _selectedType,
+          fromDate: _fromDate!,
+          toDate: _toDate!,
+          reason: _reasonCtrl.text.trim(),
+        );
+    if (mounted) Navigator.pop(context);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final leaveState = ref.watch(leaveViewModelProvider);
+    final types = LeaveType.values;
+    final typeLabels = {
+      LeaveType.casual: 'Casual',
+      LeaveType.sick: 'Sick',
+      LeaveType.earned: 'Earned',
+      LeaveType.maternity: 'Maternity',
+      LeaveType.paternity: 'Paternity',
+      LeaveType.unpaid: 'Unpaid',
+    };
+
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppColors.background,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      padding: EdgeInsets.only(
+        left: 20,
+        right: 20,
+        top: 20,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+      ),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.divider,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Apply for Leave',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Leave Type
+            const Text(
+              'Leave Type',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              height: 38,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                children: types.map((t) {
+                  final isSelected = _selectedType == t;
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: ChoiceChip(
+                      label: Text(typeLabels[t] ?? t.name),
+                      selected: isSelected,
+                      selectedColor: AppColors.primary,
+                      labelStyle: TextStyle(
+                        color: isSelected
+                            ? Colors.white
+                            : AppColors.textSecondary,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      onSelected: (_) => setState(() => _selectedType = t),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+
+            const SizedBox(height: 14),
+
+            // Date Range
+            Row(
+              children: [
+                Expanded(
+                  child: _DateButton(
+                    label: 'From',
+                    date: _fromDate,
+                    onTap: () => _pickDate(true),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _DateButton(
+                    label: 'To',
+                    date: _toDate,
+                    onTap: () => _pickDate(false),
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 14),
+
+            // Reason
+            const Text(
+              'Reason',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 8),
+            TextFormField(
+              controller: _reasonCtrl,
+              maxLines: 3,
+              decoration: const InputDecoration(
+                hintText: 'Describe the reason for your leave...',
+              ),
+              validator: (v) => (v == null || v.trim().length < 5)
+                  ? 'Please enter a reason (min 5 characters)'
+                  : null,
+            ),
+
+            const SizedBox(height: 20),
+
+            ElevatedButton(
+              onPressed: leaveState.isSubmitting ? null : _submit,
+              child: leaveState.isSubmitting
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Text('Submit Request'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DateButton extends StatelessWidget {
+  final String label;
+  final DateTime? date;
+  final VoidCallback onTap;
+
+  const _DateButton({
+    required this.label,
+    required this.date,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 40,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        decoration: BoxDecoration(
+          border: Border.all(color: AppColors.cardBorder),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              RemixIcons.calendar_2_line,
+              size: 16,
+              color: date != null ? AppColors.primary : AppColors.textHint,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                date != null
+                    ? DateFormat('dd MMM yyyy').format(date!)
+                    : label,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: date != null ? AppColors.textPrimary : AppColors.textHint,
+                  fontWeight: FontWeight.w500,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

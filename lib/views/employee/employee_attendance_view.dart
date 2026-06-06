@@ -644,20 +644,24 @@ class _SimplifiedAttendancePunchButton extends StatelessWidget {
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               isCheckedIn ? RemixIcons.logout_box_line : RemixIcons.login_box_line,
               color: Colors.white,
-              size: 20,
+              size: 18,
             ),
-            const SizedBox(width: 12),
-            Text(
-              isCheckedIn ? 'PUNCH OUT' : 'PUNCH IN',
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 14,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 1.0,
+            const SizedBox(width: 8),
+            Flexible(
+              child: Text(
+                isCheckedIn ? 'PUNCH OUT' : 'PUNCH IN',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0.8,
+                ),
+                overflow: TextOverflow.ellipsis,
               ),
             ),
           ],
