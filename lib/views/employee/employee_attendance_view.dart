@@ -604,13 +604,13 @@ class _SimplifiedAttendancePunchButton extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
         decoration: BoxDecoration(
           color: isCheckedIn 
-              ? Colors.grey[600] 
+              ? Colors.red 
               : AppColors.primary,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
               color: (isCheckedIn 
-                  ? Colors.grey[600] 
+                  ? Colors.red 
                   : AppColors.primary)!.withValues(alpha: 0.3),
               blurRadius: 12,
               offset: const Offset(0, 4),

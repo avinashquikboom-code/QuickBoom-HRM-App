@@ -1425,12 +1425,12 @@ class _SimplifiedPunchButton extends StatelessWidget {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: isCheckedIn 
-                  ? Colors.grey[600] 
+                  ? Colors.red 
                   : (isInteractive ? AppColors.primary : Colors.grey[400]),
               boxShadow: [
                 BoxShadow(
                   color: (isCheckedIn 
-                      ? Colors.grey[600] 
+                      ? Colors.red 
                       : (isInteractive ? AppColors.primary : Colors.grey[400]))!.withValues(alpha: 0.3),
                   blurRadius: 20,
                   offset: const Offset(0, 8),
@@ -1452,7 +1452,7 @@ class _SimplifiedPunchButton extends StatelessWidget {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: (isCheckedIn 
-                        ? Colors.grey[600] 
+                        ? Colors.red 
                         : (isInteractive ? AppColors.primary : Colors.grey[400]))!.withValues(alpha: 0.1),
                   ),
                 ),
@@ -1484,7 +1484,7 @@ class _SimplifiedPunchButton extends StatelessWidget {
           isCheckedIn ? 'PUNCH OUT' : 'PUNCH IN',
           style: TextStyle(
             color: isCheckedIn 
-                ? Colors.grey[600] 
+                ? Colors.red 
                 : (isInteractive ? AppColors.primary : Colors.grey[400]),
             fontSize: 16,
             fontWeight: FontWeight.w800,
