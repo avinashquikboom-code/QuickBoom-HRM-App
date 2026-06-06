@@ -439,10 +439,8 @@ class _TodayCardState extends ConsumerState<_TodayCard> {
                   const SizedBox(width: 12),
                 ],
                 Expanded(
-                  child: _AttendanceActionButton(
-                    label: hasCheckIn ? 'Punch Out' : 'Punch In',
-                    icon: hasCheckIn ? RemixIcons.logout_box_line : RemixIcons.login_box_line,
-                    color: hasCheckIn ? AppColors.error : AppColors.success,
+                  child: _SimplifiedAttendancePunchButton(
+                    isCheckedIn: hasCheckIn,
                     onTap: () {
                       if (hasCheckIn) {
                         ref.read(attendanceViewModelProvider.notifier).checkOut();
@@ -572,6 +570,61 @@ class _AttendanceActionButton extends StatelessWidget {
                 fontSize: 13,
                 fontWeight: FontWeight.w800,
                 letterSpacing: 0.3,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SimplifiedAttendancePunchButton extends StatelessWidget {
+  final bool isCheckedIn;
+  final VoidCallback onTap;
+
+  const _SimplifiedAttendancePunchButton({
+    required this.isCheckedIn,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+        decoration: BoxDecoration(
+          color: isCheckedIn 
+              ? Colors.grey[600] 
+              : AppColors.primary,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: (isCheckedIn 
+                  ? Colors.grey[600] 
+                  : AppColors.primary)!.withValues(alpha: 0.3),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              isCheckedIn ? RemixIcons.logout_box_line : RemixIcons.login_box_line,
+              color: Colors.white,
+              size: 20,
+            ),
+            const SizedBox(width: 12),
+            Text(
+              isCheckedIn ? 'PUNCH OUT' : 'PUNCH IN',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 1.0,
               ),
             ),
           ],
