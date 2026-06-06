@@ -833,26 +833,16 @@ class _TodayPunchCardState extends ConsumerState<_TodayPunchCard> {
     final isInRadiusAsync = ref.watch(geofenceProvider);
     final isInRadius = isInRadiusAsync.value ?? false;
 
-    Color scannerColor;
-    String statusText;
     bool isInteractive = false;
 
     if (hasCheckOut) {
-      scannerColor = Colors.grey;
-      statusText = 'Shift Completed';
       isInteractive = false;
     } else if (widget.isCheckedIn) {
-      scannerColor = AppColors.error;
-      statusText = 'Tap to Punch Out';
       isInteractive = true;
     } else {
       if (isInRadius) {
-        scannerColor = AppColors.success;
-        statusText = 'Tap to Punch In';
         isInteractive = true;
       } else {
-        scannerColor = Colors.orange;
-        statusText = 'Outside Geofence';
         isInteractive = false;
       }
     }
@@ -1025,12 +1015,10 @@ class _TodayPunchCardState extends ConsumerState<_TodayPunchCard> {
           ],
           const SizedBox(height: 24),
           Center(
-            child: _PremiumPunchButton(
+            child: _SimplifiedPunchButton(
               isInteractive: isInteractive,
               isCheckedIn: widget.isCheckedIn,
               isInRadius: isInRadius,
-              scannerColor: scannerColor,
-              statusText: statusText,
               onPunchTriggered: () {
                 _handlePunch(context, isInRadius: isInRadius);
               },
@@ -1405,6 +1393,117 @@ class _PremiumPunchButtonState extends State<_PremiumPunchButton> with TickerPro
             letterSpacing: 0.2,
           ),
         ),
+      ],
+    );
+  }
+}
+
+class _SimplifiedPunchButton extends StatelessWidget {
+  final bool isInteractive;
+  final bool isCheckedIn;
+  final bool isInRadius;
+  final VoidCallback onPunchTriggered;
+
+  const _SimplifiedPunchButton({
+    required this.isInteractive,
+    required this.isCheckedIn,
+    required this.isInRadius,
+    required this.onPunchTriggered,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        // Main Punch Button
+        GestureDetector(
+          onTap: isInteractive ? onPunchTriggered : null,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            width: 120,
+            height: 120,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: isCheckedIn 
+                  ? Colors.grey[600] 
+                  : (isInteractive ? AppColors.primary : Colors.grey[400]),
+              boxShadow: [
+                BoxShadow(
+                  color: (isCheckedIn 
+                      ? Colors.grey[600] 
+                      : (isInteractive ? AppColors.primary : Colors.grey[400]))!.withValues(alpha: 0.3),
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
+                ),
+                BoxShadow(
+                  color: Colors.white.withValues(alpha: 0.2),
+                  blurRadius: 10,
+                  offset: const Offset(0, -4),
+                ),
+              ],
+            ),
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                // Outer glow effect
+                Container(
+                  width: 140,
+                  height: 140,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: (isCheckedIn 
+                        ? Colors.grey[600] 
+                        : (isInteractive ? AppColors.primary : Colors.grey[400]))!.withValues(alpha: 0.1),
+                  ),
+                ),
+                // Inner circle with icon
+                Container(
+                  width: 100,
+                  height: 100,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.white.withValues(alpha: 0.1),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.3),
+                      width: 1,
+                    ),
+                  ),
+                  child: Icon(
+                    isCheckedIn ? RemixIcons.logout_box_line : RemixIcons.login_box_line,
+                    color: Colors.white,
+                    size: 40,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        // Button Label
+        Text(
+          isCheckedIn ? 'PUNCH OUT' : 'PUNCH IN',
+          style: TextStyle(
+            color: isCheckedIn 
+                ? Colors.grey[600] 
+                : (isInteractive ? AppColors.primary : Colors.grey[400]),
+            fontSize: 16,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 1.2,
+          ),
+        ),
+        // Status message
+        if (!isInteractive && !isCheckedIn && !isInRadius)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Text(
+              'Outside office area',
+              style: TextStyle(
+                color: Colors.orange[600],
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
       ],
     );
   }
