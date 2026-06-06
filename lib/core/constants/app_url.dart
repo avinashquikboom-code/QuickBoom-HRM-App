@@ -139,4 +139,22 @@ class AppUrl {
   static const String employeePayslips = '/api/mobile/payroll/slips';
   static String employeeDownloadPayslip(String id) =>
       '/api/mobile/payroll/slips/$id/download';
+
+  // ─────────────────────────────────────────────
+  // Live Tracking (Mobile)
+  // ─────────────────────────────────────────────
+  static const String trackingStart = '/api/mobile/tracking/start';
+  static const String trackingStop = '/api/mobile/tracking/stop';
+  static const String trackingUpdateLocation = '/api/mobile/tracking/location';
+  static const String trackingSessions = '/api/mobile/tracking/sessions';
+  static const String trackingHistory = '/api/mobile/tracking/history';
+  static const String trackingLive = '/api/mobile/tracking/live';
+
+  // ─────────────────────────────────────────────
+  // Geofencing (Mobile)
+  // ─────────────────────────────────────────────
+  static const String geofenceCheck = '/api/mobile/geofence/check';
+  static const String geofenceOffices = '/api/mobile/geofence/offices';
+  static const String geofenceStatus = '/api/mobile/geofence/status';
+  static const String geofenceNearby = '/api/mobile/geofence/nearby';
 }
