@@ -611,7 +611,7 @@ class _SimplifiedAttendancePunchButton extends StatelessWidget {
             BoxShadow(
               color: (isCheckedIn 
                   ? Colors.red 
-                  : AppColors.primary)!.withValues(alpha: 0.3),
+                  : AppColors.primary).withValues(alpha: 0.3),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
