@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:remixicon/remixicon.dart';
-import '../widgets/custom_bottom_nav_bar.dart';
+import '../../core/constants/app_colors.dart';
 import 'hr_dashboard_view.dart';
 import 'hr_employees_view.dart';
 import 'hr_leave_approval_view.dart';
@@ -27,33 +27,38 @@ class _HrShellState extends ConsumerState<HrShell> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBody: true,
       body: IndexedStack(
         index: _currentIndex,
         children: _pages,
       ),
-      bottomNavigationBar: CustomBottomNavBar(
-        selectedIndex: _currentIndex,
-        onItemSelected: (i) => setState(() => _currentIndex = i),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _currentIndex,
+        onTap: (index) => setState(() => _currentIndex = index),
+        type: BottomNavigationBarType.fixed,
+        backgroundColor: AppColors.background,
+        selectedItemColor: AppColors.primary,
+        unselectedItemColor: AppColors.textHint,
+        selectedFontSize: 12,
+        unselectedFontSize: 11,
         items: [
-          CustomBottomNavBarItem(
-            icon: RemixIcons.dashboard_line,
-            selectedIcon: RemixIcons.dashboard_fill,
+          BottomNavigationBarItem(
+            icon: Icon(RemixIcons.dashboard_line),
+            activeIcon: Icon(RemixIcons.dashboard_fill),
             label: 'Home',
           ),
-          CustomBottomNavBarItem(
-            icon: RemixIcons.group_line,
-            selectedIcon: RemixIcons.group_fill,
+          BottomNavigationBarItem(
+            icon: Icon(RemixIcons.group_line),
+            activeIcon: Icon(RemixIcons.group_fill),
             label: 'Staff',
           ),
-          CustomBottomNavBarItem(
-            icon: RemixIcons.calendar_event_line,
-            selectedIcon: RemixIcons.calendar_event_fill,
+          BottomNavigationBarItem(
+            icon: Icon(RemixIcons.calendar_event_line),
+            activeIcon: Icon(RemixIcons.calendar_event_fill),
             label: 'Leaves',
           ),
-          CustomBottomNavBarItem(
-            icon: RemixIcons.wallet_3_line,
-            selectedIcon: RemixIcons.wallet_3_fill,
+          BottomNavigationBarItem(
+            icon: Icon(RemixIcons.wallet_3_line),
+            activeIcon: Icon(RemixIcons.wallet_3_fill),
             label: 'Payroll',
           ),
         ],
