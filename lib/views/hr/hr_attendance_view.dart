@@ -54,6 +54,14 @@ class _HrAttendanceViewState extends ConsumerState<HrAttendanceView> {
             fontWeight: FontWeight.w800,
           ),
         ),
+        actions: [
+          IconButton(
+            onPressed: () => _downloadAttendanceReport(context),
+            icon: Icon(RemixIcons.download_line, color: AppColors.primary),
+            tooltip: 'Download Attendance Report',
+          ),
+          const SizedBox(width: 8),
+        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(60),
           child: Padding(
@@ -543,5 +551,40 @@ class _PulseAmberDotState extends State<_PulseAmberDot>
         ),
       ),
     );
+  }
+
+  // ─── Download Method ───────────────────────────────────────────────────────
+
+  Future<void> _downloadAttendanceReport(BuildContext context) async {
+    try {
+      // Show loading indicator
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Downloading attendance report...'),
+          duration: Duration(seconds: 1),
+        ),
+      );
+
+      await ref.read(hrAttendanceViewModelProvider.notifier).downloadAttendanceReport();
+      
+      // Show success message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Attendance report downloaded successfully!'),
+            backgroundColor: AppColors.primary,
+          ),
+        );
+      }
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to download report: ${error.toString()}'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
   }
 }

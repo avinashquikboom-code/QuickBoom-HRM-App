@@ -310,6 +310,37 @@ class AttendanceViewModel extends StateNotifier<AttendanceState> {
         return AttendanceStatus.absent;
     }
   }
+
+  // Download attendance report
+  Future<void> downloadMyAttendanceReport({String? month}) async {
+    try {
+      state = state.copyWith(isLoading: true);
+      
+      // Build URL with query parameters
+      String url = AppUrl.attendanceMyReportDownload;
+      if (month != null) {
+        url += '?month=$month';
+      }
+      
+      final response = await ApiService.get(url);
+      
+      if (response.statusCode == 200) {
+        // File downloaded successfully
+        if (kDebugMode) {
+          print('Attendance report downloaded successfully');
+        }
+      } else {
+        throw Exception('Failed to download attendance report');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error downloading attendance report: $e');
+      }
+      rethrow;
+    } finally {
+      state = state.copyWith(isLoading: false);
+    }
+  }
 }
 
 // ─── Provider ─────────────────────────────────────────────────────────────────

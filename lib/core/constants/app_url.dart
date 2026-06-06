@@ -37,6 +37,8 @@ class AppUrl {
   static const String attendancePunchOut = '/api/mobile/attendance/punch-out';
   static const String attendanceBreakStart = '/api/mobile/attendance/break/start';
   static const String attendanceBreakEnd   = '/api/mobile/attendance/break/end';
+  static const String attendanceMyReportDownload = '/api/mobile/attendance/my-report/download';
+  static const String attendanceReportDownload = '/api/mobile/attendance/report/download';
 
   // ─────────────────────────────────────────────
   //  Employee – Leaves

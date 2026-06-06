@@ -33,6 +33,14 @@ class EmployeeAttendanceView extends ConsumerWidget {
             fontWeight: FontWeight.w800,
           ),
         ),
+        actions: [
+          IconButton(
+            onPressed: () => _downloadAttendanceReport(ref, context),
+            icon: Icon(RemixIcons.download_line, color: AppColors.primary),
+            tooltip: 'Download Attendance Report',
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
@@ -825,5 +833,40 @@ class _TimelineTimeChip extends StatelessWidget {
         ),
       ],
     );
+  }
+}
+
+// ─── Download Method ───────────────────────────────────────────────────────
+
+Future<void> _downloadAttendanceReport(WidgetRef ref, BuildContext context) async {
+  try {
+    // Show loading indicator
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Downloading attendance report...'),
+        duration: Duration(seconds: 1),
+      ),
+    );
+
+    await ref.read(attendanceViewModelProvider.notifier).downloadMyAttendanceReport();
+    
+    // Show success message
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Attendance report downloaded successfully!'),
+          backgroundColor: AppColors.primary,
+        ),
+      );
+    }
+  } catch (error) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to download report: ${error.toString()}'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
   }
 }

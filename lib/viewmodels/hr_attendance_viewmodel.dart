@@ -93,6 +93,46 @@ class HrAttendanceViewModel extends StateNotifier<HrAttendanceState> {
   void clearSearch() {
     state = state.copyWith(searchQuery: '');
   }
+
+  // Download attendance report for HR
+  Future<void> downloadAttendanceReport({String? month, int? employeeId}) async {
+    try {
+      state = state.copyWith(isLoading: true);
+      
+      // Build URL with query parameters
+      String url = AppUrl.attendanceReportDownload;
+      List<String> queryParams = [];
+      
+      if (month != null) {
+        queryParams.add('month=$month');
+      }
+      if (employeeId != null) {
+        queryParams.add('employeeId=$employeeId');
+      }
+      
+      if (queryParams.isNotEmpty) {
+        url += '?${queryParams.join('&')}';
+      }
+      
+      final response = await ApiService.get(url);
+      
+      if (response.statusCode == 200) {
+        // File downloaded successfully
+        if (kDebugMode) {
+          print('HR attendance report downloaded successfully');
+        }
+      } else {
+        throw Exception('Failed to download attendance report');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error downloading HR attendance report: $e');
+      }
+      rethrow;
+    } finally {
+      state = state.copyWith(isLoading: false);
+    }
+  }
 }
 
 // ─── Provider ─────────────────────────────────────────────────────────────────
