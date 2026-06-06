@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:remixicon/remixicon.dart';
+import 'package:flutter/services.dart';
 import '../../core/constants/app_colors.dart';
 import '../../models/leave_request_model.dart';
 import '../../viewmodels/auth_viewmodel.dart';
@@ -47,6 +48,14 @@ class _EmployeeLeaveViewState extends ConsumerState<EmployeeLeaveView> {
             fontWeight: FontWeight.w800,
           ),
         ),
+        actions: [
+          IconButton(
+            onPressed: () => _downloadLeaveReport(),
+            icon: Icon(RemixIcons.download_line, color: AppColors.primary),
+            tooltip: 'Download Leave Report',
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
       resizeToAvoidBottomInset: false,
       floatingActionButton: FloatingActionButton.extended(
@@ -142,6 +151,39 @@ class _EmployeeLeaveViewState extends ConsumerState<EmployeeLeaveView> {
       backgroundColor: Colors.transparent,
       builder: (_) => _ApplyLeaveSheet(),
     );
+  }
+
+  Future<void> _downloadLeaveReport() async {
+    try {
+      // Show loading indicator
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Downloading leave report...'),
+          duration: Duration(seconds: 1),
+        ),
+      );
+
+      await ref.read(leaveViewModelProvider.notifier).downloadLeaveReport();
+      
+      // Show success message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Leave report downloaded successfully!'),
+            backgroundColor: AppColors.primary,
+          ),
+        );
+      }
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to download report: ${error.toString()}'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
   }
 }
 

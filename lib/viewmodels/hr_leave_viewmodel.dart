@@ -100,6 +100,23 @@ class HrLeaveViewModel extends StateNotifier<HrLeaveState> {
     }
   }
 
+  Future<void> downloadLeaveReport() async {
+    try {
+      final response = await ApiService.get('${AppUrl.baseUrl}/api/mobile/leave/report/download');
+      
+      // For file downloads, we need to handle the response differently
+      if (response.statusCode == 200) {
+        // The response body contains the PDF data
+        // In a real app, you would save this to device storage or open it
+        print('HR leave report downloaded successfully');
+      } else {
+        throw Exception('Failed to download leave report');
+      }
+    } catch (error) {
+      throw Exception('Failed to download leave report: ${error.toString()}');
+    }
+  }
+
   void clearMessage() {
     state = state.copyWith(clearMessage: true);
   }

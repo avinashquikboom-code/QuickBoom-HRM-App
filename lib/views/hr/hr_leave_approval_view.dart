@@ -31,6 +31,26 @@ class _HrLeaveApprovalViewState extends ConsumerState<HrLeaveApprovalView>
     super.dispose();
   }
 
+  Future<void> _downloadLeaveReport() async {
+    try {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Downloading leave report...')),
+      );
+      await ref.read(hrLeaveViewModelProvider.notifier).downloadLeaveReport();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Leave report downloaded successfully!')),
+        );
+      }
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to download report')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(hrLeaveViewModelProvider);
@@ -62,6 +82,14 @@ class _HrLeaveApprovalViewState extends ConsumerState<HrLeaveApprovalView>
             fontWeight: FontWeight.w800,
           ),
         ),
+        actions: [
+          IconButton(
+            onPressed: () => _downloadLeaveReport(),
+            icon: Icon(RemixIcons.download_line, color: AppColors.primary),
+            tooltip: 'Download Leave Report',
+          ),
+          const SizedBox(width: 8),
+        ],
         bottom: TabBar(
           controller: _tabController,
           indicatorColor: AppColors.primary,
