@@ -353,6 +353,17 @@ class NotificationService {
     await _getFCMToken();
   }
 
+  /// Print current FCM token to terminal
+  Future<void> printFCMToken() async {
+    try {
+      final token = await _firebaseMessaging.getToken();
+      print('🔑 FCM Token: $token');
+      debugPrint('🔑 FCM Token: $token');
+    } catch (e) {
+      debugPrint('❌ Failed to get FCM token: $e');
+    }
+  }
+
   /// Clear all notifications
   Future<void> clearAllNotifications() async {
     await _localNotifications.cancelAll();
