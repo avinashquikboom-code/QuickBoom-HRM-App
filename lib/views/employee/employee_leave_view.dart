@@ -157,22 +157,16 @@ class _EmployeeLeaveViewState extends ConsumerState<EmployeeLeaveView> {
       // Show loading indicator
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Downloading leave report...'),
+          content: Text('Generating leave report...'),
           duration: Duration(seconds: 1),
         ),
       );
 
-      await ref.read(leaveViewModelProvider.notifier).downloadLeaveReport();
-      
-      // Show success message
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Leave report downloaded successfully!'),
-            backgroundColor: AppColors.primary,
-          ),
-        );
-      }
+      final employeeName =
+          ref.read(authViewModelProvider).currentUser?.name ?? 'Employee';
+      await ref
+          .read(leaveViewModelProvider.notifier)
+          .downloadLeaveReport(employeeName: employeeName);
     } catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

@@ -1,8 +1,7 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../core/services/api_service.dart';
+import '../core/services/leave_report_pdf_service.dart';
 import '../core/constants/app_url.dart';
 import '../models/leave_request_model.dart';
 import '../models/user_model.dart';
@@ -112,35 +111,20 @@ class LeaveViewModel extends StateNotifier<LeaveState> {
     }
   }
 
-  Future<void> downloadLeaveReport() async {
+  Future<void> downloadLeaveReport({String employeeName = 'Employee'}) async {
     try {
-      final token = await ApiService.getToken();
-      if (token == null) {
-        throw Exception('Authentication token not found. Please log in again.');
+      // Ensure we have the latest balance & history before building the PDF.
+      if (state.myLeaves.isEmpty) {
+        await fetchLeaves();
       }
 
-      final downloadUri = Uri.parse(
-        '${AppUrl.baseUrl}${AppUrl.leaveMyReportDownload}?token=$token',
+      await LeaveReportPdfService.generateAndShare(
+        balance: state.balance,
+        leaves: state.myLeaves,
+        employeeName: employeeName,
       );
-
-      debugPrint('📥 Opening leave report URL: $downloadUri');
-
-      bool launched = await launchUrl(
-        downloadUri,
-        mode: LaunchMode.externalApplication,
-      );
-      if (!launched) {
-        // Fallback for devices without an external browser handler.
-        launched = await launchUrl(
-          downloadUri,
-          mode: LaunchMode.platformDefault,
-        );
-      }
-      if (!launched) {
-        throw Exception('Could not open the leave report URL.');
-      }
     } catch (error) {
-      throw Exception('Failed to download leave report: ${error.toString()}');
+      throw Exception('Failed to generate leave report: ${error.toString()}');
     }
   }
 
