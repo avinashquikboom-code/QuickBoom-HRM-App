@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../core/services/api_service.dart';
 import '../core/constants/app_url.dart';
 import '../models/leave_request_model.dart';
@@ -113,15 +114,21 @@ class LeaveViewModel extends StateNotifier<LeaveState> {
 
   Future<void> downloadLeaveReport() async {
     try {
-      final response = await ApiService.get('${AppUrl.baseUrl}/api/mobile/leave/my-report/download');
-      
-      // For file downloads, we need to handle the response differently
-      if (response.statusCode == 200) {
-        // The response body contains the PDF data
-        // In a real app, you would save this to device storage or open it
-        debugPrint('Leave report downloaded successfully');
+      final token = await ApiService.getToken();
+      if (token == null) {
+        throw Exception('Authentication token not found. Please log in again.');
+      }
+
+      final downloadUri = Uri.parse(
+        '${AppUrl.baseUrl}${AppUrl.leaveMyReportDownload}?token=$token',
+      );
+
+      debugPrint('📥 Opening leave report URL: $downloadUri');
+
+      if (await canLaunchUrl(downloadUri)) {
+        await launchUrl(downloadUri, mode: LaunchMode.externalApplication);
       } else {
-        throw Exception('Failed to download leave report');
+        throw Exception('Could not open the leave report URL.');
       }
     } catch (error) {
       throw Exception('Failed to download leave report: ${error.toString()}');

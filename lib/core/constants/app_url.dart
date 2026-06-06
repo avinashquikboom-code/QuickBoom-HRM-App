@@ -44,6 +44,8 @@ class AppUrl {
   //  Employee – Leaves
   // ─────────────────────────────────────────────
   static const String employeeLeaves = '/api/employee/leaves';
+  static const String leaveMyReportDownload = '/api/mobile/leave/my-report/download';
+  static const String leaveReportDownload = '/api/mobile/leave/report/download';
 
   // ─────────────────────────────────────────────
   //  Employee – Tasks
