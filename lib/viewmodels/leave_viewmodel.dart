@@ -125,9 +125,18 @@ class LeaveViewModel extends StateNotifier<LeaveState> {
 
       debugPrint('📥 Opening leave report URL: $downloadUri');
 
-      if (await canLaunchUrl(downloadUri)) {
-        await launchUrl(downloadUri, mode: LaunchMode.externalApplication);
-      } else {
+      bool launched = await launchUrl(
+        downloadUri,
+        mode: LaunchMode.externalApplication,
+      );
+      if (!launched) {
+        // Fallback for devices without an external browser handler.
+        launched = await launchUrl(
+          downloadUri,
+          mode: LaunchMode.platformDefault,
+        );
+      }
+      if (!launched) {
         throw Exception('Could not open the leave report URL.');
       }
     } catch (error) {
