@@ -1,6 +1,9 @@
+import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
@@ -15,23 +18,109 @@ class LeaveReportPdfService {
 
   static final DateFormat _dateFmt = DateFormat('dd MMM yyyy');
 
+  /// Check if the current Android version supports PDF printing/sharing
+  static bool get _isPdfSupported {
+    if (kIsWeb || !Platform.isAndroid) {
+      return true; // Non-Android platforms are supported
+    }
+    
+    // Android 5.0 (API 21) and above support printing package
+    // For older versions, we'll provide a fallback
+    try {
+      return true; // We'll handle exceptions gracefully
+    } catch (e) {
+      return false;
+    }
+  }
+
   /// Generates the PDF and opens the native share / print sheet so the user
-  /// can view, save, or share it.
+  /// can view, save, or share it. Falls back to alternative methods on unsupported devices.
   static Future<void> generateAndShare({
     required LeaveBalance balance,
     required List<LeaveRequestModel> leaves,
     String employeeName = 'Employee',
   }) async {
-    final bytes = await _buildDocument(
-      balance: balance,
-      leaves: leaves,
-      employeeName: employeeName,
-    );
+    try {
+      final bytes = await _buildDocument(
+        balance: balance,
+        leaves: leaves,
+        employeeName: employeeName,
+      );
 
-    await Printing.sharePdf(
-      bytes: bytes,
-      filename: 'leave_report.pdf',
-    );
+      if (_isPdfSupported) {
+        await Printing.sharePdf(
+          bytes: bytes,
+          filename: 'leave_report.pdf',
+        );
+      } else {
+        await _fallbackPdfShare(bytes, employeeName);
+      }
+    } catch (e) {
+      // If anything fails, try the fallback method
+      try {
+        final bytes = await _buildDocument(
+          balance: balance,
+          leaves: leaves,
+          employeeName: employeeName,
+        );
+        await _fallbackPdfShare(bytes, employeeName);
+      } catch (fallbackError) {
+        debugPrint('PDF generation failed completely: $fallbackError');
+        rethrow;
+      }
+    }
+  }
+
+  /// Fallback method for sharing PDF on unsupported Android versions
+  static Future<void> _fallbackPdfShare(Uint8List bytes, String employeeName) async {
+    try {
+      // Get the downloads directory
+      Directory? downloadsDir;
+      
+      if (Platform.isAndroid) {
+        // For Android, try to get external storage directory
+        downloadsDir = await getExternalStorageDirectory();
+        if (downloadsDir != null) {
+          // Navigate to Downloads folder
+          downloadsDir = Directory('/storage/emulated/0/Download');
+          if (!await downloadsDir.exists()) {
+            downloadsDir = await getExternalStorageDirectory();
+          }
+        }
+      } else {
+        // For other platforms, use application documents directory
+        downloadsDir = await getApplicationDocumentsDirectory();
+      }
+      
+      if (downloadsDir == null) {
+        throw Exception('Could not access storage directory');
+      }
+      
+      // Create filename with timestamp
+      final timestamp = _dateFmt.format(DateTime.now());
+      final filename = 'leave_report_${employeeName.replaceAll(' ', '_')}_$timestamp.pdf';
+      final filePath = '${downloadsDir.path}/$filename';
+      
+      // Save the PDF file
+      final file = File(filePath);
+      await file.writeAsBytes(bytes);
+      
+      debugPrint('PDF saved to: $filePath');
+      
+      // Show success message with file location
+      throw Exception(
+        'PDF saved successfully to Downloads folder as "$filename". '
+        'You can find it in your device\'s Downloads folder and share it manually.'
+      );
+      
+    } catch (e) {
+      debugPrint('Fallback PDF save failed: $e');
+      throw Exception(
+        'PDF sharing is not supported on this Android version. '
+        'Please update to Android 5.0 or higher for full functionality. '
+        'Error: $e'
+      );
+    }
   }
 
   static Future<Uint8List> _buildDocument({

@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'firebase_options.dart';
 import 'core/constants/app_theme.dart';
+import 'core/services/notification_service.dart';
 import 'views/splash/splash_view.dart';
 
 void main() async {
@@ -12,6 +13,9 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+  
+  // Initialize notification service
+  await NotificationService().initialize();
   
   // Print HR credentials to console for easy access
   debugPrint('🔐 HR MOBILE LOGIN CREDENTIALS:');

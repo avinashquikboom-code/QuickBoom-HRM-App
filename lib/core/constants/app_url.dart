@@ -159,4 +159,9 @@ class AppUrl {
   static const String geofenceOffices = '/api/mobile/geofence/offices';
   static const String geofenceStatus = '/api/mobile/geofence/status';
   static const String geofenceNearby = '/api/mobile/geofence/nearby';
+
+  // ─────────────────────────────────────────────
+  // FCM Token
+  // ─────────────────────────────────────────────
+  static const String saveFCMToken = '/api/employee/fcm-token';
 }

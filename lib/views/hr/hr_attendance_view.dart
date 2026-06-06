@@ -85,19 +85,56 @@ class _HrAttendanceViewState extends ConsumerState<HrAttendanceView> {
           ),
         ),
       ),
-      body: RefreshIndicator(
-        onRefresh: vm.fetchTodayAttendance,
-        color: AppColors.primary,
-        backgroundColor: AppColors.surface,
+      body: DefaultTabController(
+        length: 2,
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ─── Header Stats ───────────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Row(
+            // ─── Tab Bar ───────────────────────────────────────────────
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.cardBorder),
+              ),
+              child: TabBar(
+                tabs: [
+                  Tab(
+                    icon: Icon(RemixIcons.calendar_line),
+                    text: 'Today',
+                  ),
+                  Tab(
+                    icon: Icon(RemixIcons.history_line),
+                    text: 'History',
+                  ),
+                ],
+                labelColor: AppColors.primary,
+                unselectedLabelColor: AppColors.textHint,
+                indicatorColor: AppColors.primary,
+                indicatorWeight: 3,
+                indicatorSize: TabBarIndicatorSize.tab,
+                dividerColor: Colors.transparent,
+              ),
+            ),
+            
+            // ─── Tab Views ───────────────────────────────────────────────
+            Expanded(
+              child: TabBarView(
                 children: [
-                  _HeaderStatPill(
+                  // Today's Attendance Tab
+                  RefreshIndicator(
+                    onRefresh: vm.fetchTodayAttendance,
+                    color: AppColors.primary,
+                    backgroundColor: AppColors.surface,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // ─── Header Stats ───────────────────────────────────────────
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          child: Row(
+                            children: [
+                              _HeaderStatPill(
                     label: 'Present',
                     value: '${state.presentCount}',
                     color: AppColors.success,
@@ -177,7 +214,16 @@ class _HrAttendanceViewState extends ConsumerState<HrAttendanceView> {
                           },
                         ),
             ),
+                  
+                  // History Tab
+                  _AttendanceHistoryTab(),
+                ],
+              ),
+            ),
           ],
+        ),
+      ),
+          ]
         ),
       ),
     );
@@ -590,5 +636,204 @@ class _PulseAmberDotState extends State<_PulseAmberDot>
       ),
     );
   }
+}
 
+class _AttendanceHistoryTab extends ConsumerWidget {
+  const _AttendanceHistoryTab();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(hrAttendanceViewModelProvider);
+    final vm = ref.read(hrAttendanceViewModelProvider.notifier);
+
+    return RefreshIndicator(
+      onRefresh: vm.fetchTodayAttendance,
+      color: AppColors.primary,
+      backgroundColor: AppColors.surface,
+      child: Column(
+        children: [
+          // ─── Month/Year Filter ───────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.cardBorder),
+              ),
+              child: Row(
+                children: [
+                  Icon(RemixIcons.calendar_line, color: AppColors.primary),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Attendance History',
+                    style: TextStyle(
+                      color: AppColors.textPrimary,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    'Showing last 30 days',
+                    style: TextStyle(
+                      color: AppColors.textHint,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // ─── History Stats ───────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.success.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: AppColors.success.withValues(alpha: 0.2)),
+                    ),
+                    child: Column(
+                      children: [
+                        Text(
+                          '${state.presentCount}',
+                          style: TextStyle(
+                            color: AppColors.success,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                        Text(
+                          'Present',
+                          style: TextStyle(
+                            color: AppColors.success,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.error.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: AppColors.error.withValues(alpha: 0.2)),
+                    ),
+                    child: Column(
+                      children: [
+                        Text(
+                          '0',
+                          style: TextStyle(
+                            color: AppColors.error,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                        Text(
+                          'Absent',
+                          style: TextStyle(
+                            color: AppColors.error,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.warning.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: AppColors.warning.withValues(alpha: 0.2)),
+                    ),
+                    child: Column(
+                      children: [
+                        Text(
+                          '0',
+                          style: TextStyle(
+                            color: AppColors.warning,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                        Text(
+                          'Late',
+                          style: TextStyle(
+                            color: AppColors.warning,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // ─── History List ─────────────────────────────────────────────
+          Expanded(
+            child: state.records.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          RemixIcons.history_line,
+                          size: 48,
+                          color: AppColors.textHint,
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'No attendance history available',
+                          style: const TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 14,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Attendance records will appear here as employees punch in/out',
+                          style: TextStyle(
+                            color: AppColors.textHint,
+                            fontSize: 12,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  )
+                : ListView.separated(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 40),
+                    itemCount: state.records.length,
+                    separatorBuilder: (_, index) => const SizedBox(height: 8),
+                    itemBuilder: (_, index) {
+                      final record = state.records[index];
+                      return _AttendanceCard(record: record);
+                    },
+                  ),
+          ),
+        ],
+      ),
+    );
   }
+}

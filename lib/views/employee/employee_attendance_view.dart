@@ -183,31 +183,84 @@ class EmployeeAttendanceView extends ConsumerWidget {
                 const SizedBox(height: 28),
 
                 // ─── Timeline History ──────────────────────────────────────
-                const Text(
-                  'Attendance History Feed',
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.textPrimary,
-                    letterSpacing: -0.2,
-                  ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Attendance History Feed',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.textPrimary,
+                        letterSpacing: -0.2,
+                      ),
+                    ),
+                    if (state.isLoading)
+                      const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation(AppColors.primary),
+                        ),
+                      )
+                    else
+                      IconButton(
+                        onPressed: () => ref.read(attendanceViewModelProvider.notifier).fetchAttendanceData(),
+                        icon: Icon(RemixIcons.refresh_line, color: AppColors.primary),
+                        tooltip: 'Refresh Attendance',
+                      ),
+                  ],
                 ),
                 const SizedBox(height: 14),
 
-                ...state.history
-                    .where((a) => a.status != AttendanceStatus.weekend)
-                    .take(20)
-                    .toList()
-                    .asMap()
-                    .entries
-                    .map(
-                      (entry) {
-                        final index = entry.key;
-                        final record = entry.value;
-                        final isLast = index == state.history.where((a) => a.status != AttendanceStatus.weekend).take(20).length - 1;
-                        return _TimelineAttendanceRow(record: record, isLast: isLast);
-                      },
+                if (state.history.isEmpty && !state.isLoading)
+                  Container(
+                    padding: const EdgeInsets.all(32),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: AppColors.cardBorder),
                     ),
+                    child: Column(
+                      children: [
+                        Icon(RemixIcons.calendar_line, size: 48, color: AppColors.textHint),
+                        const SizedBox(height: 12),
+                        Text(
+                          'No attendance records found',
+                          style: TextStyle(
+                            color: AppColors.textHint,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Start punching in to see your attendance history',
+                          style: TextStyle(
+                            color: AppColors.textHint.withValues(alpha: 0.7),
+                            fontSize: 12,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  )
+                else
+                  ...state.history
+                      .where((a) => a.status != AttendanceStatus.weekend)
+                      .take(20)
+                      .toList()
+                      .asMap()
+                      .entries
+                      .map(
+                        (entry) {
+                          final index = entry.key;
+                          final record = entry.value;
+                          final isLast = index == state.history.where((a) => a.status != AttendanceStatus.weekend).take(20).length - 1;
+                          return _TimelineAttendanceRow(record: record, isLast: isLast);
+                        },
+                      ),
 
                 const SizedBox(height: 110),
               ]),
