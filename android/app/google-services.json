@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "49476481566",
+    "project_id": "quickboom-notification",
+    "storage_bucket": "quickboom-notification.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:49476481566:android:090161fedf802507df340f",
+        "android_client_info": {
+          "package_name": "com.example.quickboom_hrm"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC3l6jjgu68YzR4owaxzC8vbTi5Qzj10jE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
