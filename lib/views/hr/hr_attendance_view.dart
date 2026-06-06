@@ -182,6 +182,41 @@ class _HrAttendanceViewState extends ConsumerState<HrAttendanceView> {
       ),
     );
   }
+
+  // ─── Download Method ───────────────────────────────────────────────────────
+
+  Future<void> _downloadAttendanceReport(BuildContext context) async {
+    try {
+      // Show loading indicator
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Downloading attendance report...'),
+          duration: Duration(seconds: 1),
+        ),
+      );
+
+      await ref.read(hrAttendanceViewModelProvider.notifier).downloadAttendanceReport();
+      
+      // Show success message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Attendance report downloaded successfully!'),
+            backgroundColor: AppColors.primary,
+          ),
+        );
+      }
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to download report: ${error.toString()}'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
+  }
 }
 
 class _HeaderStatPill extends StatelessWidget {
@@ -553,38 +588,4 @@ class _PulseAmberDotState extends State<_PulseAmberDot>
     );
   }
 
-  // ─── Download Method ───────────────────────────────────────────────────────
-
-  Future<void> _downloadAttendanceReport(BuildContext context) async {
-    try {
-      // Show loading indicator
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Downloading attendance report...'),
-          duration: Duration(seconds: 1),
-        ),
-      );
-
-      await ref.read(hrAttendanceViewModelProvider.notifier).downloadAttendanceReport();
-      
-      // Show success message
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Attendance report downloaded successfully!'),
-            backgroundColor: AppColors.primary,
-          ),
-        );
-      }
-    } catch (error) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to download report: ${error.toString()}'),
-            backgroundColor: AppColors.error,
-          ),
-        );
-      }
-    }
   }
-}
