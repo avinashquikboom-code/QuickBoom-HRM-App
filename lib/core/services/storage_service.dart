@@ -116,6 +116,13 @@ class StorageService {
     }
   }
 
+  // ─── SharedPreferences Instance ───────────────────────────────────────────────
+
+  /// Get the SharedPreferences instance (used by ApiService for WebSocket)
+  static Future<SharedPreferences> getPrefs() async {
+    return await SharedPreferences.getInstance();
+  }
+
   // ─── Full Logout Clear ──────────────────────────────────────────────────────
 
   /// Clears token and cached role on logout. Keeps onboarding flag.
