@@ -127,7 +127,22 @@ class AttendanceViewModel extends StateNotifier<AttendanceState> {
     } catch (e) {
       debugPrint('❌ Punch-in error: $e');
       state = state.copyWith(isLoading: false);
-      return false;
+      
+      // Handle specific geofence errors
+      String errorMessage = e.toString();
+      if (errorMessage.contains('OUTSIDE_GEOFENCE')) {
+        throw Exception('You are outside the office geofence. Please move closer to the office location to punch in.');
+      } else if (errorMessage.contains('MISSING_LOCATION')) {
+        throw Exception('Location services are required. Please enable GPS and try again.');
+      } else if (errorMessage.contains('ALREADY_PUNCHED_IN')) {
+        throw Exception('You have already punched in today.');
+      } else if (errorMessage.contains('NO_OFFICE_ASSIGNED')) {
+        throw Exception('No office assigned to your profile. Please contact HR.');
+      } else if (errorMessage.contains('Location is required')) {
+        throw Exception('GPS location is required for punch in. Please enable location services.');
+      }
+      
+      throw Exception('Failed to punch in: ${errorMessage.replaceAll('Exception: ', '')}');
     }
   }
 
@@ -161,7 +176,18 @@ class AttendanceViewModel extends StateNotifier<AttendanceState> {
     } catch (e) {
       debugPrint('❌ Punch-out error: $e');
       state = state.copyWith(isLoading: false);
-      return false;
+      
+      // Handle specific errors
+      String errorMessage = e.toString();
+      if (errorMessage.contains('NO_ACTIVE_PUNCH_IN')) {
+        throw Exception('No active punch in found for today. Please punch in first.');
+      } else if (errorMessage.contains('STILL_ON_BREAK')) {
+        throw Exception('Cannot punch out while on break. Please end break first.');
+      } else if (errorMessage.contains('Location is required')) {
+        throw Exception('GPS location is required for punch out. Please enable location services.');
+      }
+      
+      throw Exception('Failed to punch out: ${errorMessage.replaceAll('Exception: ', '')}');
     }
   }
 
@@ -169,35 +195,56 @@ class AttendanceViewModel extends StateNotifier<AttendanceState> {
   /// Returns null if location is unavailable or permission is denied.
   Future<Position?> _getCurrentPosition() async {
     try {
+      debugPrint('🔍 Checking location services...');
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
-        debugPrint('⚠️ Location services are disabled.');
-        return null;
+        debugPrint('❌ Location services are disabled.');
+        throw Exception('Location services are disabled. Please enable GPS to continue.');
       }
 
+      debugPrint('🔍 Checking location permissions...');
       LocationPermission permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
+        debugPrint('📋 Requesting location permission...');
         permission = await Geolocator.requestPermission();
         if (permission == LocationPermission.denied) {
-          debugPrint('⚠️ Location permission denied.');
-          return null;
+          debugPrint('❌ Location permission denied.');
+          throw Exception('Location permission denied. Please allow location access to continue.');
         }
       }
 
       if (permission == LocationPermission.deniedForever) {
-        debugPrint('⚠️ Location permission permanently denied.');
-        return null;
+        debugPrint('❌ Location permission permanently denied.');
+        throw Exception('Location permission permanently denied. Please enable location in device settings.');
       }
 
-      return await Geolocator.getCurrentPosition(
+      debugPrint('📍 Getting current GPS position...');
+      final position = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
           accuracy: LocationAccuracy.high,
           timeLimit: Duration(seconds: 10),
         ),
       );
+      
+      debugPrint('✅ GPS Position obtained: lat=${position.latitude}, lon=${position.longitude}');
+      debugPrint('📊 GPS Accuracy: ${position.accuracy}m');
+      debugPrint('⏰ GPS Timestamp: ${position.timestamp}');
+      
+      return position;
     } catch (e) {
-      debugPrint('⚠️ Could not get GPS position: $e');
-      return null;
+      debugPrint('❌ Could not get GPS position: $e');
+      
+      // Provide specific error messages
+      String errorMessage = e.toString();
+      if (errorMessage.contains('Location services are disabled')) {
+        throw Exception('Please enable GPS/location services on your device.');
+      } else if (errorMessage.contains('permission')) {
+        throw Exception('Please allow location access for this app to punch in/out.');
+      } else if (errorMessage.contains('timeout')) {
+        throw Exception('Location request timed out. Please try again.');
+      } else {
+        throw Exception('Unable to get location: ${errorMessage.replaceAll('Exception: ', '')}');
+      }
     }
   }
 

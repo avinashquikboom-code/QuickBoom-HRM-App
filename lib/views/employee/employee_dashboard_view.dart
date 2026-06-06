@@ -802,25 +802,50 @@ class _TodayPunchCardState extends ConsumerState<_TodayPunchCard> {
       return;
     }
 
-    final success = widget.isCheckedIn
-        ? await ref.read(attendanceViewModelProvider.notifier).checkOut(viaFingerprint: false)
-        : await ref.read(attendanceViewModelProvider.notifier).checkIn(viaFingerprint: false);
+    try {
+      final success = widget.isCheckedIn
+          ? await ref.read(attendanceViewModelProvider.notifier).checkOut(viaFingerprint: false)
+          : await ref.read(attendanceViewModelProvider.notifier).checkIn(viaFingerprint: false);
 
-    if (success && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              Icon(RemixIcons.checkbox_circle_line, color: Colors.white),
-              const SizedBox(width: 10),
-              Expanded(child: Text(widget.isCheckedIn ? 'Checked out successfully!' : 'Checked in successfully!')),
-            ],
+      if (success && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(RemixIcons.checkbox_circle_line, color: Colors.white),
+                const SizedBox(width: 10),
+                Expanded(child: Text(widget.isCheckedIn ? 'Checked out successfully!' : 'Checked in successfully!')),
+              ],
+            ),
+            backgroundColor: AppColors.success,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
-          backgroundColor: AppColors.success,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-      );
+        );
+      }
+    } catch (error) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(RemixIcons.error_warning_line, color: Colors.white),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    error.toString().replaceAll('Exception: ', ''),
+                    style: const TextStyle(fontSize: 14),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
     }
   }
 

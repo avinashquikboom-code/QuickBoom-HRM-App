@@ -449,11 +449,36 @@ class _TodayCardState extends ConsumerState<_TodayCard> {
                 Expanded(
                   child: _SimplifiedAttendancePunchButton(
                     isCheckedIn: hasCheckIn,
-                    onTap: () {
-                      if (hasCheckIn) {
-                        ref.read(attendanceViewModelProvider.notifier).checkOut();
-                      } else {
-                        ref.read(attendanceViewModelProvider.notifier).checkIn();
+                    onTap: () async {
+                      try {
+                        if (hasCheckIn) {
+                          await ref.read(attendanceViewModelProvider.notifier).checkOut();
+                        } else {
+                          await ref.read(attendanceViewModelProvider.notifier).checkIn();
+                        }
+                      } catch (error) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Row(
+                                children: [
+                                  Icon(RemixIcons.error_warning_line, color: Colors.white),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Text(
+                                      error.toString().replaceAll('Exception: ', ''),
+                                      style: const TextStyle(fontSize: 14),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              backgroundColor: AppColors.error,
+                              behavior: SnackBarBehavior.floating,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              duration: const Duration(seconds: 4),
+                            ),
+                          );
+                        }
                       }
                     },
                   ),
