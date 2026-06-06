@@ -1,6 +1,9 @@
+import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/services/api_service.dart';
+import '../core/services/websocket_service.dart';
 import '../core/services/leave_report_pdf_service.dart';
 import '../core/constants/app_url.dart';
 import '../models/leave_request_model.dart';
@@ -75,8 +78,58 @@ class LeaveState {
 // ─── Leave ViewModel (Employee) ────────────────────────────────────────────────
 
 class LeaveViewModel extends StateNotifier<LeaveState> {
+  final WebSocketService _wsService = WebSocketService();
+  StreamSubscription? _leaveBalanceSubscription;
+
   LeaveViewModel() : super(const LeaveState()) {
+    _initializeWebSocket();
     fetchLeaves();
+  }
+
+  void _initializeWebSocket() {
+    // Connect to WebSocket
+    _wsService.connect();
+
+    // Listen for real-time leave balance updates
+    _leaveBalanceSubscription = _wsService.leaveBalanceUpdates.listen((data) {
+      if (data['type'] == 'LEAVE_BALANCE_UPDATED' && data['leaveBalance'] != null) {
+        final leaveBalance = data['leaveBalance'];
+        _updateLeaveBalanceFromWebSocket(leaveBalance);
+      }
+    });
+  }
+
+  void _updateLeaveBalanceFromWebSocket(Map<String, dynamic> leaveBalanceData) {
+    final updatedBalance = LeaveBalance(
+      casualTotal: leaveBalanceData['casualTotal'] ?? state.balance.casualTotal,
+      casualUsed: leaveBalanceData['casualUsed'] ?? state.balance.casualUsed,
+      casualRemaining: leaveBalanceData['casualRemaining'] ?? state.balance.casualRemaining,
+      sickTotal: leaveBalanceData['sickTotal'] ?? state.balance.sickTotal,
+      sickUsed: leaveBalanceData['sickUsed'] ?? state.balance.sickUsed,
+      sickRemaining: leaveBalanceData['sickRemaining'] ?? state.balance.sickRemaining,
+      earnedTotal: leaveBalanceData['earnedTotal'] ?? state.balance.earnedTotal,
+      earnedUsed: leaveBalanceData['earnedUsed'] ?? state.balance.earnedUsed,
+      earnedRemaining: leaveBalanceData['earnedRemaining'] ?? state.balance.earnedRemaining,
+    );
+
+    state = state.copyWith(
+      balance: updatedBalance,
+      successMessage: 'Leave balance updated in real-time',
+    );
+
+    // Clear success message after 3 seconds
+    Future.delayed(const Duration(seconds: 3), () {
+      if (state.successMessage?.contains('real-time') == true) {
+        state = state.copyWith(clearMessages: true);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _leaveBalanceSubscription?.cancel();
+    _wsService.dispose();
+    super.dispose();
   }
 
   Future<void> fetchLeaves() async {

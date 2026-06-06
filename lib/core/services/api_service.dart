@@ -3,6 +3,7 @@ import 'dart:developer' as dev;
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:quickboom_hrm/core/constants/app_url.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'storage_service.dart';
 
 // Enhanced logging utility
@@ -105,6 +106,14 @@ class ApiService {
   static Future<void> saveToken(String token) => StorageService.saveToken(token);
 
   static Future<void> clearToken() => StorageService.clearToken();
+
+  // Expose baseUrl for WebSocket service
+  static String get baseUrl => _baseUrl;
+
+  // Get storage instance for WebSocket service
+  static Future<SharedPreferences> getStorage() async {
+    return await StorageService.getPrefs();
+  }
 
   static Future<Map<String, String>> _headers() async {
     final headers = {
