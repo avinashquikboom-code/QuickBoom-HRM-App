@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/services/api_service.dart';
 import '../core/constants/app_url.dart';
@@ -108,7 +109,7 @@ class HrLeaveViewModel extends StateNotifier<HrLeaveState> {
       if (response.statusCode == 200) {
         // The response body contains the PDF data
         // In a real app, you would save this to device storage or open it
-        print('HR leave report downloaded successfully');
+        debugPrint('HR leave report downloaded successfully');
       } else {
         throw Exception('Failed to download leave report');
       }

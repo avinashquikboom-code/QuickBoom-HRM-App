@@ -186,9 +186,12 @@ class _HrAttendanceViewState extends ConsumerState<HrAttendanceView> {
   // ─── Download Method ───────────────────────────────────────────────────────
 
   Future<void> _downloadAttendanceReport(BuildContext context) async {
+    // Store context reference to avoid async gaps
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    
     try {
       // Show loading indicator
-      ScaffoldMessenger.of(context).showSnackBar(
+      scaffoldMessenger.showSnackBar(
         const SnackBar(
           content: Text('Downloading attendance report...'),
           duration: Duration(seconds: 1),
@@ -199,7 +202,7 @@ class _HrAttendanceViewState extends ConsumerState<HrAttendanceView> {
       
       // Show success message
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        scaffoldMessenger.showSnackBar(
           const SnackBar(
             content: Text('Attendance report downloaded successfully!'),
             backgroundColor: AppColors.primary,
@@ -208,7 +211,7 @@ class _HrAttendanceViewState extends ConsumerState<HrAttendanceView> {
       }
     } catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        scaffoldMessenger.showSnackBar(
           SnackBar(
             content: Text('Failed to download report: ${error.toString()}'),
             backgroundColor: AppColors.error,

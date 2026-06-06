@@ -1,7 +1,7 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'core/constants/app_theme.dart';
 import 'views/splash/splash_view.dart';
@@ -14,20 +14,20 @@ void main() async {
   );
   
   // Print HR credentials to console for easy access
-  print('🔐 HR MOBILE LOGIN CREDENTIALS:');
-  print('═══════════════════════════════════════');
-  print('📧 HR Email: hr@hrm.com');
-  print('🔑 HR Password: 123456');
-  print('👤 HR Name: Priya Sharma');
-  print('═══════════════════════════════════════');
-  print('📧 Employee Email: employee@hrm.com');
-  print('🔑 Employee Password: employee123');
-  print('👤 Employee Name: Rahul Verma');
-  print('═══════════════════════════════════════');
-  print('📧 Admin Email: admin@hr.com');
-  print('🔑 Admin Password: 123456');
-  print('👤 Admin Name: Super Admin');
-  print('═══════════════════════════════════════');
+  debugPrint('🔐 HR MOBILE LOGIN CREDENTIALS:');
+  debugPrint('═══════════════════════════════════════');
+  debugPrint('📧 HR Email: hr@hrm.com');
+  debugPrint('🔑 HR Password: 123456');
+  debugPrint('👤 HR Name: Priya Sharma');
+  debugPrint('═══════════════════════════════════════');
+  debugPrint('📧 Employee Email: employee@hrm.com');
+  debugPrint('🔑 Employee Password: employee123');
+  debugPrint('👤 Employee Name: Rahul Verma');
+  debugPrint('═══════════════════════════════════════');
+  debugPrint('📧 Admin Email: admin@hr.com');
+  debugPrint('🔑 Admin Password: 123456');
+  debugPrint('👤 Admin Name: Super Admin');
+  debugPrint('═══════════════════════════════════════');
   
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
