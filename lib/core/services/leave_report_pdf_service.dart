@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -32,7 +34,7 @@ class LeaveReportPdfService {
     );
   }
 
-  static Future<List<int>> _buildDocument({
+  static Future<Uint8List> _buildDocument({
     required LeaveBalance balance,
     required List<LeaveRequestModel> leaves,
     required String employeeName,
