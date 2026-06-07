@@ -9,23 +9,30 @@ class StorageService {
   StorageService._(); // prevent instantiation
 
   // ─── Keys ──────────────────────────────────────────────────────────────────
-  static const String _tokenKey          = 'auth_token';
+  static const String _empTokenKey       = 'emp_token';
+  static const String _hrTokenKey        = 'hr_token';
+  static const String _activeRoleKey     = 'active_role';
   static const String _onboardingKey     = 'hasSeenOnboarding';
   static const String _lastEmailKey      = 'last_login_email';
   static const String _userRoleKey       = 'cached_user_role';
   static const String _fcmTokenKey       = 'fcm_token';
 
   /// Public alias so ApiService can reference the token key constant.
-  static const String tokenKeyPublic = _tokenKey;
+  static const String tokenKeyPublic = _empTokenKey;
 
   // ─── Token ─────────────────────────────────────────────────────────────────
 
   /// Save the JWT auth token received after login.
-  static Future<void> saveToken(String token) async {
+  static Future<void> saveToken(String token, String role) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_tokenKey, token);
-      debugPrint('✅ Token saved to storage');
+      await prefs.setString(_activeRoleKey, role);
+      if (role == 'HR') {
+        await prefs.setString(_hrTokenKey, token);
+      } else {
+        await prefs.setString(_empTokenKey, token);
+      }
+      debugPrint('✅ Token saved to storage for role: $role');
     } catch (e) {
       debugPrint('❌ Failed to save token: $e');
     }
@@ -35,7 +42,25 @@ class StorageService {
   static Future<String?> getToken() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      return prefs.getString(_tokenKey);
+      final role = prefs.getString(_activeRoleKey);
+      if (role == 'HR') {
+        return prefs.getString(_hrTokenKey);
+      } else if (role == 'EMPLOYEE') {
+        return prefs.getString(_empTokenKey);
+      }
+
+      // Fallback if active role is not set: check if either token is present
+      final empToken = prefs.getString(_empTokenKey);
+      if (empToken != null && empToken.isNotEmpty) {
+        await prefs.setString(_activeRoleKey, 'EMPLOYEE');
+        return empToken;
+      }
+      final hrToken = prefs.getString(_hrTokenKey);
+      if (hrToken != null && hrToken.isNotEmpty) {
+        await prefs.setString(_activeRoleKey, 'HR');
+        return hrToken;
+      }
+      return null;
     } catch (e) {
       debugPrint('❌ Failed to read token: $e');
       return null;
@@ -46,7 +71,13 @@ class StorageService {
   static Future<void> clearToken() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.remove(_tokenKey);
+      final role = prefs.getString(_activeRoleKey);
+      if (role == 'HR') {
+        await prefs.remove(_hrTokenKey);
+      } else {
+        await prefs.remove(_empTokenKey);
+      }
+      await prefs.remove(_activeRoleKey);
       debugPrint('🗑️ Token cleared from storage');
     } catch (e) {
       debugPrint('❌ Failed to clear token: $e');

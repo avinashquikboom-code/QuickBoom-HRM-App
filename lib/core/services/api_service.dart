@@ -103,7 +103,7 @@ class ApiService {
 
   static Future<String?> getToken() => StorageService.getToken();
 
-  static Future<void> saveToken(String token) => StorageService.saveToken(token);
+  static Future<void> saveToken(String token, String role) => StorageService.saveToken(token, role);
 
   static Future<void> clearToken() => StorageService.clearToken();
 

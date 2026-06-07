@@ -67,7 +67,8 @@ class AuthViewModel extends StateNotifier<AuthState> {
 
     final loginData = jsonDecode(loginRes.body);
     final token = loginData['token'];
-    await ApiService.saveToken(token);
+    await ApiService.saveToken(token, 'EMPLOYEE');
+    await StorageService.saveUserRole('EMPLOYEE');
 
     // Refresh FCM token on backend after successful login
     try {
@@ -104,34 +105,120 @@ class AuthViewModel extends StateNotifier<AuthState> {
     return true;
   }
 
+  // ─── HR Login ────────────────────────────────────────────────────────────────
+
+  Future<bool> hrLogin(String email, String password) async {
+    state = state.copyWith(isLoading: true, clearError: true);
+
+    try {
+      // 1. HR login request — no FCM token required for web-based HR
+      final loginRes = await ApiService.post(AppUrl.hrLogin, {
+        'email': email.trim(),
+        'password': password.trim(),
+      });
+
+      final loginData = jsonDecode(loginRes.body);
+      if (loginData['success'] != true) {
+        final msg = loginData['message'] ?? 'HR login failed';
+        state = state.copyWith(isLoading: false, errorMessage: msg);
+        return false;
+      }
+
+      final token = loginData['token'] as String;
+      await ApiService.saveToken(token, 'HR');
+      await StorageService.saveUserRole('HR');
+
+      // 2. Parse user from login response (HR endpoint returns full user)
+      final userMap  = loginData['user']  as Map<String, dynamic>;
+      final profMap  = userMap['profile'] as Map<String, dynamic>;
+
+      final parsedUser = UserModel(
+        id:          userMap['id'].toString(),
+        employeeId:  userMap['id'].toString(),
+        name:        profMap['fullName']?.toString() ?? 'HR Manager',
+        email:       profMap['email']?.toString()    ?? email.trim(),
+        phone:       profMap['phone']?.toString()    ?? '',
+        role:        UserRole.hrManager,
+        department:  'Human Resources',
+        designation: profMap['bio']?.toString()       ?? 'HR Manager',
+        joinDate:    DateTime.tryParse(profMap['createdAt']?.toString() ?? '') ?? DateTime.now(),
+        salary:      0.0,
+      );
+
+      state = AuthState(currentUser: parsedUser);
+      return true;
+    } catch (e) {
+      final msg = e.toString().replaceFirst('Exception: ', '');
+      state = state.copyWith(isLoading: false, errorMessage: msg);
+      return false;
+    }
+  }
+
   Future<bool> restoreSession() async {
     state = state.copyWith(isLoading: true, clearError: true);
-    
-    final profileRes = await ApiService.get(AppUrl.employeeProfile);
-    final profileData = jsonDecode(profileRes.body);
 
-    final emp = profileData['employee'];
-    final prof = profileData['profile'];
-    final uRole = (profileData['user']?['role'] ?? 'EMPLOYEE').toString().toUpperCase();
+    try {
+      final activeRole = await StorageService.getUserRole();
 
-    final parsedUser = UserModel(
-      id: emp['id'].toString(),
-      employeeId: emp['employeeCode'].toString(),
-      name: emp['name'].toString(),
-      email: prof['email'].toString(),
-      phone: prof['phone'].toString(),
-      role: (uRole == 'HR' || uRole == 'SUPER_ADMIN' || uRole == 'ADMIN' || uRole == 'PLATFORM_ADMIN')
-          ? UserRole.hrManager
-          : UserRole.employee,
-      department: emp['department'].toString(),
-      designation: emp['designation'].toString(),
-      joinDate: DateTime.tryParse(emp['joinDate'].toString()) ?? DateTime.now(),
-      salary: (prof['salary'] as num?)?.toDouble() ??
-          (emp['salary'] as num?)?.toDouble() ?? 0.0,
-    );
+      if (activeRole == 'HR') {
+        // ── HR session restore ─────────────────────────────────────
+        // HR token is stored; fetch HR profile via employee/profile endpoint
+        // using the hr_token that getToken() will now return.
+        final profileRes = await ApiService.get(AppUrl.employeeProfile);
+        final profileData = jsonDecode(profileRes.body);
 
-    state = AuthState(currentUser: parsedUser);
-    return true;
+        // HR profile endpoint returns a flat profile/user object
+        final prof = (profileData['profile'] ?? profileData) as Map<String, dynamic>;
+        final user = (profileData['user']   ?? {})           as Map<String, dynamic>;
+
+        final parsedUser = UserModel(
+          id:          (user['id'] ?? prof['userId'] ?? 0).toString(),
+          employeeId:  (user['id'] ?? prof['userId'] ?? 0).toString(),
+          name:        prof['fullName']?.toString() ?? 'HR Manager',
+          email:       prof['email']?.toString()    ?? '',
+          phone:       prof['phone']?.toString()    ?? '',
+          role:        UserRole.hrManager,
+          department:  'Human Resources',
+          designation: prof['bio']?.toString() ?? 'HR Manager',
+          joinDate:    DateTime.tryParse(prof['createdAt']?.toString() ?? '') ?? DateTime.now(),
+          salary:      0.0,
+        );
+
+        state = AuthState(currentUser: parsedUser);
+        return true;
+      } else {
+        // ── Employee session restore ───────────────────────────────
+        final profileRes = await ApiService.get(AppUrl.employeeProfile);
+        final profileData = jsonDecode(profileRes.body);
+
+        final emp   = profileData['employee'] as Map<String, dynamic>;
+        final prof  = profileData['profile']  as Map<String, dynamic>;
+        final uRole = (profileData['user']?['role'] ?? 'EMPLOYEE').toString().toUpperCase();
+
+        final parsedUser = UserModel(
+          id:          emp['id'].toString(),
+          employeeId:  emp['employeeCode'].toString(),
+          name:        emp['name'].toString(),
+          email:       prof['email'].toString(),
+          phone:       prof['phone'].toString(),
+          role:        (uRole == 'HR' || uRole == 'SUPER_ADMIN' || uRole == 'ADMIN' || uRole == 'PLATFORM_ADMIN')
+              ? UserRole.hrManager
+              : UserRole.employee,
+          department:  emp['department'].toString(),
+          designation: emp['designation'].toString(),
+          joinDate:    DateTime.tryParse(emp['joinDate'].toString()) ?? DateTime.now(),
+          salary:      (prof['salary'] as num?)?.toDouble() ??
+              (emp['salary'] as num?)?.toDouble() ?? 0.0,
+        );
+
+        state = AuthState(currentUser: parsedUser);
+        return true;
+      }
+    } catch (e) {
+      debugPrint('⚠️ Session restore failed: $e');
+      state = const AuthState();
+      return false;
+    }
   }
 
   void clearError() {

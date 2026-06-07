@@ -6,7 +6,6 @@ import 'package:remixicon/remixicon.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/utils/app_responsive.dart';
 import '../../viewmodels/auth_viewmodel.dart';
-import '../../models/user_model.dart';
 import '../employee/employee_shell.dart';
 import '../hr/hr_shell.dart';
 import '../widgets/premium_animated_background.dart';
@@ -55,13 +54,20 @@ class _LoginViewState extends ConsumerState<LoginView> with SingleTickerProvider
         .read(authViewModelProvider.notifier)
         .login(_emailCtrl.text, _passCtrl.text);
     if (success && mounted) {
-      final user = ref.read(authViewModelProvider).currentUser!;
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (_) => user.role == UserRole.hrManager
-              ? const HrShell()
-              : const EmployeeShell(),
-        ),
+        MaterialPageRoute(builder: (_) => const EmployeeShell()),
+      );
+    }
+  }
+
+  Future<void> _hrLogin() async {
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+    final success = await ref
+        .read(authViewModelProvider.notifier)
+        .hrLogin(_emailCtrl.text, _passCtrl.text);
+    if (success && mounted) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const HrShell()),
       );
     }
   }
@@ -282,7 +288,9 @@ class _LoginViewState extends ConsumerState<LoginView> with SingleTickerProvider
                                   ],
                                 ),
                                 child: ElevatedButton(
-                                  onPressed: authState.isLoading ? null : _login,
+                                  onPressed: authState.isLoading
+                                      ? null
+                                      : (_tabController?.index == 1 ? _hrLogin : _login),
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: AppColors.primary,
                                     foregroundColor: Colors.white,
