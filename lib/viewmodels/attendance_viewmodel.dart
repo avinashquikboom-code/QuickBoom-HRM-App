@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../core/services/api_service.dart';
 import '../core/constants/app_url.dart';
 import '../models/attendance_model.dart';
@@ -273,19 +274,50 @@ class AttendanceViewModel extends StateNotifier<AttendanceState> {
   Future<void> downloadMyAttendanceReport({String? month}) async {
     state = state.copyWith(isLoading: true);
     
-    // Build URL with query parameters
-    String url = AppUrl.attendanceMyReportDownload;
-    if (month != null) {
-      url += '?month=$month';
+    try {
+      final token = await ApiService.getToken();
+      if (token == null) {
+        throw Exception('Authentication token not found. Please log in again.');
+      }
+
+      // Build URL with query parameters
+      String url = AppUrl.attendanceMyReportDownload;
+      if (month != null) {
+        url += '?month=$month';
+      }
+      
+      final downloadUri = Uri.parse(
+        '${AppUrl.baseUrl}$url?token=$token',
+      );
+
+      debugPrint('📥 Opening attendance report URL: $downloadUri');
+
+      bool launched = await launchUrl(
+        downloadUri,
+        mode: LaunchMode.externalApplication,
+      );
+      
+      if (!launched) {
+        // Fallback for devices without an external browser handler
+        launched = await launchUrl(
+          downloadUri,
+          mode: LaunchMode.inAppWebView,
+        );
+      }
+      
+      if (!launched) {
+        throw Exception('Could not launch download URL');
+      }
+      
+      if (kDebugMode) {
+        print('Attendance report download launched successfully');
+      }
+    } catch (e) {
+      debugPrint('❌ Error downloading attendance report: $e');
+      rethrow;
+    } finally {
+      state = state.copyWith(isLoading: false);
     }
-    
-    final response = await ApiService.get(url);
-    
-    if (kDebugMode) {
-      print('Attendance report downloaded successfully');
-    }
-    
-    state = state.copyWith(isLoading: false);
   }
 }
 

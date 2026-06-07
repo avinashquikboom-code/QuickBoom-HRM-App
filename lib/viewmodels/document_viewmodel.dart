@@ -42,9 +42,12 @@ class DocumentViewModel extends StateNotifier<DocumentState> {
     try {
       debugPrint('🔄 Fetching documents from backend...');
       final response = await ApiService.get(AppUrl.employeeDocuments);
+      debugPrint('📄 Response body: ${response.body}');
       final data = jsonDecode(response.body);
+      debugPrint('📊 Parsed data: $data');
 
       final List rawDocuments = data['documents'] ?? [];
+      debugPrint('📋 Raw documents count: ${rawDocuments.length}');
       
       final List<DocumentModel> documents = rawDocuments.map((doc) {
         // Parse document type
@@ -90,6 +93,7 @@ class DocumentViewModel extends StateNotifier<DocumentState> {
         documents: documents,
         isLoading: false,
       );
+      debugPrint('✅ Documents loaded successfully. Count: ${documents.length}');
     } catch (e) {
       debugPrint('❌ Error fetching documents: $e');
       state = DocumentState(
