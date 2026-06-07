@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/services/api_service.dart';
 import '../core/constants/app_url.dart';
@@ -60,8 +62,27 @@ class EmployeeDashboardState {
 // ─── Employee Dashboard ViewModel ──────────────────────────────────────────────
 
 class EmployeeDashboardViewModel extends StateNotifier<EmployeeDashboardState> {
+  Timer? _refreshTimer;
+
   EmployeeDashboardViewModel() : super(const EmployeeDashboardState()) {
     fetchDashboard();
+    _startAutoRefresh();
+  }
+
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    super.dispose();
+  }
+
+  void _startAutoRefresh() {
+    // Auto-refresh dashboard every 30 seconds
+    _refreshTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      if (kDebugMode) {
+        debugPrint('🔄 Auto-refreshing employee dashboard...');
+      }
+      fetchDashboard();
+    });
   }
 
   Future<void> fetchDashboard() async {

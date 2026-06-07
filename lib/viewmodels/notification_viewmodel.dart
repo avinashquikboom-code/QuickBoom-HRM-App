@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/services/api_service.dart';
 import '../core/constants/app_url.dart';
@@ -47,8 +49,27 @@ class NotificationState {
 // ─── Notification ViewModel ────────────────────────────────────────────────────
 
 class NotificationViewModel extends StateNotifier<NotificationState> {
+  Timer? _refreshTimer;
+
   NotificationViewModel() : super(const NotificationState()) {
     fetchNotifications();
+    _startAutoRefresh();
+  }
+
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    super.dispose();
+  }
+
+  void _startAutoRefresh() {
+    // Auto-refresh notifications every 30 seconds
+    _refreshTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      if (kDebugMode) {
+        debugPrint('🔄 Auto-refreshing notifications...');
+      }
+      fetchNotifications();
+    });
   }
 
   NotificationModel _parseNotification(Map<String, dynamic> n) {
