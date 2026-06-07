@@ -582,7 +582,7 @@ class _TodayCardState extends ConsumerState<_TodayCard> {
                       children: [
                         Icon(
                           _distanceData!['isWithinRadius'] == true
-                              ? RemixIcons.check_circle_line
+                              ? RemixIcons.checkbox_circle_line
                               : RemixIcons.map_pin_line,
                           size: 14,
                           color: _distanceData!['isWithinRadius'] == true
