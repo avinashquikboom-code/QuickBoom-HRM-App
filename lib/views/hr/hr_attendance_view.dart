@@ -638,16 +638,39 @@ class _PulseAmberDotState extends State<_PulseAmberDot>
   }
 }
 
-class _AttendanceHistoryTab extends ConsumerWidget {
+class _AttendanceHistoryTab extends ConsumerStatefulWidget {
   const _AttendanceHistoryTab();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_AttendanceHistoryTab> createState() => _AttendanceHistoryTabState();
+}
+
+class _AttendanceHistoryTabState extends ConsumerState<_AttendanceHistoryTab> {
+  @override
+  void initState() {
+    super.initState();
+    // Fetch last 30 days of attendance on init
+    _fetchHistory();
+  }
+
+  Future<void> _fetchHistory() async {
+    final now = DateTime.now();
+    final thirtyDaysAgo = now.subtract(const Duration(days: 30));
+    final from = thirtyDaysAgo.toIso8601String().split('T')[0];
+    final to = now.toIso8601String().split('T')[0];
+    await ref.read(hrAttendanceViewModelProvider.notifier).fetchHistoryAttendance(
+      from: from,
+      to: to,
+      limit: 100,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final state = ref.watch(hrAttendanceViewModelProvider);
-    final vm = ref.read(hrAttendanceViewModelProvider.notifier);
 
     return RefreshIndicator(
-      onRefresh: vm.fetchTodayAttendance,
+      onRefresh: _fetchHistory,
       color: AppColors.primary,
       backgroundColor: AppColors.surface,
       child: Column(
@@ -676,7 +699,7 @@ class _AttendanceHistoryTab extends ConsumerWidget {
                   ),
                   const Spacer(),
                   Text(
-                    'Showing last 30 days',
+                    'Last 30 days',
                     style: TextStyle(
                       color: AppColors.textHint,
                       fontSize: 12,

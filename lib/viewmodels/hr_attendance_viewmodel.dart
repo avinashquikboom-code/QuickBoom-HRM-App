@@ -63,16 +63,27 @@ class HrAttendanceViewModel extends StateNotifier<HrAttendanceState> {
   Future<void> fetchTodayAttendance() async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
-      final currentTime = DateTime.now();
-      final url = '${AppUrl.hrTodayAttendance}'
-          '?clientTimestamp=${Uri.encodeComponent(currentTime.toUtc().toIso8601String())}'
-          '&timezone=${Uri.encodeComponent(currentTime.timeZoneName)}';
+      // Get today's date in YYYY-MM-DD format
+      final today = DateTime.now().toIso8601String().split('T')[0];
 
-      debugPrint('🔄 Fetching today\'s HR attendance logs...');
+      final queryParams = <String, String>{
+        'from': today,
+        'to': today,
+        'limit': '100',
+      };
+
+      final queryString = queryParams.entries
+          .map((e) => '${e.key}=${e.value}')
+          .join('&');
+
+      final url = '${AppUrl.hrTodayAttendance}?$queryString';
+
+      debugPrint('🔄 Fetching HR attendance logs...');
       final res = await ApiService.get(url);
       final data = jsonDecode(res.body);
 
-      final List rawRecords = data['attendances'] ?? [];
+      // Handle both response structures
+      final List rawRecords = data['records'] ?? data['attendances'] ?? [];
       final records = rawRecords.map((r) => HrAttendanceRecord.fromJson(r)).toList();
 
       state = state.copyWith(records: records, isLoading: false);
@@ -92,6 +103,45 @@ class HrAttendanceViewModel extends StateNotifier<HrAttendanceState> {
 
   void clearSearch() {
     state = state.copyWith(searchQuery: '');
+  }
+
+  // Fetch attendance history with date range
+  Future<void> fetchHistoryAttendance({
+    String? from,
+    String? to,
+    int limit = 50,
+  }) async {
+    state = state.copyWith(isLoading: true, clearError: true);
+    try {
+      final queryParams = <String, String>{
+        'limit': limit.toString(),
+      };
+
+      if (from != null) queryParams['from'] = from;
+      if (to != null) queryParams['to'] = to;
+
+      final queryString = queryParams.entries
+          .map((e) => '${e.key}=${e.value}')
+          .join('&');
+
+      final url = '${AppUrl.hrTodayAttendance}?$queryString';
+
+      debugPrint('🔄 Fetching HR attendance history...');
+      final res = await ApiService.get(url);
+      final data = jsonDecode(res.body);
+
+      final List rawRecords = data['records'] ?? data['attendances'] ?? [];
+      final records = rawRecords.map((r) => HrAttendanceRecord.fromJson(r)).toList();
+
+      state = state.copyWith(records: records, isLoading: false);
+      debugPrint('✅ HR attendance history fetched: ${records.length} records.');
+    } catch (e) {
+      debugPrint('❌ Error fetching HR attendance history: $e');
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: e.toString().replaceAll('Exception: ', ''),
+      );
+    }
   }
 
   // Download attendance report for HR
