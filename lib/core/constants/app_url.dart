@@ -151,6 +151,11 @@ class AppUrl {
   static const String mobileApplyLeave = '/api/mobile/leave/apply';
 
   // ─────────────────────────────────────────────
+  // Mobile – Attendance (HR/Admin)
+  // ─────────────────────────────────────────────
+  static const String mobileAllAttendance = '/api/mobile/attendance/all';
+
+  // ─────────────────────────────────────────────
   // Mobile – Notifications
   // ─────────────────────────────────────────────
   static const String mobileNotifications = '/api/mobile/notifications';

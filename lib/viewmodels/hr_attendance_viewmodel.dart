@@ -98,24 +98,24 @@ class HrAttendanceViewModel extends StateNotifier<HrAttendanceState> {
   Future<void> downloadAttendanceReport({String? month, int? employeeId}) async {
     try {
       state = state.copyWith(isLoading: true);
-      
+
       // Build URL with query parameters
       String url = AppUrl.attendanceReportDownload;
       List<String> queryParams = [];
-      
+
       if (month != null) {
         queryParams.add('month=$month');
       }
       if (employeeId != null) {
         queryParams.add('employeeId=$employeeId');
       }
-      
+
       if (queryParams.isNotEmpty) {
         url += '?${queryParams.join('&')}';
       }
-      
+
       final response = await ApiService.get(url);
-      
+
       if (response.statusCode == 200) {
         // File downloaded successfully
         if (kDebugMode) {
@@ -131,6 +131,53 @@ class HrAttendanceViewModel extends StateNotifier<HrAttendanceState> {
       rethrow;
     } finally {
       state = state.copyWith(isLoading: false);
+    }
+  }
+
+  // Fetch all employees' attendance (HR/Admin only)
+  Future<void> fetchAllEmployeesAttendance({
+    String? from,
+    String? to,
+    int? employeeId,
+    int? departmentId,
+    int? officeId,
+    int page = 1,
+    int limit = 50,
+  }) async {
+    state = state.copyWith(isLoading: true, clearError: true);
+    try {
+      final queryParams = <String, String>{
+        'page': page.toString(),
+        'limit': limit.toString(),
+      };
+
+      if (from != null) queryParams['from'] = from;
+      if (to != null) queryParams['to'] = to;
+      if (employeeId != null) queryParams['employeeId'] = employeeId.toString();
+      if (departmentId != null) queryParams['departmentId'] = departmentId.toString();
+      if (officeId != null) queryParams['officeId'] = officeId.toString();
+
+      final queryString = queryParams.entries
+          .map((e) => '${e.key}=${e.value}')
+          .join('&');
+
+      final url = '${AppUrl.mobileAllAttendance}?$queryString';
+
+      debugPrint('🔄 Fetching all employees attendance...');
+      final res = await ApiService.get(url);
+      final data = jsonDecode(res.body);
+
+      final List rawRecords = data['records'] ?? [];
+      final records = rawRecords.map((r) => HrAttendanceRecord.fromJson(r)).toList();
+
+      state = state.copyWith(records: records, isLoading: false);
+      debugPrint('✅ All employees attendance fetched: ${records.length} records.');
+    } catch (e) {
+      debugPrint('❌ Error fetching all employees attendance: $e');
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: e.toString().replaceAll('Exception: ', ''),
+      );
     }
   }
 }
