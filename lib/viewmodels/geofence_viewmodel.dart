@@ -310,11 +310,16 @@ class GeofenceViewModel extends StateNotifier<GeofenceState> {
       final data = jsonDecode(response.body);
       if (data['success'] == true) {
         final result = data['result'];
+        final coordinates = result['coordinates'];
+        final officeLat = coordinates != null ? coordinates['officeLat']?.toDouble() : null;
+        final officeLon = coordinates != null ? coordinates['officeLon']?.toDouble() : null;
         state = state.copyWith(
           isWithinGeofence: data['status'] == 'WITHIN_GEOFENCE',
           distance: result['distance']?.toDouble(),
           nearestOffice: result['officeName'],
           maxRadius: result['maxRadius'],
+          officeLatitude: officeLat,
+          officeLongitude: officeLon,
           currentPosition: position,
           isLoading: false,
         );
