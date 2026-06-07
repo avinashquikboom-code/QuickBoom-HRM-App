@@ -19,6 +19,7 @@ class LiveTrackingState {
   final bool isLoading;
   final String? errorMessage;
   final String? successMessage;
+  final bool isLocationEnabled;
 
   const LiveTrackingState({
     this.isTracking = false,
@@ -30,6 +31,7 @@ class LiveTrackingState {
     this.isLoading = false,
     this.errorMessage,
     this.successMessage,
+    this.isLocationEnabled = true,
   });
 
   LiveTrackingState copyWith({
@@ -42,6 +44,7 @@ class LiveTrackingState {
     bool? isLoading,
     String? errorMessage,
     String? successMessage,
+    bool? isLocationEnabled,
     bool clearError = false,
     bool clearSuccess = false,
   }) {
@@ -55,6 +58,7 @@ class LiveTrackingState {
       isLoading: isLoading ?? this.isLoading,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
       successMessage: clearSuccess ? null : (successMessage ?? this.successMessage),
+      isLocationEnabled: isLocationEnabled ?? this.isLocationEnabled,
     );
   }
 
@@ -147,7 +151,10 @@ class LiveTrackingViewModel extends StateNotifier<LiveTrackingState> {
     try {
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
-        state = state.copyWith(errorMessage: 'Location services are disabled.');
+        state = state.copyWith(
+          isLocationEnabled: false,
+          errorMessage: 'Location services are disabled.',
+        );
         return null;
       }
 
@@ -155,13 +162,19 @@ class LiveTrackingViewModel extends StateNotifier<LiveTrackingState> {
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
         if (permission == LocationPermission.denied) {
-          state = state.copyWith(errorMessage: 'Location permissions are denied.');
+          state = state.copyWith(
+            isLocationEnabled: false,
+            errorMessage: 'Location permissions are denied.',
+          );
           return null;
         }
       }
 
       if (permission == LocationPermission.deniedForever) {
-        state = state.copyWith(errorMessage: 'Location permissions are permanently denied.');
+        state = state.copyWith(
+          isLocationEnabled: false,
+          errorMessage: 'Location permissions are permanently denied.',
+        );
         return null;
       }
 
@@ -172,10 +185,17 @@ class LiveTrackingViewModel extends StateNotifier<LiveTrackingState> {
         ),
       );
 
-      state = state.copyWith(currentPosition: position);
+      state = state.copyWith(
+        currentPosition: position,
+        isLocationEnabled: true,
+        clearError: true,
+      );
       return position;
     } catch (e) {
-      state = state.copyWith(errorMessage: 'Failed to get location: $e');
+      state = state.copyWith(
+        isLocationEnabled: false,
+        errorMessage: 'Failed to get location: $e',
+      );
       return null;
     }
   }
@@ -288,6 +308,18 @@ class LiveTrackingViewModel extends StateNotifier<LiveTrackingState> {
 
     try {
       final position = await getCurrentLocation();
+      
+      // Send location status to server even if location is disabled
+      await ApiService.post(AppUrl.trackingUpdateLocation, {
+        'latitude': position?.latitude ?? 0,
+        'longitude': position?.longitude ?? 0,
+        'accuracy': position?.accuracy,
+        'speed': position?.speed,
+        'heading': position?.heading,
+        'altitude': position?.altitude,
+        'isLocationEnabled': state.isLocationEnabled,
+      });
+
       if (position == null) return;
 
       final locationPoint = LocationPoint(
@@ -303,16 +335,6 @@ class LiveTrackingViewModel extends StateNotifier<LiveTrackingState> {
       // Add to location history
       final updatedHistory = [...state.locationHistory, locationPoint];
       state = state.copyWith(locationHistory: updatedHistory);
-
-      // Send location to server
-      await ApiService.post(AppUrl.trackingUpdateLocation, {
-        'latitude': position.latitude,
-        'longitude': position.longitude,
-        'accuracy': position.accuracy,
-        'speed': position.speed,
-        'heading': position.heading,
-        'altitude': position.altitude,
-      });
     } catch (e) {
       debugPrint('Failed to update location: $e');
     }
