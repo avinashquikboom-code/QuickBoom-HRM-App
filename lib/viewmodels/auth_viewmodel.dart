@@ -5,7 +5,6 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import '../core/services/api_service.dart';
 import '../core/services/storage_service.dart';
 import '../core/constants/app_url.dart';
-import '../core/services/notification_service.dart';
 import '../models/user_model.dart';
 
 // ─── Auth State ──────────────────────────────────────────────────────────────
@@ -58,7 +57,7 @@ class AuthViewModel extends StateNotifier<AuthState> {
       }
     }
 
-    // 1. Live login request
+    // 1. Mobile login request - returns complete user data
     final loginRes = await ApiService.post(AppUrl.login, {
       'email': employeeId.trim(),
       'password': password.trim(),
@@ -66,40 +65,36 @@ class AuthViewModel extends StateNotifier<AuthState> {
     });
 
     final loginData = jsonDecode(loginRes.body);
-    final token = loginData['token'];
+    if (loginData['success'] != true) {
+      final msg = loginData['message'] ?? 'Login failed';
+      state = state.copyWith(isLoading: false, errorMessage: msg);
+      return false;
+    }
+
+    final token = loginData['token'] as String;
     final userRole = loginData['user']['role'].toString().toUpperCase();
     await ApiService.saveToken(token, userRole);
     await StorageService.saveUserRole(userRole);
 
-    // Refresh FCM token on backend after successful login
-    try {
-      await NotificationService().refreshToken();
-    } catch (e) {
-      debugPrint('⚠️ Failed to refresh FCM token after login: $e');
-    }
-
-    // 2. Live profile request
-    final profileRes = await ApiService.get(AppUrl.employeeProfile);
-    final profileData = jsonDecode(profileRes.body);
-
-    final emp = profileData['employee'];
-    final prof = profileData['profile'];
-    final uRole = loginData['user']['role'].toString().toUpperCase();
+    // 2. Parse user data from mobile login response
+    final userMap = loginData['user'] as Map<String, dynamic>;
+    final profMap = userMap['profile'] as Map<String, dynamic>? ?? {};
+    final empMap = userMap['employee'] as Map<String, dynamic>? ?? {};
 
     final parsedUser = UserModel(
-      id: emp['id'].toString(),
-      employeeId: emp['employeeCode'].toString(),
-      name: emp['name'].toString(),
-      email: prof['email'].toString(),
-      phone: prof['phone'].toString(),
-      role: (uRole == 'HR' || uRole == 'SUPER_ADMIN' || uRole == 'ADMIN')
+      id: userMap['id'].toString(),
+      employeeId: empMap['employeeCode']?.toString() ?? userMap['id'].toString(),
+      name: profMap['fullName']?.toString() ?? 
+             (empMap['firstName']?.toString() ?? '') + ' ' + (empMap['lastName']?.toString() ?? '').trim(),
+      email: profMap['email']?.toString() ?? userMap['email']?.toString() ?? employeeId.trim(),
+      phone: profMap['phone']?.toString() ?? '',
+      role: (userRole == 'HR' || userRole == 'SUPER_ADMIN' || userRole == 'ADMIN')
           ? UserRole.hrManager
           : UserRole.employee,
-      department: emp['department'].toString(),
-      designation: emp['designation'].toString(),
-      joinDate: DateTime.tryParse(emp['joinDate'].toString()) ?? DateTime.now(),
-      salary: (prof['salary'] as num?)?.toDouble() ??
-          (emp['salary'] as num?)?.toDouble() ?? 0.0,
+      department: empMap['department']?.toString() ?? 'General',
+      designation: empMap['designation']?.toString() ?? 'Employee',
+      joinDate: DateTime.tryParse(profMap['createdAt']?.toString() ?? empMap['joinDate']?.toString() ?? '') ?? DateTime.now(),
+      salary: 0.0,
     );
 
     state = AuthState(currentUser: parsedUser);
@@ -112,7 +107,7 @@ class AuthViewModel extends StateNotifier<AuthState> {
     state = state.copyWith(isLoading: true, clearError: true);
 
     try {
-      // 1. Use mobile login endpoint for HR users (same as employees)
+      // Use mobile login endpoint for HR users (same as employees)
       final loginRes = await ApiService.post(AppUrl.login, {
         'email': email.trim(),
         'password': password.trim(),
@@ -130,7 +125,7 @@ class AuthViewModel extends StateNotifier<AuthState> {
       await ApiService.saveToken(token, userRole);
       await StorageService.saveUserRole(userRole);
 
-      // 2. Parse user from login response
+      // Parse user from mobile login response
       final userMap = loginData['user'] as Map<String, dynamic>;
       final profMap = userMap['profile'] as Map<String, dynamic>? ?? {};
       final empMap = userMap['employee'] as Map<String, dynamic>? ?? {};
@@ -138,7 +133,8 @@ class AuthViewModel extends StateNotifier<AuthState> {
       final parsedUser = UserModel(
         id: userMap['id'].toString(),
         employeeId: empMap['employeeCode']?.toString() ?? userMap['id'].toString(),
-        name: profMap['fullName']?.toString() ?? empMap['firstName']?.toString() ?? 'HR Manager',
+        name: profMap['fullName']?.toString() ?? 
+               (empMap['firstName']?.toString() ?? '') + ' ' + (empMap['lastName']?.toString() ?? '').trim(),
         email: profMap['email']?.toString() ?? userMap['email']?.toString() ?? email.trim(),
         phone: profMap['phone']?.toString() ?? '',
         role: UserRole.hrManager,

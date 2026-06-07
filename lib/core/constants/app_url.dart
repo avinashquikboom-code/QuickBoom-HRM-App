@@ -23,7 +23,7 @@ class AppUrl {
   // ─────────────────────────────────────────────
   //  Employee – Profile
   // ─────────────────────────────────────────────
-  static const String employeeProfile  = '/api/employee/profile';
+  static const String employeeProfile  = '/api/mobile/auth/profile';
   static const String employeeAvatar   = '/api/employee/avatar';
 
   // ─────────────────────────────────────────────
