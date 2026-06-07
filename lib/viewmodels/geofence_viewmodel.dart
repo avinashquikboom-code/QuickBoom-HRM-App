@@ -15,6 +15,8 @@ class GeofenceState {
   final List<OfficeGeofence> offices;
   final List<OfficeGeofence> nearbyOffices;
   final Position? currentPosition;
+  final double? officeLatitude;
+  final double? officeLongitude;
   final bool isLoading;
   final String? errorMessage;
   final String? successMessage;
@@ -27,6 +29,8 @@ class GeofenceState {
     this.offices = const [],
     this.nearbyOffices = const [],
     this.currentPosition,
+    this.officeLatitude,
+    this.officeLongitude,
     this.isLoading = false,
     this.errorMessage,
     this.successMessage,
@@ -40,6 +44,8 @@ class GeofenceState {
     List<OfficeGeofence>? offices,
     List<OfficeGeofence>? nearbyOffices,
     Position? currentPosition,
+    double? officeLatitude,
+    double? officeLongitude,
     bool? isLoading,
     String? errorMessage,
     String? successMessage,
@@ -54,6 +60,8 @@ class GeofenceState {
       offices: offices ?? this.offices,
       nearbyOffices: nearbyOffices ?? this.nearbyOffices,
       currentPosition: currentPosition ?? this.currentPosition,
+      officeLatitude: officeLatitude ?? this.officeLatitude,
+      officeLongitude: officeLongitude ?? this.officeLongitude,
       isLoading: isLoading ?? this.isLoading,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
       successMessage: clearSuccess ? null : (successMessage ?? this.successMessage),
@@ -205,11 +213,16 @@ class GeofenceViewModel extends StateNotifier<GeofenceState> {
       final data = jsonDecode(response.body);
       if (data['success'] == true) {
         final result = data['result'];
+        final coordinates = result['coordinates'];
+        final officeLat = coordinates != null ? coordinates['officeLat']?.toDouble() : null;
+        final officeLon = coordinates != null ? coordinates['officeLon']?.toDouble() : null;
         state = state.copyWith(
           isWithinGeofence: result['isWithinGeofence'] ?? false,
           distance: result['distance']?.toDouble(),
           nearestOffice: result['officeName'],
           maxRadius: result['maxRadius'],
+          officeLatitude: officeLat,
+          officeLongitude: officeLon,
           currentPosition: position,
           isLoading: false,
           successMessage: 'Geofence check completed.',

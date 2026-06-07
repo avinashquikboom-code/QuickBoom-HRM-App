@@ -21,6 +21,7 @@ import '../../viewmodels/geofence_viewmodel.dart';
 
 
 final geofenceProvider = FutureProvider<bool>((ref) async {
+  await Future.delayed(Duration.zero);
   return ref.read(geofenceViewModelProvider.notifier).checkGeofenceStatus();
 });
 
