@@ -1,9 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/services/api_service.dart';
-import '../core/services/storage_service.dart';
 import '../core/constants/app_url.dart';
 import '../models/notification_model.dart';
 
@@ -52,22 +50,6 @@ class NotificationState {
 class NotificationViewModel extends StateNotifier<NotificationState> {
   NotificationViewModel() : super(const NotificationState()) {
     fetchNotifications();
-  }
-
-  void _startAutoRefresh() {
-    // Auto-refresh notifications every 30 seconds
-    _refreshTimer = Timer.periodic(const Duration(seconds: 30), (_) async {
-      // Check if user is still authenticated before refreshing
-      final hasToken = await StorageService.hasToken();
-      if (!hasToken) {
-        _refreshTimer?.cancel();
-        return;
-      }
-      if (kDebugMode) {
-        debugPrint('🔄 Auto-refreshing notifications...');
-      }
-      fetchNotifications();
-    });
   }
 
   NotificationModel _parseNotification(Map<String, dynamic> n) {

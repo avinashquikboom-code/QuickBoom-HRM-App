@@ -1,9 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/services/api_service.dart';
-import '../core/services/storage_service.dart';
 import '../core/constants/app_url.dart';
 
 // ─── HR Dashboard Stats ────────────────────────────────────────────────────────
@@ -87,33 +85,8 @@ class HRDashboardState {
 // ─── HR Dashboard ViewModel ─────────────────────────────────────────────────────
 
 class HRDashboardViewModel extends StateNotifier<HRDashboardState> {
-  Timer? _refreshTimer;
-
   HRDashboardViewModel() : super(const HRDashboardState()) {
     fetchDashboardStats();
-    _startAutoRefresh();
-  }
-
-  @override
-  void dispose() {
-    _refreshTimer?.cancel();
-    super.dispose();
-  }
-
-  void _startAutoRefresh() {
-    // Auto-refresh dashboard every 30 seconds
-    _refreshTimer = Timer.periodic(const Duration(seconds: 30), (_) async {
-      // Check if user is still authenticated before refreshing
-      final hasToken = await StorageService.hasToken();
-      if (!hasToken) {
-        _refreshTimer?.cancel();
-        return;
-      }
-      if (kDebugMode) {
-        debugPrint('🔄 Auto-refreshing HR dashboard...');
-      }
-      fetchDashboardStats();
-    });
   }
 
   Future<void> fetchDashboardStats() async {

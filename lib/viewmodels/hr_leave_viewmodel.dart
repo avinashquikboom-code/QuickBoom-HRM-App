@@ -4,7 +4,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../core/services/api_service.dart';
-import '../core/services/storage_service.dart';
 import '../core/constants/app_url.dart';
 import '../models/leave_request_model.dart';
 
@@ -44,33 +43,8 @@ class HrLeaveState {
 // ─── HR Leave ViewModel ────────────────────────────────────────────────────────
 
 class HrLeaveViewModel extends StateNotifier<HrLeaveState> {
-  Timer? _refreshTimer;
-
   HrLeaveViewModel() : super(const HrLeaveState()) {
     fetchLeaves();
-    _startAutoRefresh();
-  }
-
-  @override
-  void dispose() {
-    _refreshTimer?.cancel();
-    super.dispose();
-  }
-
-  void _startAutoRefresh() {
-    // Auto-refresh HR leaves every 30 seconds
-    _refreshTimer = Timer.periodic(const Duration(seconds: 30), (_) async {
-      // Check if user is still authenticated before refreshing
-      final hasToken = await StorageService.hasToken();
-      if (!hasToken) {
-        _refreshTimer?.cancel();
-        return;
-      }
-      if (kDebugMode) {
-        debugPrint('🔄 Auto-refreshing HR leaves...');
-      }
-      fetchLeaves();
-    });
   }
 
   Future<void> fetchLeaves() async {
