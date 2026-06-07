@@ -164,4 +164,11 @@ class AppUrl {
   // FCM Token
   // ─────────────────────────────────────────────
   static const String saveFCMToken = '/api/employee/fcm-token';
+
+  // ─────────────────────────────────────────────
+  // Distance Tracking (Mobile)
+  // ─────────────────────────────────────────────
+  static const String distanceCurrent = '/api/mobile/distance/current';
+  static const String distanceHistory = '/api/mobile/distance/history';
+  static const String distanceOfficeInfo = '/api/mobile/distance/office-info';
 }
