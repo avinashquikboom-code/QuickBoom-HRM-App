@@ -112,8 +112,8 @@ class AuthViewModel extends StateNotifier<AuthState> {
     state = state.copyWith(isLoading: true, clearError: true);
 
     try {
-      // 1. HR login request — no FCM token required for web-based HR
-      final loginRes = await ApiService.post(AppUrl.hrLogin, {
+      // 1. Use mobile login endpoint for HR users (same as employees)
+      final loginRes = await ApiService.post(AppUrl.login, {
         'email': email.trim(),
         'password': password.trim(),
       });
@@ -126,24 +126,26 @@ class AuthViewModel extends StateNotifier<AuthState> {
       }
 
       final token = loginData['token'] as String;
-      await ApiService.saveToken(token, 'HR');
-      await StorageService.saveUserRole('HR');
+      final userRole = loginData['user']['role'].toString().toUpperCase();
+      await ApiService.saveToken(token, userRole);
+      await StorageService.saveUserRole(userRole);
 
-      // 2. Parse user from login response (HR endpoint returns full user)
-      final userMap  = loginData['user']  as Map<String, dynamic>;
-      final profMap  = userMap['profile'] as Map<String, dynamic>;
+      // 2. Parse user from login response
+      final userMap = loginData['user'] as Map<String, dynamic>;
+      final profMap = userMap['profile'] as Map<String, dynamic>? ?? {};
+      final empMap = userMap['employee'] as Map<String, dynamic>? ?? {};
 
       final parsedUser = UserModel(
-        id:          userMap['id'].toString(),
-        employeeId:  userMap['id'].toString(),
-        name:        profMap['fullName']?.toString() ?? 'HR Manager',
-        email:       profMap['email']?.toString()    ?? email.trim(),
-        phone:       profMap['phone']?.toString()    ?? '',
-        role:        UserRole.hrManager,
-        department:  'Human Resources',
-        designation: profMap['bio']?.toString()       ?? 'HR Manager',
-        joinDate:    DateTime.tryParse(profMap['createdAt']?.toString() ?? '') ?? DateTime.now(),
-        salary:      0.0,
+        id: userMap['id'].toString(),
+        employeeId: empMap['employeeCode']?.toString() ?? userMap['id'].toString(),
+        name: profMap['fullName']?.toString() ?? empMap['firstName']?.toString() ?? 'HR Manager',
+        email: profMap['email']?.toString() ?? userMap['email']?.toString() ?? email.trim(),
+        phone: profMap['phone']?.toString() ?? '',
+        role: UserRole.hrManager,
+        department: empMap['department']?.toString() ?? 'Human Resources',
+        designation: empMap['designation']?.toString() ?? profMap['bio']?.toString() ?? 'HR Manager',
+        joinDate: DateTime.tryParse(profMap['createdAt']?.toString() ?? empMap['joinDate']?.toString() ?? '') ?? DateTime.now(),
+        salary: 0.0,
       );
 
       state = AuthState(currentUser: parsedUser);
