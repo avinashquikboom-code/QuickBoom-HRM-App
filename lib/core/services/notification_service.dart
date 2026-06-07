@@ -266,33 +266,67 @@ class NotificationService {
     required Map<String, dynamic> data,
     required String channelId,
   }) async {
-    final androidDetails = AndroidNotificationDetails(
-      channelId,
-      'Channel Name',
-      channelDescription: 'Channel Description',
-      importance: Importance.high,
-      priority: Priority.high,
-      showWhen: true,
-    );
+    try {
+      final channelName = _getChannelName(channelId);
+      final channelDescription = _getChannelDescription(channelId);
+      
+      final androidDetails = AndroidNotificationDetails(
+        channelId,
+        channelName,
+        channelDescription: channelDescription,
+        importance: Importance.high,
+        priority: Priority.high,
+        showWhen: true,
+        icon: '@mipmap/ic_launcher',
+      );
 
-    const iosDetails = DarwinNotificationDetails(
-      presentAlert: true,
-      presentBadge: true,
-      presentSound: true,
-    );
+      const iosDetails = DarwinNotificationDetails(
+        presentAlert: true,
+        presentBadge: true,
+        presentSound: true,
+      );
 
-    final details = NotificationDetails(
-      android: androidDetails,
-      iOS: iosDetails,
-    );
+      final details = NotificationDetails(
+        android: androidDetails,
+        iOS: iosDetails,
+      );
 
-    await _localNotifications.show(
-      DateTime.now().millisecondsSinceEpoch.remainder(100000),
-      title,
-      body,
-      details,
-      payload: data.toString(),
-    );
+      await _localNotifications.show(
+        DateTime.now().millisecondsSinceEpoch.remainder(100000),
+        title,
+        body,
+        details,
+        payload: data.toString(),
+      );
+    } catch (e) {
+      debugPrint('❌ Failed to show local notification: $e');
+    }
+  }
+
+  String _getChannelName(String channelId) {
+    switch (channelId) {
+      case 'leave_notifications':
+        return 'Leave Notifications';
+      case 'attendance_notifications':
+        return 'Attendance Notifications';
+      case 'task_notifications':
+        return 'Task Notifications';
+      default:
+        return 'General Notifications';
+    }
+  }
+
+  String _getChannelDescription(String channelId) {
+    switch (channelId) {
+      case 'leave_notifications':
+        return 'Notifications for leave request updates';
+      case 'attendance_notifications':
+        return 'Notifications for attendance updates';
+      case 'task_notifications':
+        return 'Notifications for task assignments and updates';
+      default:
+        return 'General system notifications';
+    }
   }
 
   /// Get notification channel based on message type
@@ -379,6 +413,17 @@ class NotificationService {
   /// Clear all notifications
   Future<void> clearAllNotifications() async {
     await _localNotifications.cancelAll();
+  }
+
+  /// Test local notification (for debugging)
+  Future<void> showTestNotification() async {
+    await _showLocalNotification(
+      title: 'Test Notification',
+      body: 'This is a test local notification',
+      data: {'type': 'test'},
+      channelId: 'general_notifications',
+    );
+    debugPrint('✅ Test notification triggered');
   }
 
   /// Dispose resources
