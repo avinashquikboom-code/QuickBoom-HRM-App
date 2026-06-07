@@ -41,85 +41,72 @@ class AuthViewModel extends StateNotifier<AuthState> {
   Future<bool> login(String employeeId, String password) async {
     state = state.copyWith(isLoading: true, clearError: true);
 
-    try {
-      // 1. Live login request
-      final loginRes = await ApiService.post(AppUrl.login, {
-        'email': employeeId.trim(),
-        'password': password.trim(),
-      });
+    // 1. Live login request
+    final loginRes = await ApiService.post(AppUrl.login, {
+      'email': employeeId.trim(),
+      'password': password.trim(),
+    });
 
-      final loginData = jsonDecode(loginRes.body);
-      final token = loginData['token'];
-      await ApiService.saveToken(token);
+    final loginData = jsonDecode(loginRes.body);
+    final token = loginData['token'];
+    await ApiService.saveToken(token);
 
-      // 2. Live profile request
-      final profileRes = await ApiService.get(AppUrl.employeeProfile);
-      final profileData = jsonDecode(profileRes.body);
+    // 2. Live profile request
+    final profileRes = await ApiService.get(AppUrl.employeeProfile);
+    final profileData = jsonDecode(profileRes.body);
 
-      final emp = profileData['employee'];
-      final prof = profileData['profile'];
-      final uRole = loginData['user']['role'].toString().toUpperCase();
+    final emp = profileData['employee'];
+    final prof = profileData['profile'];
+    final uRole = loginData['user']['role'].toString().toUpperCase();
 
-      final parsedUser = UserModel(
-        id: emp['id'].toString(),
-        employeeId: emp['employeeCode'].toString(),
-        name: emp['name'].toString(),
-        email: prof['email'].toString(),
-        phone: prof['phone'].toString(),
-        role: (uRole == 'HR' || uRole == 'SUPER_ADMIN' || uRole == 'ADMIN')
-            ? UserRole.hrManager
-            : UserRole.employee,
-        department: emp['department'].toString(),
-        designation: emp['designation'].toString(),
-        joinDate: DateTime.tryParse(emp['joinDate'].toString()) ?? DateTime.now(),
-        salary: (prof['salary'] as num?)?.toDouble() ??
-            (emp['salary'] as num?)?.toDouble() ?? 0.0,
-      );
+    final parsedUser = UserModel(
+      id: emp['id'].toString(),
+      employeeId: emp['employeeCode'].toString(),
+      name: emp['name'].toString(),
+      email: prof['email'].toString(),
+      phone: prof['phone'].toString(),
+      role: (uRole == 'HR' || uRole == 'SUPER_ADMIN' || uRole == 'ADMIN')
+          ? UserRole.hrManager
+          : UserRole.employee,
+      department: emp['department'].toString(),
+      designation: emp['designation'].toString(),
+      joinDate: DateTime.tryParse(emp['joinDate'].toString()) ?? DateTime.now(),
+      salary: (prof['salary'] as num?)?.toDouble() ??
+          (emp['salary'] as num?)?.toDouble() ?? 0.0,
+    );
 
-      state = AuthState(currentUser: parsedUser);
-      return true;
-    } catch (error) {
-      state = state.copyWith(
-        isLoading: false,
-        errorMessage: error.toString().replaceAll('Exception: ', ''),
-      );
-      return false;
-    }
+    state = AuthState(currentUser: parsedUser);
+    return true;
   }
 
   Future<bool> restoreSession() async {
     state = state.copyWith(isLoading: true, clearError: true);
-    try {
-      final profileRes = await ApiService.get(AppUrl.employeeProfile);
-      final profileData = jsonDecode(profileRes.body);
+    
+    final profileRes = await ApiService.get(AppUrl.employeeProfile);
+    final profileData = jsonDecode(profileRes.body);
 
-      final emp = profileData['employee'];
-      final prof = profileData['profile'];
-      final uRole = (profileData['user']?['role'] ?? 'EMPLOYEE').toString().toUpperCase();
+    final emp = profileData['employee'];
+    final prof = profileData['profile'];
+    final uRole = (profileData['user']?['role'] ?? 'EMPLOYEE').toString().toUpperCase();
 
-      final parsedUser = UserModel(
-        id: emp['id'].toString(),
-        employeeId: emp['employeeCode'].toString(),
-        name: emp['name'].toString(),
-        email: prof['email'].toString(),
-        phone: prof['phone'].toString(),
-        role: (uRole == 'HR' || uRole == 'SUPER_ADMIN' || uRole == 'ADMIN' || uRole == 'PLATFORM_ADMIN')
-            ? UserRole.hrManager
-            : UserRole.employee,
-        department: emp['department'].toString(),
-        designation: emp['designation'].toString(),
-        joinDate: DateTime.tryParse(emp['joinDate'].toString()) ?? DateTime.now(),
-        salary: (prof['salary'] as num?)?.toDouble() ??
-            (emp['salary'] as num?)?.toDouble() ?? 0.0,
-      );
+    final parsedUser = UserModel(
+      id: emp['id'].toString(),
+      employeeId: emp['employeeCode'].toString(),
+      name: emp['name'].toString(),
+      email: prof['email'].toString(),
+      phone: prof['phone'].toString(),
+      role: (uRole == 'HR' || uRole == 'SUPER_ADMIN' || uRole == 'ADMIN' || uRole == 'PLATFORM_ADMIN')
+          ? UserRole.hrManager
+          : UserRole.employee,
+      department: emp['department'].toString(),
+      designation: emp['designation'].toString(),
+      joinDate: DateTime.tryParse(emp['joinDate'].toString()) ?? DateTime.now(),
+      salary: (prof['salary'] as num?)?.toDouble() ??
+          (emp['salary'] as num?)?.toDouble() ?? 0.0,
+    );
 
-      state = AuthState(currentUser: parsedUser);
-      return true;
-    } catch (error) {
-      await ApiService.clearToken();
-      state = const AuthState();
-      return false;
-    }
+    state = AuthState(currentUser: parsedUser);
+    return true;
   }
 
   void clearError() {

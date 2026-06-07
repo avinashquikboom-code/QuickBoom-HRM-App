@@ -99,213 +99,124 @@ class AttendanceViewModel extends StateNotifier<AttendanceState> {
 
   Future<bool> checkIn({bool viaFingerprint = false}) async {
     state = state.copyWith(isLoading: true);
-    try {
-      final currentTime = DateTime.now();
-      debugPrint('🕒 LOCAL TIME BEFORE API CALL: ${currentTime.toIso8601String()}');
-      debugPrint('🌍 TIMEZONE: ${currentTime.timeZoneName} (${currentTime.timeZoneOffset})');
+    
+    final currentTime = DateTime.now();
+    debugPrint('🕒 LOCAL TIME BEFORE API CALL: ${currentTime.toIso8601String()}');
+    debugPrint('🌍 TIMEZONE: ${currentTime.timeZoneName} (${currentTime.timeZoneOffset})');
 
-      // Fetch real GPS coordinates
-      final position = await _getCurrentPosition();
-      debugPrint('📍 GPS Position: lat=${position?.latitude}, lon=${position?.longitude}');
+    // Fetch real GPS coordinates
+    final position = await _getCurrentPosition();
+    debugPrint('📍 GPS Position: lat=${position?.latitude}, lon=${position?.longitude}');
 
-      if (position == null && !kDebugMode) {
-        throw Exception('Location is required. Please enable GPS to punch in.');
-      }
+    final response = await ApiService.post(AppUrl.attendancePunchIn, {
+      'latitude': position?.latitude ?? 0.0,
+      'longitude': position?.longitude ?? 0.0,
+      'notes': viaFingerprint ? 'Punched in via Fingerprint' : 'Punched in via mobile app',
+      'clientTimestamp': currentTime.toUtc().toIso8601String(),
+      'timezone': currentTime.timeZoneName,
+      'isFingerprint': viaFingerprint,
+    });
 
-      final response = await ApiService.post(AppUrl.attendancePunchIn, {
-        'latitude': position?.latitude ?? 0.0,
-        'longitude': position?.longitude ?? 0.0,
-        'notes': viaFingerprint ? 'Punched in via Fingerprint' : 'Punched in via mobile app',
-        'clientTimestamp': currentTime.toUtc().toIso8601String(),
-        'timezone': currentTime.timeZoneName,
-        'isFingerprint': viaFingerprint,
-      });
-
-      debugPrint('✅ Punch-in API response: ${response.body}');
-      await fetchAttendanceData();
-      return true;
-    } catch (e) {
-      debugPrint('❌ Punch-in error: $e');
-      state = state.copyWith(isLoading: false);
-      
-      // Handle specific geofence errors
-      String errorMessage = e.toString();
-      if (errorMessage.contains('OUTSIDE_GEOFENCE')) {
-        throw Exception('You are outside the office geofence. Please move closer to the office location to punch in.');
-      } else if (errorMessage.contains('MISSING_LOCATION')) {
-        throw Exception('Location services are required. Please enable GPS and try again.');
-      } else if (errorMessage.contains('ALREADY_PUNCHED_IN')) {
-        throw Exception('You have already punched in today.');
-      } else if (errorMessage.contains('NO_OFFICE_ASSIGNED')) {
-        throw Exception('No office assigned to your profile. Please contact HR.');
-      } else if (errorMessage.contains('Location is required')) {
-        throw Exception('GPS location is required for punch in. Please enable location services.');
-      }
-      
-      throw Exception('Failed to punch in: ${errorMessage.replaceAll('Exception: ', '')}');
-    }
+    debugPrint('✅ Punch-in API response: ${response.body}');
+    await fetchAttendanceData();
+    return true;
   }
 
   Future<bool> checkOut({bool viaFingerprint = false}) async {
     state = state.copyWith(isLoading: true);
-    try {
-      final currentTime = DateTime.now();
-      debugPrint('🕒 LOCAL TIME BEFORE API CALL: ${currentTime.toIso8601String()}');
-      debugPrint('🌍 TIMEZONE: ${currentTime.timeZoneName} (${currentTime.timeZoneOffset})');
+    
+    final currentTime = DateTime.now();
+    debugPrint('🕒 LOCAL TIME BEFORE API CALL: ${currentTime.toIso8601String()}');
+    debugPrint('🌍 TIMEZONE: ${currentTime.timeZoneName} (${currentTime.timeZoneOffset})');
 
-      // Fetch real GPS coordinates
-      final position = await _getCurrentPosition();
-      debugPrint('📍 GPS Position: lat=${position?.latitude}, lon=${position?.longitude}');
+    // Fetch real GPS coordinates
+    final position = await _getCurrentPosition();
+    debugPrint('📍 GPS Position: lat=${position?.latitude}, lon=${position?.longitude}');
 
-      if (position == null && !kDebugMode) {
-        throw Exception('Location is required. Please enable GPS to punch out.');
-      }
+    final response = await ApiService.post(AppUrl.attendancePunchOut, {
+      'latitude': position?.latitude ?? 0.0,
+      'longitude': position?.longitude ?? 0.0,
+      'notes': viaFingerprint ? 'Punched out via Fingerprint' : 'Punched out via mobile app',
+      'clientTimestamp': currentTime.toUtc().toIso8601String(),
+      'timezone': currentTime.timeZoneName,
+      'isFingerprint': viaFingerprint,
+    });
 
-      final response = await ApiService.post(AppUrl.attendancePunchOut, {
-        'latitude': position?.latitude ?? 0.0,
-        'longitude': position?.longitude ?? 0.0,
-        'notes': viaFingerprint ? 'Punched out via Fingerprint' : 'Punched out via mobile app',
-        'clientTimestamp': currentTime.toUtc().toIso8601String(),
-        'timezone': currentTime.timeZoneName,
-        'isFingerprint': viaFingerprint,
-      });
-
-      debugPrint('✅ Punch-out API response: ${response.body}');
-      await fetchAttendanceData();
-      return true;
-    } catch (e) {
-      debugPrint('❌ Punch-out error: $e');
-      state = state.copyWith(isLoading: false);
-      
-      // Handle specific errors
-      String errorMessage = e.toString();
-      if (errorMessage.contains('NO_ACTIVE_PUNCH_IN')) {
-        throw Exception('No active punch in found for today. Please punch in first.');
-      } else if (errorMessage.contains('STILL_ON_BREAK')) {
-        throw Exception('Cannot punch out while on break. Please end break first.');
-      } else if (errorMessage.contains('Location is required')) {
-        throw Exception('GPS location is required for punch out. Please enable location services.');
-      }
-      
-      throw Exception('Failed to punch out: ${errorMessage.replaceAll('Exception: ', '')}');
-    }
+    debugPrint('✅ Punch-out API response: ${response.body}');
+    await fetchAttendanceData();
+    return true;
   }
 
   /// Returns the device's current GPS position, requesting permission if needed.
   /// Returns null if location is unavailable or permission is denied.
   Future<Position?> _getCurrentPosition() async {
-    try {
-      debugPrint('🔍 Checking location services...');
-      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
-        debugPrint('❌ Location services are disabled.');
-        throw Exception('Location services are disabled. Please enable GPS to continue.');
-      }
-
-      debugPrint('🔍 Checking location permissions...');
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        debugPrint('📋 Requesting location permission...');
-        permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.denied) {
-          debugPrint('❌ Location permission denied.');
-          throw Exception('Location permission denied. Please allow location access to continue.');
-        }
-      }
-
-      if (permission == LocationPermission.deniedForever) {
-        debugPrint('❌ Location permission permanently denied.');
-        throw Exception('Location permission permanently denied. Please enable location in device settings.');
-      }
-
-      debugPrint('📍 Getting current GPS position...');
-      final position = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.high,
-          timeLimit: Duration(seconds: 10),
-        ),
-      );
-      
-      debugPrint('✅ GPS Position obtained: lat=${position.latitude}, lon=${position.longitude}');
-      debugPrint('📊 GPS Accuracy: ${position.accuracy}m');
-      debugPrint('⏰ GPS Timestamp: ${position.timestamp}');
-      
-      return position;
-    } catch (e) {
-      debugPrint('❌ Could not get GPS position: $e');
-      
-      // Provide specific error messages
-      String errorMessage = e.toString();
-      if (errorMessage.contains('Location services are disabled')) {
-        throw Exception('Please enable GPS/location services on your device.');
-      } else if (errorMessage.contains('permission')) {
-        throw Exception('Please allow location access for this app to punch in/out.');
-      } else if (errorMessage.contains('timeout')) {
-        throw Exception('Location request timed out. Please try again.');
-      } else {
-        throw Exception('Unable to get location: ${errorMessage.replaceAll('Exception: ', '')}');
-      }
+    debugPrint('🔍 Checking location services...');
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    
+    debugPrint('🔍 Checking location permissions...');
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      debugPrint('📋 Requesting location permission...');
+      permission = await Geolocator.requestPermission();
     }
+
+    debugPrint('📍 Getting current GPS position...');
+    final position = await Geolocator.getCurrentPosition(
+      locationSettings: const LocationSettings(
+        accuracy: LocationAccuracy.high,
+        timeLimit: Duration(seconds: 10),
+      ),
+    );
+    
+    debugPrint('✅ GPS Position obtained: lat=${position.latitude}, lon=${position.longitude}');
+    debugPrint('📊 GPS Accuracy: ${position.accuracy}m');
+    debugPrint('⏰ GPS Timestamp: ${position.timestamp}');
+    
+    return position;
   }
 
   Future<void> startBreak() async {
     state = state.copyWith(isLoading: true);
-    try {
-      debugPrint('☕ Starting break...');
-      final currentTime = DateTime.now();
-      debugPrint('🕒 LOCAL TIME BEFORE API CALL: ${currentTime.toIso8601String()}');
-      
-      final position = await _getCurrentPosition();
-      debugPrint('📍 GPS Position: lat=${position?.latitude}, lon=${position?.longitude}');
+    
+    debugPrint('☕ Starting break...');
+    final currentTime = DateTime.now();
+    debugPrint('🕒 LOCAL TIME BEFORE API CALL: ${currentTime.toIso8601String()}');
+    
+    final position = await _getCurrentPosition();
+    debugPrint('📍 GPS Position: lat=${position?.latitude}, lon=${position?.longitude}');
 
-      if (position == null && !kDebugMode) {
-        throw Exception('Location is required. Please enable GPS to start break.');
-      }
-
-      // Use the new mobile API endpoint for starting break
-      final response = await ApiService.post(AppUrl.attendanceBreakStart, {
-        'latitude': position?.latitude ?? 0.0,
-        'longitude': position?.longitude ?? 0.0,
-        'clientTimestamp': currentTime.toUtc().toIso8601String(),
-        'timezone': currentTime.timeZoneName,
-      });
-      debugPrint('✅ Break start response: ${response.body}');
-      
-      await fetchAttendanceData();
-    } catch (e) {
-      debugPrint('❌ Start break error: $e');
-      state = state.copyWith(isLoading: false);
-    }
+    // Use the new mobile API endpoint for starting break
+    final response = await ApiService.post(AppUrl.attendanceBreakStart, {
+      'latitude': position?.latitude ?? 0.0,
+      'longitude': position?.longitude ?? 0.0,
+      'clientTimestamp': currentTime.toUtc().toIso8601String(),
+      'timezone': currentTime.timeZoneName,
+    });
+    debugPrint('✅ Break start response: ${response.body}');
+    
+    await fetchAttendanceData();
   }
 
   Future<void> endBreak() async {
     state = state.copyWith(isLoading: true);
-    try {
-      debugPrint('🔄 Ending break...');
-      final currentTime = DateTime.now();
-      debugPrint('🕒 LOCAL TIME BEFORE API CALL: ${currentTime.toIso8601String()}');
-      
-      final position = await _getCurrentPosition();
-      debugPrint('📍 GPS Position: lat=${position?.latitude}, lon=${position?.longitude}');
+    
+    debugPrint('🔄 Ending break...');
+    final currentTime = DateTime.now();
+    debugPrint('🕒 LOCAL TIME BEFORE API CALL: ${currentTime.toIso8601String()}');
+    
+    final position = await _getCurrentPosition();
+    debugPrint('📍 GPS Position: lat=${position?.latitude}, lon=${position?.longitude}');
 
-      if (position == null && !kDebugMode) {
-        throw Exception('Location is required. Please enable GPS to end break.');
-      }
-
-      // Use the new mobile API endpoint for ending break
-      final response = await ApiService.post(AppUrl.attendanceBreakEnd, {
-        'latitude': position?.latitude ?? 0.0,
-        'longitude': position?.longitude ?? 0.0,
-        'clientTimestamp': currentTime.toUtc().toIso8601String(),
-        'timezone': currentTime.timeZoneName,
-      });
-      debugPrint('✅ Break end response: ${response.body}');
-      
-      await fetchAttendanceData();
-    } catch (e) {
-      debugPrint('❌ End break error: $e');
-      state = state.copyWith(isLoading: false);
-    }
+    // Use the new mobile API endpoint for ending break
+    final response = await ApiService.post(AppUrl.attendanceBreakEnd, {
+      'latitude': position?.latitude ?? 0.0,
+      'longitude': position?.longitude ?? 0.0,
+      'clientTimestamp': currentTime.toUtc().toIso8601String(),
+      'timezone': currentTime.timeZoneName,
+    });
+    debugPrint('✅ Break end response: ${response.body}');
+    
+    await fetchAttendanceData();
   }
 
   AttendanceModel _parseRecord(Map<String, dynamic> data) {
@@ -360,33 +271,21 @@ class AttendanceViewModel extends StateNotifier<AttendanceState> {
 
   // Download attendance report
   Future<void> downloadMyAttendanceReport({String? month}) async {
-    try {
-      state = state.copyWith(isLoading: true);
-      
-      // Build URL with query parameters
-      String url = AppUrl.attendanceMyReportDownload;
-      if (month != null) {
-        url += '?month=$month';
-      }
-      
-      final response = await ApiService.get(url);
-      
-      if (response.statusCode == 200) {
-        // File downloaded successfully
-        if (kDebugMode) {
-          print('Attendance report downloaded successfully');
-        }
-      } else {
-        throw Exception('Failed to download attendance report');
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        print('Error downloading attendance report: $e');
-      }
-      rethrow;
-    } finally {
-      state = state.copyWith(isLoading: false);
+    state = state.copyWith(isLoading: true);
+    
+    // Build URL with query parameters
+    String url = AppUrl.attendanceMyReportDownload;
+    if (month != null) {
+      url += '?month=$month';
     }
+    
+    final response = await ApiService.get(url);
+    
+    if (kDebugMode) {
+      print('Attendance report downloaded successfully');
+    }
+    
+    state = state.copyWith(isLoading: false);
   }
 }
 

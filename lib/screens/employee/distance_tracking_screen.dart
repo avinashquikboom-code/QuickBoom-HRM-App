@@ -33,37 +33,31 @@ class _DistanceTrackingScreenState extends ConsumerState<DistanceTrackingScreen>
       _error = null;
     });
 
-    try {
-      // Get office info
-      final officeResult = await DistanceTrackingService.getOfficeInfo();
-      if (officeResult['success']) {
-        setState(() {
-          _officeInfo = OfficeInfo.fromJson(officeResult['data']);
-        });
-      }
-
-      // Get distance history
-      final historyResult = await DistanceTrackingService.getDistanceHistory(limit: 30);
-      if (historyResult['success']) {
-        setState(() {
-          _history = (historyResult['data']['history'] as List)
-              .map((item) => DistanceHistoryRecord.fromJson(item))
-              .toList();
-          _summary = DistanceHistorySummary.fromJson(historyResult['data']['summary']);
-        });
-      }
-
-      // Get current location and distance
-      await _getCurrentDistance();
-    } catch (e) {
+    // Get office info
+    final officeResult = await DistanceTrackingService.getOfficeInfo();
+    if (officeResult['success']) {
       setState(() {
-        _error = e.toString();
-      });
-    } finally {
-      setState(() {
-        _isLoading = false;
+        _officeInfo = OfficeInfo.fromJson(officeResult['data']);
       });
     }
+
+    // Get distance history
+    final historyResult = await DistanceTrackingService.getDistanceHistory(limit: 30);
+    if (historyResult['success']) {
+      setState(() {
+        _history = (historyResult['data']['history'] as List)
+            .map((item) => DistanceHistoryRecord.fromJson(item))
+            .toList();
+        _summary = DistanceHistorySummary.fromJson(historyResult['data']['summary']);
+      });
+    }
+
+    // Get current location and distance
+    await _getCurrentDistance();
+
+    setState(() {
+      _isLoading = false;
+    });
   }
 
   Future<void> _getCurrentDistance() async {
@@ -71,36 +65,26 @@ class _DistanceTrackingScreenState extends ConsumerState<DistanceTrackingScreen>
       _isGettingLocation = true;
     });
 
-    try {
-      // Get current position
-      final position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-      );
+    // Get current position
+    final position = await Geolocator.getCurrentPosition(
+      desiredAccuracy: LocationAccuracy.high,
+    );
 
-      // Get distance from office
-      final result = await DistanceTrackingService.getCurrentDistance(
-        latitude: position.latitude,
-        longitude: position.longitude,
-      );
+    // Get distance from office
+    final result = await DistanceTrackingService.getCurrentDistance(
+      latitude: position.latitude,
+      longitude: position.longitude,
+    );
 
-      if (result['success']) {
-        setState(() {
-          _currentDistance = DistanceData.fromJson(result['data']);
-        });
-      } else {
-        setState(() {
-          _error = result['error'] ?? 'Failed to get distance';
-        });
-      }
-    } catch (e) {
+    if (result['success']) {
       setState(() {
-        _error = e.toString();
-      });
-    } finally {
-      setState(() {
-        _isGettingLocation = false;
+        _currentDistance = DistanceData.fromJson(result['data']);
       });
     }
+
+    setState(() {
+      _isGettingLocation = false;
+    });
   }
 
   @override

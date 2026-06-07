@@ -459,30 +459,19 @@ class _AttendanceHistoryScreenState extends ConsumerState<AttendanceHistoryScree
   }
 
   void _downloadReport(dynamic attendanceViewModel) async {
-    try {
-      // Convert selected month to format expected by API (e.g., "2024-01")
-      final monthFormat = DateFormat('MMM yyyy').parse(_selectedMonth);
-      final monthString = '${monthFormat.year}-${monthFormat.month.toString().padLeft(2, '0')}';
-      
-      await attendanceViewModel.downloadMyAttendanceReport(month: monthString);
-      
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Attendance report downloaded successfully'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to download report: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+    // Convert selected month to format expected by API (e.g., "2024-01")
+    final monthFormat = DateFormat('MMM yyyy').parse(_selectedMonth);
+    final monthString = '${monthFormat.year}-${monthFormat.month.toString().padLeft(2, '0')}';
+    
+    await attendanceViewModel.downloadMyAttendanceReport(month: monthString);
+    
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Attendance report downloaded successfully'),
+          backgroundColor: Colors.green,
+        ),
+      );
     }
   }
 }

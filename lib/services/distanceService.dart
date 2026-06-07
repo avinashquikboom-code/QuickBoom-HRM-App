@@ -11,41 +11,25 @@ class DistanceTrackingService {
     required double latitude,
     required double longitude,
   }) async {
-    try {
-      final token = await StorageHelper.getToken();
-      
-      if (token == null) {
-        throw Exception('Authentication token not found');
-      }
+    final token = await StorageHelper.getToken();
 
-      final response = await http.get(
-        Uri.parse('$_baseUrl/api/mobile/distance/current')
-            .replace(queryParameters: {
-          'latitude': latitude.toString(),
-          'longitude': longitude.toString(),
-        }),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-      );
+    final response = await http.get(
+      Uri.parse('$_baseUrl/api/mobile/distance/current')
+          .replace(queryParameters: {
+        'latitude': latitude.toString(),
+        'longitude': longitude.toString(),
+      }),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
 
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        return {
-          'success': true,
-          'data': data['data'],
-        };
-      } else {
-        final errorData = json.decode(response.body);
-        throw Exception(errorData['message'] ?? 'Failed to get distance');
-      }
-    } catch (e) {
-      return {
-        'success': false,
-        'error': e.toString(),
-      };
-    }
+    final data = json.decode(response.body);
+    return {
+      'success': true,
+      'data': data['data'],
+    };
   }
 
   /// Get distance tracking history
@@ -54,84 +38,52 @@ class DistanceTrackingService {
     String? endDate,
     int limit = 50,
   }) async {
-    try {
-      final token = await StorageHelper.getToken();
-      
-      if (token == null) {
-        throw Exception('Authentication token not found');
-      }
+    final token = await StorageHelper.getToken();
 
-      final queryParams = <String, String>{
-        'limit': limit.toString(),
-      };
+    final queryParams = <String, String>{
+      'limit': limit.toString(),
+    };
 
-      if (startDate != null) {
-        queryParams['startDate'] = startDate;
-      }
-      if (endDate != null) {
-        queryParams['endDate'] = endDate;
-      }
-
-      final response = await http.get(
-        Uri.parse('$_baseUrl/api/mobile/distance/history')
-            .replace(queryParameters: queryParams),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-      );
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        return {
-          'success': true,
-          'data': data['data'],
-        };
-      } else {
-        final errorData = json.decode(response.body);
-        throw Exception(errorData['message'] ?? 'Failed to get distance history');
-      }
-    } catch (e) {
-      return {
-        'success': false,
-        'error': e.toString(),
-      };
+    if (startDate != null) {
+      queryParams['startDate'] = startDate;
     }
+    if (endDate != null) {
+      queryParams['endDate'] = endDate;
+    }
+
+    final response = await http.get(
+      Uri.parse('$_baseUrl/api/mobile/distance/history')
+          .replace(queryParameters: queryParams),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    final data = json.decode(response.body);
+    return {
+      'success': true,
+      'data': data['data'],
+    };
   }
 
   /// Get office information for distance tracking
   static Future<Map<String, dynamic>> getOfficeInfo() async {
-    try {
-      final token = await StorageHelper.getToken();
-      
-      if (token == null) {
-        throw Exception('Authentication token not found');
-      }
+    final token = await StorageHelper.getToken();
 
-      final response = await http.get(
-        Uri.parse('$_baseUrl/api/mobile/distance/office-info'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-      );
+    final response = await http.get(
+      Uri.parse('$_baseUrl/api/mobile/distance/office-info'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
 
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        return {
-          'success': true,
-          'data': data['data']['office'],
-        };
-      } else {
-        final errorData = json.decode(response.body);
-        throw Exception(errorData['message'] ?? 'Failed to get office info');
-      }
-    } catch (e) {
-      return {
-        'success': false,
-        'error': e.toString(),
-      };
-    }
+    final data = json.decode(response.body);
+    return {
+      'success': true,
+      'data': data['data']['office'],
+    };
   }
 }
 
