@@ -660,8 +660,8 @@ class _AttendanceHistoryTabState extends ConsumerState<_AttendanceHistoryTab> {
   @override
   void initState() {
     super.initState();
-    // Fetch last 30 days of attendance on init
-    _fetchHistory();
+    // Fetch last 30 days of attendance on init (delayed to avoid modifying provider during build)
+    Future(() => _fetchHistory());
   }
 
   Future<void> _fetchHistory() async {

@@ -71,12 +71,9 @@ class StorageService {
   static Future<void> clearToken() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final role = prefs.getString(_activeRoleKey);
-      if (role == 'HR') {
-        await prefs.remove(_hrTokenKey);
-      } else {
-        await prefs.remove(_empTokenKey);
-      }
+      // Clear both tokens to ensure complete logout
+      await prefs.remove(_hrTokenKey);
+      await prefs.remove(_empTokenKey);
       await prefs.remove(_activeRoleKey);
       debugPrint('🗑️ Token cleared from storage');
     } catch (e) {

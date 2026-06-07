@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/services/api_service.dart';
+import '../core/services/storage_service.dart';
 import '../core/constants/app_url.dart';
 
 // ─── HR Dashboard Stats ────────────────────────────────────────────────────────
@@ -101,7 +102,13 @@ class HRDashboardViewModel extends StateNotifier<HRDashboardState> {
 
   void _startAutoRefresh() {
     // Auto-refresh dashboard every 30 seconds
-    _refreshTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+    _refreshTimer = Timer.periodic(const Duration(seconds: 30), (_) async {
+      // Check if user is still authenticated before refreshing
+      final hasToken = await StorageService.hasToken();
+      if (!hasToken) {
+        _refreshTimer?.cancel();
+        return;
+      }
       if (kDebugMode) {
         debugPrint('🔄 Auto-refreshing HR dashboard...');
       }

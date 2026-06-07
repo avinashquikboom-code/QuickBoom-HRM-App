@@ -57,27 +57,8 @@ class AttendanceState {
 // ─── Attendance ViewModel ────────────────────────────────────────────────────
 
 class AttendanceViewModel extends StateNotifier<AttendanceState> {
-  Timer? _refreshTimer;
-
   AttendanceViewModel() : super(const AttendanceState()) {
     fetchAttendanceData();
-    _startAutoRefresh();
-  }
-
-  @override
-  void dispose() {
-    _refreshTimer?.cancel();
-    super.dispose();
-  }
-
-  void _startAutoRefresh() {
-    // Auto-refresh attendance every 30 seconds
-    _refreshTimer = Timer.periodic(const Duration(seconds: 30), (_) {
-      if (kDebugMode) {
-        debugPrint('🔄 Auto-refreshing attendance...');
-      }
-      fetchAttendanceData();
-    });
   }
 
   Future<void> fetchAttendanceData() async {

@@ -235,16 +235,11 @@ class AuthViewModel extends StateNotifier<AuthState> {
   }
 
   Future<void> _performCleanup() async {
-    final fcmToken = await StorageService.getFCMToken();
-    if (fcmToken != null && fcmToken.isNotEmpty) {
-      try {
-        await ApiService.post(AppUrl.logout, {
-          'fcmToken': fcmToken,
-        });
-        debugPrint('✅ Backend logout successful');
-      } catch (e) {
-        debugPrint('⚠️ Backend logout failed: $e');
-      }
+    try {
+      await ApiService.post(AppUrl.logout, {});
+      debugPrint('✅ Backend logout successful');
+    } catch (e) {
+      debugPrint('⚠️ Backend logout failed: $e');
     }
     await StorageService.clearSessionData();
   }
