@@ -50,7 +50,9 @@ class HrLeaveViewModel extends StateNotifier<HrLeaveState> {
     try {
       final res = await ApiService.get(AppUrl.hrLeaves);
       final data = jsonDecode(res.body);
-      final List rawLeaves = data['leaves'] ?? [];
+
+      // Handle both response structures
+      final List rawLeaves = data['data']?['leaveRequests'] ?? data['leaves'] ?? [];
       final leaves = rawLeaves.map((l) => _parseLeave(l)).toList();
 
       state = state.copyWith(allLeaves: leaves);
@@ -139,11 +141,23 @@ class HrLeaveViewModel extends StateNotifier<HrLeaveState> {
   }
 
   LeaveRequestModel _parseLeave(Map<String, dynamic> data) {
+    // Handle both flat and nested employee data structures
+    final employeeData = data['employee'] as Map<String, dynamic>?;
+    final employeeName = employeeData != null
+        ? '${employeeData['firstName'] ?? ''} ${employeeData['lastName'] ?? ''}'.trim()
+        : (data['employeeName']?.toString() ?? 'Unknown');
+    final employeeId = employeeData != null
+        ? employeeData['id']?.toString()
+        : data['employeeId']?.toString();
+    final department = employeeData != null
+        ? employeeData['department']?.toString() ?? 'N/A'
+        : data['department']?.toString() ?? 'N/A';
+
     return LeaveRequestModel(
       id: data['id'].toString(),
-      employeeId: data['employeeId'].toString(),
-      employeeName: data['employeeName'].toString(),
-      department: data['department'].toString(),
+      employeeId: employeeId ?? '0',
+      employeeName: employeeName,
+      department: department,
       type: _parseLeaveType(data['type']?.toString() ?? 'CASUAL'),
       fromDate: DateTime.tryParse(data['fromDate'].toString()) ?? DateTime.now(),
       toDate: DateTime.tryParse(data['toDate'].toString()) ?? DateTime.now(),

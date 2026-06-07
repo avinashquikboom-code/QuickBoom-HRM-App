@@ -103,15 +103,15 @@ class AppUrl {
   // ─────────────────────────────────────────────
   //  HR – Leaves
   // ─────────────────────────────────────────────
-  static const String hrLeaves = '/api/hr/leaves';
+  static const String hrLeaves = '/api/mobile/leave/hr/requests';
 
   /// Approve a leave request.
   static String hrApproveLeave(String leaveId) =>
-      '/api/hr/leaves/$leaveId/approve';
+      '/api/mobile/leave/hr/$leaveId/approve';
 
   /// Reject a leave request.
   static String hrRejectLeave(String leaveId) =>
-      '/api/hr/leaves/$leaveId/reject';
+      '/api/mobile/leave/hr/$leaveId/reject';
 
   // ─────────────────────────────────────────────
   //  HR – Tasks
