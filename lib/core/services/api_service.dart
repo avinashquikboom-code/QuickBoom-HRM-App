@@ -136,6 +136,20 @@ class ApiService {
     try {
       final response = await http.get(url, headers: headers);
       ApiLogger.logResponse('GET', path, response.statusCode, response.body);
+      
+      // Handle 401 - try token refresh
+      if (response.statusCode == 401) {
+        final refreshed = await _tryRefreshToken();
+        if (refreshed) {
+          // Retry with new token
+          final newHeaders = await _headers();
+          final retryResponse = await http.get(url, headers: newHeaders);
+          ApiLogger.logResponse('GET (retry)', path, retryResponse.statusCode, retryResponse.body);
+          _checkResponse(retryResponse);
+          return retryResponse;
+        }
+      }
+      
       _checkResponse(response);
       return response;
     } catch (e) {
@@ -214,5 +228,32 @@ class ApiService {
       
       throw Exception(message);
     }
+  }
+
+  static Future<bool> _tryRefreshToken() async {
+    try {
+      final token = await getToken();
+      if (token == null) return false;
+
+      final response = await http.post(
+        Uri.parse('$_baseUrl${AppUrl.refreshToken}'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'token': token}),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success'] == true && data['token'] != null) {
+          final newToken = data['token'];
+          final role = await StorageService.getUserRole() ?? 'EMPLOYEE';
+          await saveToken(newToken, role);
+          debugPrint('✅ Token refreshed successfully');
+          return true;
+        }
+      }
+    } catch (e) {
+      debugPrint('❌ Token refresh failed: $e');
+    }
+    return false;
   }
 }

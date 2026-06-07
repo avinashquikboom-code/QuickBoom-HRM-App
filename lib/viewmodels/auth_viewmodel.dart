@@ -67,8 +67,9 @@ class AuthViewModel extends StateNotifier<AuthState> {
 
     final loginData = jsonDecode(loginRes.body);
     final token = loginData['token'];
-    await ApiService.saveToken(token, 'EMPLOYEE');
-    await StorageService.saveUserRole('EMPLOYEE');
+    final userRole = loginData['user']['role'].toString().toUpperCase();
+    await ApiService.saveToken(token, userRole);
+    await StorageService.saveUserRole(userRole);
 
     // Refresh FCM token on backend after successful login
     try {
