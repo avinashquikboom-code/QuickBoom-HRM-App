@@ -154,6 +154,13 @@ class NotificationService {
   /// Save FCM token to backend
   Future<void> _saveFCMToken(String token) async {
     try {
+      // Check if user is authenticated before saving to backend
+      final authToken = await ApiService.getToken();
+      if (authToken == null || authToken.isEmpty) {
+        debugPrint('⚠️ No auth token available, skipping FCM token save to backend');
+        return;
+      }
+      
       await ApiService.post(AppUrl.saveFCMToken, {
         'fcmToken': token,
         'platform': Platform.operatingSystem,
