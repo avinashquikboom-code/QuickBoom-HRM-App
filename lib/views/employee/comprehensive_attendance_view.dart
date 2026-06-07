@@ -131,7 +131,7 @@ class _ComprehensiveAttendanceViewState extends ConsumerState<ComprehensiveAtten
             Row(
               children: [
                 _summaryItem('Total Work Hours', '${_summary!.totalWorkHours.toStringAsFixed(1)}h', Icons.work, Colors.blue),
-                _summaryItem('Total Break Time', '${_summary!.totalBreakTime.toStringAsFixed(0)}m', Icons.free_breakout, Colors.orange),
+                _summaryItem('Total Break Time', '${_summary!.totalBreakTime.toStringAsFixed(0)}m', Icons.coffee, Colors.orange),
               ],
             ),
             const SizedBox(height: 12),
@@ -317,7 +317,7 @@ class _ComprehensiveAttendanceViewState extends ConsumerState<ComprehensiveAtten
       ),
       child: Row(
         children: [
-          Icon(Icons.free_breakout, color: color, size: 20),
+          Icon(Icons.coffee, color: color, size: 20),
           const SizedBox(width: 8),
           Expanded(
             child: Column(
