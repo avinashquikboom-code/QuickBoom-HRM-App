@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/services/api_service.dart';
 import '../core/constants/app_url.dart';
@@ -54,8 +56,27 @@ class ExpenseState {
 // ─── Expense ViewModel ────────────────────────────────────────────────────────
 
 class ExpenseViewModel extends StateNotifier<ExpenseState> {
+  Timer? _refreshTimer;
+
   ExpenseViewModel() : super(const ExpenseState()) {
     fetchExpenses();
+    _startAutoRefresh();
+  }
+
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    super.dispose();
+  }
+
+  void _startAutoRefresh() {
+    // Auto-refresh expenses every 30 seconds
+    _refreshTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      if (kDebugMode) {
+        debugPrint('🔄 Auto-refreshing expenses...');
+      }
+      fetchExpenses();
+    });
   }
 
   ExpenseModel _parseExpense(Map<String, dynamic> e) {

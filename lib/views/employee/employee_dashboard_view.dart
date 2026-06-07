@@ -13,6 +13,7 @@ import '../../viewmodels/leave_viewmodel.dart';
 import '../../viewmodels/notification_viewmodel.dart';
 import '../../viewmodels/employee_dashboard_viewmodel.dart';
 import '../../viewmodels/holiday_viewmodel.dart';
+import '../../widgets/shimmer_loading.dart';
 import 'notifications_view.dart';
 import 'employee_expenses_view.dart';
 import 'employee_shift_view.dart';
@@ -314,10 +315,22 @@ class EmployeeDashboardView extends ConsumerWidget {
                 _SectionTitle(title: 'Holidays Calendar'),
                 const SizedBox(height: 12),
                 holidayState.isLoading
-                    ? const Center(
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(vertical: 32),
-                          child: CircularProgressIndicator(color: AppColors.primary),
+                    ? Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 32),
+                        child: Column(
+                          children: [
+                            ShimmerLoading(
+                              height: 60,
+                              width: double.infinity,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            const SizedBox(height: 12),
+                            ShimmerLoading(
+                              height: 60,
+                              width: double.infinity,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ],
                         ),
                       )
                     : holidayState.holidays.isEmpty

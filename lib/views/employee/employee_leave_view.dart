@@ -6,6 +6,7 @@ import '../../core/constants/app_colors.dart';
 import '../../models/leave_request_model.dart';
 import '../../viewmodels/auth_viewmodel.dart';
 import '../../viewmodels/leave_viewmodel.dart';
+import '../../widgets/shimmer_loading.dart';
 
 class EmployeeLeaveView extends ConsumerStatefulWidget {
   const EmployeeLeaveView({super.key});
@@ -126,7 +127,29 @@ class _EmployeeLeaveViewState extends ConsumerState<EmployeeLeaveView> {
             ),
             const SizedBox(height: 10),
 
-            if (leaveState.myLeaves.isEmpty)
+            if (leaveState.isLoading)
+              Column(
+                children: [
+                  ShimmerLoading(
+                    height: 80,
+                    width: double.infinity,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  const SizedBox(height: 12),
+                  ShimmerLoading(
+                    height: 80,
+                    width: double.infinity,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  const SizedBox(height: 12),
+                  ShimmerLoading(
+                    height: 80,
+                    width: double.infinity,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ],
+              )
+            else if (leaveState.myLeaves.isEmpty)
               const _EmptyState()
             else
               ...leaveState.myLeaves.map(

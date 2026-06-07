@@ -9,6 +9,7 @@ import '../../viewmodels/auth_viewmodel.dart';
 import '../../viewmodels/employee_list_viewmodel.dart';
 import '../../viewmodels/hr_leave_viewmodel.dart';
 import '../../viewmodels/hr_dashboard_viewmodel.dart';
+import '../../widgets/shimmer_loading.dart';
 import '../auth/login_view.dart';
 import 'hr_reports_view.dart';
 import 'hr_expenses_view.dart';
@@ -167,72 +168,90 @@ class HrDashboardView extends ConsumerWidget {
             sliver: SliverList(
               delegate: SliverChildListDelegate([
                 // ─── Executive Stats Grid (Calculated & Responsive) ───────────
-                LayoutBuilder(
-                  builder: (context, constraints) {
-                    final width = constraints.maxWidth;
-                    final columns = width < 600 ? 2 : 4;
-                    final itemWidth = (width - (columns - 1) * 12) / columns;
-                    return Wrap(
-                      spacing: 12,
-                      runSpacing: 12,
-                      children: [
-                        SizedBox(
-                          width: itemWidth,
-                          child: _StatCard(
-                            label: 'Total Employees',
-                            value: '$totalEmployees',
-                            icon: RemixIcons.group_line,
-                            color: AppColors.primary,
-                            bgColor: AppColors.primarySurface,
-                            ratio: 1.0,
+                if (dashboardState.isLoading)
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
+                    children: [
+                      ShimmerLoading(
+                        height: 100,
+                        width: double.infinity,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      ShimmerLoading(
+                        height: 100,
+                        width: double.infinity,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ],
+                  )
+                else
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final width = constraints.maxWidth;
+                      final columns = width < 600 ? 2 : 4;
+                      final itemWidth = (width - (columns - 1) * 12) / columns;
+                      return Wrap(
+                        spacing: 12,
+                        runSpacing: 12,
+                        children: [
+                          SizedBox(
+                            width: itemWidth,
+                            child: _StatCard(
+                              label: 'Total Employees',
+                              value: '$totalEmployees',
+                              icon: RemixIcons.group_line,
+                              color: AppColors.primary,
+                              bgColor: AppColors.primarySurface,
+                              ratio: 1.0,
+                            ),
                           ),
-                        ),
-                        SizedBox(
-                          width: itemWidth,
-                          child: _StatCard(
-                            label: 'Present Today',
-                            value: '$presentToday',
-                            icon: RemixIcons.checkbox_circle_line,
-                            color: AppColors.success,
-                            bgColor: AppColors.successSurface,
-                            ratio: totalEmployees > 0
-                                ? (presentToday / totalEmployees)
-                                : 0.0,
+                          SizedBox(
+                            width: itemWidth,
+                            child: _StatCard(
+                              label: 'Present Today',
+                              value: '$presentToday',
+                              icon: RemixIcons.checkbox_circle_line,
+                              color: AppColors.success,
+                              bgColor: AppColors.successSurface,
+                              ratio: totalEmployees > 0
+                                  ? (presentToday / totalEmployees)
+                                  : 0.0,
+                            ),
                           ),
-                        ),
-                        SizedBox(
-                          width: itemWidth,
-                          child: _StatCard(
-                            label: 'On Leave',
-                            value: '$onLeave',
-                            icon: RemixIcons.calendar_close_line,
-                            color: AppColors.warning,
-                            bgColor: AppColors.warningSurface,
-                            ratio: totalEmployees > 0
-                                ? (onLeave / totalEmployees)
-                                : 0.0,
+                          SizedBox(
+                            width: itemWidth,
+                            child: _StatCard(
+                              label: 'On Leave',
+                              value: '$onLeave',
+                              icon: RemixIcons.calendar_close_line,
+                              color: AppColors.warning,
+                              bgColor: AppColors.warningSurface,
+                              ratio: totalEmployees > 0
+                                  ? (onLeave / totalEmployees)
+                                  : 0.0,
+                            ),
                           ),
-                        ),
-                        SizedBox(
-                          width: itemWidth,
-                          child: _StatCard(
-                            label: 'Pending Leaves',
-                            value: '$pendingLeaves',
-                            icon: RemixIcons.time_line,
-                            color: AppColors.error,
-                            bgColor: AppColors.errorSurface,
-                            ratio: totalEmployees > 0
-                                ? (pendingLeaves / totalEmployees).clamp(
-                                    0.0,
-                                    1.0,
-                                  )
-                                : 0.0,
+                          SizedBox(
+                            width: itemWidth,
+                            child: _StatCard(
+                              label: 'Pending Leaves',
+                              value: '$pendingLeaves',
+                              icon: RemixIcons.time_line,
+                              color: AppColors.error,
+                              bgColor: AppColors.errorSurface,
+                              ratio: totalEmployees > 0
+                                  ? (pendingLeaves / totalEmployees).clamp(
+                                      0.0,
+                                      1.0,
+                                    )
+                                  : 0.0,
+                            ),
                           ),
-                        ),
-                      ],
-                    );
-                  },
-                ).animate().fadeIn(),
+                        ],
+                      );
+                    },
+                  ).animate().fadeIn(),
 
                 const SizedBox(height: 24),
 

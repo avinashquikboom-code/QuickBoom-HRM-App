@@ -6,6 +6,7 @@ import '../../core/constants/app_colors.dart';
 import '../../models/expense_model.dart';
 import '../../viewmodels/auth_viewmodel.dart';
 import '../../viewmodels/expense_viewmodel.dart';
+import '../../widgets/shimmer_loading.dart';
 
 class EmployeeExpensesView extends ConsumerStatefulWidget {
   const EmployeeExpensesView({super.key});
@@ -94,7 +95,29 @@ class _EmployeeExpensesViewState extends ConsumerState<EmployeeExpensesView> {
                 ),
                 const SizedBox(height: 10),
 
-                if (state.myExpenses.isEmpty)
+                if (state.isLoading)
+                  Column(
+                    children: [
+                      ShimmerLoading(
+                        height: 80,
+                        width: double.infinity,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      const SizedBox(height: 12),
+                      ShimmerLoading(
+                        height: 80,
+                        width: double.infinity,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      const SizedBox(height: 12),
+                      ShimmerLoading(
+                        height: 80,
+                        width: double.infinity,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ],
+                  )
+                else if (state.myExpenses.isEmpty)
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 40),
                     child: Center(

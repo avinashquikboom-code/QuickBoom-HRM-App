@@ -12,6 +12,7 @@ class AttendanceModel {
   final Duration totalBreakDuration;
   final double? officeLat;
   final double? officeLon;
+  final bool isLateMarkedAsHalfDay;
 
   const AttendanceModel({
     required this.id,
@@ -25,6 +26,7 @@ class AttendanceModel {
     this.totalBreakDuration = Duration.zero,
     this.officeLat,
     this.officeLon,
+    this.isLateMarkedAsHalfDay = false,
   });
 
   AttendanceModel copyWith({
@@ -40,6 +42,7 @@ class AttendanceModel {
     bool clearBreakStartTime = false,
     double? officeLat,
     double? officeLon,
+    bool? isLateMarkedAsHalfDay,
   }) {
     return AttendanceModel(
       id: id ?? this.id,
@@ -53,6 +56,7 @@ class AttendanceModel {
       totalBreakDuration: totalBreakDuration ?? this.totalBreakDuration,
       officeLat: officeLat ?? this.officeLat,
       officeLon: officeLon ?? this.officeLon,
+      isLateMarkedAsHalfDay: isLateMarkedAsHalfDay ?? this.isLateMarkedAsHalfDay,
     );
   }
 

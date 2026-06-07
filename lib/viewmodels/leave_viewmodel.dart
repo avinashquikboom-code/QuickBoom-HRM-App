@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/services/api_service.dart';
@@ -80,10 +81,30 @@ class LeaveState {
 class LeaveViewModel extends StateNotifier<LeaveState> {
   final WebSocketService _wsService = WebSocketService();
   StreamSubscription? _leaveBalanceSubscription;
+  Timer? _refreshTimer;
 
   LeaveViewModel() : super(const LeaveState()) {
     _initializeWebSocket();
     fetchLeaves();
+    _startAutoRefresh();
+  }
+
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    _leaveBalanceSubscription?.cancel();
+    _wsService.disconnect();
+    super.dispose();
+  }
+
+  void _startAutoRefresh() {
+    // Auto-refresh leaves every 30 seconds
+    _refreshTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      if (kDebugMode) {
+        debugPrint('🔄 Auto-refreshing leaves...');
+      }
+      fetchLeaves();
+    });
   }
 
   void _initializeWebSocket() {
@@ -123,13 +144,6 @@ class LeaveViewModel extends StateNotifier<LeaveState> {
         state = state.copyWith(clearMessages: true);
       }
     });
-  }
-
-  @override
-  void dispose() {
-    _leaveBalanceSubscription?.cancel();
-    _wsService.dispose();
-    super.dispose();
   }
 
   Future<void> fetchLeaves() async {

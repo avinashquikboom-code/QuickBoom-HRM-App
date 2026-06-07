@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/services/api_service.dart';
 import '../core/constants/app_url.dart';
@@ -48,8 +50,27 @@ class HrExpenseState {
 // ─── HR Expense ViewModel ─────────────────────────────────────────────────────
 
 class HrExpenseViewModel extends StateNotifier<HrExpenseState> {
+  Timer? _refreshTimer;
+
   HrExpenseViewModel() : super(const HrExpenseState()) {
     fetchExpenses();
+    _startAutoRefresh();
+  }
+
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    super.dispose();
+  }
+
+  void _startAutoRefresh() {
+    // Auto-refresh HR expenses every 30 seconds
+    _refreshTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      if (kDebugMode) {
+        debugPrint('🔄 Auto-refreshing HR expenses...');
+      }
+      fetchExpenses();
+    });
   }
 
   Future<void> fetchExpenses() async {

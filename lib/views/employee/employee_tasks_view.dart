@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../../core/constants/app_colors.dart';
 import '../../models/task_model.dart';
 import '../../viewmodels/task_viewmodel.dart';
+import '../../widgets/shimmer_loading.dart';
 
 class EmployeeTasksView extends ConsumerStatefulWidget {
   const EmployeeTasksView({super.key});
@@ -166,6 +167,25 @@ class _TaskList extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(taskViewModelProvider);
+
+    if (state.isLoading) {
+      return ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: 3,
+        itemBuilder: (context, index) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: ShimmerLoading(
+              height: 80,
+              width: double.infinity,
+              borderRadius: BorderRadius.circular(12),
+            ),
+          );
+        },
+      );
+    }
+
     if (tasks.isEmpty) {
       return Center(
         child: Column(

@@ -5,6 +5,7 @@ import 'package:remixicon/remixicon.dart';
 import '../../core/constants/app_colors.dart';
 import '../../models/task_model.dart';
 import '../../viewmodels/hr_task_viewmodel.dart';
+import '../../widgets/shimmer_loading.dart';
 
 class HrTasksView extends ConsumerStatefulWidget {
   const HrTasksView({super.key});
@@ -63,7 +64,26 @@ class _HrTasksViewState extends ConsumerState<HrTasksView> {
             ),
             const SizedBox(height: 10),
 
-            if (state.allTasks.isEmpty)
+            if (state.isLoading && state.allTasks.isEmpty)
+              Column(
+                children: [
+                  ShimmerLoading(
+                    height: 80,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  const SizedBox(height: 12),
+                  ShimmerLoading(
+                    height: 80,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  const SizedBox(height: 12),
+                  ShimmerLoading(
+                    height: 80,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ],
+              )
+            else if (state.allTasks.isEmpty)
               const Center(
                 child: Padding(
                   padding: EdgeInsets.all(40),

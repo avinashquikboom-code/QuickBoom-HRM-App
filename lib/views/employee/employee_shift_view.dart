@@ -4,6 +4,7 @@ import '../../core/constants/app_colors.dart';
 import 'package:remixicon/remixicon.dart';
 import '../../viewmodels/shift_viewmodel.dart';
 import '../../viewmodels/auth_viewmodel.dart';
+import '../../widgets/shimmer_loading.dart';
 
 class EmployeeShiftView extends ConsumerWidget {
   const EmployeeShiftView({super.key});
@@ -45,7 +46,13 @@ class EmployeeShiftView extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 10),
-            if (myAssignment == null)
+            if (state.isLoading)
+              ShimmerLoading(
+                height: 120,
+                width: double.infinity,
+                borderRadius: BorderRadius.circular(16),
+              )
+            else if (myAssignment == null)
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(

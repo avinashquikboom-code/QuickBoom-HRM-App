@@ -6,6 +6,7 @@ import '../../core/constants/app_colors.dart';
 import '../../models/leave_request_model.dart';
 import '../../viewmodels/auth_viewmodel.dart';
 import '../../viewmodels/hr_leave_viewmodel.dart';
+import '../../widgets/shimmer_loading.dart';
 
 class HrLeaveApprovalView extends ConsumerStatefulWidget {
   const HrLeaveApprovalView({super.key});
@@ -169,6 +170,24 @@ class _LeaveList extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(hrLeaveViewModelProvider);
+
+    if (state.isProcessing && leaves.isEmpty) {
+      return ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: 3,
+        itemBuilder: (context, index) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: ShimmerLoading(
+              height: 100,
+              borderRadius: BorderRadius.circular(12),
+            ),
+          );
+        },
+      );
+    }
+
     if (leaves.isEmpty) {
       return Center(
         child: Padding(

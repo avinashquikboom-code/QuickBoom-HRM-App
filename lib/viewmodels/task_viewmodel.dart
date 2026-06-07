@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/services/api_service.dart';
 import '../core/constants/app_url.dart';
@@ -42,8 +44,27 @@ class TaskState {
 // ─── Task ViewModel (Employee) ─────────────────────────────────────────────────
 
 class TaskViewModel extends StateNotifier<TaskState> {
+  Timer? _refreshTimer;
+
   TaskViewModel() : super(const TaskState()) {
     fetchTasks();
+    _startAutoRefresh();
+  }
+
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    super.dispose();
+  }
+
+  void _startAutoRefresh() {
+    // Auto-refresh tasks every 30 seconds
+    _refreshTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      if (kDebugMode) {
+        debugPrint('🔄 Auto-refreshing tasks...');
+      }
+      fetchTasks();
+    });
   }
 
   TaskModel _parseTask(Map<String, dynamic> t) {

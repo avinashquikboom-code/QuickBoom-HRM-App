@@ -8,6 +8,7 @@ import '../../core/constants/app_colors.dart';
 import '../../core/services/distance_service.dart';
 import '../../models/attendance_model.dart';
 import '../../viewmodels/attendance_viewmodel.dart';
+import '../../widgets/shimmer_loading.dart';
 
 class EmployeeAttendanceView extends ConsumerWidget {
   const EmployeeAttendanceView({super.key});
@@ -198,12 +199,13 @@ class EmployeeAttendanceView extends ConsumerWidget {
                       ),
                     ),
                     if (state.isLoading)
-                      const SizedBox(
+                      SizedBox(
                         width: 16,
                         height: 16,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation(AppColors.primary),
+                        child: ShimmerLoading(
+                          width: 16,
+                          height: 16,
+                          borderRadius: BorderRadius.circular(8),
                         ),
                       )
                     else
@@ -928,13 +930,36 @@ class _TimelineAttendanceRow extends StatelessWidget {
                           width: 1,
                         ),
                       ),
-                      child: Text(
-                        record.statusLabel,
-                        style: TextStyle(
-                          color: statusColor,
-                          fontSize: 10.5,
-                          fontWeight: FontWeight.w800,
-                        ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            record.statusLabel,
+                            style: TextStyle(
+                              color: statusColor,
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          if (record.status == AttendanceStatus.late && record.isLateMarkedAsHalfDay) ...[
+                            const SizedBox(width: 4),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                              decoration: BoxDecoration(
+                                color: AppColors.info.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                '½ Day',
+                                style: TextStyle(
+                                  color: AppColors.info,
+                                  fontSize: 8,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                     ),
                   ],

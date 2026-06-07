@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -56,8 +57,27 @@ class AttendanceState {
 // ─── Attendance ViewModel ────────────────────────────────────────────────────
 
 class AttendanceViewModel extends StateNotifier<AttendanceState> {
+  Timer? _refreshTimer;
+
   AttendanceViewModel() : super(const AttendanceState()) {
     fetchAttendanceData();
+    _startAutoRefresh();
+  }
+
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    super.dispose();
+  }
+
+  void _startAutoRefresh() {
+    // Auto-refresh attendance every 30 seconds
+    _refreshTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      if (kDebugMode) {
+        debugPrint('🔄 Auto-refreshing attendance...');
+      }
+      fetchAttendanceData();
+    });
   }
 
   Future<void> fetchAttendanceData() async {
@@ -248,6 +268,7 @@ class AttendanceViewModel extends StateNotifier<AttendanceState> {
       totalBreakDuration: Duration(seconds: data['totalBreakSeconds'] ?? 0),
       officeLat: officeData?['latitude'] != null ? (officeData['latitude'] as num).toDouble() : null,
       officeLon: officeData?['longitude'] != null ? (officeData['longitude'] as num).toDouble() : null,
+      isLateMarkedAsHalfDay: data['isLateMarkedAsHalfDay'] ?? false,
     );
   }
 

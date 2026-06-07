@@ -6,6 +6,7 @@ import 'package:remixicon/remixicon.dart';
 import '../../core/constants/app_colors.dart';
 import '../../models/hr_attendance_record_model.dart';
 import '../../viewmodels/hr_attendance_viewmodel.dart';
+import '../../widgets/shimmer_loading.dart';
 
 class HrAttendanceView extends ConsumerStatefulWidget {
   const HrAttendanceView({super.key});
@@ -169,8 +170,18 @@ class _HrAttendanceViewState extends ConsumerState<HrAttendanceView> {
             // ─── Attendance List ─────────────────────────────────────────
             Expanded(
               child: state.isLoading && state.records.isEmpty
-                  ? const Center(
-                      child: CircularProgressIndicator(color: AppColors.primary),
+                  ? ListView.builder(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: 5,
+                      itemBuilder: (context, index) {
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: ShimmerLoading(
+                            height: 80,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        );
+                      },
                     )
                   : state.filteredRecords.isEmpty
                       ? ListView(

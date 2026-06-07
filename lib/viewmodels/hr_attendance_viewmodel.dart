@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -56,8 +57,27 @@ class HrAttendanceState {
 // ─── HR Attendance ViewModel ───────────────────────────────────────────────────
 
 class HrAttendanceViewModel extends StateNotifier<HrAttendanceState> {
+  Timer? _refreshTimer;
+
   HrAttendanceViewModel() : super(const HrAttendanceState()) {
     fetchTodayAttendance();
+    _startAutoRefresh();
+  }
+
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    super.dispose();
+  }
+
+  void _startAutoRefresh() {
+    // Auto-refresh HR attendance every 30 seconds
+    _refreshTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      if (kDebugMode) {
+        debugPrint('🔄 Auto-refreshing HR attendance...');
+      }
+      fetchTodayAttendance();
+    });
   }
 
   Future<void> fetchTodayAttendance() async {

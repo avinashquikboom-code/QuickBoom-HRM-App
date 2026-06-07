@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -42,8 +43,27 @@ class HrLeaveState {
 // ─── HR Leave ViewModel ────────────────────────────────────────────────────────
 
 class HrLeaveViewModel extends StateNotifier<HrLeaveState> {
+  Timer? _refreshTimer;
+
   HrLeaveViewModel() : super(const HrLeaveState()) {
     fetchLeaves();
+    _startAutoRefresh();
+  }
+
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    super.dispose();
+  }
+
+  void _startAutoRefresh() {
+    // Auto-refresh HR leaves every 30 seconds
+    _refreshTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      if (kDebugMode) {
+        debugPrint('🔄 Auto-refreshing HR leaves...');
+      }
+      fetchLeaves();
+    });
   }
 
   Future<void> fetchLeaves() async {

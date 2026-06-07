@@ -6,6 +6,7 @@ import '../../core/constants/app_colors.dart';
 import '../../models/expense_model.dart';
 import '../../viewmodels/hr_expense_viewmodel.dart';
 import '../../viewmodels/auth_viewmodel.dart';
+import '../../widgets/shimmer_loading.dart';
 
 class HrExpensesView extends ConsumerWidget {
   const HrExpensesView({super.key});
@@ -61,7 +62,21 @@ class HrExpensesView extends ConsumerWidget {
                 ),
                 const SizedBox(height: 10),
 
-                if (state.pendingExpenses.isEmpty)
+                if (state.isProcessing && state.pendingExpenses.isEmpty)
+                  Column(
+                    children: [
+                      ShimmerLoading(
+                        height: 80,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      const SizedBox(height: 12),
+                      ShimmerLoading(
+                        height: 80,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ],
+                  )
+                else if (state.pendingExpenses.isEmpty)
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 40),
                     child: Center(child: Text('No pending expenses.', style: TextStyle(color: AppColors.textSecondary))),

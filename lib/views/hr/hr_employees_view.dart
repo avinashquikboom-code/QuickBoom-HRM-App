@@ -5,6 +5,7 @@ import 'package:remixicon/remixicon.dart';
 import '../../core/constants/app_colors.dart';
 import '../../models/user_model.dart';
 import '../../viewmodels/employee_list_viewmodel.dart';
+import '../../widgets/shimmer_loading.dart';
 
 class HrEmployeesView extends ConsumerWidget {
   const HrEmployeesView({super.key});
@@ -93,17 +94,31 @@ class HrEmployeesView extends ConsumerWidget {
 
           // ─── Employee List ────────────────────────────────────────────
           Expanded(
-            child: state.filteredEmployees.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(RemixIcons.group_line,
-                            size: 48, color: AppColors.textHint),
-                        const SizedBox(height: 12),
-                        const Text('No employees found',
-                            style: TextStyle(
-                                color: AppColors.textSecondary,
+            child: state.isLoading && state.filteredEmployees.isEmpty
+                ? ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: 5,
+                    itemBuilder: (context, index) {
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: ShimmerLoading(
+                          height: 80,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      );
+                    },
+                  )
+                : state.filteredEmployees.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(RemixIcons.group_line,
+                                size: 48, color: AppColors.textHint),
+                            const SizedBox(height: 12),
+                            const Text('No employees found',
+                                style: TextStyle(
+                                    color: AppColors.textSecondary,
                                 fontSize: 14)),
                       ],
                     ),
