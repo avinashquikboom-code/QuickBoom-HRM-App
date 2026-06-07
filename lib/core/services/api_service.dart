@@ -167,6 +167,20 @@ class ApiService {
     try {
       final response = await http.post(url, headers: headers, body: jsonEncode(body));
       ApiLogger.logResponse('POST', path, response.statusCode, response.body);
+      
+      // Handle 401 - try token refresh
+      if (response.statusCode == 401) {
+        final refreshed = await _tryRefreshToken();
+        if (refreshed) {
+          // Retry with new token
+          final newHeaders = await _headers();
+          final retryResponse = await http.post(url, headers: newHeaders, body: jsonEncode(body));
+          ApiLogger.logResponse('POST (retry)', path, retryResponse.statusCode, retryResponse.body);
+          _checkResponse(retryResponse);
+          return retryResponse;
+        }
+      }
+      
       _checkResponse(response);
       return response;
     } catch (e) {
@@ -184,6 +198,20 @@ class ApiService {
     try {
       final response = await http.put(url, headers: headers, body: jsonEncode(body));
       ApiLogger.logResponse('PUT', path, response.statusCode, response.body);
+      
+      // Handle 401 - try token refresh
+      if (response.statusCode == 401) {
+        final refreshed = await _tryRefreshToken();
+        if (refreshed) {
+          // Retry with new token
+          final newHeaders = await _headers();
+          final retryResponse = await http.put(url, headers: newHeaders, body: jsonEncode(body));
+          ApiLogger.logResponse('PUT (retry)', path, retryResponse.statusCode, retryResponse.body);
+          _checkResponse(retryResponse);
+          return retryResponse;
+        }
+      }
+      
       _checkResponse(response);
       return response;
     } catch (e) {
@@ -201,6 +229,20 @@ class ApiService {
     try {
       final response = await http.delete(url, headers: headers);
       ApiLogger.logResponse('DELETE', path, response.statusCode, response.body);
+      
+      // Handle 401 - try token refresh
+      if (response.statusCode == 401) {
+        final refreshed = await _tryRefreshToken();
+        if (refreshed) {
+          // Retry with new token
+          final newHeaders = await _headers();
+          final retryResponse = await http.delete(url, headers: newHeaders);
+          ApiLogger.logResponse('DELETE (retry)', path, retryResponse.statusCode, retryResponse.body);
+          _checkResponse(retryResponse);
+          return retryResponse;
+        }
+      }
+      
       _checkResponse(response);
       return response;
     } catch (e) {
