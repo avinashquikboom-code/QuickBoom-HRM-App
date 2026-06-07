@@ -45,33 +45,8 @@ class TaskState {
 // ─── Task ViewModel (Employee) ─────────────────────────────────────────────────
 
 class TaskViewModel extends StateNotifier<TaskState> {
-  Timer? _refreshTimer;
-
   TaskViewModel() : super(const TaskState()) {
     fetchTasks();
-    _startAutoRefresh();
-  }
-
-  @override
-  void dispose() {
-    _refreshTimer?.cancel();
-    super.dispose();
-  }
-
-  void _startAutoRefresh() {
-    // Auto-refresh tasks every 30 seconds
-    _refreshTimer = Timer.periodic(const Duration(seconds: 30), (_) async {
-      // Check if user is still authenticated before refreshing
-      final hasToken = await StorageService.hasToken();
-      if (!hasToken) {
-        _refreshTimer?.cancel();
-        return;
-      }
-      if (kDebugMode) {
-        debugPrint('🔄 Auto-refreshing tasks...');
-      }
-      fetchTasks();
-    });
   }
 
   TaskModel _parseTask(Map<String, dynamic> t) {

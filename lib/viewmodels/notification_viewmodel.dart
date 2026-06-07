@@ -50,17 +50,8 @@ class NotificationState {
 // ─── Notification ViewModel ────────────────────────────────────────────────────
 
 class NotificationViewModel extends StateNotifier<NotificationState> {
-  Timer? _refreshTimer;
-
   NotificationViewModel() : super(const NotificationState()) {
     fetchNotifications();
-    _startAutoRefresh();
-  }
-
-  @override
-  void dispose() {
-    _refreshTimer?.cancel();
-    super.dispose();
   }
 
   void _startAutoRefresh() {

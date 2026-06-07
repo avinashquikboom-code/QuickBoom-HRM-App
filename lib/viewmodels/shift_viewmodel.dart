@@ -36,33 +36,8 @@ class ShiftState {
 // ─── Shift ViewModel ──────────────────────────────────────────────────────────
 
 class ShiftViewModel extends StateNotifier<ShiftState> {
-  Timer? _refreshTimer;
-
   ShiftViewModel() : super(const ShiftState()) {
     fetchShiftAssignment();
-    _startAutoRefresh();
-  }
-
-  @override
-  void dispose() {
-    _refreshTimer?.cancel();
-    super.dispose();
-  }
-
-  void _startAutoRefresh() {
-    // Auto-refresh shift assignment every 30 seconds
-    _refreshTimer = Timer.periodic(const Duration(seconds: 30), (_) async {
-      // Check if user is still authenticated before refreshing
-      final hasToken = await StorageService.hasToken();
-      if (!hasToken) {
-        _refreshTimer?.cancel();
-        return;
-      }
-      if (kDebugMode) {
-        debugPrint('🔄 Auto-refreshing shift assignment...');
-      }
-      fetchShiftAssignment();
-    });
   }
 
   Future<void> fetchShiftAssignment() async {

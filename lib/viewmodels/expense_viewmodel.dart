@@ -57,33 +57,8 @@ class ExpenseState {
 // ─── Expense ViewModel ────────────────────────────────────────────────────────
 
 class ExpenseViewModel extends StateNotifier<ExpenseState> {
-  Timer? _refreshTimer;
-
   ExpenseViewModel() : super(const ExpenseState()) {
     fetchExpenses();
-    _startAutoRefresh();
-  }
-
-  @override
-  void dispose() {
-    _refreshTimer?.cancel();
-    super.dispose();
-  }
-
-  void _startAutoRefresh() {
-    // Auto-refresh expenses every 30 seconds
-    _refreshTimer = Timer.periodic(const Duration(seconds: 30), (_) async {
-      // Check if user is still authenticated before refreshing
-      final hasToken = await StorageService.hasToken();
-      if (!hasToken) {
-        _refreshTimer?.cancel();
-        return;
-      }
-      if (kDebugMode) {
-        debugPrint('🔄 Auto-refreshing expenses...');
-      }
-      fetchExpenses();
-    });
   }
 
   ExpenseModel _parseExpense(Map<String, dynamic> e) {
