@@ -840,267 +840,6 @@ class _TodayPunchCardState extends ConsumerState<_TodayPunchCard> {
     }
   }
 
-  void _showDistanceCalculationSheet(BuildContext context, GeofenceState state) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) {
-        final double? userLat = state.currentPosition?.latitude;
-        final double? userLon = state.currentPosition?.longitude;
-        final double? officeLat = state.officeLatitude;
-        final double? officeLon = state.officeLongitude;
-        final double? distance = state.distance;
-        final int? maxRadius = state.maxRadius;
-        final double? excessDistance = (distance != null && maxRadius != null) ? (distance - maxRadius) : null;
-
-        return Container(
-          decoration: const BoxDecoration(
-            color: AppColors.background,
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(28),
-              topRight: Radius.circular(28),
-            ),
-          ),
-          padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 5,
-                  decoration: BoxDecoration(
-                    color: AppColors.cardBorder,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: Colors.orange.withValues(alpha: 0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(RemixIcons.navigation_line, color: Colors.orange, size: 24),
-                  ),
-                  const SizedBox(width: 12),
-                  const Expanded(
-                    child: Text(
-                      'Distance Calculation Detail',
-                      style: TextStyle(
-                        color: AppColors.textPrimary,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              const Text(
-                'HAVERSINE FORMULA USED',
-                style: TextStyle(
-                  color: AppColors.textSecondary,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 0.8,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.cardBorder),
-                ),
-                child: const Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'd = 2R × arcsin(√[sin²(Δlat/2) + cos(lat₁) × cos(lat₂) × sin²(Δlon/2)])',
-                      style: TextStyle(
-                        color: AppColors.primary,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        fontFamily: 'monospace',
-                      ),
-                    ),
-                    SizedBox(height: 8),
-                    Text(
-                      'This formula calculates the shortest great-circle distance between two GPS coordinates on the Earth\'s surface (modeled as a sphere of radius R = 6,371 km).',
-                      style: TextStyle(
-                        color: AppColors.textSecondary,
-                        fontSize: 11.5,
-                        height: 1.4,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 20),
-              const Text(
-                'COORDINATES COMPARISON',
-                style: TextStyle(
-                  color: AppColors.textSecondary,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 0.8,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: AppColors.surface,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: AppColors.cardBorder),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Row(
-                            children: [
-                              Icon(RemixIcons.user_location_line, color: AppColors.primary, size: 16),
-                              SizedBox(width: 6),
-                              Text(
-                                'You',
-                                style: TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w800),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 10),
-                          Text('Lat: ${userLat?.toStringAsFixed(6) ?? "N/A"}', style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-                          const SizedBox(height: 4),
-                          Text('Lon: ${userLon?.toStringAsFixed(6) ?? "N/A"}', style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: AppColors.surface,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: AppColors.cardBorder),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              const Icon(RemixIcons.building_4_line, color: AppColors.success, size: 16),
-                              const SizedBox(width: 6),
-                              Expanded(
-                                child: Text(
-                                  state.nearestOffice ?? 'Office',
-                                  style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w800),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 10),
-                          Text('Lat: ${officeLat?.toStringAsFixed(6) ?? "N/A"}', style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-                          const SizedBox(height: 4),
-                          Text('Lon: ${officeLon?.toStringAsFixed(6) ?? "N/A"}', style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: excessDistance != null && excessDistance > 0 
-                      ? Colors.orange.withValues(alpha: 0.08) 
-                      : AppColors.success.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: excessDistance != null && excessDistance > 0 
-                        ? Colors.orange.withValues(alpha: 0.2) 
-                        : AppColors.success.withValues(alpha: 0.2),
-                  ),
-                ),
-                child: Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'Calculated Distance:',
-                          style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w700, fontSize: 13),
-                        ),
-                        Text(
-                          distance != null ? '${distance.toStringAsFixed(1)} meters' : 'N/A',
-                          style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w800, fontSize: 14),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'Allowed Geofence Radius:',
-                          style: TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.w600, fontSize: 12.5),
-                        ),
-                        Text(
-                          maxRadius != null ? '$maxRadius meters' : 'N/A',
-                          style: const TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.w700, fontSize: 13),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    const Divider(height: 1, color: AppColors.cardBorder),
-                    const SizedBox(height: 10),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          excessDistance != null && excessDistance > 0 ? 'Outside Range by:' : 'Inside Geofence:',
-                          style: TextStyle(
-                            color: excessDistance != null && excessDistance > 0 ? Colors.orange[800] : AppColors.success,
-                            fontWeight: FontWeight.w800,
-                            fontSize: 13.5,
-                          ),
-                        ),
-                        Text(
-                          excessDistance != null
-                              ? '${excessDistance.abs().toStringAsFixed(1)} meters'
-                              : 'N/A',
-                          style: TextStyle(
-                            color: excessDistance != null && excessDistance > 0 ? Colors.orange[800] : AppColors.success,
-                            fontWeight: FontWeight.w900,
-                            fontSize: 14.5,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
@@ -1196,26 +935,21 @@ class _TodayPunchCardState extends ConsumerState<_TodayPunchCard> {
               Row(
                 children: [
                   if (!hasCheckOut && !widget.isCheckedIn) ...[
-                    GestureDetector(
-                      onTap: () => _showDistanceCalculationSheet(context, geofenceState),
-                      child: Text(
-                        isInRadius 
-                            ? 'Location Verified' 
-                            : (geofenceState.distance != null 
-                                ? 'Outside Area (${geofenceState.distance!.toStringAsFixed(0)}m / ${(geofenceState.distance! / 1000).toStringAsFixed(2)} km)'
-                                : 'Location Required'),
-                        style: TextStyle(
-                          fontSize: 10.5,
-                          fontWeight: FontWeight.w800,
-                          color: isInRadius ? AppColors.success : Colors.orange,
-                          decoration: isInRadius ? null : TextDecoration.underline,
-                        ),
+                    Text(
+                      isInRadius 
+                          ? 'Location Verified' 
+                          : (geofenceState.distance != null 
+                              ? 'Outside Area (${geofenceState.distance!.toStringAsFixed(0)}m / ${(geofenceState.distance! / 1000).toStringAsFixed(2)} km)'
+                              : 'Location Required'),
+                      style: TextStyle(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w800,
+                        color: isInRadius ? AppColors.success : Colors.orange,
                       ),
                     ),
                     const SizedBox(width: 6),
                     GestureDetector(
                       onTap: geofenceState.isLoading ? null : () => ref.invalidate(geofenceProvider),
-                      onLongPress: () => _showDistanceCalculationSheet(context, geofenceState),
                       child: geofenceState.isLoading
                           ? const SizedBox(
                               width: 14,
@@ -1318,9 +1052,6 @@ class _TodayPunchCardState extends ConsumerState<_TodayPunchCard> {
               distance: geofenceState.distance,
               onPunchTriggered: () {
                 _handlePunch(context, isInRadius: isInRadius);
-              },
-              onShowCalculation: () {
-                _showDistanceCalculationSheet(context, geofenceState);
               },
             ),
           ),
@@ -1704,7 +1435,6 @@ class _SimplifiedPunchButton extends StatelessWidget {
   final bool isInRadius;
   final double? distance;
   final VoidCallback onPunchTriggered;
-  final VoidCallback? onShowCalculation;
 
   const _SimplifiedPunchButton({
     required this.isInteractive,
@@ -1712,7 +1442,6 @@ class _SimplifiedPunchButton extends StatelessWidget {
     required this.isInRadius,
     this.distance,
     required this.onPunchTriggered,
-    this.onShowCalculation,
   });
 
   @override
@@ -1799,19 +1528,15 @@ class _SimplifiedPunchButton extends StatelessWidget {
         if (!isInteractive && !isCheckedIn && !isInRadius)
           Padding(
             padding: const EdgeInsets.only(top: 8),
-            child: GestureDetector(
-              onTap: onShowCalculation,
-              child: Text(
-                distance != null
-                    ? 'Outside office area (${distance!.toStringAsFixed(0)}m / ${(distance! / 1000).toStringAsFixed(2)} km)\nTap to see calculation'
-                    : 'Outside office area',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Colors.orange[600],
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  decoration: TextDecoration.underline,
-                ),
+            child: Text(
+              distance != null
+                  ? 'Outside office area (${distance!.toStringAsFixed(0)}m / ${(distance! / 1000).toStringAsFixed(2)} km)'
+                  : 'Outside office area',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.orange[600],
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ),
