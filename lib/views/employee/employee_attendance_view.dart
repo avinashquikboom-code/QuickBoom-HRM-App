@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:remixicon/remixicon.dart';
+import 'package:geolocator/geolocator.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/services/distance_service.dart';
 import '../../models/attendance_model.dart';
 import '../../viewmodels/attendance_viewmodel.dart';
 
@@ -343,11 +345,14 @@ class _TodayCard extends ConsumerStatefulWidget {
 
 class _TodayCardState extends ConsumerState<_TodayCard> {
   Timer? _timer;
+  Map<String, dynamic>? _distanceData;
+  bool _isLoadingDistance = false;
 
   @override
   void initState() {
     super.initState();
     _startTimerIfNeeded();
+    _loadDistance();
   }
 
   @override
@@ -369,6 +374,21 @@ class _TodayCardState extends ConsumerState<_TodayCard> {
       _timer?.cancel();
       _timer = null;
     }
+  }
+
+  Future<void> _loadDistance() async {
+    setState(() => _isLoadingDistance = true);
+    try {
+      final position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+      final result = await DistanceService.getCurrentDistance(
+        latitude: position.latitude,
+        longitude: position.longitude,
+      );
+      setState(() => _distanceData = result);
+    } catch (e) {
+      // Silently fail if location is not available
+    }
+    setState(() => _isLoadingDistance = false);
   }
 
   @override
@@ -480,62 +500,123 @@ class _TodayCardState extends ConsumerState<_TodayCard> {
 
           // Action Buttons
           if (!hasCheckOut)
-            Row(
+            Column(
               children: [
-                if (hasCheckIn) ...[
-                  Expanded(
-                    child: _AttendanceActionButton(
-                      label: isOnBreak ? 'End Break' : 'Take Break',
-                      icon: isOnBreak ? RemixIcons.play_line : RemixIcons.cup_line,
-                      color: AppColors.warning,
-                      onTap: () {
-                        if (isOnBreak) {
-                          ref.read(attendanceViewModelProvider.notifier).endBreak();
-                        } else {
-                          ref.read(attendanceViewModelProvider.notifier).startBreak();
-                        }
-                      },
+                Row(
+                  children: [
+                    if (hasCheckIn) ...[
+                      Expanded(
+                        child: _AttendanceActionButton(
+                          label: isOnBreak ? 'End Break' : 'Take Break',
+                          icon: isOnBreak ? RemixIcons.play_line : RemixIcons.cup_line,
+                          color: AppColors.warning,
+                          onTap: () {
+                            if (isOnBreak) {
+                              ref.read(attendanceViewModelProvider.notifier).endBreak();
+                            } else {
+                              ref.read(attendanceViewModelProvider.notifier).startBreak();
+                            }
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                    ],
+                    Expanded(
+                      child: _SimplifiedAttendancePunchButton(
+                        isCheckedIn: hasCheckIn,
+                        onTap: () async {
+                          try {
+                            if (hasCheckIn) {
+                              await ref.read(attendanceViewModelProvider.notifier).checkOut();
+                            } else {
+                              await ref.read(attendanceViewModelProvider.notifier).checkIn();
+                            }
+                          } catch (error) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Row(
+                                    children: [
+                                      Icon(RemixIcons.error_warning_line, color: Colors.white),
+                                      const SizedBox(width: 10),
+                                      Expanded(
+                                        child: Text(
+                                          error.toString().replaceAll('Exception: ', ''),
+                                          style: const TextStyle(fontSize: 14),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  backgroundColor: AppColors.error,
+                                  behavior: SnackBarBehavior.floating,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  duration: const Duration(seconds: 4),
+                                ),
+                              );
+                            }
+                          }
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                // Distance Display
+                if (_distanceData != null)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: (_distanceData!['isWithinRadius'] == true
+                          ? AppColors.success
+                          : AppColors.warning).withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: (_distanceData!['isWithinRadius'] == true
+                            ? AppColors.success
+                            : AppColors.warning).withValues(alpha: 0.2),
+                        width: 1,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          _distanceData!['isWithinRadius'] == true
+                              ? RemixIcons.check_circle_line
+                              : RemixIcons.map_pin_line,
+                          size: 14,
+                          color: _distanceData!['isWithinRadius'] == true
+                              ? AppColors.success
+                              : AppColors.warning,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          '${_distanceData!['distance']?.toStringAsFixed(2) ?? '0.0'} km from office',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: _distanceData!['isWithinRadius'] == true
+                                ? AppColors.success
+                                : AppColors.warning,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                else if (_isLoadingDistance)
+                  const SizedBox(
+                    height: 24,
+                    child: Center(
+                      child: SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation(AppColors.textHint),
+                        ),
+                      ),
                     ),
                   ),
-                  const SizedBox(width: 12),
-                ],
-                Expanded(
-                  child: _SimplifiedAttendancePunchButton(
-                    isCheckedIn: hasCheckIn,
-                    onTap: () async {
-                      try {
-                        if (hasCheckIn) {
-                          await ref.read(attendanceViewModelProvider.notifier).checkOut();
-                        } else {
-                          await ref.read(attendanceViewModelProvider.notifier).checkIn();
-                        }
-                      } catch (error) {
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Row(
-                                children: [
-                                  Icon(RemixIcons.error_warning_line, color: Colors.white),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: Text(
-                                      error.toString().replaceAll('Exception: ', ''),
-                                      style: const TextStyle(fontSize: 14),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              backgroundColor: AppColors.error,
-                              behavior: SnackBarBehavior.floating,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                              duration: const Duration(seconds: 4),
-                            ),
-                          );
-                        }
-                      }
-                    },
-                  ),
-                ),
               ],
             )
           else
