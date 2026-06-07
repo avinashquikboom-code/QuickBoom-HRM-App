@@ -52,24 +52,26 @@ class ProfileViewModel extends StateNotifier<ProfileState> {
       final res = await ApiService.get(AppUrl.employeeProfile);
       final data = jsonDecode(res.body);
 
-      final emp = data['employee'];
-      final prof = data['profile'];
-      final uRole = (data['user']?['role'] ?? 'EMPLOYEE').toString().toUpperCase();
+      // Handle mobile API response structure
+      final user = data['user'] ?? data;
+      final prof = user['profile'] as Map<String, dynamic>? ?? {};
+      final emp = user['employee'] as Map<String, dynamic>? ?? {};
+      final uRole = (user['role'] ?? 'EMPLOYEE').toString().toUpperCase();
 
       final parsedUser = UserModel(
-        id: emp['id'].toString(),
-        employeeId: emp['employeeCode'].toString(),
-        name: emp['name'].toString(),
-        email: prof['email'].toString(),
-        phone: prof['phone'].toString(),
+        id: user['id']?.toString() ?? emp['id']?.toString() ?? '0',
+        employeeId: emp['employeeCode']?.toString() ?? user['id']?.toString() ?? '0',
+        name: prof['fullName']?.toString() ??
+               (emp['firstName']?.toString() ?? '') + ' ' + (emp['lastName']?.toString() ?? '').trim(),
+        email: prof['email']?.toString() ?? user['email']?.toString() ?? '',
+        phone: prof['phone']?.toString() ?? '',
         role: (uRole == 'HR' || uRole == 'SUPER_ADMIN' || uRole == 'ADMIN' || uRole == 'PLATFORM_ADMIN')
             ? UserRole.hrManager
             : UserRole.employee,
-        department: emp['department'].toString(),
-        designation: emp['designation'].toString(),
-        joinDate: DateTime.tryParse(emp['joinDate'].toString()) ?? DateTime.now(),
-        salary: (prof['salary'] as num?)?.toDouble() ??
-            (emp['salary'] as num?)?.toDouble() ?? 0.0,
+        department: emp['department']?.toString() ?? 'General',
+        designation: emp['designation']?.toString() ?? prof['bio']?.toString() ?? 'Employee',
+        joinDate: DateTime.tryParse(prof['createdAt']?.toString() ?? emp['joinDate']?.toString() ?? '') ?? DateTime.now(),
+        salary: 0.0,
       );
 
       state = state.copyWith(user: parsedUser, isLoading: false);
