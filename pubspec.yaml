@@ -31,12 +31,12 @@ dependencies:
   table_calendar: ^3.1.2
 
   # Media / Uploads
-  image_picker: ^1.1.5
+  image_picker: ^1.1.2
 
   # Utilities
   intl: ^0.19.0
   equatable: ^2.0.5
-  shared_preferences: ^2.3.2
+  shared_preferences: ^2.4.2
   local_auth: ^2.2.0
   remixicon: ^4.9.3
   geolocator: ^13.0.2
@@ -45,11 +45,11 @@ dependencies:
   # Firebase
   firebase_core: ^4.10.0
   firebase_messaging: ^16.3.0
-  flutter_local_notifications: ^17.2.3
+  flutter_local_notifications: ^18.0.1
 
   # PDF generation & sharing
   pdf: ^3.11.1
-  printing: ^5.12.2
+  printing: ^5.13.3
   path_provider: ^2.1.3
 
 

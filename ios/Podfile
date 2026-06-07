@@ -1,0 +1,33 @@
+# Uncomment this line to define a global platform for your project
+platform :ios, '13.0'
+
+# CocoaPods analytics sends network requests to Apple Intelligence. Use this to disable it.
+ENV['COCOAPODS_DISABLE_STATS'] = 'true'
+
+# Suppress Swift Package Manager warnings for incompatible plugins
+post_install do |installer|
+  installer.pods_project.targets.each do |target|
+    target.build_configurations.each do |config|
+      # Disable Swift Package Manager for incompatible plugins
+      if target.name.start_with?('printing') || target.name.start_with?('flutter_local_notifications')
+        config.build_settings['SWIFT_PACKAGE_MANAGER_RESOURCES'] = 'NO'
+        config.build_settings['SWIFT_PACKAGE_MANAGER_RESOURCES'] = 'NO'
+      end
+      
+      # Set iOS deployment target
+      config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.0'
+      
+      # Fix Kotlin Gradle Plugin warnings by setting proper configuration
+      if target.name.start_with?('image_picker_android') || target.name.start_with?('shared_preferences_android')
+        config.build_settings['GRADLE_OPTS'] = '-Dorg.gradle.jvmargs=-Xmx4g -XX:MaxPermSize=512m'
+      end
+    end
+  end
+end
+
+target 'Runner' do
+  use_frameworks! :linkage => :static
+
+  # Flutter Pods
+  flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
+end

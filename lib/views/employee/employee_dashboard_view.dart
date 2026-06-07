@@ -17,21 +17,11 @@ import 'notifications_view.dart';
 import 'employee_expenses_view.dart';
 import 'employee_shift_view.dart';
 import 'package:remixicon/remixicon.dart';
-import 'package:geolocator/geolocator.dart';
+import '../../viewmodels/geofence_viewmodel.dart';
+
 
 final geofenceProvider = FutureProvider<bool>((ref) async {
-  bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-  if (!serviceEnabled) return false;
-
-  LocationPermission permission = await Geolocator.checkPermission();
-  if (permission == LocationPermission.denied) {
-    permission = await Geolocator.requestPermission();
-    if (permission == LocationPermission.denied) return false;
-  }
-  
-  if (permission == LocationPermission.deniedForever) return false;
-
-  return true;
+  return ref.read(geofenceViewModelProvider.notifier).checkGeofenceStatus();
 });
 
 
@@ -855,8 +845,9 @@ class _TodayPunchCardState extends ConsumerState<_TodayPunchCard> {
     final hasCheckIn = widget.todayRecord?.checkIn != null;
     final hasCheckOut = widget.todayRecord?.checkOut != null;
     final isOnBreak = widget.todayRecord?.isOnBreak ?? false;
-    final isInRadiusAsync = ref.watch(geofenceProvider);
-    final isInRadius = isInRadiusAsync.value ?? false;
+    final geofenceState = ref.watch(geofenceViewModelProvider);
+    ref.watch(geofenceProvider);
+    final isInRadius = geofenceState.isWithinGeofence;
 
     bool isInteractive = false;
 
@@ -944,7 +935,11 @@ class _TodayPunchCardState extends ConsumerState<_TodayPunchCard> {
                 children: [
                   if (!hasCheckOut && !widget.isCheckedIn) ...[
                     Text(
-                      isInRadius ? 'Location Verified' : 'Location Required',
+                      isInRadius 
+                          ? 'Location Verified' 
+                          : (geofenceState.distance != null 
+                              ? 'Outside Area (${geofenceState.distance!.toStringAsFixed(0)}m / ${(geofenceState.distance! / 1000).toStringAsFixed(2)} km)'
+                              : 'Location Required'),
                       style: TextStyle(
                         fontSize: 10.5,
                         fontWeight: FontWeight.w800,
@@ -953,12 +948,21 @@ class _TodayPunchCardState extends ConsumerState<_TodayPunchCard> {
                     ),
                     const SizedBox(width: 6),
                     GestureDetector(
-                      onTap: () => ref.invalidate(geofenceProvider),
-                      child: Icon(
-                        isInRadius ? RemixIcons.map_pin_user_fill : RemixIcons.refresh_line, 
-                        size: 16, 
-                        color: isInRadius ? AppColors.success : Colors.orange,
-                      ),
+                      onTap: geofenceState.isLoading ? null : () => ref.invalidate(geofenceProvider),
+                      child: geofenceState.isLoading
+                          ? const SizedBox(
+                              width: 14,
+                              height: 14,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 1.5,
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.orange),
+                              ),
+                            )
+                          : Icon(
+                              isInRadius ? RemixIcons.map_pin_user_fill : RemixIcons.refresh_line, 
+                              size: 16, 
+                              color: isInRadius ? AppColors.success : Colors.orange,
+                            ),
                     ),
                     const SizedBox(width: 10),
                   ],
@@ -1044,6 +1048,7 @@ class _TodayPunchCardState extends ConsumerState<_TodayPunchCard> {
               isInteractive: isInteractive,
               isCheckedIn: widget.isCheckedIn,
               isInRadius: isInRadius,
+              distance: geofenceState.distance,
               onPunchTriggered: () {
                 _handlePunch(context, isInRadius: isInRadius);
               },
@@ -1427,12 +1432,14 @@ class _SimplifiedPunchButton extends StatelessWidget {
   final bool isInteractive;
   final bool isCheckedIn;
   final bool isInRadius;
+  final double? distance;
   final VoidCallback onPunchTriggered;
 
   const _SimplifiedPunchButton({
     required this.isInteractive,
     required this.isCheckedIn,
     required this.isInRadius,
+    this.distance,
     required this.onPunchTriggered,
   });
 
@@ -1521,7 +1528,9 @@ class _SimplifiedPunchButton extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(top: 8),
             child: Text(
-              'Outside office area',
+              distance != null
+                  ? 'Outside office area (${distance!.toStringAsFixed(0)}m / ${(distance! / 1000).toStringAsFixed(2)} km)'
+                  : 'Outside office area',
               style: TextStyle(
                 color: Colors.orange[600],
                 fontSize: 12,
