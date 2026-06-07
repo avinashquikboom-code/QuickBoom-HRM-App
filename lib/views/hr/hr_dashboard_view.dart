@@ -14,6 +14,7 @@ import 'hr_reports_view.dart';
 import 'hr_expenses_view.dart';
 import 'hr_shifts_view.dart';
 import 'hr_attendance_view.dart';
+import 'hr_notifications_view.dart';
 
 class HrDashboardView extends ConsumerWidget {
   const HrDashboardView({super.key});
@@ -61,7 +62,14 @@ class HrDashboardView extends ConsumerWidget {
                   color: AppColors.textPrimary,
                   size: 20,
                 ),
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const HrNotificationsView(),
+                    ),
+                  );
+                },
               ),
               PopupMenuButton<String>(
                 icon: Icon(RemixIcons.more_2_fill, color: AppColors.textPrimary),
