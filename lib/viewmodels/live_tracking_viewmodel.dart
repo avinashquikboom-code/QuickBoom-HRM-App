@@ -379,7 +379,7 @@ class LiveTrackingViewModel extends StateNotifier<LiveTrackingState> {
   Timer? _locationTimer;
 
   void _startLocationUpdates() {
-    _locationTimer = Timer.periodic(const Duration(seconds: 15), (timer) {
+    _locationTimer = Timer.periodic(const Duration(seconds: 10), (timer) {
       updateLocation();
     });
   }
