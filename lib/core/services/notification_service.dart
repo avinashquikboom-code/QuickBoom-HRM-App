@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'api_service.dart';
+import 'storage_service.dart';
 import '../constants/app_url.dart';
 import 'websocket_service.dart';
 
@@ -139,8 +140,12 @@ class NotificationService {
       final token = await _firebaseMessaging.getToken();
       debugPrint('🔑 FCM Token: $token');
       
-      // Save token to local storage and backend
-      await _saveFCMToken(token!);
+      if (token != null) {
+        // Save to SharedPreferences
+        await StorageService.saveFCMToken(token);
+        // Save to backend
+        await _saveFCMToken(token);
+      }
     } catch (e) {
       debugPrint('❌ Failed to get FCM token: $e');
     }

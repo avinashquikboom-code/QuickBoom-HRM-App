@@ -15,7 +15,8 @@ class AppUrl {
   // ─────────────────────────────────────────────
   //  Auth
   // ─────────────────────────────────────────────
-  static const String login = '/api/auth/login';
+  static const String login = '/api/mobile/auth/login';
+  static const String logout = '/api/mobile/auth/logout';
 
   // ─────────────────────────────────────────────
   //  Employee – Profile

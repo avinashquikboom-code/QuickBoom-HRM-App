@@ -13,6 +13,7 @@ class StorageService {
   static const String _onboardingKey     = 'hasSeenOnboarding';
   static const String _lastEmailKey      = 'last_login_email';
   static const String _userRoleKey       = 'cached_user_role';
+  static const String _fcmTokenKey       = 'fcm_token';
 
   /// Public alias so ApiService can reference the token key constant.
   static const String tokenKeyPublic = _tokenKey;
@@ -113,6 +114,38 @@ class StorageService {
       return prefs.getString(_userRoleKey);
     } catch (_) {
       return null;
+    }
+  }
+
+  // ─── FCM Token ─────────────────────────────────────────────────────────────
+
+  static Future<void> saveFCMToken(String token) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_fcmTokenKey, token);
+      debugPrint('✅ FCM Token saved to storage');
+    } catch (e) {
+      debugPrint('❌ Failed to save FCM token: $e');
+    }
+  }
+
+  static Future<String?> getFCMToken() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getString(_fcmTokenKey);
+    } catch (e) {
+      debugPrint('❌ Failed to read FCM token: $e');
+      return null;
+    }
+  }
+
+  static Future<void> clearFCMToken() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_fcmTokenKey);
+      debugPrint('🗑️ FCM Token cleared from storage');
+    } catch (e) {
+      debugPrint('❌ Failed to clear FCM token: $e');
     }
   }
 

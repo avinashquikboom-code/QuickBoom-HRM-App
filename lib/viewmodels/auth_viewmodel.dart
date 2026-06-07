@@ -1,7 +1,11 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import '../core/services/api_service.dart';
+import '../core/services/storage_service.dart';
 import '../core/constants/app_url.dart';
+import '../core/services/notification_service.dart';
 import '../models/user_model.dart';
 
 // ─── Auth State ──────────────────────────────────────────────────────────────
@@ -41,15 +45,36 @@ class AuthViewModel extends StateNotifier<AuthState> {
   Future<bool> login(String employeeId, String password) async {
     state = state.copyWith(isLoading: true, clearError: true);
 
+    String? fcmToken = await StorageService.getFCMToken();
+    if (fcmToken == null || fcmToken.isEmpty) {
+      try {
+        fcmToken = await FirebaseMessaging.instance.getToken();
+        if (fcmToken != null && fcmToken.isNotEmpty) {
+          await StorageService.saveFCMToken(fcmToken);
+        }
+        debugPrint('🔑 FCM Token obtained for login: $fcmToken');
+      } catch (e) {
+        debugPrint('⚠️ Could not get FCM token for login: $e');
+      }
+    }
+
     // 1. Live login request
     final loginRes = await ApiService.post(AppUrl.login, {
       'email': employeeId.trim(),
       'password': password.trim(),
+      'fcmToken': fcmToken,
     });
 
     final loginData = jsonDecode(loginRes.body);
     final token = loginData['token'];
     await ApiService.saveToken(token);
+
+    // Refresh FCM token on backend after successful login
+    try {
+      await NotificationService().refreshToken();
+    } catch (e) {
+      debugPrint('⚠️ Failed to refresh FCM token after login: $e');
+    }
 
     // 2. Live profile request
     final profileRes = await ApiService.get(AppUrl.employeeProfile);
@@ -114,8 +139,26 @@ class AuthViewModel extends StateNotifier<AuthState> {
   }
 
   void logout() {
-    ApiService.clearToken();
+    // 1. Reset local AuthState synchronously so UI reacts instantly
     state = const AuthState();
+
+    // 2. Perform background cleanup asynchronously
+    _performCleanup();
+  }
+
+  Future<void> _performCleanup() async {
+    final fcmToken = await StorageService.getFCMToken();
+    if (fcmToken != null && fcmToken.isNotEmpty) {
+      try {
+        await ApiService.post(AppUrl.logout, {
+          'fcmToken': fcmToken,
+        });
+        debugPrint('✅ Backend logout successful');
+      } catch (e) {
+        debugPrint('⚠️ Backend logout failed: $e');
+      }
+    }
+    await StorageService.clearSessionData();
   }
 }
 
