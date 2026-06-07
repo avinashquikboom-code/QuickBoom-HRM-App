@@ -145,6 +145,20 @@ class AppUrl {
       '/api/mobile/payroll/slips/$id/download';
 
   // ─────────────────────────────────────────────
+  // Mobile – Leave
+  // ─────────────────────────────────────────────
+  static const String mobileMyLeaves = '/api/mobile/leave/my-leaves';
+  static const String mobileApplyLeave = '/api/mobile/leave/apply';
+
+  // ─────────────────────────────────────────────
+  // Mobile – Notifications
+  // ─────────────────────────────────────────────
+  static const String mobileNotifications = '/api/mobile/notifications';
+  static String mobileMarkNotificationRead(String id) =>
+      '/api/mobile/notifications/$id/read';
+  static const String mobileMarkAllNotificationsRead = '/api/mobile/notifications/read-all';
+
+  // ─────────────────────────────────────────────
   // Live Tracking (Mobile)
   // ─────────────────────────────────────────────
   static const String trackingStart = '/api/mobile/tracking/start';

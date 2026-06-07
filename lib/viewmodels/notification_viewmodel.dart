@@ -91,9 +91,9 @@ class NotificationViewModel extends StateNotifier<NotificationState> {
   Future<void> fetchNotifications() async {
     state = state.copyWith(isLoading: true);
     try {
-      final res = await ApiService.get(AppUrl.employeeNotifications);
+      final res = await ApiService.get(AppUrl.mobileNotifications);
       final data = jsonDecode(res.body);
-      final List rawNotifs = data['notifications'] ?? [];
+      final List rawNotifs = data['data']['notifications'] ?? [];
       final notifications = rawNotifs.map((n) => _parseNotification(n)).toList();
 
       state = state.copyWith(
@@ -107,7 +107,7 @@ class NotificationViewModel extends StateNotifier<NotificationState> {
 
   Future<void> markAsRead(String id) async {
     try {
-      await ApiService.put(AppUrl.employeeNotificationRead(id), {});
+      await ApiService.put(AppUrl.mobileMarkNotificationRead(id), {});
       final updated = state.notifications.map((n) {
         if (n.id == id) return n.copyWith(isRead: true);
         return n;
@@ -118,7 +118,7 @@ class NotificationViewModel extends StateNotifier<NotificationState> {
 
   Future<void> markAllAsRead() async {
     try {
-      await ApiService.put(AppUrl.employeeNotificationsReadAll, {});
+      await ApiService.put(AppUrl.mobileMarkAllNotificationsRead, {});
       final updated = state.notifications
           .map((n) => n.copyWith(isRead: true))
           .toList();

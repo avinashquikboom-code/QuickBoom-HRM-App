@@ -135,23 +135,23 @@ class LeaveViewModel extends StateNotifier<LeaveState> {
   Future<void> fetchLeaves() async {
     state = state.copyWith(isLoading: true);
     try {
-      final res = await ApiService.get(AppUrl.employeeLeaves);
+      final res = await ApiService.get(AppUrl.mobileMyLeaves);
       final data = jsonDecode(res.body);
 
-      final List rawLeaves = data['leaves'] ?? [];
+      final List rawLeaves = data['data']['leaveRequests'] ?? [];
       final leaves = rawLeaves.map((l) => _parseLeave(l)).toList();
 
-      final bal = data['balance'];
+      final bal = data['data']['leaveBalances'];
       final balance = LeaveBalance(
-        casualTotal: bal['casualTotal'] ?? 12,
-        casualUsed: bal['casualUsed'] ?? 0,
-        casualRemaining: bal['casualRemaining'] ?? 12,
-        sickTotal: bal['sickTotal'] ?? 10,
-        sickUsed: bal['sickUsed'] ?? 0,
-        sickRemaining: bal['sickRemaining'] ?? 10,
-        earnedTotal: bal['earnedTotal'] ?? 15,
-        earnedUsed: bal['earnedUsed'] ?? 0,
-        earnedRemaining: bal['earnedRemaining'] ?? 15,
+        casualTotal: bal['casual']['total'] ?? 12,
+        casualUsed: bal['casual']['used'] ?? 0,
+        casualRemaining: bal['casual']['remaining'] ?? 12,
+        sickTotal: bal['sick']['total'] ?? 10,
+        sickUsed: bal['sick']['used'] ?? 0,
+        sickRemaining: bal['sick']['remaining'] ?? 10,
+        earnedTotal: bal['earned']['total'] ?? 15,
+        earnedUsed: bal['earned']['used'] ?? 0,
+        earnedRemaining: bal['earned']['remaining'] ?? 15,
       );
 
       state = state.copyWith(
