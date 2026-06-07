@@ -171,4 +171,9 @@ class AppUrl {
   static const String distanceCurrent = '/api/mobile/distance/current';
   static const String distanceHistory = '/api/mobile/distance/history';
   static const String distanceOfficeInfo = '/api/mobile/distance/office-info';
+
+  // ─────────────────────────────────────────────
+  // Comprehensive Attendance Report (Mobile)
+  // ─────────────────────────────────────────────
+  static const String attendanceComprehensiveReport = '/api/mobile/attendance/comprehensive/comprehensive-report';
 }
