@@ -214,16 +214,16 @@ class _HrAttendanceViewState extends ConsumerState<HrAttendanceView> {
                           },
                         ),
             ),
-                  
+                  ],
+                ),
+                  ),
+
                   // History Tab
                   _AttendanceHistoryTab(),
                 ],
               ),
             ),
           ],
-        ),
-      ),
-          ]
         ),
       ),
     );

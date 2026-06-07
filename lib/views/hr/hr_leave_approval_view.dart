@@ -420,7 +420,7 @@ class _LeaveCard extends StatelessWidget {
                         size: 13, color: AppColors.textSecondary),
                     const SizedBox(width: 6),
                     Text(
-                      '${DateFormat('dd MMM').format(leave.fromDate)} → ${DateFormat('dd MMM yyyy').format(leave.toDate)}',
+                      '${DateFormat('dd MMM, yyyy').format(leave.fromDate)} - ${DateFormat('dd MMM, yyyy').format(leave.toDate)}',
                       style: const TextStyle(
                           fontSize: 12, color: AppColors.textSecondary),
                     ),
