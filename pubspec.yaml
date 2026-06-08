@@ -31,7 +31,7 @@ dependencies:
   table_calendar: ^3.1.2
 
   # Media / Uploads
-  image_picker: ^1.1.2
+  image_picker: ^1.1.4
 
   # Utilities
   intl: ^0.19.0
