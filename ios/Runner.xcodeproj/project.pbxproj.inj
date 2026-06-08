@@ -1,8 +1,0 @@
-# This file helps with Swift Package Manager compatibility
-# Add these settings to your Xcode project to suppress SPM warnings
-
-# For printing plugin
-# Add to Build Settings -> Swift Package Manager -> Disable Swift Package Manager: YES
-
-# For flutter_local_notifications plugin  
-# Add to Build Settings -> Swift Package Manager -> Disable Swift Package Manager: YES
