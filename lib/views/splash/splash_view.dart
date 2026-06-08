@@ -35,10 +35,13 @@ class _SplashViewState extends ConsumerState<SplashView> {
     String? token;
 
     try {
+      print('🔍 Checking storage...');
       hasSeenOnboarding = await StorageService.hasSeenOnboarding();
       token = await StorageService.getToken();
+      print('🔍 Onboarding seen: $hasSeenOnboarding');
+      print('🔍 Token exists: ${token != null && token.isNotEmpty}');
     } catch (e) {
-      debugPrint('Error loading storage: $e');
+      print('❌ Error loading storage: $e');
     }
 
     // Always show splash for at least 1.5 seconds
@@ -48,6 +51,7 @@ class _SplashViewState extends ConsumerState<SplashView> {
 
     // No token -> onboarding or login
     if (token == null || token.isEmpty) {
+      print('🚀 No token, navigating to ${hasSeenOnboarding ? "Login" : "Onboarding"}');
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
           builder: (_) => hasSeenOnboarding ? const LoginView() : const OnboardingView(),
@@ -58,22 +62,40 @@ class _SplashViewState extends ConsumerState<SplashView> {
 
     // Token exists -> restore session via authViewModel
     setState(() => _statusMessage = 'Restoring session...');
+    print('🔄 Restoring session...');
 
-    final restored = await ref.read(authViewModelProvider.notifier).restoreSession();
+    try {
+      final restored = await ref.read(authViewModelProvider.notifier).restoreSession()
+          .timeout(const Duration(seconds: 10), onTimeout: () {
+        print('⏱️ Session restore timeout');
+        throw Exception('Session restore timeout');
+      });
 
-    if (!mounted) return;
+      if (!mounted) return;
 
-    if (restored) {
-      final user = ref.read(authViewModelProvider).currentUser!;
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (_) => user.role == UserRole.hrManager
-              ? const HrShell()
-              : const EmployeeShell(),
-        ),
-      );
-    } else {
-      // Token invalid or expired
+      if (restored) {
+        final user = ref.read(authViewModelProvider).currentUser!;
+        print('✅ Session restored for ${user.name} (${user.role})');
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (_) => user.role == UserRole.hrManager
+                ? const HrShell()
+                : const EmployeeShell(),
+          ),
+        );
+      } else {
+        print('❌ Session restore failed, navigating to login');
+        // Token invalid or expired
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (_) => hasSeenOnboarding ? const LoginView() : const OnboardingView(),
+          ),
+        );
+      }
+    } catch (e) {
+      print('❌ Session restore error: $e');
+      if (!mounted) return;
+      // On error, navigate to login
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
           builder: (_) => hasSeenOnboarding ? const LoginView() : const OnboardingView(),
