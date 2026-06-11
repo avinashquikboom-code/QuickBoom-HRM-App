@@ -10,7 +10,7 @@ class AppUrl {
   //  Base
   // ─────────────────────────────────────────────
   static const String baseUrl =
-      'https://quickboom-hrm-backend.onrender.com';
+      'http://69.62.80.20:3000';
 
   // ─────────────────────────────────────────────
   //  Auth
