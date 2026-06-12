@@ -277,11 +277,19 @@ class ApiService {
       final token = await getToken();
       if (token == null) return false;
 
+      final path = AppUrl.refreshToken;
+      final url = Uri.parse('$_baseUrl$path');
+      final body = {'token': token};
+
+      ApiLogger.logRequest('POST', path, body: body);
+
       final response = await http.post(
-        Uri.parse('$_baseUrl${AppUrl.refreshToken}'),
+        url,
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'token': token}),
+        body: jsonEncode(body),
       );
+
+      ApiLogger.logResponse('POST', path, response.statusCode, response.body);
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -294,7 +302,7 @@ class ApiService {
         }
       }
     } catch (e) {
-      debugPrint('❌ Token refresh failed: $e');
+      ApiLogger.logError('POST', AppUrl.refreshToken, e.toString());
     }
     return false;
   }

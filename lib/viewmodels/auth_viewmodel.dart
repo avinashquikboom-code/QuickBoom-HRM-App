@@ -110,10 +110,24 @@ class AuthViewModel extends StateNotifier<AuthState> {
     state = state.copyWith(isLoading: true, clearError: true);
 
     try {
+      String? fcmToken = await StorageService.getFCMToken();
+      if (fcmToken == null || fcmToken.isEmpty) {
+        try {
+          fcmToken = await FirebaseMessaging.instance.getToken();
+          if (fcmToken != null && fcmToken.isNotEmpty) {
+            await StorageService.saveFCMToken(fcmToken);
+          }
+          debugPrint('🔑 FCM Token obtained for HR login: $fcmToken');
+        } catch (e) {
+          debugPrint('⚠️ Could not get FCM token for HR login: $e');
+        }
+      }
+
       // Use mobile login endpoint for HR users (same as employees)
       final loginRes = await ApiService.post(AppUrl.login, {
         'email': email.trim(),
         'password': password.trim(),
+        'fcmToken': fcmToken,
       });
 
       final loginData = jsonDecode(loginRes.body);
@@ -224,6 +238,12 @@ class AuthViewModel extends StateNotifier<AuthState> {
       }
     } catch (e) {
       debugPrint('⚠️ Session restore failed: $e');
+      // Clear invalid/expired session data so the app doesn't try to restore it next time
+      try {
+        await StorageService.clearSessionData();
+      } catch (err) {
+        debugPrint('⚠️ Failed to clear invalid session data: $err');
+      }
       state = const AuthState();
       return false;
     }
