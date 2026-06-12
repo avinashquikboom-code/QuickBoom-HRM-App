@@ -31,7 +31,7 @@ dependencies:
   table_calendar: ^3.1.2
 
   # Media / Uploads
-  image_picker: ^1.1.4
+  image_picker: ^1.2.2
 
   # Utilities
   intl: ^0.19.0
@@ -45,7 +45,7 @@ dependencies:
   # Firebase
   firebase_core: ^4.10.0
   firebase_messaging: ^16.3.0
-  flutter_local_notifications: ^18.0.1
+  flutter_local_notifications: ^22.0.0
 
   # PDF generation & sharing
   pdf: ^3.11.1

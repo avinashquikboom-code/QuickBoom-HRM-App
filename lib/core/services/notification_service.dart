@@ -88,7 +88,7 @@ class NotificationService {
     );
 
     await _localNotifications.initialize(
-      initSettings,
+      settings: initSettings,
       onDidReceiveNotificationResponse: _onNotificationTapped,
     );
 
@@ -292,10 +292,10 @@ class NotificationService {
       );
 
       await _localNotifications.show(
-        DateTime.now().millisecondsSinceEpoch.remainder(100000),
-        title,
-        body,
-        details,
+        id: DateTime.now().millisecondsSinceEpoch.remainder(100000),
+        title: title,
+        body: body,
+        notificationDetails: details,
         payload: data.toString(),
       );
     } catch (e) {
