@@ -105,6 +105,9 @@ class ApiService {
 
   static Future<void> saveToken(String token, String role) => StorageService.saveToken(token, role);
 
+  static Future<void> saveTokens(String token, String refreshToken, String role) =>
+      StorageService.saveTokens(token, refreshToken, role);
+
   static Future<void> clearToken() => StorageService.clearToken();
 
   // Expose baseUrl for WebSocket service
@@ -274,12 +277,12 @@ class ApiService {
 
   static Future<bool> _tryRefreshToken() async {
     try {
-      final token = await getToken();
-      if (token == null) return false;
+      final refreshToken = await StorageService.getRefreshToken();
+      if (refreshToken == null || refreshToken.isEmpty) return false;
 
       final path = AppUrl.refreshToken;
       final url = Uri.parse('$_baseUrl$path');
-      final body = {'token': token};
+      final body = {'refreshToken': refreshToken};
 
       ApiLogger.logRequest('POST', path, body: body);
 
@@ -295,8 +298,9 @@ class ApiService {
         final data = jsonDecode(response.body);
         if (data['success'] == true && data['token'] != null) {
           final newToken = data['token'];
+          final newRefreshToken = data['refreshToken'] ?? refreshToken;
           final role = await StorageService.getUserRole() ?? 'EMPLOYEE';
-          await saveToken(newToken, role);
+          await saveTokens(newToken, newRefreshToken, role);
           debugPrint('✅ Token refreshed successfully');
           return true;
         }

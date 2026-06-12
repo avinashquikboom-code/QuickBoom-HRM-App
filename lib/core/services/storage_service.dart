@@ -9,13 +9,15 @@ class StorageService {
   StorageService._(); // prevent instantiation
 
   // ─── Keys ──────────────────────────────────────────────────────────────────
-  static const String _empTokenKey       = 'emp_token';
-  static const String _hrTokenKey        = 'hr_token';
-  static const String _activeRoleKey     = 'active_role';
-  static const String _onboardingKey     = 'hasSeenOnboarding';
-  static const String _lastEmailKey      = 'last_login_email';
-  static const String _userRoleKey       = 'cached_user_role';
-  static const String _fcmTokenKey       = 'fcm_token';
+  static const String _empTokenKey         = 'emp_token';
+  static const String _hrTokenKey          = 'hr_token';
+  static const String _empRefreshTokenKey  = 'emp_refresh_token';
+  static const String _hrRefreshTokenKey   = 'hr_refresh_token';
+  static const String _activeRoleKey       = 'active_role';
+  static const String _onboardingKey       = 'hasSeenOnboarding';
+  static const String _lastEmailKey        = 'last_login_email';
+  static const String _userRoleKey         = 'cached_user_role';
+  static const String _fcmTokenKey         = 'fcm_token';
 
   /// Public alias so ApiService can reference the token key constant.
   static const String tokenKeyPublic = _empTokenKey;
@@ -32,9 +34,43 @@ class StorageService {
       } else {
         await prefs.setString(_empTokenKey, token);
       }
-      debugPrint('✅ Token saved to storage for role: $role');
+      debugPrint('✅ Access token saved to storage for role: $role');
     } catch (e) {
-      debugPrint('❌ Failed to save token: $e');
+      debugPrint('❌ Failed to save access token: $e');
+    }
+  }
+
+  /// Save both access and refresh tokens.
+  static Future<void> saveTokens(String token, String refreshToken, String role) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_activeRoleKey, role);
+      if (role == 'HR') {
+        await prefs.setString(_hrTokenKey, token);
+        await prefs.setString(_hrRefreshTokenKey, refreshToken);
+      } else {
+        await prefs.setString(_empTokenKey, token);
+        await prefs.setString(_empRefreshTokenKey, refreshToken);
+      }
+      debugPrint('✅ Tokens saved to storage for role: $role');
+    } catch (e) {
+      debugPrint('❌ Failed to save tokens: $e');
+    }
+  }
+
+  /// Save the refresh token.
+  static Future<void> saveRefreshToken(String refreshToken, String role) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_activeRoleKey, role);
+      if (role == 'HR') {
+        await prefs.setString(_hrRefreshTokenKey, refreshToken);
+      } else {
+        await prefs.setString(_empRefreshTokenKey, refreshToken);
+      }
+      debugPrint('✅ Refresh token saved to storage for role: $role');
+    } catch (e) {
+      debugPrint('❌ Failed to save refresh token: $e');
     }
   }
 
@@ -67,17 +103,48 @@ class StorageService {
     }
   }
 
-  /// Delete the stored token (used on logout).
+  /// Read the stored refresh token. Returns null if none exists.
+  static Future<String?> getRefreshToken() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final role = prefs.getString(_activeRoleKey);
+      if (role == 'HR') {
+        return prefs.getString(_hrRefreshTokenKey);
+      } else if (role == 'EMPLOYEE') {
+        return prefs.getString(_empRefreshTokenKey);
+      }
+
+      // Fallback if active role is not set: check if either token is present
+      final empRefreshToken = prefs.getString(_empRefreshTokenKey);
+      if (empRefreshToken != null && empRefreshToken.isNotEmpty) {
+        await prefs.setString(_activeRoleKey, 'EMPLOYEE');
+        return empRefreshToken;
+      }
+      final hrRefreshToken = prefs.getString(_hrRefreshTokenKey);
+      if (hrRefreshToken != null && hrRefreshToken.isNotEmpty) {
+        await prefs.setString(_activeRoleKey, 'HR');
+        return hrRefreshToken;
+      }
+      return null;
+    } catch (e) {
+      debugPrint('❌ Failed to read refresh token: $e');
+      return null;
+    }
+  }
+
+  /// Delete all stored tokens (used on logout).
   static Future<void> clearToken() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      // Clear both tokens to ensure complete logout
+      // Clear all tokens to ensure complete logout
       await prefs.remove(_hrTokenKey);
       await prefs.remove(_empTokenKey);
+      await prefs.remove(_hrRefreshTokenKey);
+      await prefs.remove(_empRefreshTokenKey);
       await prefs.remove(_activeRoleKey);
-      debugPrint('🗑️ Token cleared from storage');
+      debugPrint('🗑️ All tokens cleared from storage');
     } catch (e) {
-      debugPrint('❌ Failed to clear token: $e');
+      debugPrint('❌ Failed to clear tokens: $e');
     }
   }
 

@@ -73,8 +73,9 @@ class AuthViewModel extends StateNotifier<AuthState> {
     }
 
     final token = loginData['token'] as String;
+    final refreshToken = loginData['refreshToken'] as String? ?? '';
     final userRole = loginData['user']['role'].toString().toUpperCase();
-    await ApiService.saveToken(token, userRole);
+    await ApiService.saveTokens(token, refreshToken, userRole);
     await StorageService.saveUserRole(userRole);
 
     // 2. Parse user data from mobile login response
@@ -138,8 +139,9 @@ class AuthViewModel extends StateNotifier<AuthState> {
       }
 
       final token = loginData['token'] as String;
+      final refreshToken = loginData['refreshToken'] as String? ?? '';
       final userRole = loginData['user']['role'].toString().toUpperCase();
-      await ApiService.saveToken(token, userRole);
+      await ApiService.saveTokens(token, refreshToken, userRole);
       await StorageService.saveUserRole(userRole);
 
       // Parse user from mobile login response
