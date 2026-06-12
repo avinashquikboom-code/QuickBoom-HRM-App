@@ -5,6 +5,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import '../core/services/api_service.dart';
 import '../core/services/storage_service.dart';
 import '../core/constants/app_url.dart';
+import '../core/services/notification_service.dart';
 import '../models/user_model.dart';
 
 // ─── Auth State ──────────────────────────────────────────────────────────────
@@ -98,6 +99,8 @@ class AuthViewModel extends StateNotifier<AuthState> {
     );
 
     state = AuthState(currentUser: parsedUser);
+    // Sync FCM token to backend now that user is logged in
+    NotificationService().refreshToken();
     return true;
   }
 
@@ -145,6 +148,8 @@ class AuthViewModel extends StateNotifier<AuthState> {
       );
 
       state = AuthState(currentUser: parsedUser);
+      // Sync FCM token to backend now that user is logged in
+      NotificationService().refreshToken();
       return true;
     } catch (e) {
       final msg = e.toString().replaceFirst('Exception: ', '');
@@ -184,6 +189,8 @@ class AuthViewModel extends StateNotifier<AuthState> {
         );
 
         state = AuthState(currentUser: parsedUser);
+        // Sync FCM token to backend now that session is restored
+        NotificationService().refreshToken();
         return true;
       } else {
         // ── Employee session restore ───────────────────────────────
@@ -211,6 +218,8 @@ class AuthViewModel extends StateNotifier<AuthState> {
         );
 
         state = AuthState(currentUser: parsedUser);
+        // Sync FCM token to backend now that session is restored
+        NotificationService().refreshToken();
         return true;
       }
     } catch (e) {

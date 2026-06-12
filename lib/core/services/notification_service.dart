@@ -37,8 +37,8 @@ class NotificationService {
       // Initialize local notifications
       await _initializeLocalNotifications();
       
-      // Get FCM token
-      await _getFCMToken();
+      // Get FCM token but don't save to backend yet (will be saved after login / session restore)
+      await _getFCMToken(saveToBackend: false);
       
       // Set up message handlers
       _setupMessageHandlers();
@@ -135,7 +135,7 @@ class NotificationService {
   }
 
   /// Get and save FCM token
-  Future<void> _getFCMToken() async {
+  Future<void> _getFCMToken({bool saveToBackend = true}) async {
     try {
       final token = await _firebaseMessaging.getToken();
       debugPrint('🔑 FCM Token: $token');
@@ -143,8 +143,10 @@ class NotificationService {
       if (token != null) {
         // Save to SharedPreferences
         await StorageService.saveFCMToken(token);
-        // Save to backend
-        await _saveFCMToken(token);
+        if (saveToBackend) {
+          // Save to backend
+          await _saveFCMToken(token);
+        }
       }
     } catch (e) {
       debugPrint('❌ Failed to get FCM token: $e');
@@ -219,6 +221,13 @@ class NotificationService {
     
     // Handle messages when app is opened from terminated state
     FirebaseMessaging.onBackgroundMessage(_handleBackgroundMessage);
+
+    // Handle FCM token refreshes dynamically
+    _firebaseMessaging.onTokenRefresh.listen((token) async {
+      debugPrint('🔑 FCM Token Refreshed: $token');
+      await StorageService.saveFCMToken(token);
+      await _saveFCMToken(token);
+    });
   }
 
   /// Handle foreground messages
@@ -394,9 +403,9 @@ class NotificationService {
     }
   }
 
-  /// Refresh FCM token (call this after login)
+  /// Refresh FCM token (call this after login or session restore)
   Future<void> refreshToken() async {
-    await _getFCMToken();
+    await _getFCMToken(saveToBackend: true);
   }
 
   /// Print current FCM token to terminal
