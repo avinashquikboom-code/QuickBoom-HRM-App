@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:developer' as dev;
 import 'package:flutter/foundation.dart';
@@ -96,6 +97,9 @@ class ApiLogger {
 class ApiService {
   static final String _baseUrl = AppUrl.baseUrl;
 
+  static const Duration defaultTimeout = Duration(seconds: 20);
+  static const Duration loginTimeout = Duration(seconds: 15);
+
   static const String tokenKey = StorageService.tokenKeyPublic;
 
   // Private constructor
@@ -130,14 +134,15 @@ class ApiService {
     return headers;
   }
 
-  static Future<http.Response> get(String path) async {
+  static Future<http.Response> get(String path, {Duration? timeout}) async {
     final url = Uri.parse('$_baseUrl$path');
     final headers = await _headers();
+    final requestTimeout = timeout ?? defaultTimeout;
     
     ApiLogger.logRequest('GET', path);
     
     try {
-      final response = await http.get(url, headers: headers);
+      final response = await http.get(url, headers: headers).timeout(requestTimeout);
       ApiLogger.logResponse('GET', path, response.statusCode, response.body);
       
       // Handle 401 - try token refresh
@@ -146,7 +151,7 @@ class ApiService {
         if (refreshed) {
           // Retry with new token
           final newHeaders = await _headers();
-          final retryResponse = await http.get(url, headers: newHeaders);
+          final retryResponse = await http.get(url, headers: newHeaders).timeout(requestTimeout);
           ApiLogger.logResponse('GET (retry)', path, retryResponse.statusCode, retryResponse.body);
           _checkResponse(retryResponse);
           return retryResponse;
@@ -155,20 +160,30 @@ class ApiService {
       
       _checkResponse(response);
       return response;
+    } on TimeoutException {
+      ApiLogger.logError('GET', path, 'Request timed out after ${requestTimeout.inSeconds}s');
+      throw Exception('Request timed out. Please check your connection and try again.');
     } catch (e) {
       ApiLogger.logError('GET', path, e.toString());
       rethrow;
     }
   }
 
-  static Future<http.Response> post(String path, Map<String, dynamic> body) async {
+  static Future<http.Response> post(
+    String path,
+    Map<String, dynamic> body, {
+    Duration? timeout,
+  }) async {
     final url = Uri.parse('$_baseUrl$path');
     final headers = await _headers();
+    final requestTimeout = timeout ?? defaultTimeout;
     
     ApiLogger.logRequest('POST', path, body: body);
     
     try {
-      final response = await http.post(url, headers: headers, body: jsonEncode(body));
+      final response = await http
+          .post(url, headers: headers, body: jsonEncode(body))
+          .timeout(requestTimeout);
       ApiLogger.logResponse('POST', path, response.statusCode, response.body);
       
       // Handle 401 - try token refresh
@@ -177,7 +192,9 @@ class ApiService {
         if (refreshed) {
           // Retry with new token
           final newHeaders = await _headers();
-          final retryResponse = await http.post(url, headers: newHeaders, body: jsonEncode(body));
+          final retryResponse = await http
+              .post(url, headers: newHeaders, body: jsonEncode(body))
+              .timeout(requestTimeout);
           ApiLogger.logResponse('POST (retry)', path, retryResponse.statusCode, retryResponse.body);
           _checkResponse(retryResponse);
           return retryResponse;
@@ -186,20 +203,26 @@ class ApiService {
       
       _checkResponse(response);
       return response;
+    } on TimeoutException {
+      ApiLogger.logError('POST', path, 'Request timed out after ${requestTimeout.inSeconds}s');
+      throw Exception('Request timed out. Please check your connection and try again.');
     } catch (e) {
       ApiLogger.logError('POST', path, e.toString(), statusCode: null, responseBody: jsonEncode(body));
       rethrow;
     }
   }
 
-  static Future<http.Response> put(String path, Map<String, dynamic> body) async {
+  static Future<http.Response> put(String path, Map<String, dynamic> body, {Duration? timeout}) async {
     final url = Uri.parse('$_baseUrl$path');
     final headers = await _headers();
+    final requestTimeout = timeout ?? defaultTimeout;
     
     ApiLogger.logRequest('PUT', path, body: body);
     
     try {
-      final response = await http.put(url, headers: headers, body: jsonEncode(body));
+      final response = await http
+          .put(url, headers: headers, body: jsonEncode(body))
+          .timeout(requestTimeout);
       ApiLogger.logResponse('PUT', path, response.statusCode, response.body);
       
       // Handle 401 - try token refresh
@@ -208,7 +231,9 @@ class ApiService {
         if (refreshed) {
           // Retry with new token
           final newHeaders = await _headers();
-          final retryResponse = await http.put(url, headers: newHeaders, body: jsonEncode(body));
+          final retryResponse = await http
+              .put(url, headers: newHeaders, body: jsonEncode(body))
+              .timeout(requestTimeout);
           ApiLogger.logResponse('PUT (retry)', path, retryResponse.statusCode, retryResponse.body);
           _checkResponse(retryResponse);
           return retryResponse;
@@ -217,20 +242,24 @@ class ApiService {
       
       _checkResponse(response);
       return response;
+    } on TimeoutException {
+      ApiLogger.logError('PUT', path, 'Request timed out after ${requestTimeout.inSeconds}s');
+      throw Exception('Request timed out. Please check your connection and try again.');
     } catch (e) {
       ApiLogger.logError('PUT', path, e.toString(), statusCode: null, responseBody: jsonEncode(body));
       rethrow;
     }
   }
 
-  static Future<http.Response> delete(String path) async {
+  static Future<http.Response> delete(String path, {Duration? timeout}) async {
     final url = Uri.parse('$_baseUrl$path');
     final headers = await _headers();
+    final requestTimeout = timeout ?? defaultTimeout;
     
     ApiLogger.logRequest('DELETE', path);
     
     try {
-      final response = await http.delete(url, headers: headers);
+      final response = await http.delete(url, headers: headers).timeout(requestTimeout);
       ApiLogger.logResponse('DELETE', path, response.statusCode, response.body);
       
       // Handle 401 - try token refresh
@@ -239,7 +268,7 @@ class ApiService {
         if (refreshed) {
           // Retry with new token
           final newHeaders = await _headers();
-          final retryResponse = await http.delete(url, headers: newHeaders);
+          final retryResponse = await http.delete(url, headers: newHeaders).timeout(requestTimeout);
           ApiLogger.logResponse('DELETE (retry)', path, retryResponse.statusCode, retryResponse.body);
           _checkResponse(retryResponse);
           return retryResponse;
@@ -248,6 +277,9 @@ class ApiService {
       
       _checkResponse(response);
       return response;
+    } on TimeoutException {
+      ApiLogger.logError('DELETE', path, 'Request timed out after ${requestTimeout.inSeconds}s');
+      throw Exception('Request timed out. Please check your connection and try again.');
     } catch (e) {
       ApiLogger.logError('DELETE', path, e.toString());
       rethrow;

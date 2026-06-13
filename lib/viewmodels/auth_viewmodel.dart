@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import '../core/services/api_service.dart';
 import '../core/services/storage_service.dart';
 import '../core/constants/app_url.dart';
@@ -42,98 +41,80 @@ class AuthState {
 class AuthViewModel extends StateNotifier<AuthState> {
   AuthViewModel() : super(const AuthState());
 
-  Future<bool> login(String employeeId, String password) async {
-    state = state.copyWith(isLoading: true, clearError: true);
+  /// Use cached FCM token only — never block login on Firebase token fetch.
+  Future<String?> _getCachedFcmToken() async {
+    final cached = await StorageService.getFCMToken();
+    if (cached != null && cached.isNotEmpty) return cached;
+    return null;
+  }
 
-    String? fcmToken = await StorageService.getFCMToken();
-    if (fcmToken == null || fcmToken.isEmpty) {
-      try {
-        fcmToken = await FirebaseMessaging.instance.getToken();
-        if (fcmToken != null && fcmToken.isNotEmpty) {
-          await StorageService.saveFCMToken(fcmToken);
-        }
-        debugPrint('🔑 FCM Token obtained for login: $fcmToken');
-      } catch (e) {
-        debugPrint('⚠️ Could not get FCM token for login: $e');
-      }
-    }
+  /// Sync FCM token in background after login (non-blocking).
+  void _syncFcmTokenInBackground() {
+    NotificationService().refreshToken();
+  }
 
-    // 1. Mobile login request - returns complete user data
-    final loginRes = await ApiService.post(AppUrl.login, {
-      'email': employeeId.trim(),
-      'password': password.trim(),
-      'fcmToken': fcmToken,
-    });
-
-    final loginData = jsonDecode(loginRes.body);
-    if (loginData['success'] != true) {
-      final msg = loginData['message'] ?? 'Login failed';
-      state = state.copyWith(isLoading: false, errorMessage: msg);
-      return false;
-    }
-
-    final token = loginData['token'] as String;
-    final refreshToken = loginData['refreshToken'] as String? ?? '';
-    final userRole = loginData['user']['role'].toString().toUpperCase();
-    await ApiService.saveTokens(token, refreshToken, userRole);
-    await StorageService.saveUserRole(userRole);
-
-    // 2. Parse user data from mobile login response
+  UserModel _parseUserFromLoginResponse(
+    Map<String, dynamic> loginData,
+    String fallbackEmail, {
+    required bool forceHrRole,
+  }) {
     final userMap = loginData['user'] as Map<String, dynamic>;
     final profMap = userMap['profile'] as Map<String, dynamic>? ?? {};
     final empMap = userMap['employee'] as Map<String, dynamic>? ?? {};
+    final userRole = userMap['role'].toString().toUpperCase();
 
-    final parsedUser = UserModel(
+    final isHrRole = forceHrRole ||
+        userRole == 'HR' ||
+        userRole == 'SUPER_ADMIN' ||
+        userRole == 'ADMIN';
+
+    return UserModel(
       id: userMap['id'].toString(),
       employeeId: empMap['employeeCode']?.toString() ?? userMap['id'].toString(),
-      name: profMap['fullName']?.toString() ?? 
-             (empMap['firstName']?.toString() ?? '') + ' ' + (empMap['lastName']?.toString() ?? '').trim(),
-      email: profMap['email']?.toString() ?? userMap['email']?.toString() ?? employeeId.trim(),
+      name: profMap['fullName']?.toString() ??
+          '${empMap['firstName']?.toString() ?? ''} ${empMap['lastName']?.toString() ?? ''}'.trim(),
+      email: profMap['email']?.toString() ??
+          userMap['email']?.toString() ??
+          fallbackEmail.trim(),
       phone: profMap['phone']?.toString() ?? '',
-      role: (userRole == 'HR' || userRole == 'SUPER_ADMIN' || userRole == 'ADMIN')
-          ? UserRole.hrManager
-          : UserRole.employee,
-      department: empMap['department']?.toString() ?? 'General',
-      designation: empMap['designation']?.toString() ?? 'Employee',
-      joinDate: DateTime.tryParse(profMap['createdAt']?.toString() ?? empMap['joinDate']?.toString() ?? '') ?? DateTime.now(),
+      role: isHrRole ? UserRole.hrManager : UserRole.employee,
+      department: empMap['department']?.toString() ??
+          (isHrRole ? 'Human Resources' : 'General'),
+      designation: empMap['designation']?.toString() ??
+          profMap['bio']?.toString() ??
+          (isHrRole ? 'HR Manager' : 'Employee'),
+      joinDate: DateTime.tryParse(
+            profMap['createdAt']?.toString() ?? empMap['joinDate']?.toString() ?? '',
+          ) ??
+          DateTime.now(),
       salary: 0.0,
     );
-
-    state = AuthState(currentUser: parsedUser);
-    // Sync FCM token to backend now that user is logged in
-    NotificationService().refreshToken();
-    return true;
   }
 
-  // ─── HR Login ────────────────────────────────────────────────────────────────
-
-  Future<bool> hrLogin(String email, String password) async {
+  Future<bool> _performLogin(
+    String email,
+    String password, {
+    required bool forceHrRole,
+  }) async {
     state = state.copyWith(isLoading: true, clearError: true);
 
     try {
-      String? fcmToken = await StorageService.getFCMToken();
-      if (fcmToken == null || fcmToken.isEmpty) {
-        try {
-          fcmToken = await FirebaseMessaging.instance.getToken();
-          if (fcmToken != null && fcmToken.isNotEmpty) {
-            await StorageService.saveFCMToken(fcmToken);
-          }
-          debugPrint('🔑 FCM Token obtained for HR login: $fcmToken');
-        } catch (e) {
-          debugPrint('⚠️ Could not get FCM token for HR login: $e');
-        }
-      }
+      // Use cached FCM only — do not await FirebaseMessaging.getToken() here
+      final fcmToken = await _getCachedFcmToken();
 
-      // Use mobile login endpoint for HR users (same as employees)
-      final loginRes = await ApiService.post(AppUrl.login, {
-        'email': email.trim(),
-        'password': password.trim(),
-        'fcmToken': fcmToken,
-      });
+      final loginRes = await ApiService.post(
+        AppUrl.login,
+        {
+          'email': email.trim(),
+          'password': password.trim(),
+          if (fcmToken != null) 'fcmToken': fcmToken,
+        },
+        timeout: ApiService.loginTimeout,
+      );
 
       final loginData = jsonDecode(loginRes.body);
       if (loginData['success'] != true) {
-        final msg = loginData['message'] ?? 'HR login failed';
+        final msg = loginData['message'] ?? 'Login failed';
         state = state.copyWith(isLoading: false, errorMessage: msg);
         return false;
       }
@@ -144,28 +125,16 @@ class AuthViewModel extends StateNotifier<AuthState> {
       await ApiService.saveTokens(token, refreshToken, userRole);
       await StorageService.saveUserRole(userRole);
 
-      // Parse user from mobile login response
-      final userMap = loginData['user'] as Map<String, dynamic>;
-      final profMap = userMap['profile'] as Map<String, dynamic>? ?? {};
-      final empMap = userMap['employee'] as Map<String, dynamic>? ?? {};
-
-      final parsedUser = UserModel(
-        id: userMap['id'].toString(),
-        employeeId: empMap['employeeCode']?.toString() ?? userMap['id'].toString(),
-        name: profMap['fullName']?.toString() ?? 
-               (empMap['firstName']?.toString() ?? '') + ' ' + (empMap['lastName']?.toString() ?? '').trim(),
-        email: profMap['email']?.toString() ?? userMap['email']?.toString() ?? email.trim(),
-        phone: profMap['phone']?.toString() ?? '',
-        role: UserRole.hrManager,
-        department: empMap['department']?.toString() ?? 'Human Resources',
-        designation: empMap['designation']?.toString() ?? profMap['bio']?.toString() ?? 'HR Manager',
-        joinDate: DateTime.tryParse(profMap['createdAt']?.toString() ?? empMap['joinDate']?.toString() ?? '') ?? DateTime.now(),
-        salary: 0.0,
+      final parsedUser = _parseUserFromLoginResponse(
+        loginData,
+        email,
+        forceHrRole: forceHrRole,
       );
 
       state = AuthState(currentUser: parsedUser);
-      // Sync FCM token to backend now that user is logged in
-      NotificationService().refreshToken();
+
+      // Sync FCM in background (handles missing cached token without blocking login)
+      _syncFcmTokenInBackground();
       return true;
     } catch (e) {
       final msg = e.toString().replaceFirst('Exception: ', '');
@@ -173,6 +142,12 @@ class AuthViewModel extends StateNotifier<AuthState> {
       return false;
     }
   }
+
+  Future<bool> login(String employeeId, String password) =>
+      _performLogin(employeeId, password, forceHrRole: false);
+
+  Future<bool> hrLogin(String email, String password) =>
+      _performLogin(email, password, forceHrRole: true);
 
   Future<bool> restoreSession() async {
     state = state.copyWith(isLoading: true, clearError: true);
@@ -205,8 +180,7 @@ class AuthViewModel extends StateNotifier<AuthState> {
         );
 
         state = AuthState(currentUser: parsedUser);
-        // Sync FCM token to backend now that session is restored
-        NotificationService().refreshToken();
+        _syncFcmTokenInBackground();
         return true;
       } else {
         // ── Employee session restore ───────────────────────────────
@@ -234,8 +208,7 @@ class AuthViewModel extends StateNotifier<AuthState> {
         );
 
         state = AuthState(currentUser: parsedUser);
-        // Sync FCM token to backend now that session is restored
-        NotificationService().refreshToken();
+        _syncFcmTokenInBackground();
         return true;
       }
     } catch (e) {

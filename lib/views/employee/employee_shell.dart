@@ -17,20 +17,25 @@ class EmployeeShell extends ConsumerStatefulWidget {
 class _EmployeeShellState extends ConsumerState<EmployeeShell> {
   int _currentIndex = 0;
 
-  final _pages = const [
-    EmployeeDashboardView(),
-    EmployeeAttendanceView(),
-    EmployeeLeaveView(),
-    EmployeeProfileView(),
-  ];
+  Widget _buildPage(int index) {
+    switch (index) {
+      case 0:
+        return const EmployeeDashboardView();
+      case 1:
+        return const EmployeeAttendanceView();
+      case 2:
+        return const EmployeeLeaveView();
+      case 3:
+        return const EmployeeProfileView();
+      default:
+        return const EmployeeDashboardView();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: IndexedStack(
-        index: _currentIndex,
-        children: _pages,
-      ),
+      body: _buildPage(_currentIndex),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: (index) => setState(() => _currentIndex = index),

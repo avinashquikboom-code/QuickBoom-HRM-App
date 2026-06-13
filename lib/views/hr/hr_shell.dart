@@ -17,20 +17,25 @@ class HrShell extends ConsumerStatefulWidget {
 class _HrShellState extends ConsumerState<HrShell> {
   int _currentIndex = 0;
 
-  final List<Widget> _pages = const [
-    HrDashboardView(),
-    HrEmployeesView(),
-    HrLeaveApprovalView(),
-    HrPayrollView(),
-  ];
+  Widget _buildPage(int index) {
+    switch (index) {
+      case 0:
+        return const HrDashboardView();
+      case 1:
+        return const HrEmployeesView();
+      case 2:
+        return const HrLeaveApprovalView();
+      case 3:
+        return const HrPayrollView();
+      default:
+        return const HrDashboardView();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: IndexedStack(
-        index: _currentIndex,
-        children: _pages,
-      ),
+      body: _buildPage(_currentIndex),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: (index) => setState(() => _currentIndex = index),

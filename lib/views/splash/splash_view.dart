@@ -34,23 +34,26 @@ class _SplashViewState extends ConsumerState<SplashView> {
     bool hasSeenOnboarding = false;
     String? token;
 
-    try {
-      print('🔍 Checking storage...');
-      hasSeenOnboarding = await StorageService.hasSeenOnboarding();
-      token = await StorageService.getToken();
-      print('🔍 Onboarding seen: $hasSeenOnboarding');
-      print('🔍 Token exists: ${token != null && token.isNotEmpty}');
-    } catch (e) {
-      print('❌ Error loading storage: $e');
-    }
-
-    // Always show splash for at least 1.5 seconds
-    await Future.delayed(const Duration(milliseconds: 1500));
+    // Run storage check and minimum splash display in parallel
+    await Future.wait([
+      Future.delayed(const Duration(milliseconds: 800)),
+      () async {
+        try {
+          print('🔍 Checking storage...');
+          hasSeenOnboarding = await StorageService.hasSeenOnboarding();
+          token = await StorageService.getToken();
+          print('🔍 Onboarding seen: $hasSeenOnboarding');
+          print('🔍 Token exists: ${token != null && token!.isNotEmpty}');
+        } catch (e) {
+          print('❌ Error loading storage: $e');
+        }
+      }(),
+    ]);
 
     if (!mounted) return;
 
     // No token -> onboarding or login
-    if (token == null || token.isEmpty) {
+    if (token == null || token!.isEmpty) {
       print('🚀 No token, navigating to ${hasSeenOnboarding ? "Login" : "Onboarding"}');
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
