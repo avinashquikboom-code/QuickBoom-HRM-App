@@ -145,8 +145,8 @@ class ApiService {
       final response = await http.get(url, headers: headers).timeout(requestTimeout);
       ApiLogger.logResponse('GET', path, response.statusCode, response.body);
       
-      // Handle 401 - try token refresh
-      if (response.statusCode == 401) {
+      // Handle 401 - try token refresh (skip for auth paths)
+      if (response.statusCode == 401 && !_isAuthPath(path)) {
         final refreshed = await _tryRefreshToken();
         if (refreshed) {
           // Retry with new token
@@ -186,8 +186,8 @@ class ApiService {
           .timeout(requestTimeout);
       ApiLogger.logResponse('POST', path, response.statusCode, response.body);
       
-      // Handle 401 - try token refresh
-      if (response.statusCode == 401) {
+      // Handle 401 - try token refresh (skip for auth paths)
+      if (response.statusCode == 401 && !_isAuthPath(path)) {
         final refreshed = await _tryRefreshToken();
         if (refreshed) {
           // Retry with new token
@@ -225,8 +225,8 @@ class ApiService {
           .timeout(requestTimeout);
       ApiLogger.logResponse('PUT', path, response.statusCode, response.body);
       
-      // Handle 401 - try token refresh
-      if (response.statusCode == 401) {
+      // Handle 401 - try token refresh (skip for auth paths)
+      if (response.statusCode == 401 && !_isAuthPath(path)) {
         final refreshed = await _tryRefreshToken();
         if (refreshed) {
           // Retry with new token
@@ -262,8 +262,8 @@ class ApiService {
       final response = await http.delete(url, headers: headers).timeout(requestTimeout);
       ApiLogger.logResponse('DELETE', path, response.statusCode, response.body);
       
-      // Handle 401 - try token refresh
-      if (response.statusCode == 401) {
+      // Handle 401 - try token refresh (skip for auth paths)
+      if (response.statusCode == 401 && !_isAuthPath(path)) {
         final refreshed = await _tryRefreshToken();
         if (refreshed) {
           // Retry with new token
@@ -284,6 +284,13 @@ class ApiService {
       ApiLogger.logError('DELETE', path, e.toString());
       rethrow;
     }
+  }
+
+  static bool _isAuthPath(String path) {
+    return path.contains('/login') ||
+        path.contains('/register') ||
+        path.contains('/refresh') ||
+        path.contains('/logout');
   }
 
   static void _checkResponse(http.Response response) {

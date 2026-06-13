@@ -14,8 +14,8 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
   
-  // Initialize notification service
-  await NotificationService().initialize();
+  // Initialize notification service (non-blocking)
+  NotificationService().initialize();
   
   // Print HR credentials to console for easy access
   debugPrint('🔐 HR MOBILE LOGIN CREDENTIALS:');

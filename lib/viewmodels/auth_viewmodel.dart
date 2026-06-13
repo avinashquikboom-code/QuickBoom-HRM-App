@@ -78,7 +78,9 @@ class AuthViewModel extends StateNotifier<AuthState> {
           fallbackEmail.trim(),
       phone: profMap['phone']?.toString() ?? '',
       role: isHrRole ? UserRole.hrManager : UserRole.employee,
-      department: empMap['department']?.toString() ??
+      department: (empMap['department'] is Map 
+              ? empMap['department']['name'] 
+              : empMap['department'])?.toString() ??
           (isHrRole ? 'Human Resources' : 'General'),
       designation: empMap['designation']?.toString() ??
           profMap['bio']?.toString() ??
@@ -162,16 +164,15 @@ class AuthViewModel extends StateNotifier<AuthState> {
         final profileRes = await ApiService.get(AppUrl.employeeProfile);
         final profileData = jsonDecode(profileRes.body);
 
-        // HR profile endpoint returns a flat profile/user object
-        final prof = (profileData['profile'] ?? profileData) as Map<String, dynamic>;
-        final user = (profileData['user']   ?? {})           as Map<String, dynamic>;
+        final userMap = profileData['user'] as Map<String, dynamic>;
+        final prof = userMap['profile'] as Map<String, dynamic>? ?? {};
 
         final parsedUser = UserModel(
-          id:          (user['id'] ?? prof['userId'] ?? 0).toString(),
-          employeeId:  (user['id'] ?? prof['userId'] ?? 0).toString(),
+          id:          userMap['id'].toString(),
+          employeeId:  userMap['id'].toString(),
           name:        prof['fullName']?.toString() ?? 'HR Manager',
-          email:       prof['email']?.toString()    ?? '',
-          phone:       prof['phone']?.toString()    ?? '',
+          email:       prof['email']?.toString() ?? userMap['email']?.toString() ?? '',
+          phone:       prof['phone']?.toString() ?? '',
           role:        UserRole.hrManager,
           department:  'Human Resources',
           designation: prof['bio']?.toString() ?? 'HR Manager',
@@ -187,22 +188,24 @@ class AuthViewModel extends StateNotifier<AuthState> {
         final profileRes = await ApiService.get(AppUrl.employeeProfile);
         final profileData = jsonDecode(profileRes.body);
 
-        final emp   = profileData['employee'] as Map<String, dynamic>;
-        final prof  = profileData['profile']  as Map<String, dynamic>;
-        final uRole = (profileData['user']?['role'] ?? 'EMPLOYEE').toString().toUpperCase();
+        final userMap = profileData['user'] as Map<String, dynamic>;
+        final emp   = userMap['employee'] as Map<String, dynamic>? ?? {};
+        final prof  = userMap['profile']  as Map<String, dynamic>? ?? {};
+        final uRole = (userMap['role'] ?? 'EMPLOYEE').toString().toUpperCase();
 
         final parsedUser = UserModel(
-          id:          emp['id'].toString(),
-          employeeId:  emp['employeeCode'].toString(),
-          name:        emp['name'].toString(),
-          email:       prof['email'].toString(),
-          phone:       prof['phone'].toString(),
+          id:          emp['id']?.toString() ?? userMap['id'].toString(),
+          employeeId:  emp['employeeCode']?.toString() ?? userMap['id'].toString(),
+          name:        prof['fullName']?.toString() ?? 
+                       '${emp['firstName'] ?? ''} ${emp['lastName'] ?? ''}'.trim(),
+          email:       prof['email']?.toString() ?? userMap['email']?.toString() ?? '',
+          phone:       prof['phone']?.toString() ?? '',
           role:        (uRole == 'HR' || uRole == 'SUPER_ADMIN' || uRole == 'ADMIN' || uRole == 'PLATFORM_ADMIN')
               ? UserRole.hrManager
               : UserRole.employee,
-          department:  emp['department'].toString(),
-          designation: emp['designation'].toString(),
-          joinDate:    DateTime.tryParse(emp['joinDate'].toString()) ?? DateTime.now(),
+          department:  (emp['department'] is Map ? emp['department']['name'] : emp['department'])?.toString() ?? 'General',
+          designation: emp['designation']?.toString() ?? 'Employee',
+          joinDate:    DateTime.tryParse(emp['joinDate']?.toString() ?? '') ?? DateTime.now(),
           salary:      (prof['salary'] as num?)?.toDouble() ??
               (emp['salary'] as num?)?.toDouble() ?? 0.0,
         );
