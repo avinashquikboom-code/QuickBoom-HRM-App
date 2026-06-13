@@ -349,6 +349,7 @@ class _TodayCardState extends ConsumerState<_TodayCard> {
   Timer? _timer;
   Map<String, dynamic>? _distanceData;
   bool _isLoadingDistance = false;
+  bool _isPunching = false;
 
   @override
   void initState() {
@@ -526,7 +527,9 @@ class _TodayCardState extends ConsumerState<_TodayCard> {
                     Expanded(
                       child: _SimplifiedAttendancePunchButton(
                         isCheckedIn: hasCheckIn,
+                        isLoading: _isPunching,
                         onTap: () async {
+                          setState(() => _isPunching = true);
                           try {
                             if (hasCheckIn) {
                               await ref.read(attendanceViewModelProvider.notifier).checkOut();
@@ -555,6 +558,10 @@ class _TodayCardState extends ConsumerState<_TodayCard> {
                                   duration: const Duration(seconds: 4),
                                 ),
                               );
+                            }
+                          } finally {
+                            if (mounted) {
+                              setState(() => _isPunching = false);
                             }
                           }
                         },
@@ -750,17 +757,19 @@ class _AttendanceActionButton extends StatelessWidget {
 
 class _SimplifiedAttendancePunchButton extends StatelessWidget {
   final bool isCheckedIn;
+  final bool isLoading;
   final VoidCallback onTap;
 
   const _SimplifiedAttendancePunchButton({
     required this.isCheckedIn,
+    required this.isLoading,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onTap,
+      onTap: isLoading ? null : onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
         decoration: BoxDecoration(
@@ -782,15 +791,25 @@ class _SimplifiedAttendancePunchButton extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              isCheckedIn ? RemixIcons.logout_box_line : RemixIcons.login_box_line,
-              color: Colors.white,
-              size: 18,
-            ),
+            if (isLoading)
+              SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation(Colors.white),
+                ),
+              )
+            else
+              Icon(
+                isCheckedIn ? RemixIcons.logout_box_line : RemixIcons.login_box_line,
+                color: Colors.white,
+                size: 18,
+              ),
             const SizedBox(width: 8),
             Flexible(
               child: Text(
-                isCheckedIn ? 'PUNCH OUT' : 'PUNCH IN',
+                isLoading ? 'Processing...' : (isCheckedIn ? 'PUNCH OUT' : 'PUNCH IN'),
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 13,
