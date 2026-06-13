@@ -97,8 +97,8 @@ class ApiLogger {
 class ApiService {
   static final String _baseUrl = AppUrl.baseUrl;
 
-  static const Duration defaultTimeout = Duration(seconds: 20);
-  static const Duration loginTimeout = Duration(seconds: 15);
+  static const Duration defaultTimeout = Duration(seconds: 30);
+  static const Duration loginTimeout = Duration(seconds: 30);
 
   static const String tokenKey = StorageService.tokenKeyPublic;
 
