@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
+import 'package:geolocator/geolocator.dart';
 import '../../core/constants/app_colors.dart';
 import '../../models/leave_request_model.dart';
 import '../../models/announcement_model.dart';
@@ -754,6 +755,7 @@ class _TodayPunchCard extends ConsumerStatefulWidget {
 
 class _TodayPunchCardState extends ConsumerState<_TodayPunchCard> {
   Timer? _timer;
+  bool _isPunching = false;
 
   @override
   void initState() {
@@ -787,47 +789,101 @@ class _TodayPunchCardState extends ConsumerState<_TodayPunchCard> {
     super.dispose();
   }
 
-  Future<void> _handlePunch(BuildContext context, {required bool isInRadius}) async {
-    if (!widget.isCheckedIn && !isInRadius) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              Icon(RemixIcons.error_warning_line, color: Colors.white),
-              const SizedBox(width: 10),
-              const Expanded(child: Text('Punch blocked: You are outside the office geofence.')),
-            ],
-          ),
-          backgroundColor: Colors.orange,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-      );
-      return;
-    }
+  Future<void> _handlePunch(BuildContext context) async {
+    if (_isPunching) return;
+
+    setState(() {
+      _isPunching = true;
+    });
+
+    debugPrint('[PUNCH] Button click: ${widget.isCheckedIn ? "Punch Out" : "Punch In"}');
 
     try {
-      final success = widget.isCheckedIn
-          ? await ref.read(attendanceViewModelProvider.notifier).checkOut(viaFingerprint: false)
-          : await ref.read(attendanceViewModelProvider.notifier).checkIn(viaFingerprint: false);
+      Position? position;
+      bool isWithinGeofence = false;
 
-      if (success && context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                Icon(RemixIcons.checkbox_circle_line, color: Colors.white),
-                const SizedBox(width: 10),
-                Expanded(child: Text(widget.isCheckedIn ? 'Checked out successfully!' : 'Checked in successfully!')),
-              ],
-            ),
-            backgroundColor: AppColors.success,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          ),
+      // 1. Fetch location
+      debugPrint('[PUNCH] Location fetch start');
+      position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 10),
+        ),
+      );
+      debugPrint('[PUNCH] Location fetch end: lat=${position.latitude}, lon=${position.longitude}');
+
+      // 2. Validate geofence if punching in
+      if (!widget.isCheckedIn) {
+        debugPrint('[PUNCH] Geofence validation start');
+        isWithinGeofence = await ref.read(geofenceViewModelProvider.notifier).checkGeofenceStatus(
+          latitude: position.latitude,
+          longitude: position.longitude,
         );
+        debugPrint('[PUNCH] Geofence validation end: isWithinGeofence = $isWithinGeofence');
+
+        if (!isWithinGeofence) {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Row(
+                  children: [
+                    Icon(RemixIcons.error_warning_line, color: Colors.white),
+                    const SizedBox(width: 10),
+                    const Expanded(child: Text('Punch blocked: You are outside the office geofence.')),
+                  ],
+                ),
+                backgroundColor: Colors.orange,
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            );
+          }
+          setState(() {
+            _isPunching = false;
+          });
+          return;
+        }
+      }
+
+      // 3. Trigger API call
+      debugPrint('[PUNCH] API request start: ${widget.isCheckedIn ? "checkOut" : "checkIn"}');
+      final success = widget.isCheckedIn
+          ? await ref.read(attendanceViewModelProvider.notifier).checkOut(
+              viaFingerprint: false,
+              latitude: position.latitude,
+              longitude: position.longitude,
+            )
+          : await ref.read(attendanceViewModelProvider.notifier).checkIn(
+              viaFingerprint: false,
+              latitude: position.latitude,
+              longitude: position.longitude,
+            );
+
+      debugPrint('[PUNCH] API response: success = $success');
+
+      if (success) {
+        debugPrint('[PUNCH] Attendance state refresh');
+        await ref.read(attendanceViewModelProvider.notifier).fetchAttendanceData();
+
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  Icon(RemixIcons.checkbox_circle_line, color: Colors.white),
+                  const SizedBox(width: 10),
+                  Expanded(child: Text(widget.isCheckedIn ? 'Checked out successfully!' : 'Checked in successfully!')),
+                ],
+              ),
+              backgroundColor: AppColors.success,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+          );
+        }
       }
     } catch (error) {
+      debugPrint('[PUNCH] Error during punch flow: $error');
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -849,6 +905,12 @@ class _TodayPunchCardState extends ConsumerState<_TodayPunchCard> {
             duration: const Duration(seconds: 4),
           ),
         );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isPunching = false;
+        });
       }
     }
   }
@@ -1124,19 +1186,7 @@ class _TodayPunchCardState extends ConsumerState<_TodayPunchCard> {
     ref.watch(geofenceProvider);
     final isInRadius = geofenceState.isWithinGeofence;
 
-    bool isInteractive = false;
-
-    if (hasCheckOut) {
-      isInteractive = false;
-    } else if (widget.isCheckedIn) {
-      isInteractive = true;
-    } else {
-      if (isInRadius) {
-        isInteractive = true;
-      } else {
-        isInteractive = false;
-      }
-    }
+    bool isInteractive = !hasCheckOut && !_isPunching;
 
     return Container(
       padding: const EdgeInsets.all(22),
@@ -1338,8 +1388,9 @@ class _TodayPunchCardState extends ConsumerState<_TodayPunchCard> {
               isCheckedIn: widget.isCheckedIn,
               isInRadius: isInRadius,
               distance: geofenceState.distance,
+              isLoading: _isPunching,
               onPunchTriggered: () {
-                _handlePunch(context, isInRadius: isInRadius);
+                _handlePunch(context);
               },
             ),
           ),
@@ -1722,6 +1773,7 @@ class _SimplifiedPunchButton extends StatelessWidget {
   final bool isCheckedIn;
   final bool isInRadius;
   final double? distance;
+  final bool isLoading;
   final VoidCallback onPunchTriggered;
 
   const _SimplifiedPunchButton({
@@ -1729,30 +1781,31 @@ class _SimplifiedPunchButton extends StatelessWidget {
     required this.isCheckedIn,
     required this.isInRadius,
     this.distance,
+    required this.isLoading,
     required this.onPunchTriggered,
   });
 
   @override
   Widget build(BuildContext context) {
+    final buttonColor = isCheckedIn 
+        ? Colors.red 
+        : (isInteractive ? AppColors.primary : Colors.grey[400]);
+
     return Column(
       children: [
         // Main Punch Button
         GestureDetector(
-          onTap: isInteractive ? onPunchTriggered : null,
+          onTap: (isInteractive && !isLoading) ? onPunchTriggered : null,
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),
             width: 120,
             height: 120,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: isCheckedIn 
-                  ? Colors.red 
-                  : (isInteractive ? AppColors.primary : Colors.grey[400]),
+              color: buttonColor,
               boxShadow: [
                 BoxShadow(
-                  color: (isCheckedIn 
-                      ? Colors.red 
-                      : (isInteractive ? AppColors.primary : Colors.grey[400]))!.withValues(alpha: 0.3),
+                  color: buttonColor!.withValues(alpha: 0.3),
                   blurRadius: 20,
                   offset: const Offset(0, 8),
                 ),
@@ -1772,12 +1825,10 @@ class _SimplifiedPunchButton extends StatelessWidget {
                   height: 140,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: (isCheckedIn 
-                        ? Colors.red 
-                        : (isInteractive ? AppColors.primary : Colors.grey[400]))!.withValues(alpha: 0.1),
+                    color: buttonColor.withValues(alpha: 0.1),
                   ),
                 ),
-                // Inner circle with icon
+                // Inner circle with icon or loading indicator
                 Container(
                   width: 100,
                   height: 100,
@@ -1789,11 +1840,22 @@ class _SimplifiedPunchButton extends StatelessWidget {
                       width: 1,
                     ),
                   ),
-                  child: Icon(
-                    isCheckedIn ? RemixIcons.logout_box_line : RemixIcons.login_box_line,
-                    color: Colors.white,
-                    size: 40,
-                  ),
+                  child: isLoading
+                      ? const Center(
+                          child: SizedBox(
+                            width: 32,
+                            height: 32,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 3,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          ),
+                        )
+                      : Icon(
+                          isCheckedIn ? RemixIcons.logout_box_line : RemixIcons.login_box_line,
+                          color: Colors.white,
+                          size: 40,
+                        ),
                 ),
               ],
             ),
@@ -1802,18 +1864,18 @@ class _SimplifiedPunchButton extends StatelessWidget {
         const SizedBox(height: 16),
         // Button Label
         Text(
-          isCheckedIn ? 'PUNCH OUT' : 'PUNCH IN',
+          isLoading
+              ? 'PROCESSING...'
+              : (isCheckedIn ? 'PUNCH OUT' : 'PUNCH IN'),
           style: TextStyle(
-            color: isCheckedIn 
-                ? Colors.red 
-                : (isInteractive ? AppColors.primary : Colors.grey[400]),
+            color: buttonColor,
             fontSize: 16,
             fontWeight: FontWeight.w800,
             letterSpacing: 1.2,
           ),
         ),
         // Status message
-        if (!isInteractive && !isCheckedIn && !isInRadius)
+        if (!isInteractive && !isCheckedIn && !isInRadius && !isLoading)
           Padding(
             padding: const EdgeInsets.only(top: 8),
             child: Text(

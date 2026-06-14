@@ -99,20 +99,28 @@ class AttendanceViewModel extends StateNotifier<AttendanceState> {
     }
   }
 
-  Future<bool> checkIn({bool viaFingerprint = false}) async {
+  Future<bool> checkIn({bool viaFingerprint = false, double? latitude, double? longitude}) async {
     state = state.copyWith(isLoading: true);
     
     final currentTime = DateTime.now();
     debugPrint('🕒 LOCAL TIME BEFORE API CALL: ${currentTime.toIso8601String()}');
     debugPrint('🌍 TIMEZONE: ${currentTime.timeZoneName} (${currentTime.timeZoneOffset})');
 
-    // Fetch real GPS coordinates
-    final position = await _getCurrentPosition();
-    debugPrint('📍 GPS Position: lat=${position?.latitude}, lon=${position?.longitude}');
+    double lat = latitude ?? 0.0;
+    double lon = longitude ?? 0.0;
 
+    if (latitude == null || longitude == null) {
+      // Fetch real GPS coordinates
+      final position = await _getCurrentPosition();
+      lat = position?.latitude ?? 0.0;
+      lon = position?.longitude ?? 0.0;
+    }
+    debugPrint('📍 GPS Position: lat=$lat, lon=$lon');
+
+    debugPrint('[PUNCH] API request start: checkIn');
     final response = await ApiService.post(AppUrl.attendancePunchIn, {
-      'latitude': position?.latitude ?? 0.0,
-      'longitude': position?.longitude ?? 0.0,
+      'latitude': lat,
+      'longitude': lon,
       'notes': viaFingerprint ? 'Punched in via Fingerprint' : 'Punched in via mobile app',
       'clientTimestamp': currentTime.toUtc().toIso8601String(),
       'timezone': currentTime.timeZoneName,
@@ -120,24 +128,35 @@ class AttendanceViewModel extends StateNotifier<AttendanceState> {
     });
 
     debugPrint('✅ Punch-in API response: ${response.body}');
+    debugPrint('[PUNCH] API response: success');
+    
+    debugPrint('[PUNCH] Attendance state refresh');
     await fetchAttendanceData();
     return true;
   }
 
-  Future<bool> checkOut({bool viaFingerprint = false}) async {
+  Future<bool> checkOut({bool viaFingerprint = false, double? latitude, double? longitude}) async {
     state = state.copyWith(isLoading: true);
     
     final currentTime = DateTime.now();
     debugPrint('🕒 LOCAL TIME BEFORE API CALL: ${currentTime.toIso8601String()}');
     debugPrint('🌍 TIMEZONE: ${currentTime.timeZoneName} (${currentTime.timeZoneOffset})');
 
-    // Fetch real GPS coordinates
-    final position = await _getCurrentPosition();
-    debugPrint('📍 GPS Position: lat=${position?.latitude}, lon=${position?.longitude}');
+    double lat = latitude ?? 0.0;
+    double lon = longitude ?? 0.0;
 
+    if (latitude == null || longitude == null) {
+      // Fetch real GPS coordinates
+      final position = await _getCurrentPosition();
+      lat = position?.latitude ?? 0.0;
+      lon = position?.longitude ?? 0.0;
+    }
+    debugPrint('📍 GPS Position: lat=$lat, lon=$lon');
+
+    debugPrint('[PUNCH] API request start: checkOut');
     final response = await ApiService.post(AppUrl.attendancePunchOut, {
-      'latitude': position?.latitude ?? 0.0,
-      'longitude': position?.longitude ?? 0.0,
+      'latitude': lat,
+      'longitude': lon,
       'notes': viaFingerprint ? 'Punched out via Fingerprint' : 'Punched out via mobile app',
       'clientTimestamp': currentTime.toUtc().toIso8601String(),
       'timezone': currentTime.timeZoneName,
@@ -145,6 +164,9 @@ class AttendanceViewModel extends StateNotifier<AttendanceState> {
     });
 
     debugPrint('✅ Punch-out API response: ${response.body}');
+    debugPrint('[PUNCH] API response: success');
+    
+    debugPrint('[PUNCH] Attendance state refresh');
     await fetchAttendanceData();
     return true;
   }
@@ -154,6 +176,10 @@ class AttendanceViewModel extends StateNotifier<AttendanceState> {
   Future<Position?> _getCurrentPosition() async {
     debugPrint('🔍 Checking location services...');
     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      debugPrint('❌ Location services are disabled.');
+      return null;
+    }
     
     debugPrint('🔍 Checking location permissions...');
     LocationPermission permission = await Geolocator.checkPermission();

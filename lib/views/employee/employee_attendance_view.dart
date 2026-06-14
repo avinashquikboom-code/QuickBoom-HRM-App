@@ -8,6 +8,7 @@ import '../../core/constants/app_colors.dart';
 import '../../core/services/distance_service.dart';
 import '../../models/attendance_model.dart';
 import '../../viewmodels/attendance_viewmodel.dart';
+import '../../viewmodels/geofence_viewmodel.dart';
 import '../../widgets/shimmer_loading.dart';
 
 class EmployeeAttendanceView extends ConsumerWidget {
@@ -529,14 +530,91 @@ class _TodayCardState extends ConsumerState<_TodayCard> {
                         isCheckedIn: hasCheckIn,
                         isLoading: _isPunching,
                         onTap: () async {
+                          if (_isPunching) return;
+                          
                           setState(() => _isPunching = true);
+                          debugPrint('[PUNCH] Button click: ${hasCheckIn ? "Punch Out" : "Punch In"}');
+
                           try {
-                            if (hasCheckIn) {
-                              await ref.read(attendanceViewModelProvider.notifier).checkOut();
-                            } else {
-                              await ref.read(attendanceViewModelProvider.notifier).checkIn();
+                            // 1. Fetch location
+                            debugPrint('[PUNCH] Location fetch start');
+                            final position = await Geolocator.getCurrentPosition(
+                              locationSettings: const LocationSettings(
+                                accuracy: LocationAccuracy.high,
+                                timeLimit: Duration(seconds: 10),
+                              ),
+                            );
+                            debugPrint('[PUNCH] Location fetch end: lat=${position.latitude}, lon=${position.longitude}');
+
+                            // 2. If punching in, validate geofence
+                            if (!hasCheckIn) {
+                              debugPrint('[PUNCH] Geofence validation start');
+                              final isWithinGeofence = await ref.read(geofenceViewModelProvider.notifier).checkGeofenceStatus(
+                                latitude: position.latitude,
+                                longitude: position.longitude,
+                              );
+                              debugPrint('[PUNCH] Geofence validation end: isWithinGeofence = $isWithinGeofence');
+
+                              if (!isWithinGeofence) {
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Row(
+                                        children: [
+                                          Icon(RemixIcons.error_warning_line, color: Colors.white),
+                                          const SizedBox(width: 10),
+                                          const Expanded(child: Text('Punch blocked: You are outside the office geofence.')),
+                                        ],
+                                      ),
+                                      backgroundColor: Colors.orange,
+                                      behavior: SnackBarBehavior.floating,
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                    ),
+                                  );
+                                }
+                                setState(() => _isPunching = false);
+                                return;
+                              }
+                            }
+
+                            // 3. Trigger API request
+                            debugPrint('[PUNCH] API request start: ${hasCheckIn ? "checkOut" : "checkIn"}');
+                            final success = hasCheckIn
+                                ? await ref.read(attendanceViewModelProvider.notifier).checkOut(
+                                    viaFingerprint: false,
+                                    latitude: position.latitude,
+                                    longitude: position.longitude,
+                                  )
+                                : await ref.read(attendanceViewModelProvider.notifier).checkIn(
+                                    viaFingerprint: false,
+                                    latitude: position.latitude,
+                                    longitude: position.longitude,
+                                  );
+                            debugPrint('[PUNCH] API response: success = $success');
+
+                            if (success) {
+                              debugPrint('[PUNCH] Attendance state refresh');
+                              _loadDistance();
+                              
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Row(
+                                      children: [
+                                        Icon(RemixIcons.checkbox_circle_line, color: Colors.white),
+                                        const SizedBox(width: 10),
+                                        Expanded(child: Text(hasCheckIn ? 'Checked out successfully!' : 'Checked in successfully!')),
+                                      ],
+                                    ),
+                                    backgroundColor: AppColors.success,
+                                    behavior: SnackBarBehavior.floating,
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  ),
+                                );
+                              }
                             }
                           } catch (error) {
+                            debugPrint('[PUNCH] Error during punch flow: $error');
                             if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
