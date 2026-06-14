@@ -9,6 +9,7 @@ import '../../viewmodels/auth_viewmodel.dart';
 import '../employee/employee_shell.dart';
 import '../hr/hr_shell.dart';
 import '../widgets/premium_animated_background.dart';
+import 'forgot_password_view.dart';
 
 class LoginView extends ConsumerStatefulWidget {
   const LoginView({super.key});
@@ -274,6 +275,31 @@ class _LoginViewState extends ConsumerState<LoginView> with SingleTickerProvider
                               ],
 
                               const SizedBox(height: 32),
+
+                              // ─── Forgot Password Link ───────────────────────
+                              Align(
+                                alignment: Alignment.centerRight,
+                                child: TextButton(
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => const ForgotPasswordView(),
+                                      ),
+                                    );
+                                  },
+                                  child: Text(
+                                    'Forgot Password?',
+                                    style: TextStyle(
+                                      color: AppColors.primary,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ).animate().fadeIn(delay: 650.ms).slideX(begin: 0.1, end: 0),
+
+                              const SizedBox(height: 16),
 
                               // ─── Sign In Button ──────────────────────────
                               Container(

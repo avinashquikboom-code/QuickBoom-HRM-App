@@ -10,6 +10,7 @@ import '../auth/login_view.dart';
 import 'employee_documents_view.dart';
 import 'employee_expenses_view.dart';
 import 'employee_shift_view.dart';
+import 'change_password_view.dart';
 
 class EmployeeProfileView extends ConsumerWidget {
   const EmployeeProfileView({super.key});
@@ -284,6 +285,18 @@ class EmployeeProfileView extends ConsumerWidget {
                           context,
                           MaterialPageRoute(
                             builder: (_) => const EmployeeShiftView(),
+                          ),
+                        );
+                      },
+                    ),
+                    _ActionRow(
+                      label: 'Change Password',
+                      icon: RemixIcons.lock_line,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const ChangePasswordView(),
                           ),
                         );
                       },

@@ -19,6 +19,8 @@ class AppUrl {
   static const String hrLogin = '/api/auth/hr/login';
   static const String logout = '/api/mobile/auth/logout';
   static const String refreshToken = '/api/mobile/auth/refresh';
+  static const String changePassword = '/api/admin/change-password';
+  static const String forgotPassword = '/api/mobile/auth/forgot-password';
 
   // ─────────────────────────────────────────────
   //  Employee – Profile
