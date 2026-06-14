@@ -10,7 +10,7 @@ class AppUrl {
   //  Base
   // ─────────────────────────────────────────────
   static const String baseUrl =
-      'http://69.62.80.20:5004';
+      'https://api.voxiqai.com';
 
   // ─────────────────────────────────────────────
   //  Auth
