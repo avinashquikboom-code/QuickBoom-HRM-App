@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'firebase_options.dart';
 import 'core/constants/app_theme.dart';
 import 'core/services/notification_service.dart';
+import 'core/services/theme_service.dart';
 import 'views/splash/splash_view.dart';
 
 void main() async {
@@ -50,8 +51,30 @@ void main() async {
   );
 }
 
-class HrmApp extends StatelessWidget {
+class HrmApp extends ConsumerStatefulWidget {
   const HrmApp({super.key});
+
+  @override
+  ConsumerState<HrmApp> createState() => _HrmAppState();
+}
+
+class _HrmAppState extends ConsumerState<HrmApp> {
+  ThemeMode _themeMode = ThemeMode.system;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadThemeMode();
+  }
+
+  Future<void> _loadThemeMode() async {
+    final savedThemeMode = await ThemeService.getThemeMode();
+    if (mounted) {
+      setState(() {
+        _themeMode = savedThemeMode;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -59,6 +82,8 @@ class HrmApp extends StatelessWidget {
       title: 'HRM',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: _themeMode,
       home: const SplashView(),
     );
   }

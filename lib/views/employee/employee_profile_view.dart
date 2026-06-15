@@ -4,6 +4,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
 import 'package:remixicon/remixicon.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/services/theme_service.dart';
 import '../../viewmodels/auth_viewmodel.dart';
 import '../../viewmodels/profile_viewmodel.dart';
 import '../auth/login_view.dart';
@@ -299,6 +300,28 @@ class EmployeeProfileView extends ConsumerWidget {
                             builder: (_) => const ChangePasswordView(),
                           ),
                         );
+                      },
+                    ),
+                    _ActionRow(
+                      label: 'Toggle Theme',
+                      icon: RemixIcons.sun_line,
+                      onTap: () async {
+                        final currentTheme = await ThemeService.getThemeMode();
+                        final newTheme = currentTheme == ThemeMode.light 
+                            ? ThemeMode.dark 
+                            : ThemeMode.light;
+                        await ThemeService.setThemeMode(newTheme);
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(newTheme == ThemeMode.dark 
+                                  ? 'Dark mode enabled' 
+                                  : 'Light mode enabled'),
+                              backgroundColor: AppColors.primary,
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                        }
                       },
                     ),
                   ],
