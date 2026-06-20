@@ -18,21 +18,7 @@ void main() async {
   // Initialize notification service (non-blocking)
   NotificationService().initialize();
   
-  // Print HR credentials to console for easy access
-  debugPrint('🔐 HR MOBILE LOGIN CREDENTIALS:');
-  debugPrint('═══════════════════════════════════════');
-  debugPrint('📧 HR Email: hr@hrm.com');
-  debugPrint('🔑 HR Password: 123456');
-  debugPrint('👤 HR Name: Priya Sharma');
-  debugPrint('═══════════════════════════════════════');
-  debugPrint('📧 Employee Email: employee@hrm.com');
-  debugPrint('🔑 Employee Password: employee123');
-  debugPrint('👤 Employee Name: Rahul Verma');
-  debugPrint('═══════════════════════════════════════');
-  debugPrint('📧 Admin Email: admin@hr.com');
-  debugPrint('🔑 Admin Password: 123456');
-  debugPrint('👤 Admin Name: Super Admin');
-  debugPrint('═══════════════════════════════════════');
+
   
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,

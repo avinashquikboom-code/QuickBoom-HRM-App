@@ -66,7 +66,8 @@ class AuthViewModel extends StateNotifier<AuthState> {
     final isHrRole = forceHrRole ||
         userRole == 'HR' ||
         userRole == 'SUPER_ADMIN' ||
-        userRole == 'ADMIN';
+        userRole == 'ADMIN' ||
+        userRole == 'PLATFORM_ADMIN';
 
     return UserModel(
       id: userMap['id'].toString(),
