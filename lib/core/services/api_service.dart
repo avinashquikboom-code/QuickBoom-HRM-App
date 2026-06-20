@@ -102,6 +102,9 @@ class ApiService {
 
   static const String tokenKey = StorageService.tokenKeyPublic;
 
+  // Single shared persistent HTTP Client instance for TCP connection reuse
+  static final http.Client _client = http.Client();
+
   // Private constructor
   ApiService._();
 
@@ -142,7 +145,7 @@ class ApiService {
     ApiLogger.logRequest('GET', path);
     
     try {
-      final response = await http.get(url, headers: headers).timeout(requestTimeout);
+      final response = await _client.get(url, headers: headers).timeout(requestTimeout);
       ApiLogger.logResponse('GET', path, response.statusCode, response.body);
       
       // Handle 401 - try token refresh (skip for auth paths)
@@ -151,7 +154,7 @@ class ApiService {
         if (refreshed) {
           // Retry with new token
           final newHeaders = await _headers();
-          final retryResponse = await http.get(url, headers: newHeaders).timeout(requestTimeout);
+          final retryResponse = await _client.get(url, headers: newHeaders).timeout(requestTimeout);
           ApiLogger.logResponse('GET (retry)', path, retryResponse.statusCode, retryResponse.body);
           _checkResponse(retryResponse);
           return retryResponse;
@@ -181,7 +184,7 @@ class ApiService {
     ApiLogger.logRequest('POST', path, body: body);
     
     try {
-      final response = await http
+      final response = await _client
           .post(url, headers: headers, body: jsonEncode(body))
           .timeout(requestTimeout);
       ApiLogger.logResponse('POST', path, response.statusCode, response.body);
@@ -192,7 +195,7 @@ class ApiService {
         if (refreshed) {
           // Retry with new token
           final newHeaders = await _headers();
-          final retryResponse = await http
+          final retryResponse = await _client
               .post(url, headers: newHeaders, body: jsonEncode(body))
               .timeout(requestTimeout);
           ApiLogger.logResponse('POST (retry)', path, retryResponse.statusCode, retryResponse.body);
@@ -220,7 +223,7 @@ class ApiService {
     ApiLogger.logRequest('PUT', path, body: body);
     
     try {
-      final response = await http
+      final response = await _client
           .put(url, headers: headers, body: jsonEncode(body))
           .timeout(requestTimeout);
       ApiLogger.logResponse('PUT', path, response.statusCode, response.body);
@@ -231,7 +234,7 @@ class ApiService {
         if (refreshed) {
           // Retry with new token
           final newHeaders = await _headers();
-          final retryResponse = await http
+          final retryResponse = await _client
               .put(url, headers: newHeaders, body: jsonEncode(body))
               .timeout(requestTimeout);
           ApiLogger.logResponse('PUT (retry)', path, retryResponse.statusCode, retryResponse.body);
@@ -259,7 +262,7 @@ class ApiService {
     ApiLogger.logRequest('DELETE', path);
     
     try {
-      final response = await http.delete(url, headers: headers).timeout(requestTimeout);
+      final response = await _client.delete(url, headers: headers).timeout(requestTimeout);
       ApiLogger.logResponse('DELETE', path, response.statusCode, response.body);
       
       // Handle 401 - try token refresh (skip for auth paths)
@@ -268,7 +271,7 @@ class ApiService {
         if (refreshed) {
           // Retry with new token
           final newHeaders = await _headers();
-          final retryResponse = await http.delete(url, headers: newHeaders).timeout(requestTimeout);
+          final retryResponse = await _client.delete(url, headers: newHeaders).timeout(requestTimeout);
           ApiLogger.logResponse('DELETE (retry)', path, retryResponse.statusCode, retryResponse.body);
           _checkResponse(retryResponse);
           return retryResponse;
@@ -325,7 +328,7 @@ class ApiService {
 
       ApiLogger.logRequest('POST', path, body: body);
 
-      final response = await http.post(
+      final response = await _client.post(
         url,
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(body),

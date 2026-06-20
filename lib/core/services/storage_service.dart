@@ -8,6 +8,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 class StorageService {
   StorageService._(); // prevent instantiation
 
+  // Cached SharedPreferences instance
+  static SharedPreferences? _prefs;
+
+  static Future<SharedPreferences> _getPrefs() async {
+    _prefs ??= await SharedPreferences.getInstance();
+    return _prefs!;
+  }
+
   // ─── Keys ──────────────────────────────────────────────────────────────────
   static const String _empTokenKey         = 'emp_token';
   static const String _hrTokenKey          = 'hr_token';
@@ -27,7 +35,7 @@ class StorageService {
   /// Save the JWT auth token received after login.
   static Future<void> saveToken(String token, String role) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await _getPrefs();
       await prefs.setString(_activeRoleKey, role);
       if (role == 'HR') {
         await prefs.setString(_hrTokenKey, token);
@@ -43,7 +51,7 @@ class StorageService {
   /// Save both access and refresh tokens.
   static Future<void> saveTokens(String token, String refreshToken, String role) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await _getPrefs();
       await prefs.setString(_activeRoleKey, role);
       if (role == 'HR') {
         await prefs.setString(_hrTokenKey, token);
@@ -61,7 +69,7 @@ class StorageService {
   /// Save the refresh token.
   static Future<void> saveRefreshToken(String refreshToken, String role) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await _getPrefs();
       await prefs.setString(_activeRoleKey, role);
       if (role == 'HR') {
         await prefs.setString(_hrRefreshTokenKey, refreshToken);
@@ -77,7 +85,7 @@ class StorageService {
   /// Read the stored JWT token. Returns null if none exists.
   static Future<String?> getToken() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await _getPrefs();
       final role = prefs.getString(_activeRoleKey);
       if (role == 'HR') {
         return prefs.getString(_hrTokenKey);
@@ -106,7 +114,7 @@ class StorageService {
   /// Read the stored refresh token. Returns null if none exists.
   static Future<String?> getRefreshToken() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await _getPrefs();
       final role = prefs.getString(_activeRoleKey);
       if (role == 'HR') {
         return prefs.getString(_hrRefreshTokenKey);
@@ -135,7 +143,7 @@ class StorageService {
   /// Delete all stored tokens (used on logout).
   static Future<void> clearToken() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await _getPrefs();
       // Clear all tokens to ensure complete logout
       await prefs.remove(_hrTokenKey);
       await prefs.remove(_empTokenKey);
@@ -159,7 +167,7 @@ class StorageService {
   /// Mark onboarding as completed.
   static Future<void> markOnboardingSeen() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await _getPrefs();
       await prefs.setBool(_onboardingKey, true);
     } catch (e) {
       debugPrint('❌ Failed to mark onboarding: $e');
@@ -169,7 +177,7 @@ class StorageService {
   /// Returns true if the user has already seen onboarding.
   static Future<bool> hasSeenOnboarding() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await _getPrefs();
       return prefs.getBool(_onboardingKey) ?? false;
     } catch (e) {
       return false;
@@ -180,14 +188,14 @@ class StorageService {
 
   static Future<void> saveLastEmail(String email) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await _getPrefs();
       await prefs.setString(_lastEmailKey, email);
     } catch (_) {}
   }
 
   static Future<String?> getLastEmail() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await _getPrefs();
       return prefs.getString(_lastEmailKey);
     } catch (_) {
       return null;
@@ -198,14 +206,14 @@ class StorageService {
 
   static Future<void> saveUserRole(String role) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await _getPrefs();
       await prefs.setString(_userRoleKey, role);
     } catch (_) {}
   }
 
   static Future<String?> getUserRole() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await _getPrefs();
       return prefs.getString(_userRoleKey);
     } catch (_) {
       return null;
@@ -216,7 +224,7 @@ class StorageService {
 
   static Future<void> saveFCMToken(String token) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await _getPrefs();
       await prefs.setString(_fcmTokenKey, token);
       debugPrint('✅ FCM Token saved to storage');
     } catch (e) {
@@ -226,7 +234,7 @@ class StorageService {
 
   static Future<String?> getFCMToken() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await _getPrefs();
       return prefs.getString(_fcmTokenKey);
     } catch (e) {
       debugPrint('❌ Failed to read FCM token: $e');
@@ -236,7 +244,7 @@ class StorageService {
 
   static Future<void> clearFCMToken() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await _getPrefs();
       await prefs.remove(_fcmTokenKey);
       debugPrint('🗑️ FCM Token cleared from storage');
     } catch (e) {
@@ -248,7 +256,7 @@ class StorageService {
 
   /// Get the SharedPreferences instance (used by ApiService for WebSocket)
   static Future<SharedPreferences> getPrefs() async {
-    return await SharedPreferences.getInstance();
+    return await _getPrefs();
   }
 
   // ─── Full Logout Clear ──────────────────────────────────────────────────────
@@ -257,7 +265,7 @@ class StorageService {
   static Future<void> clearSessionData() async {
     await clearToken();
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await _getPrefs();
       await prefs.remove(_userRoleKey);
       await prefs.remove(_lastEmailKey);
     } catch (e) {
