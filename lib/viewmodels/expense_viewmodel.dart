@@ -100,7 +100,7 @@ class ExpenseViewModel extends StateNotifier<ExpenseState> {
       id: e['id']?.toString() ?? '',
       employeeId: e['employeeId']?.toString() ?? '',
       employeeName: e['employeeName']?.toString() ?? '',
-      department: e['department']?.toString() ?? '',
+      department: (e['department'] is Map ? e['department']['name'] : e['department'])?.toString() ?? '',
       category: category,
       amount: (e['amount'] as num?)?.toDouble() ?? 0.0,
       description: e['description']?.toString() ?? '',

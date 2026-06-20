@@ -68,7 +68,9 @@ class ProfileViewModel extends StateNotifier<ProfileState> {
         role: (uRole == 'HR' || uRole == 'SUPER_ADMIN' || uRole == 'ADMIN' || uRole == 'PLATFORM_ADMIN')
             ? UserRole.hrManager
             : UserRole.employee,
-        department: emp['department']?.toString() ?? 'General',
+        department: (emp['department'] is Map 
+            ? emp['department']['name'] 
+            : emp['department'])?.toString() ?? 'General',
         designation: emp['designation']?.toString() ?? prof['bio']?.toString() ?? 'Employee',
         joinDate: DateTime.tryParse(prof['createdAt']?.toString() ?? emp['joinDate']?.toString() ?? '') ?? DateTime.now(),
         salary: 0.0,

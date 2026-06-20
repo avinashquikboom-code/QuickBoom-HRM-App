@@ -101,7 +101,7 @@ class EmployeeListViewModel extends StateNotifier<EmployeeListState> {
       email: e['email']?.toString() ?? '',
       phone: e['phone']?.toString() ?? '',
       role: UserRole.employee,
-      department: e['department']?.toString() ?? '',
+      department: (e['department'] is Map ? e['department']['name'] : e['department'])?.toString() ?? '',
       designation: e['designation']?.toString() ?? '',
       joinDate: e['joinDate'] != null ? DateTime.tryParse(e['joinDate'].toString()) ?? DateTime.now() : DateTime.now(),
       salary: (e['salary'] as num?)?.toDouble() ?? 0.0,

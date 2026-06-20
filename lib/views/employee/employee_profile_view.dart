@@ -4,7 +4,6 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
 import 'package:remixicon/remixicon.dart';
 import '../../core/constants/app_colors.dart';
-import '../../core/services/theme_service.dart';
 import '../../viewmodels/auth_viewmodel.dart';
 import '../../viewmodels/profile_viewmodel.dart';
 import '../auth/login_view.dart';
@@ -12,6 +11,7 @@ import 'employee_documents_view.dart';
 import 'employee_expenses_view.dart';
 import 'employee_shift_view.dart';
 import 'change_password_view.dart';
+import 'theme_settings_view.dart';
 
 class EmployeeProfileView extends ConsumerWidget {
   const EmployeeProfileView({super.key});
@@ -303,25 +303,15 @@ class EmployeeProfileView extends ConsumerWidget {
                       },
                     ),
                     _ActionRow(
-                      label: 'Toggle Theme',
+                      label: 'Theme Settings',
                       icon: RemixIcons.sun_line,
-                      onTap: () async {
-                        final currentTheme = ref.read(themeModeProvider);
-                        final newTheme = currentTheme == ThemeMode.light 
-                            ? ThemeMode.dark 
-                            : ThemeMode.light;
-                        await ref.read(themeModeProvider.notifier).setThemeMode(newTheme);
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(newTheme == ThemeMode.dark 
-                                  ? 'Dark mode enabled' 
-                                  : 'Light mode enabled'),
-                              backgroundColor: AppColors.primary,
-                              behavior: SnackBarBehavior.floating,
-                            ),
-                          );
-                        }
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const ThemeSettingsView(),
+                          ),
+                        );
                       },
                     ),
                   ],
