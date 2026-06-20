@@ -47,7 +47,7 @@ class _SplashViewState extends ConsumerState<SplashView> {
 
     // Run storage check and minimum splash display in parallel
     await Future.wait([
-      Future.delayed(const Duration(milliseconds: 800)),
+      Future.delayed(const Duration(milliseconds: 1500)),
       () async {
         try {
           debugPrint('🔍 Checking storage...');

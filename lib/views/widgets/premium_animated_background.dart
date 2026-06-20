@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../core/constants/app_colors.dart';
 
 class PremiumAnimatedBackground extends StatefulWidget {
@@ -32,10 +33,16 @@ class _PremiumAnimatedBackgroundState extends State<PremiumAnimatedBackground>
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        // 1. Light Brand-Aligned Soft Base (0% Grey)
-        Container(
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.dark,
+        statusBarBrightness: Brightness.light,
+      ),
+      child: Stack(
+        children: [
+          // 1. Light Brand-Aligned Soft Base (0% Grey)
+          Container(
           color: const Color(0xFFF3FAF8), // Very soft, clean mint-white base
         ),
         // 2. Slow-Moving Ambient Brand Orbs
@@ -115,6 +122,7 @@ class _PremiumAnimatedBackgroundState extends State<PremiumAnimatedBackground>
         // 4. Content Overlay
         Positioned.fill(child: widget.child),
       ],
-    );
-  }
+    ),
+  );
+}
 }

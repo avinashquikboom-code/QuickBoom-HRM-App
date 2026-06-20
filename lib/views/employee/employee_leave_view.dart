@@ -523,9 +523,9 @@ class _ApplyLeaveSheetState extends ConsumerState<_ApplyLeaveSheet> {
     };
 
     return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.background,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: EdgeInsets.only(
         left: 20,
@@ -544,29 +544,29 @@ class _ApplyLeaveSheetState extends ConsumerState<_ApplyLeaveSheet> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppColors.divider,
+                  color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF334155) : AppColors.divider,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
             ),
             const SizedBox(height: 16),
-            const Text(
+            Text(
               'Apply for Leave',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
             const SizedBox(height: 16),
 
             // Leave Type
-            const Text(
+            Text(
               'Leave Type',
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
             const SizedBox(height: 8),
@@ -582,10 +582,11 @@ class _ApplyLeaveSheetState extends ConsumerState<_ApplyLeaveSheet> {
                       label: Text(typeLabels[t] ?? t.name),
                       selected: isSelected,
                       selectedColor: AppColors.primary,
+                      backgroundColor: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
                       labelStyle: TextStyle(
                         color: isSelected
                             ? Colors.white
-                            : AppColors.textSecondary,
+                            : (Theme.of(context).brightness == Brightness.dark ? const Color(0xFF94A3B8) : AppColors.textSecondary),
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
                       ),
@@ -622,12 +623,12 @@ class _ApplyLeaveSheetState extends ConsumerState<_ApplyLeaveSheet> {
             const SizedBox(height: 14),
 
             // Reason
-            const Text(
+            Text(
               'Reason',
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
             const SizedBox(height: 8),
@@ -677,15 +678,18 @@ class _DateButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: isDark ? const Color(0xFF1E293B) : AppColors.surface,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: date != null ? AppColors.primary : AppColors.inputBorder,
+            color: date != null 
+                ? AppColors.primary 
+                : (isDark ? const Color(0xFF334155) : AppColors.inputBorder),
             width: date != null ? 1.5 : 1,
           ),
         ),
@@ -694,7 +698,7 @@ class _DateButton extends StatelessWidget {
             Icon(
               RemixIcons.calendar_event_line,
               size: 15,
-              color: date != null ? AppColors.primary : AppColors.textHint,
+              color: date != null ? AppColors.primary : (isDark ? const Color(0xFF64748B) : AppColors.textHint),
             ),
             const SizedBox(width: 8),
             Column(
@@ -702,9 +706,9 @@ class _DateButton extends StatelessWidget {
               children: [
                 Text(
                   label,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 10,
-                    color: AppColors.textHint,
+                    color: isDark ? const Color(0xFF64748B) : AppColors.textHint,
                   ),
                 ),
                 Text(
@@ -713,8 +717,8 @@ class _DateButton extends StatelessWidget {
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
                     color: date != null
-                        ? AppColors.textPrimary
-                        : AppColors.textHint,
+                        ? (isDark ? Colors.white : AppColors.textPrimary)
+                        : (isDark ? const Color(0xFF64748B) : AppColors.textHint),
                   ),
                 ),
               ],

@@ -37,39 +37,19 @@ void main() async {
   );
 }
 
-class HrmApp extends ConsumerStatefulWidget {
+class HrmApp extends ConsumerWidget {
   const HrmApp({super.key});
 
   @override
-  ConsumerState<HrmApp> createState() => _HrmAppState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final themeMode = ref.watch(themeModeProvider);
 
-class _HrmAppState extends ConsumerState<HrmApp> {
-  ThemeMode _themeMode = ThemeMode.system;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadThemeMode();
-  }
-
-  Future<void> _loadThemeMode() async {
-    final savedThemeMode = await ThemeService.getThemeMode();
-    if (mounted) {
-      setState(() {
-        _themeMode = savedThemeMode;
-      });
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
     return MaterialApp(
       title: 'HRM',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
-      themeMode: _themeMode,
+      themeMode: themeMode,
       home: const SplashView(),
     );
   }

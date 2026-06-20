@@ -306,11 +306,11 @@ class EmployeeProfileView extends ConsumerWidget {
                       label: 'Toggle Theme',
                       icon: RemixIcons.sun_line,
                       onTap: () async {
-                        final currentTheme = await ThemeService.getThemeMode();
+                        final currentTheme = ref.read(themeModeProvider);
                         final newTheme = currentTheme == ThemeMode.light 
                             ? ThemeMode.dark 
                             : ThemeMode.light;
-                        await ThemeService.setThemeMode(newTheme);
+                        await ref.read(themeModeProvider.notifier).setThemeMode(newTheme);
                         if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
@@ -366,22 +366,33 @@ class EmployeeProfileView extends ConsumerWidget {
   void _confirmLogout(BuildContext context, WidgetRef ref) {
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Theme.of(ctx).colorScheme.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text(
+        title: Text(
           'Logout Confirmation',
-          style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+          style: TextStyle(
+            fontWeight: FontWeight.w800, 
+            fontSize: 16,
+            color: Theme.of(ctx).colorScheme.onSurface,
+          ),
         ),
-        content: const Text(
+        content: Text(
           'Are you sure you want to securely end your current session?',
-          style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
+          style: TextStyle(
+            fontSize: 14, 
+            color: Theme.of(ctx).colorScheme.onSurface.withValues(alpha: 0.7),
+          ),
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(
               'Cancel',
-              style: TextStyle(fontWeight: FontWeight.w700),
+              style: TextStyle(
+                fontWeight: FontWeight.w700,
+                color: Theme.of(ctx).colorScheme.primary,
+              ),
             ),
           ),
           ElevatedButton(
@@ -395,7 +406,7 @@ class EmployeeProfileView extends ConsumerWidget {
             ),
             onPressed: () {
               ref.read(authViewModelProvider.notifier).logout();
-              Navigator.of(context).pushAndRemoveUntil(
+              Navigator.of(ctx).pushAndRemoveUntil(
                 MaterialPageRoute(builder: (_) => const LoginView()),
                 (_) => false,
               );
