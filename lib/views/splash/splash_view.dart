@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:remixicon/remixicon.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geolocator/geolocator.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/services/storage_service.dart';
 import '../../core/utils/app_responsive.dart';
@@ -33,6 +34,18 @@ class _SplashViewState extends ConsumerState<SplashView> {
   Future<void> _checkSessionAndRoute() async {
     bool hasSeenOnboarding = false;
     String? token;
+
+    // Ask for location permissions at app startup
+    try {
+      print('🔍 Checking location permissions on startup...');
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        print('📋 Requesting location permission...');
+        permission = await Geolocator.requestPermission();
+      }
+    } catch (e) {
+      print('⚠️ Failed to request location permission on startup: $e');
+    }
 
     // Run storage check and minimum splash display in parallel
     await Future.wait([

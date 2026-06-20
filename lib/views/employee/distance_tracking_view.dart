@@ -44,13 +44,48 @@ class _DistanceTrackingViewState extends ConsumerState<DistanceTrackingView> {
 
   Future<void> _getCurrentDistance() async {
     setState(() => _isGettingLocation = true);
-    final position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
-    final result = await DistanceService.getCurrentDistance(
-      latitude: position.latitude,
-      longitude: position.longitude,
-    );
-    setState(() => _currentDistance = DistanceData.fromJson(result));
-    setState(() => _isGettingLocation = false);
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        throw Exception('Location services are disabled.');
+      }
+
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          throw Exception('Location permissions are denied.');
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        throw Exception('Location permissions are permanently denied. Please enable them in settings.');
+      }
+
+      final position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+        ),
+      );
+      final result = await DistanceService.getCurrentDistance(
+        latitude: position.latitude,
+        longitude: position.longitude,
+      );
+      setState(() => _currentDistance = DistanceData.fromJson(result));
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString().replaceAll('Exception: ', '')),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isGettingLocation = false);
+      }
+    }
   }
 
   @override

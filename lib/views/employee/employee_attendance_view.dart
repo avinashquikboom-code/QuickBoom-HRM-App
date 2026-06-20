@@ -536,7 +536,25 @@ class _TodayCardState extends ConsumerState<_TodayCard> {
                           debugPrint('[PUNCH] Button click: ${hasCheckIn ? "Punch Out" : "Punch In"}');
 
                           try {
-                            // 1. Fetch location
+                            // 1. Check and request location permission if needed
+                            debugPrint('[PUNCH] Checking location services and permissions');
+                            bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+                            if (!serviceEnabled) {
+                              throw Exception('Location services are disabled. Please enable them.');
+                            }
+
+                            LocationPermission permission = await Geolocator.checkPermission();
+                            if (permission == LocationPermission.denied) {
+                              permission = await Geolocator.requestPermission();
+                              if (permission == LocationPermission.denied) {
+                                throw Exception('Location permissions are denied.');
+                              }
+                            }
+
+                            if (permission == LocationPermission.deniedForever) {
+                              throw Exception('Location permissions are permanently denied. Please enable them in settings.');
+                            }
+
                             debugPrint('[PUNCH] Location fetch start');
                             final position = await Geolocator.getCurrentPosition(
                               locationSettings: const LocationSettings(
