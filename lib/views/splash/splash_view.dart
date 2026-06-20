@@ -38,11 +38,11 @@ class _SplashViewState extends ConsumerState<SplashView> {
     // Ask for location permissions at app startup in the background (non-blocking)
     Geolocator.checkPermission().then((permission) {
       if (permission == LocationPermission.denied) {
-        print('📋 Requesting location permission...');
+        debugPrint('📋 Requesting location permission...');
         Geolocator.requestPermission();
       }
     }).catchError((e) {
-      print('⚠️ Failed to request location permission on startup: $e');
+      debugPrint('⚠️ Failed to request location permission on startup: $e');
     });
 
     // Run storage check and minimum splash display in parallel
@@ -50,13 +50,13 @@ class _SplashViewState extends ConsumerState<SplashView> {
       Future.delayed(const Duration(milliseconds: 800)),
       () async {
         try {
-          print('🔍 Checking storage...');
+          debugPrint('🔍 Checking storage...');
           hasSeenOnboarding = await StorageService.hasSeenOnboarding();
           token = await StorageService.getToken();
-          print('🔍 Onboarding seen: $hasSeenOnboarding');
-          print('🔍 Token exists: ${token != null && token!.isNotEmpty}');
+          debugPrint('🔍 Onboarding seen: $hasSeenOnboarding');
+          debugPrint('🔍 Token exists: ${token != null && token!.isNotEmpty}');
         } catch (e) {
-          print('❌ Error loading storage: $e');
+          debugPrint('❌ Error loading storage: $e');
         }
       }(),
     ]);
@@ -65,7 +65,7 @@ class _SplashViewState extends ConsumerState<SplashView> {
 
     // No token -> onboarding or login
     if (token == null || token!.isEmpty) {
-      print('🚀 No token, navigating to ${hasSeenOnboarding ? "Login" : "Onboarding"}');
+      debugPrint('🚀 No token, navigating to ${hasSeenOnboarding ? "Login" : "Onboarding"}');
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
           builder: (_) => hasSeenOnboarding ? const LoginView() : const OnboardingView(),
@@ -76,12 +76,12 @@ class _SplashViewState extends ConsumerState<SplashView> {
 
     // Token exists -> restore session via authViewModel
     setState(() => _statusMessage = 'Restoring session...');
-    print('🔄 Restoring session...');
+    debugPrint('🔄 Restoring session...');
 
     try {
       final restored = await ref.read(authViewModelProvider.notifier).restoreSession()
           .timeout(const Duration(seconds: 10), onTimeout: () {
-        print('⏱️ Session restore timeout');
+        debugPrint('⏱️ Session restore timeout');
         throw Exception('Session restore timeout');
       });
 
@@ -89,7 +89,7 @@ class _SplashViewState extends ConsumerState<SplashView> {
 
       if (restored) {
         final user = ref.read(authViewModelProvider).currentUser!;
-        print('✅ Session restored for ${user.name} (${user.role})');
+        debugPrint('✅ Session restored for ${user.name} (${user.role})');
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
             builder: (_) => user.role == UserRole.hrManager
@@ -98,7 +98,7 @@ class _SplashViewState extends ConsumerState<SplashView> {
           ),
         );
       } else {
-        print('❌ Session restore failed, navigating to login');
+        debugPrint('❌ Session restore failed, navigating to login');
         // Token invalid or expired
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
@@ -107,7 +107,7 @@ class _SplashViewState extends ConsumerState<SplashView> {
         );
       }
     } catch (e) {
-      print('❌ Session restore error: $e');
+      debugPrint('❌ Session restore error: $e');
       if (!mounted) return;
       // On error, navigate to login
       Navigator.of(context).pushReplacement(

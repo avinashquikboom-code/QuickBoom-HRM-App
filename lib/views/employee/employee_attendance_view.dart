@@ -383,7 +383,9 @@ class _TodayCardState extends ConsumerState<_TodayCard> {
   Future<void> _loadDistance() async {
     setState(() => _isLoadingDistance = true);
     try {
-      final position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+      final position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
+      );
       final result = await DistanceService.getCurrentDistance(
         latitude: position.latitude,
         longitude: position.longitude,

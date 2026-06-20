@@ -151,7 +151,7 @@ class _ComprehensiveAttendanceViewState extends ConsumerState<ComprehensiveAtten
     return Expanded(
       child: Container(
         padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+        decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
         child: Column(
           children: [
             Icon(icon, color: color, size: 24),
@@ -198,7 +198,7 @@ class _ComprehensiveAttendanceViewState extends ConsumerState<ComprehensiveAtten
     return Expanded(
       child: Container(
         padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+        decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
         child: Column(
           children: [
             Icon(icon, color: color, size: 24),
@@ -230,7 +230,7 @@ class _ComprehensiveAttendanceViewState extends ConsumerState<ComprehensiveAtten
             if (_locationTracking.isEmpty)
               const Text('No location tracking data available', style: TextStyle(color: Colors.grey))
             else
-              ..._locationTracking.take(5).map((loc) => _locationItem(loc)).toList(),
+              ..._locationTracking.take(5).map((loc) => _locationItem(loc)),
           ],
         ),
       ),
@@ -263,7 +263,7 @@ class _ComprehensiveAttendanceViewState extends ConsumerState<ComprehensiveAtten
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
-              color: Colors.green.withOpacity(0.1),
+              color: Colors.green.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(loc.locationStatus, style: const TextStyle(fontSize: 12, color: Colors.green, fontWeight: FontWeight.bold)),
@@ -292,7 +292,7 @@ class _ComprehensiveAttendanceViewState extends ConsumerState<ComprehensiveAtten
             if (_breakDetails.isEmpty)
               const Text('No break data available', style: TextStyle(color: Colors.grey))
             else
-              ..._breakDetails.take(5).map((breakDetail) => _breakItem(breakDetail)).toList(),
+              ..._breakDetails.take(5).map((breakDetail) => _breakItem(breakDetail)),
           ],
         ),
       ),
@@ -331,7 +331,7 @@ class _ComprehensiveAttendanceViewState extends ConsumerState<ComprehensiveAtten
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(breakDetail.breakType, style: TextStyle(fontSize: 12, color: color, fontWeight: FontWeight.bold)),
@@ -360,7 +360,7 @@ class _ComprehensiveAttendanceViewState extends ConsumerState<ComprehensiveAtten
             if (_records.isEmpty)
               const Text('No attendance records available', style: TextStyle(color: Colors.grey))
             else
-              ..._records.take(10).map((record) => _recordItem(record)).toList(),
+              ..._records.take(10).map((record) => _recordItem(record)),
           ],
         ),
       ),
@@ -394,7 +394,7 @@ class _ComprehensiveAttendanceViewState extends ConsumerState<ComprehensiveAtten
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: typeColor.withOpacity(0.1),
+                  color: typeColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(record.attendanceType, style: TextStyle(fontSize: 12, color: typeColor, fontWeight: FontWeight.bold)),
@@ -432,7 +432,7 @@ class _ComprehensiveAttendanceViewState extends ConsumerState<ComprehensiveAtten
       margin: const EdgeInsets.only(right: 8),
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text('$label: ${time != null ? DateFormat('HH:mm').format(DateTime.parse(time)) : '--'}',

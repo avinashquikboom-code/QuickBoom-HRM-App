@@ -62,7 +62,7 @@ class ProfileViewModel extends StateNotifier<ProfileState> {
         id: user['id']?.toString() ?? emp['id']?.toString() ?? '0',
         employeeId: emp['employeeCode']?.toString() ?? user['id']?.toString() ?? '0',
         name: prof['fullName']?.toString() ??
-               (emp['firstName']?.toString() ?? '') + ' ' + (emp['lastName']?.toString() ?? '').trim(),
+               '${emp['firstName']?.toString() ?? ''} ${(emp['lastName']?.toString() ?? '').trim()}',
         email: prof['email']?.toString() ?? user['email']?.toString() ?? '',
         phone: prof['phone']?.toString() ?? '',
         role: (uRole == 'HR' || uRole == 'SUPER_ADMIN' || uRole == 'ADMIN' || uRole == 'PLATFORM_ADMIN')

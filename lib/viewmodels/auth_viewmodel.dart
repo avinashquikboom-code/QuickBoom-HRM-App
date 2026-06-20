@@ -109,7 +109,7 @@ class AuthViewModel extends StateNotifier<AuthState> {
         {
           'email': email.trim(),
           'password': password.trim(),
-          if (fcmToken != null) 'fcmToken': fcmToken,
+          'fcmToken': ?fcmToken,
         },
         timeout: ApiService.loginTimeout,
       );

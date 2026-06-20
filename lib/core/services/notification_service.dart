@@ -412,7 +412,6 @@ class NotificationService {
   Future<void> printFCMToken() async {
     try {
       final token = await _firebaseMessaging.getToken();
-      print('🔑 FCM Token: $token');
       debugPrint('🔑 FCM Token: $token');
     } catch (e) {
       debugPrint('❌ Failed to get FCM token: $e');

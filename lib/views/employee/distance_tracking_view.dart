@@ -238,7 +238,7 @@ class _DistanceTrackingViewState extends ConsumerState<DistanceTrackingView> {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: (color ?? Colors.blue).withOpacity(0.1),
+          color: (color ?? Colors.blue).withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Column(
@@ -266,7 +266,7 @@ class _DistanceTrackingViewState extends ConsumerState<DistanceTrackingView> {
             if (_history.isEmpty)
               const Text('No distance history available', style: TextStyle(color: Colors.grey))
             else
-              ..._history.take(10).map((record) => _historyItem(record)).toList(),
+              ..._history.take(10).map((record) => _historyItem(record)),
           ],
         ),
       ),

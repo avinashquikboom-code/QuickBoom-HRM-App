@@ -102,7 +102,7 @@ class _AttendanceHistoryViewState extends ConsumerState<AttendanceHistoryView> {
   Widget _statItem(String label, String value, Color color, IconData icon) {
     return Container(
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+      decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
       child: Column(
         children: [
           Icon(icon, color: color, size: 24),
@@ -185,7 +185,7 @@ class _AttendanceHistoryViewState extends ConsumerState<AttendanceHistoryView> {
     }
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+      decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -198,7 +198,6 @@ class _AttendanceHistoryViewState extends ConsumerState<AttendanceHistoryView> {
   }
 
   List<dynamic> _filterByMonth(List<dynamic> history) {
-    final targetMonth = DateFormat('MMM yyyy').format(DateTime.now());
     return history.where((record) {
       return DateFormat('MMM yyyy').format(record.date) == _selectedMonth;
     }).toList();
