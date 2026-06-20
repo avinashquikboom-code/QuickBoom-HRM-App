@@ -35,17 +35,15 @@ class _SplashViewState extends ConsumerState<SplashView> {
     bool hasSeenOnboarding = false;
     String? token;
 
-    // Ask for location permissions at app startup
-    try {
-      print('🔍 Checking location permissions on startup...');
-      LocationPermission permission = await Geolocator.checkPermission();
+    // Ask for location permissions at app startup in the background (non-blocking)
+    Geolocator.checkPermission().then((permission) {
       if (permission == LocationPermission.denied) {
         print('📋 Requesting location permission...');
-        permission = await Geolocator.requestPermission();
+        Geolocator.requestPermission();
       }
-    } catch (e) {
+    }).catchError((e) {
       print('⚠️ Failed to request location permission on startup: $e');
-    }
+    });
 
     // Run storage check and minimum splash display in parallel
     await Future.wait([
