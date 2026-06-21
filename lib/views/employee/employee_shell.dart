@@ -34,18 +34,20 @@ class _EmployeeShellState extends ConsumerState<EmployeeShell> {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Scaffold(
       body: _buildPage(_currentIndex),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: (index) => setState(() => _currentIndex = index),
         type: BottomNavigationBarType.fixed,
-        backgroundColor: AppColors.background,
+        backgroundColor: cs.surface,
         selectedItemColor: AppColors.primary,
-        unselectedItemColor: AppColors.textHint,
+        unselectedItemColor: cs.onSurface.withValues(alpha: 0.45),
         selectedFontSize: 12,
         unselectedFontSize: 11,
-        items: [
+        elevation: 12,
+        items: const [
           BottomNavigationBarItem(
             icon: Icon(RemixIcons.home_3_line),
             activeIcon: Icon(RemixIcons.home_3_fill),

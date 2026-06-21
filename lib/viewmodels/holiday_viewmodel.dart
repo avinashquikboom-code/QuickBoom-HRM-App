@@ -62,7 +62,7 @@ class HolidayViewModel extends StateNotifier<HolidayState> {
         id: h['id']?.toString() ?? '',
         name: h['name']?.toString() ?? '',
         date: h['date']?.toString() ?? '',
-        dateTime: DateTime.tryParse(h['date'].toString()) ?? DateTime.now(),
+        dateTime: DateTime.tryParse(h['date']?.toString() ?? '') ?? DateTime.now(),
         isPublic: h['isPublic'] ?? true,
       )).toList();
 

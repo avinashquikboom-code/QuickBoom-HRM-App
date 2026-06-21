@@ -9,6 +9,7 @@ import '../core/constants/app_url.dart';
 
 class GeofenceState {
   final bool isWithinGeofence;
+  final bool enableGeofence;
   final double? distance;
   final String? nearestOffice;
   final int? maxRadius;
@@ -23,6 +24,7 @@ class GeofenceState {
 
   const GeofenceState({
     this.isWithinGeofence = false,
+    this.enableGeofence = true,
     this.distance,
     this.nearestOffice,
     this.maxRadius,
@@ -38,6 +40,7 @@ class GeofenceState {
 
   GeofenceState copyWith({
     bool? isWithinGeofence,
+    bool? enableGeofence,
     double? distance,
     String? nearestOffice,
     int? maxRadius,
@@ -54,6 +57,7 @@ class GeofenceState {
   }) {
     return GeofenceState(
       isWithinGeofence: isWithinGeofence ?? this.isWithinGeofence,
+      enableGeofence: enableGeofence ?? this.enableGeofence,
       distance: distance ?? this.distance,
       nearestOffice: nearestOffice ?? this.nearestOffice,
       maxRadius: maxRadius ?? this.maxRadius,
@@ -216,8 +220,10 @@ class GeofenceViewModel extends StateNotifier<GeofenceState> {
         final coordinates = result['coordinates'];
         final officeLat = coordinates != null ? coordinates['officeLat']?.toDouble() : null;
         final officeLon = coordinates != null ? coordinates['officeLon']?.toDouble() : null;
+        final enableGeofence = result['enableGeofence'] ?? true;
         state = state.copyWith(
           isWithinGeofence: result['isWithinGeofence'] ?? false,
+          enableGeofence: enableGeofence,
           distance: result['distance']?.toDouble(),
           nearestOffice: result['officeName'],
           maxRadius: result['maxRadius'],
@@ -227,7 +233,7 @@ class GeofenceViewModel extends StateNotifier<GeofenceState> {
           isLoading: false,
           successMessage: 'Geofence check completed.',
         );
-        return result['isWithinGeofence'] ?? false;
+        return enableGeofence ? (result['isWithinGeofence'] ?? false) : true;
       } else {
         state = state.copyWith(
           isLoading: false,
@@ -313,8 +319,10 @@ class GeofenceViewModel extends StateNotifier<GeofenceState> {
         final coordinates = result['coordinates'];
         final officeLat = coordinates != null ? coordinates['officeLat']?.toDouble() : null;
         final officeLon = coordinates != null ? coordinates['officeLon']?.toDouble() : null;
+        final enableGeofence = result['enableGeofence'] ?? true;
         state = state.copyWith(
-          isWithinGeofence: data['status'] == 'WITHIN_GEOFENCE',
+          isWithinGeofence: result['isWithinGeofence'] ?? false,
+          enableGeofence: enableGeofence,
           distance: result['distance']?.toDouble(),
           nearestOffice: result['officeName'],
           maxRadius: result['maxRadius'],

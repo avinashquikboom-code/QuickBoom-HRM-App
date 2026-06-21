@@ -1202,7 +1202,7 @@ class _TodayPunchCardState extends ConsumerState<_TodayPunchCard> {
     final isOnBreak = widget.todayRecord?.isOnBreak ?? false;
     final geofenceState = ref.watch(geofenceViewModelProvider);
     ref.watch(geofenceProvider);
-    final isInRadius = geofenceState.isWithinGeofence;
+    final isInRadius = geofenceState.isWithinGeofence || !geofenceState.enableGeofence;
 
     bool isInteractive = !hasCheckOut && !_isPunching;
 
