@@ -13,11 +13,25 @@ import 'employee_shift_view.dart';
 import 'change_password_view.dart';
 import 'theme_settings_view.dart';
 
-class EmployeeProfileView extends ConsumerWidget {
+class EmployeeProfileView extends ConsumerStatefulWidget {
   const EmployeeProfileView({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<EmployeeProfileView> createState() => _EmployeeProfileViewState();
+}
+
+class _EmployeeProfileViewState extends ConsumerState<EmployeeProfileView> {
+  @override
+  void initState() {
+    super.initState();
+    // Fetch fresh profile data when profile view is opened
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(profileViewModelProvider.notifier).fetchProfile();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final profileState = ref.watch(profileViewModelProvider);
     final user = profileState.user;
 
@@ -395,6 +409,8 @@ class EmployeeProfileView extends ConsumerWidget {
               ),
             ),
             onPressed: () {
+              // Clear profile cache before logout
+              ref.read(profileViewModelProvider.notifier).clearCachedData();
               ref.read(authViewModelProvider.notifier).logout();
               Navigator.of(ctx).pushAndRemoveUntil(
                 MaterialPageRoute(builder: (_) => const LoginView()),

@@ -100,6 +100,7 @@ class AuthViewModel extends StateNotifier<AuthState> {
     required bool forceHrRole,
   }) async {
     state = state.copyWith(isLoading: true, clearError: true);
+    debugPrint('🔐 [AUTH] Login attempt for email: $email');
 
     try {
       // Use cached FCM only — do not await FirebaseMessaging.getToken() here
@@ -118,6 +119,7 @@ class AuthViewModel extends StateNotifier<AuthState> {
       final loginData = jsonDecode(loginRes.body);
       if (loginData['success'] != true) {
         final msg = loginData['message'] ?? 'Login failed';
+        debugPrint('❌ [AUTH] Login failed: $msg');
         state = state.copyWith(isLoading: false, errorMessage: msg);
         return false;
       }
@@ -125,6 +127,11 @@ class AuthViewModel extends StateNotifier<AuthState> {
       final token = loginData['token'] as String;
       final refreshToken = loginData['refreshToken'] as String? ?? '';
       final userRole = loginData['user']['role'].toString().toUpperCase();
+      
+      debugPrint('✅ [AUTH] Login successful for email: $email');
+      debugPrint('👤 [AUTH] User role: $userRole');
+      debugPrint('🔑 [AUTH] Token saved to storage');
+      
       await ApiService.saveTokens(token, refreshToken, userRole);
       await StorageService.saveUserRole(userRole);
 
@@ -134,6 +141,7 @@ class AuthViewModel extends StateNotifier<AuthState> {
         forceHrRole: forceHrRole,
       );
 
+      debugPrint('👤 [AUTH] Parsed user: ${parsedUser.name} (${parsedUser.email})');
       state = AuthState(currentUser: parsedUser);
 
       // Sync FCM in background (handles missing cached token without blocking login)
@@ -141,6 +149,7 @@ class AuthViewModel extends StateNotifier<AuthState> {
       return true;
     } catch (e) {
       final msg = e.toString().replaceFirst('Exception: ', '');
+      debugPrint('❌ [AUTH] Login error: $msg');
       state = state.copyWith(isLoading: false, errorMessage: msg);
       return false;
     }
@@ -248,6 +257,7 @@ class AuthViewModel extends StateNotifier<AuthState> {
       debugPrint('⚠️ Backend logout failed: $e');
     }
     await StorageService.clearSessionData();
+    debugPrint('🗑️ Session data cleared from storage');
   }
 }
 

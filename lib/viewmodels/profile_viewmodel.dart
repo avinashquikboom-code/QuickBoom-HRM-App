@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/services/api_service.dart';
 import '../core/constants/app_url.dart';
@@ -42,12 +43,11 @@ class ProfileState {
 // ─── Profile ViewModel ─────────────────────────────────────────────────────────
 
 class ProfileViewModel extends StateNotifier<ProfileState> {
-  ProfileViewModel() : super(const ProfileState()) {
-    fetchProfile();
-  }
+  ProfileViewModel() : super(const ProfileState());
 
   Future<void> fetchProfile() async {
     state = state.copyWith(isLoading: true, clearMessages: true);
+    debugPrint('🔄 [PROFILE] Fetching profile data...');
     try {
       final res = await ApiService.get(AppUrl.employeeProfile);
       final data = jsonDecode(res.body);
@@ -76,8 +76,10 @@ class ProfileViewModel extends StateNotifier<ProfileState> {
         salary: 0.0,
       );
 
+      debugPrint('✅ [PROFILE] Profile loaded: ${parsedUser.name} (${parsedUser.email})');
       state = state.copyWith(user: parsedUser, isLoading: false);
     } catch (error) {
+      debugPrint('❌ [PROFILE] Failed to load profile: $error');
       state = state.copyWith(
         isLoading: false,
         errorMessage: error.toString().replaceAll('Exception: ', ''),
@@ -151,6 +153,10 @@ class ProfileViewModel extends StateNotifier<ProfileState> {
 
   void clearMessages() {
     state = state.copyWith(clearMessages: true);
+  }
+
+  void clearCachedData() {
+    state = const ProfileState();
   }
 }
 
