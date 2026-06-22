@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
 import 'package:remixicon/remixicon.dart';
 import 'package:quickboom_hrm/core/constants/app_colors.dart';
@@ -32,7 +31,6 @@ class _HrProfileViewState extends ConsumerState<HrProfileView> {
     final profileState = ref.watch(profileViewModelProvider);
     final user = profileState.user;
     final cs = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     if (profileState.isLoading) {
       return Scaffold(
