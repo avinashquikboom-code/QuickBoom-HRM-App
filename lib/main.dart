@@ -2,11 +2,11 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'firebase_options.dart';
-import 'core/constants/app_theme.dart';
-import 'core/services/notification_service.dart';
-import 'core/services/theme_service.dart';
-import 'views/splash/splash_view.dart';
+import 'package:quickboom_hrm/firebase_options.dart';
+import 'package:quickboom_hrm/core/constants/app_theme.dart';
+import 'package:quickboom_hrm/core/services/notification_service.dart';
+import 'package:quickboom_hrm/core/services/theme_service.dart';
+import 'package:quickboom_hrm/features/splash/presentation/screens/splash_view.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

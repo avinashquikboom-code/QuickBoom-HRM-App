@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:socket_io_client/socket_io_client.dart' as socket_io;
-import 'api_service.dart';
+import 'package:quickboom_hrm/core/services/api_service.dart';
 
 class WebSocketService {
   static final WebSocketService _instance = WebSocketService._internal();

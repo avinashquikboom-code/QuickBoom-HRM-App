@@ -1,6 +1,6 @@
 import 'dart:convert';
-import './api_service.dart';
-import '../constants/app_url.dart';
+import 'package:quickboom_hrm/core/services/api_service.dart';
+import 'package:quickboom_hrm/core/constants/app_url.dart';
 
 class MobileNotificationService {
   // Fetch all notifications for the logged-in user

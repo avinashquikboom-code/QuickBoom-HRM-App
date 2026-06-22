@@ -4,10 +4,10 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'api_service.dart';
-import 'storage_service.dart';
-import '../constants/app_url.dart';
-import 'websocket_service.dart';
+import 'package:quickboom_hrm/core/services/api_service.dart';
+import 'package:quickboom_hrm/core/services/storage_service.dart';
+import 'package:quickboom_hrm/core/constants/app_url.dart';
+import 'package:quickboom_hrm/core/services/websocket_service.dart';
 
 /// Global notification service for handling push notifications
 class NotificationService {
