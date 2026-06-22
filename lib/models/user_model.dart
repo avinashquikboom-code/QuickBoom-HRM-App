@@ -11,6 +11,7 @@ class UserModel {
   final String designation;
   final DateTime joinDate;
   final double salary;
+  final String? avatar;
 
   const UserModel({
     required this.id,
@@ -23,6 +24,7 @@ class UserModel {
     required this.designation,
     required this.joinDate,
     required this.salary,
+    this.avatar,
   });
 
   String get initials {

@@ -5,7 +5,7 @@ import '../../core/constants/app_colors.dart';
 import 'hr_dashboard_view.dart';
 import 'hr_employees_view.dart';
 import 'hr_leave_approval_view.dart';
-import 'hr_payroll_view.dart';
+import 'hr_profile_view.dart';
 
 class HrShell extends ConsumerStatefulWidget {
   const HrShell({super.key});
@@ -26,7 +26,7 @@ class _HrShellState extends ConsumerState<HrShell> {
       case 2:
         return const HrLeaveApprovalView();
       case 3:
-        return const HrPayrollView();
+        return const HrProfileView();
       default:
         return const HrDashboardView();
     }
@@ -62,9 +62,9 @@ class _HrShellState extends ConsumerState<HrShell> {
             label: 'Leaves',
           ),
           BottomNavigationBarItem(
-            icon: Icon(RemixIcons.wallet_3_line),
-            activeIcon: Icon(RemixIcons.wallet_3_fill),
-            label: 'Payroll',
+            icon: Icon(RemixIcons.user_line),
+            activeIcon: Icon(RemixIcons.user_fill),
+            label: 'Profile',
           ),
         ],
       ),

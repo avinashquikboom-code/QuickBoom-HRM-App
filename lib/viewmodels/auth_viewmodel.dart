@@ -91,6 +91,7 @@ class AuthViewModel extends StateNotifier<AuthState> {
           ) ??
           DateTime.now(),
       salary: 0.0,
+      avatar: profMap['avatar']?.toString(),
     );
   }
 
@@ -188,6 +189,7 @@ class AuthViewModel extends StateNotifier<AuthState> {
           designation: prof['bio']?.toString() ?? 'HR Manager',
           joinDate:    DateTime.tryParse(prof['createdAt']?.toString() ?? '') ?? DateTime.now(),
           salary:      0.0,
+          avatar:      prof['avatar']?.toString(),
         );
 
         state = AuthState(currentUser: parsedUser);
@@ -218,6 +220,7 @@ class AuthViewModel extends StateNotifier<AuthState> {
           joinDate:    DateTime.tryParse(emp['joinDate']?.toString() ?? '') ?? DateTime.now(),
           salary:      (prof['salary'] as num?)?.toDouble() ??
               (emp['salary'] as num?)?.toDouble() ?? 0.0,
+          avatar:      prof['avatar']?.toString(),
         );
 
         state = AuthState(currentUser: parsedUser);
