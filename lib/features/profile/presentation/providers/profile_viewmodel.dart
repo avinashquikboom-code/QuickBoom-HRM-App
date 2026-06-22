@@ -73,8 +73,8 @@ class ProfileViewModel extends StateNotifier<ProfileState> {
             : emp['department'])?.toString() ?? 'General',
         designation: emp['designation']?.toString() ?? prof['bio']?.toString() ?? 'Employee',
         joinDate: DateTime.tryParse(prof['createdAt']?.toString() ?? emp['joinDate']?.toString() ?? '') ?? DateTime.now(),
-        salary: 0.0,
-        avatar: prof['avatar']?.toString(),
+        salary: double.tryParse(user['salary']?.toString() ?? emp['salary']?.toString() ?? '') ?? 0.0,
+        avatar: prof['avatarUrl']?.toString() ?? prof['avatar']?.toString(),
       );
 
       debugPrint('✅ [PROFILE] Profile loaded: ${parsedUser.name} (${parsedUser.email})');
@@ -117,7 +117,7 @@ class ProfileViewModel extends StateNotifier<ProfileState> {
   Future<void> uploadAvatar(String imageBase64) async {
     state = state.copyWith(isUpdating: true, clearMessages: true);
     try {
-      await ApiService.put(AppUrl.employeeAvatar, {
+      await ApiService.post(AppUrl.employeeAvatarUpload, {
         'imageBase64': imageBase64,
       });
 
@@ -137,7 +137,7 @@ class ProfileViewModel extends StateNotifier<ProfileState> {
   Future<void> removeAvatar() async {
     state = state.copyWith(isUpdating: true, clearMessages: true);
     try {
-      await ApiService.delete(AppUrl.employeeAvatar);
+      await ApiService.delete(AppUrl.employeeAvatarRemove);
 
       await fetchProfile();
       state = state.copyWith(

@@ -1,8 +1,10 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
 import 'package:remixicon/remixicon.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:quickboom_hrm/core/constants/app_colors.dart';
 import 'package:quickboom_hrm/features/auth/presentation/providers/auth_viewmodel.dart';
 import 'package:quickboom_hrm/features/profile/presentation/providers/profile_viewmodel.dart';
@@ -12,6 +14,7 @@ import 'package:quickboom_hrm/features/expense/presentation/screens/employee_exp
 import 'package:quickboom_hrm/features/shift/presentation/screens/employee_shift_view.dart';
 import 'package:quickboom_hrm/features/profile/presentation/screens/change_password_view.dart';
 import 'package:quickboom_hrm/features/profile/presentation/screens/theme_settings_view.dart';
+import 'package:quickboom_hrm/features/payroll/presentation/screens/employee_payroll_view.dart';
 
 class EmployeeProfileView extends ConsumerStatefulWidget {
   const EmployeeProfileView({super.key});
@@ -129,27 +132,42 @@ class _EmployeeProfileViewState extends ConsumerState<EmployeeProfileView> {
                   ),
                   child: Column(
                     children: [
-                      Container(
-                        width: 90,
-                        height: 90,
-                        decoration: BoxDecoration(
-                          color: AppColors.primary.withValues(alpha: 0.15),
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: AppColors.primary.withValues(alpha: 0.3),
-                            width: 3,
+                      Stack(
+                        children: [
+                          Container(
+                            width: 90,
+                            height: 90,
+                            decoration: BoxDecoration(
+                              color: AppColors.primary.withValues(alpha: 0.15),
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: AppColors.primary.withValues(alpha: 0.3),
+                                width: 3,
+                              ),
+                            ),
+                            child: _buildAvatarImage(user.avatar, user.initials),
                           ),
-                        ),
-                        child: Center(
-                          child: Text(
-                            user.initials,
-                            style: const TextStyle(
-                              color: AppColors.primary,
-                              fontSize: 32,
-                              fontWeight: FontWeight.w900,
+                          Positioned(
+                            bottom: 0,
+                            right: 0,
+                            child: GestureDetector(
+                              onTap: () => _showAvatarOptions(context, ref),
+                              child: Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primary,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: cs.surface, width: 2),
+                                ),
+                                child: const Icon(
+                                  RemixIcons.camera_line,
+                                  color: Colors.white,
+                                  size: 14,
+                                ),
+                              ),
                             ),
                           ),
-                        ),
+                        ],
                       ).animate().scale(
                             duration: 500.ms,
                             curve: Curves.easeOutBack,
@@ -263,6 +281,18 @@ class _EmployeeProfileViewState extends ConsumerState<EmployeeProfileView> {
                         value:
                             '₹${NumberFormat('#,##,###').format(user.salary)}',
                         icon: RemixIcons.money_rupee_circle_line),
+                    _ActionRow(
+                      label: 'View Salary History',
+                      icon: RemixIcons.file_list_3_line,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const EmployeePayrollView(),
+                          ),
+                        );
+                      },
+                    ),
                   ],
                 ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.05, end: 0),
 
@@ -366,6 +396,192 @@ class _EmployeeProfileViewState extends ConsumerState<EmployeeProfileView> {
         ],
       ),
     );
+  }
+
+  Widget _buildAvatarImage(String? avatar, String initials) {
+    if (avatar == null || avatar.isEmpty || avatar == '/favicon.svg') {
+      return Center(
+        child: Text(
+          initials,
+          style: const TextStyle(
+            color: AppColors.primary,
+            fontSize: 32,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+      );
+    }
+
+    try {
+      if (avatar.startsWith('data:image')) {
+        final base64Content = avatar.split(',').last;
+        return ClipOval(
+          child: Image.memory(
+            base64Decode(base64Content),
+            fit: BoxFit.cover,
+            width: 90,
+            height: 90,
+            errorBuilder: (context, error, stackTrace) => Center(
+              child: Text(
+                initials,
+                style: const TextStyle(
+                  color: AppColors.primary,
+                  fontSize: 32,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ),
+          ),
+        );
+      } else if (avatar.startsWith('http://') || avatar.startsWith('https://')) {
+        return ClipOval(
+          child: Image.network(
+            avatar,
+            fit: BoxFit.cover,
+            width: 90,
+            height: 90,
+            errorBuilder: (context, error, stackTrace) => Center(
+              child: Text(
+                initials,
+                style: const TextStyle(
+                  color: AppColors.primary,
+                  fontSize: 32,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ),
+          ),
+        );
+      } else {
+        return ClipOval(
+          child: Image.memory(
+            base64Decode(avatar),
+            fit: BoxFit.cover,
+            width: 90,
+            height: 90,
+            errorBuilder: (context, error, stackTrace) => Center(
+              child: Text(
+                initials,
+                style: const TextStyle(
+                  color: AppColors.primary,
+                  fontSize: 32,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      return Center(
+        child: Text(
+          initials,
+          style: const TextStyle(
+            color: AppColors.primary,
+            fontSize: 32,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+      );
+    }
+  }
+
+  void _showAvatarOptions(BuildContext context, WidgetRef ref) {
+    final cs = Theme.of(context).colorScheme;
+    final profileState = ref.read(profileViewModelProvider);
+    final user = profileState.user;
+    final hasAvatar = user?.avatar != null && user!.avatar!.isNotEmpty && user.avatar != '/favicon.svg';
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: cs.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 8),
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: cs.onSurface.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Profile Photo',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 16),
+              ListTile(
+                leading: const Icon(RemixIcons.image_line, color: AppColors.primary),
+                title: const Text('Choose from Gallery', style: TextStyle(fontWeight: FontWeight.w600)),
+                onTap: () async {
+                  Navigator.pop(context);
+                  await _pickAndUploadImage(ImageSource.gallery);
+                },
+              ),
+              ListTile(
+                leading: const Icon(RemixIcons.camera_line, color: AppColors.primary),
+                title: const Text('Take a Photo', style: TextStyle(fontWeight: FontWeight.w600)),
+                onTap: () async {
+                  Navigator.pop(context);
+                  await _pickAndUploadImage(ImageSource.camera);
+                },
+              ),
+              if (hasAvatar)
+                ListTile(
+                  leading: Icon(RemixIcons.delete_bin_line, color: AppColors.error),
+                  title: Text(
+                    'Remove Photo',
+                    style: TextStyle(color: AppColors.error, fontWeight: FontWeight.w600),
+                  ),
+                  onTap: () async {
+                    Navigator.pop(context);
+                    await ref.read(profileViewModelProvider.notifier).removeAvatar();
+                  },
+                ),
+              const SizedBox(height: 16),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _pickAndUploadImage(ImageSource source) async {
+    try {
+      final picker = ImagePicker();
+      final image = await picker.pickImage(
+        source: source,
+        maxWidth: 512,
+        maxHeight: 512,
+        imageQuality: 85,
+      );
+      if (image != null) {
+        final bytes = await image.readAsBytes();
+        final base64Image = 'data:image/jpeg;base64,${base64Encode(bytes)}';
+        await ref.read(profileViewModelProvider.notifier).uploadAvatar(base64Image);
+      }
+    } catch (e) {
+      debugPrint('Failed to pick and upload image: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to update profile photo: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
   }
 
   void _confirmLogout(BuildContext context, WidgetRef ref) {

@@ -1,7 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
-/// Central service for all SharedPreferences interactions.
+/// Central service for all SharedPreferences and secure storage interactions.
 ///
 /// All storage keys are defined here as private constants so they
 /// cannot be mis-spelled across the codebase.
@@ -10,6 +11,9 @@ class StorageService {
 
   // Cached SharedPreferences instance
   static SharedPreferences? _prefs;
+
+  // FlutterSecureStorage instance for tokens
+  static const FlutterSecureStorage _secureStorage = FlutterSecureStorage();
 
   static Future<SharedPreferences> _getPrefs() async {
     _prefs ??= await SharedPreferences.getInstance();
@@ -38,11 +42,11 @@ class StorageService {
       final prefs = await _getPrefs();
       await prefs.setString(_activeRoleKey, role);
       if (role == 'HR') {
-        await prefs.setString(_hrTokenKey, token);
+        await _secureStorage.write(key: _hrTokenKey, value: token);
       } else {
-        await prefs.setString(_empTokenKey, token);
+        await _secureStorage.write(key: _empTokenKey, value: token);
       }
-      debugPrint('✅ Access token saved to storage for role: $role');
+      debugPrint('✅ Access token saved to secure storage for role: $role');
     } catch (e) {
       debugPrint('❌ Failed to save access token: $e');
     }
@@ -54,13 +58,13 @@ class StorageService {
       final prefs = await _getPrefs();
       await prefs.setString(_activeRoleKey, role);
       if (role == 'HR') {
-        await prefs.setString(_hrTokenKey, token);
-        await prefs.setString(_hrRefreshTokenKey, refreshToken);
+        await _secureStorage.write(key: _hrTokenKey, value: token);
+        await _secureStorage.write(key: _hrRefreshTokenKey, value: refreshToken);
       } else {
-        await prefs.setString(_empTokenKey, token);
-        await prefs.setString(_empRefreshTokenKey, refreshToken);
+        await _secureStorage.write(key: _empTokenKey, value: token);
+        await _secureStorage.write(key: _empRefreshTokenKey, value: refreshToken);
       }
-      debugPrint('✅ Tokens saved to storage for role: $role');
+      debugPrint('✅ Tokens saved to secure storage for role: $role');
     } catch (e) {
       debugPrint('❌ Failed to save tokens: $e');
     }
@@ -72,11 +76,11 @@ class StorageService {
       final prefs = await _getPrefs();
       await prefs.setString(_activeRoleKey, role);
       if (role == 'HR') {
-        await prefs.setString(_hrRefreshTokenKey, refreshToken);
+        await _secureStorage.write(key: _hrRefreshTokenKey, value: refreshToken);
       } else {
-        await prefs.setString(_empRefreshTokenKey, refreshToken);
+        await _secureStorage.write(key: _empRefreshTokenKey, value: refreshToken);
       }
-      debugPrint('✅ Refresh token saved to storage for role: $role');
+      debugPrint('✅ Refresh token saved to secure storage for role: $role');
     } catch (e) {
       debugPrint('❌ Failed to save refresh token: $e');
     }
@@ -88,18 +92,18 @@ class StorageService {
       final prefs = await _getPrefs();
       final role = prefs.getString(_activeRoleKey);
       if (role == 'HR') {
-        return prefs.getString(_hrTokenKey);
+        return await _secureStorage.read(key: _hrTokenKey);
       } else if (role == 'EMPLOYEE') {
-        return prefs.getString(_empTokenKey);
+        return await _secureStorage.read(key: _empTokenKey);
       }
 
       // Fallback if active role is not set: check if either token is present
-      final empToken = prefs.getString(_empTokenKey);
+      final empToken = await _secureStorage.read(key: _empTokenKey);
       if (empToken != null && empToken.isNotEmpty) {
         await prefs.setString(_activeRoleKey, 'EMPLOYEE');
         return empToken;
       }
-      final hrToken = prefs.getString(_hrTokenKey);
+      final hrToken = await _secureStorage.read(key: _hrTokenKey);
       if (hrToken != null && hrToken.isNotEmpty) {
         await prefs.setString(_activeRoleKey, 'HR');
         return hrToken;
@@ -117,18 +121,18 @@ class StorageService {
       final prefs = await _getPrefs();
       final role = prefs.getString(_activeRoleKey);
       if (role == 'HR') {
-        return prefs.getString(_hrRefreshTokenKey);
+        return await _secureStorage.read(key: _hrRefreshTokenKey);
       } else if (role == 'EMPLOYEE') {
-        return prefs.getString(_empRefreshTokenKey);
+        return await _secureStorage.read(key: _empRefreshTokenKey);
       }
 
       // Fallback if active role is not set: check if either token is present
-      final empRefreshToken = prefs.getString(_empRefreshTokenKey);
+      final empRefreshToken = await _secureStorage.read(key: _empRefreshTokenKey);
       if (empRefreshToken != null && empRefreshToken.isNotEmpty) {
         await prefs.setString(_activeRoleKey, 'EMPLOYEE');
         return empRefreshToken;
       }
-      final hrRefreshToken = prefs.getString(_hrRefreshTokenKey);
+      final hrRefreshToken = await _secureStorage.read(key: _hrRefreshTokenKey);
       if (hrRefreshToken != null && hrRefreshToken.isNotEmpty) {
         await prefs.setString(_activeRoleKey, 'HR');
         return hrRefreshToken;
@@ -144,13 +148,13 @@ class StorageService {
   static Future<void> clearToken() async {
     try {
       final prefs = await _getPrefs();
-      // Clear all tokens to ensure complete logout
-      await prefs.remove(_hrTokenKey);
-      await prefs.remove(_empTokenKey);
-      await prefs.remove(_hrRefreshTokenKey);
-      await prefs.remove(_empRefreshTokenKey);
+      // Clear all tokens from secure storage
+      await _secureStorage.delete(key: _hrTokenKey);
+      await _secureStorage.delete(key: _empTokenKey);
+      await _secureStorage.delete(key: _hrRefreshTokenKey);
+      await _secureStorage.delete(key: _empRefreshTokenKey);
       await prefs.remove(_activeRoleKey);
-      debugPrint('🗑️ All tokens cleared from storage');
+      debugPrint('🗑️ All tokens cleared from secure storage');
     } catch (e) {
       debugPrint('❌ Failed to clear tokens: $e');
     }

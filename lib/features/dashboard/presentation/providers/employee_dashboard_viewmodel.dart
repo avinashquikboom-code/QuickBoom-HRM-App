@@ -1,9 +1,103 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quickboom_hrm/core/services/api_service.dart';
 import 'package:quickboom_hrm/core/constants/app_url.dart';
 import 'package:quickboom_hrm/features/dashboard/data/models/announcement_model.dart';
+
+// ─── Upcoming Data Models ───────────────────────────────────────────────────
+
+class UpcomingShift {
+  final String name;
+  final String startTime;
+  final String endTime;
+  final String? color;
+  final String nextDate;
+  final String dayName;
+
+  UpcomingShift({
+    required this.name,
+    required this.startTime,
+    required this.endTime,
+    this.color,
+    required this.nextDate,
+    required this.dayName,
+  });
+
+  factory UpcomingShift.fromJson(Map<String, dynamic> json) {
+    return UpcomingShift(
+      name: json['name'] ?? '',
+      startTime: json['startTime'] ?? '',
+      endTime: json['endTime'] ?? '',
+      color: json['color'],
+      nextDate: json['nextDate'] ?? '',
+      dayName: json['dayName'] ?? '',
+    );
+  }
+}
+
+class UpcomingHoliday {
+  final String name;
+  final String date;
+  final bool isPublic;
+  final String? description;
+
+  UpcomingHoliday({
+    required this.name,
+    required this.date,
+    required this.isPublic,
+    this.description,
+  });
+
+  factory UpcomingHoliday.fromJson(Map<String, dynamic> json) {
+    return UpcomingHoliday(
+      name: json['name'] ?? '',
+      date: json['date'] ?? '',
+      isPublic: json['isPublic'] ?? true,
+      description: json['description'],
+    );
+  }
+}
+
+class UpcomingLeave {
+  final String type;
+  final String fromDate;
+  final String toDate;
+  final String? reason;
+
+  UpcomingLeave({
+    required this.type,
+    required this.fromDate,
+    required this.toDate,
+    this.reason,
+  });
+
+  factory UpcomingLeave.fromJson(Map<String, dynamic> json) {
+    return UpcomingLeave(
+      type: json['type'] ?? '',
+      fromDate: json['fromDate'] ?? '',
+      toDate: json['toDate'] ?? '',
+      reason: json['reason'],
+    );
+  }
+}
+
+class UpcomingData {
+  final UpcomingShift? upcomingShift;
+  final UpcomingHoliday? upcomingHoliday;
+  final UpcomingLeave? upcomingLeave;
+  final String? salaryDate;
+  final AnnouncementModel? latestAnnouncement;
+
+  UpcomingData({
+    this.upcomingShift,
+    this.upcomingHoliday,
+    this.upcomingLeave,
+    this.salaryDate,
+    this.latestAnnouncement,
+  });
+}
 
 // ─── Dashboard Stats ───────────────────────────────────────────────────────────
 
@@ -32,12 +126,14 @@ class DashboardStats {
 class EmployeeDashboardState {
   final DashboardStats stats;
   final List<AnnouncementModel> announcements;
+  final UpcomingData? upcomingData;
   final bool isLoading;
   final String? errorMessage;
 
   const EmployeeDashboardState({
     this.stats = const DashboardStats(),
     this.announcements = const [],
+    this.upcomingData,
     this.isLoading = false,
     this.errorMessage,
   });
@@ -45,6 +141,7 @@ class EmployeeDashboardState {
   EmployeeDashboardState copyWith({
     DashboardStats? stats,
     List<AnnouncementModel>? announcements,
+    UpcomingData? upcomingData,
     bool? isLoading,
     String? errorMessage,
     bool clearError = false,
@@ -52,6 +149,7 @@ class EmployeeDashboardState {
     return EmployeeDashboardState(
       stats: stats ?? this.stats,
       announcements: announcements ?? this.announcements,
+      upcomingData: upcomingData ?? this.upcomingData,
       isLoading: isLoading ?? this.isLoading,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
     );
@@ -108,9 +206,54 @@ class EmployeeDashboardViewModel extends StateNotifier<EmployeeDashboardState> {
         );
       }).toList();
 
+      // Fetch upcoming data
+      UpcomingData? upcomingData;
+      try {
+        final upcomingRes = await ApiService.get(AppUrl.employeeDashboardUpcoming);
+        final upcomingJson = jsonDecode(upcomingRes.body);
+        if (upcomingJson['success'] == true && upcomingJson['data'] != null) {
+          final uData = upcomingJson['data'];
+          
+          final shiftJson = uData['upcomingShift'];
+          final holidayJson = uData['upcomingHoliday'];
+          final leaveJson = uData['upcomingLeave'];
+          final salDate = uData['salaryDate']?.toString();
+          
+          final announcementJson = uData['latestAnnouncement'];
+          AnnouncementModel? latestAnn;
+          if (announcementJson != null) {
+            AnnouncementCategory cat = AnnouncementCategory.general;
+            switch ((announcementJson['category'] ?? 'general').toString().toLowerCase()) {
+              case 'event': cat = AnnouncementCategory.event; break;
+              case 'holiday': cat = AnnouncementCategory.holiday; break;
+              case 'policy': cat = AnnouncementCategory.policy; break;
+            }
+            latestAnn = AnnouncementModel(
+              id: announcementJson['id']?.toString() ?? '',
+              title: announcementJson['title']?.toString() ?? '',
+              description: announcementJson['content']?.toString() ?? '',
+              date: DateTime.tryParse(announcementJson['createdAt']?.toString() ?? '') ?? DateTime.now(),
+              postedBy: announcementJson['publishedBy']?.toString() ?? 'HR',
+              category: cat,
+            );
+          }
+
+          upcomingData = UpcomingData(
+            upcomingShift: shiftJson != null ? UpcomingShift.fromJson(shiftJson) : null,
+            upcomingHoliday: holidayJson != null ? UpcomingHoliday.fromJson(holidayJson) : null,
+            upcomingLeave: leaveJson != null ? UpcomingLeave.fromJson(leaveJson) : null,
+            salaryDate: salDate,
+            latestAnnouncement: latestAnn,
+          );
+        }
+      } catch (e) {
+        debugPrint('⚠️ Error fetching upcoming widget data: $e');
+      }
+
       state = EmployeeDashboardState(
         stats: stats,
         announcements: announcements,
+        upcomingData: upcomingData,
         isLoading: false,
       );
     } catch (error) {

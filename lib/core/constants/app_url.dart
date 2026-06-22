@@ -40,11 +40,14 @@ class AppUrl {
   // ─────────────────────────────────────────────
   static const String employeeProfile  = '/api/mobile/auth/profile';
   static const String employeeAvatar   = '/api/employee/avatar';
+  static const String employeeAvatarUpload = '/api/mobile/auth/profile/avatar';
+  static const String employeeAvatarRemove = '/api/mobile/auth/profile/avatar';
 
   // ─────────────────────────────────────────────
   //  Employee – Dashboard
   // ─────────────────────────────────────────────
   static const String employeeDashboardStats = '/api/employee/dashboard/stats';
+  static const String employeeDashboardUpcoming = '/api/mobile/dashboard/upcoming';
 
   // ─────────────────────────────────────────────
   //  Employee – Attendance  (mobile)

@@ -312,6 +312,13 @@ class EmployeeDashboardView extends ConsumerWidget {
 
                 const SizedBox(height: 24),
 
+                _UpcomingWidget(
+                  upcomingData: dashboardState.upcomingData,
+                  isLoading: dashboardState.isLoading,
+                ),
+
+                const SizedBox(height: 24),
+
                 // ─── Upcoming Holidays Calendar ──────────────────────────────
                 _SectionTitle(title: 'Holidays Calendar'),
                 const SizedBox(height: 12),
@@ -2477,5 +2484,212 @@ class _AnnouncementTile extends StatelessWidget {
       default:
         return AppColors.primary;
     }
+  }
+}
+
+class _UpcomingWidget extends StatelessWidget {
+  final UpcomingData? upcomingData;
+  final bool isLoading;
+
+  const _UpcomingWidget({this.upcomingData, this.isLoading = false});
+
+  @override
+  Widget build(BuildContext context) {
+    if (isLoading) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: ShimmerLoading(
+          height: 120,
+          width: double.infinity,
+          borderRadius: BorderRadius.circular(24),
+        ),
+      );
+    }
+
+    if (upcomingData == null) {
+      return const SizedBox.shrink();
+    }
+
+    final uShift = upcomingData!.upcomingShift;
+    final uHoliday = upcomingData!.upcomingHoliday;
+    final uLeave = upcomingData!.upcomingLeave;
+    final salDateStr = upcomingData!.salaryDate;
+    final announcement = upcomingData!.latestAnnouncement;
+
+    String? formattedSalaryDate;
+    if (salDateStr != null) {
+      try {
+        final parsed = DateTime.parse(salDateStr);
+        formattedSalaryDate = DateFormat('d MMM yyyy').format(parsed);
+      } catch (_) {
+        formattedSalaryDate = salDateStr;
+      }
+    }
+
+    final hasContent = uShift != null || uHoliday != null || uLeave != null || formattedSalaryDate != null || announcement != null;
+    if (!hasContent) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: AppColors.cardBorder, width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withValues(alpha: 0.04),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(RemixIcons.calendar_event_line, color: AppColors.primary, size: 16),
+              ),
+              const SizedBox(width: 10),
+              const Text(
+                'Upcoming Schedule & Events',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.textPrimary,
+                  letterSpacing: -0.2,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 18),
+          
+          if (uShift != null) ...[
+            _buildEventRow(
+              icon: RemixIcons.time_line,
+              iconColor: AppColors.primary,
+              title: 'Next Shift',
+              value: '${uShift.dayName} (${uShift.name})',
+              subtitle: '${uShift.startTime} - ${uShift.endTime}',
+            ),
+            if (uLeave != null || uHoliday != null || formattedSalaryDate != null || announcement != null)
+              const Divider(height: 20, color: AppColors.cardBorder),
+          ],
+
+          if (uLeave != null) ...[
+            _buildEventRow(
+              icon: RemixIcons.user_shared_line,
+              iconColor: AppColors.warning,
+              title: 'Approved Leave',
+              value: '${uLeave.type} Leave',
+              subtitle: 'From ${uLeave.fromDate} to ${uLeave.toDate}',
+            ),
+            if (uHoliday != null || formattedSalaryDate != null || announcement != null)
+              const Divider(height: 20, color: AppColors.cardBorder),
+          ],
+
+          if (uHoliday != null) ...[
+            _buildEventRow(
+              icon: RemixIcons.award_line,
+              iconColor: AppColors.info,
+              title: 'Upcoming Holiday',
+              value: uHoliday.name,
+              subtitle: uHoliday.date,
+            ),
+            if (formattedSalaryDate != null || announcement != null)
+              const Divider(height: 20, color: AppColors.cardBorder),
+          ],
+
+          if (formattedSalaryDate != null) ...[
+            _buildEventRow(
+              icon: RemixIcons.money_dollar_circle_line,
+              iconColor: AppColors.success,
+              title: 'Salary Processing Date',
+              value: formattedSalaryDate,
+              subtitle: 'Expected paycheck distribution date',
+            ),
+            if (announcement != null)
+              const Divider(height: 20, color: AppColors.cardBorder),
+          ],
+
+          if (announcement != null) ...[
+            _buildEventRow(
+              icon: RemixIcons.advertisement_line,
+              iconColor: AppColors.warning,
+              title: 'Latest Announcement',
+              value: announcement.title,
+              subtitle: announcement.description,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEventRow({
+    required IconData icon,
+    required Color iconColor,
+    required String title,
+    required String value,
+    required String subtitle,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: iconColor.withValues(alpha: 0.08),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, color: iconColor, size: 16),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  color: AppColors.textHint,
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.2,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                value,
+                style: const TextStyle(
+                  color: AppColors.textPrimary,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 1),
+              Text(
+                subtitle,
+                style: const TextStyle(
+                  color: AppColors.textSecondary,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
   }
 }
