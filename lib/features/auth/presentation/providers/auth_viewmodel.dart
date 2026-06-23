@@ -7,6 +7,28 @@ import 'package:quickboom_hrm/core/constants/app_url.dart';
 import 'package:quickboom_hrm/core/services/notification_service.dart';
 import 'package:quickboom_hrm/features/auth/data/models/user_model.dart';
 
+// Import all user-specific view models for session invalidation on logout
+import 'package:quickboom_hrm/features/attendance/presentation/providers/attendance_viewmodel.dart';
+import 'package:quickboom_hrm/features/attendance/presentation/providers/geofence_viewmodel.dart';
+import 'package:quickboom_hrm/features/attendance/presentation/providers/live_tracking_viewmodel.dart';
+import 'package:quickboom_hrm/features/attendance/presentation/providers/hr_attendance_viewmodel.dart';
+import 'package:quickboom_hrm/features/expense/presentation/providers/expense_viewmodel.dart';
+import 'package:quickboom_hrm/features/expense/presentation/providers/hr_expense_viewmodel.dart';
+import 'package:quickboom_hrm/features/employees/presentation/providers/employee_list_viewmodel.dart';
+import 'package:quickboom_hrm/features/payroll/presentation/providers/employee_payroll_viewmodel.dart';
+import 'package:quickboom_hrm/features/payroll/presentation/providers/hr_payroll_viewmodel.dart';
+import 'package:quickboom_hrm/features/leave/presentation/providers/leave_viewmodel.dart';
+import 'package:quickboom_hrm/features/leave/presentation/providers/hr_leave_viewmodel.dart';
+import 'package:quickboom_hrm/features/task/presentation/providers/task_viewmodel.dart';
+import 'package:quickboom_hrm/features/task/presentation/providers/hr_task_viewmodel.dart';
+import 'package:quickboom_hrm/features/profile/presentation/providers/profile_viewmodel.dart';
+import 'package:quickboom_hrm/features/notification/presentation/providers/notification_viewmodel.dart';
+import 'package:quickboom_hrm/features/document/presentation/providers/document_viewmodel.dart';
+import 'package:quickboom_hrm/features/shift/presentation/providers/shift_viewmodel.dart';
+import 'package:quickboom_hrm/features/dashboard/presentation/providers/employee_dashboard_viewmodel.dart';
+import 'package:quickboom_hrm/features/dashboard/presentation/providers/hr_dashboard_viewmodel.dart';
+import 'package:quickboom_hrm/features/holiday/presentation/providers/holiday_viewmodel.dart';
+
 // ─── Auth State ──────────────────────────────────────────────────────────────
 
 class AuthState {
@@ -39,7 +61,9 @@ class AuthState {
 // ─── Auth ViewModel ───────────────────────────────────────────────────────────
 
 class AuthViewModel extends StateNotifier<AuthState> {
-  AuthViewModel() : super(const AuthState());
+  final Ref ref;
+
+  AuthViewModel(this.ref) : super(const AuthState());
 
   /// Use cached FCM token only — never block login on Firebase token fetch.
   Future<String?> _getCachedFcmToken() async {
@@ -248,7 +272,29 @@ class AuthViewModel extends StateNotifier<AuthState> {
     // 1. Reset local AuthState synchronously so UI reacts instantly
     state = const AuthState();
 
-    // 2. Perform background cleanup asynchronously
+    // 2. Invalidate all user-specific providers so they reset to default/empty state
+    ref.invalidate(attendanceViewModelProvider);
+    ref.invalidate(geofenceViewModelProvider);
+    ref.invalidate(liveTrackingViewModelProvider);
+    ref.invalidate(hrAttendanceViewModelProvider);
+    ref.invalidate(expenseViewModelProvider);
+    ref.invalidate(hrExpenseViewModelProvider);
+    ref.invalidate(employeeListViewModelProvider);
+    ref.invalidate(employeePayrollViewModelProvider);
+    ref.invalidate(hrPayrollViewModelProvider);
+    ref.invalidate(leaveViewModelProvider);
+    ref.invalidate(hrLeaveViewModelProvider);
+    ref.invalidate(taskViewModelProvider);
+    ref.invalidate(hrTaskViewModelProvider);
+    ref.invalidate(profileViewModelProvider);
+    ref.invalidate(notificationViewModelProvider);
+    ref.invalidate(documentViewModelProvider);
+    ref.invalidate(shiftViewModelProvider);
+    ref.invalidate(hrDashboardViewModelProvider);
+    ref.invalidate(employeeDashboardViewModelProvider);
+    ref.invalidate(holidayViewModelProvider);
+
+    // 3. Perform background cleanup asynchronously
     _performCleanup();
   }
 
@@ -268,5 +314,5 @@ class AuthViewModel extends StateNotifier<AuthState> {
 
 final authViewModelProvider =
     StateNotifierProvider<AuthViewModel, AuthState>((ref) {
-  return AuthViewModel();
+  return AuthViewModel(ref);
 });

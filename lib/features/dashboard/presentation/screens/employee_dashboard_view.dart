@@ -949,6 +949,181 @@ class _TodayPunchCardState extends ConsumerState<_TodayPunchCard> {
     }
   }
 
+  void _confirmHalfDayPunchOut(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Theme.of(ctx).colorScheme.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text(
+          'Half Day Punch Out',
+          style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+        ),
+        content: const Text(
+          'Are you sure you want to punch out early and mark it as a Half Day?',
+          style: TextStyle(fontSize: 14),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(
+              'Cancel',
+              style: TextStyle(fontWeight: FontWeight.w700, color: Theme.of(ctx).colorScheme.primary),
+            ),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            onPressed: () async {
+              Navigator.pop(ctx);
+              setState(() {
+                _isPunching = true;
+              });
+              try {
+                Position? position;
+                bool isWithinGeofence = false;
+
+                // 1. Check and request location permission if needed
+                debugPrint('[PUNCH] Checking location services and permissions for Half Day');
+                bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+                if (!serviceEnabled) {
+                  throw Exception('Location services are disabled. Please enable them.');
+                }
+
+                LocationPermission permission = await Geolocator.checkPermission();
+                if (permission == LocationPermission.denied) {
+                  permission = await Geolocator.requestPermission();
+                  if (permission == LocationPermission.denied) {
+                    throw Exception('Location permissions are denied.');
+                  }
+                }
+
+                if (permission == LocationPermission.deniedForever) {
+                  throw Exception('Location permissions are permanently denied. Please enable them in settings.');
+                }
+
+                debugPrint('[PUNCH] Location fetch start for Half Day');
+                position = await Geolocator.getCurrentPosition(
+                  locationSettings: const LocationSettings(
+                    accuracy: LocationAccuracy.high,
+                    timeLimit: Duration(seconds: 10),
+                  ),
+                );
+                debugPrint('[PUNCH] Location fetch end: lat=${position.latitude}, lon=${position.longitude}');
+
+                // 2. Validate geofence if required
+                final geofenceState = ref.read(geofenceViewModelProvider);
+                final shouldCheckGeofence = geofenceState.enablePunchOutGeofence;
+
+                if (shouldCheckGeofence) {
+                  debugPrint('[PUNCH] Geofence validation start for Half Day');
+                  isWithinGeofence = await ref.read(geofenceViewModelProvider.notifier).checkGeofenceStatus(
+                    latitude: position.latitude,
+                    longitude: position.longitude,
+                  );
+                  debugPrint('[PUNCH] Geofence validation end: isWithinGeofence = $isWithinGeofence');
+
+                  if (!isWithinGeofence) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Row(
+                            children: [
+                              Icon(RemixIcons.error_warning_line, color: Colors.white),
+                              const SizedBox(width: 10),
+                              const Expanded(
+                                child: Text('Punch blocked: You are outside the office geofence for punch out.'),
+                              ),
+                            ],
+                          ),
+                          backgroundColor: Colors.orange,
+                          behavior: SnackBarBehavior.floating,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                      );
+                    }
+                    setState(() {
+                      _isPunching = false;
+                    });
+                    return;
+                  }
+                }
+
+                // 3. Trigger API call
+                debugPrint('[PUNCH] API request start for Half Day: checkOut');
+                final success = await ref.read(attendanceViewModelProvider.notifier).checkOut(
+                  viaFingerprint: false,
+                  latitude: position.latitude,
+                  longitude: position.longitude,
+                );
+
+                debugPrint('[PUNCH] API response: success = $success');
+
+                if (success) {
+                  debugPrint('[PUNCH] Attendance state refresh');
+                  await ref.read(attendanceViewModelProvider.notifier).fetchAttendanceData();
+
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Row(
+                          children: [
+                            Icon(RemixIcons.checkbox_circle_line, color: Colors.white),
+                            const SizedBox(width: 10),
+                            const Expanded(child: Text('Punched out for Half Day successfully!')),
+                          ],
+                        ),
+                        backgroundColor: AppColors.success,
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    );
+                  }
+                }
+              } catch (error) {
+                debugPrint('[PUNCH] Error during Half Day punch flow: $error');
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Row(
+                        children: [
+                          Icon(RemixIcons.error_warning_line, color: Colors.white),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              error.toString().replaceAll('Exception: ', ''),
+                              style: const TextStyle(fontSize: 14),
+                            ),
+                          ),
+                        ],
+                      ),
+                      backgroundColor: AppColors.error,
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      duration: const Duration(seconds: 4),
+                    ),
+                  );
+                }
+              } finally {
+                if (mounted) {
+                  setState(() {
+                    _isPunching = false;
+                  });
+                }
+              }
+            },
+            child: const Text('Confirm', style: TextStyle(fontWeight: FontWeight.w800)),
+          ),
+        ],
+      ),
+    );
+  }
+
+
   void _showDistanceCalculationSheet(BuildContext context, GeofenceState state) {
     showModalBottomSheet(
       context: context,
@@ -1430,51 +1605,90 @@ class _TodayPunchCardState extends ConsumerState<_TodayPunchCard> {
           ),
           if (widget.isCheckedIn && !hasCheckOut) ...[
             const SizedBox(height: 18),
-            Center(
-              child: SizedBox(
-                width: 160,
-                child: Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: (isOnBreak ? AppColors.success : AppColors.warning).withValues(alpha: 0.2),
-                        blurRadius: 16,
-                        offset: const Offset(0, 6),
-                      ),
-                    ],
-                  ),
-                  child: ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: isOnBreak ? AppColors.success : AppColors.warning,
-                      foregroundColor: Colors.white,
-                      minimumSize: const Size(double.infinity, 44),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      elevation: 0,
-                      shadowColor: Colors.transparent,
-                      textStyle: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.5,
-                      ),
+            Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: (isOnBreak ? AppColors.success : AppColors.warning).withValues(alpha: 0.2),
+                          blurRadius: 16,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
                     ),
-                    icon: Icon(
-                      isOnBreak ? RemixIcons.play_line : RemixIcons.cup_line,
-                      size: 19,
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: isOnBreak ? AppColors.success : AppColors.warning,
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size(double.infinity, 44),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        elevation: 0,
+                        shadowColor: Colors.transparent,
+                        textStyle: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                      icon: Icon(
+                        isOnBreak ? RemixIcons.play_line : RemixIcons.cup_line,
+                        size: 19,
+                      ),
+                      label: Text(isOnBreak ? 'End Break' : 'Take Break'),
+                      onPressed: () {
+                        if (isOnBreak) {
+                          ref.read(attendanceViewModelProvider.notifier).endBreak();
+                        } else {
+                          ref.read(attendanceViewModelProvider.notifier).startBreak();
+                        }
+                      },
                     ),
-                    label: Text(isOnBreak ? 'End Break' : 'Take Break'),
-                    onPressed: () {
-                      if (isOnBreak) {
-                        ref.read(attendanceViewModelProvider.notifier).endBreak();
-                      } else {
-                        ref.read(attendanceViewModelProvider.notifier).startBreak();
-                      }
-                    },
                   ),
                 ),
-              ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.purple.withValues(alpha: 0.2),
+                          blurRadius: 16,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
+                    ),
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.purple,
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size(double.infinity, 44),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        elevation: 0,
+                        shadowColor: Colors.transparent,
+                        textStyle: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                      icon: const Icon(
+                        RemixIcons.time_line,
+                        size: 19,
+                      ),
+                      label: const Text('Half Day'),
+                      onPressed: () => _confirmHalfDayPunchOut(context),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ],
