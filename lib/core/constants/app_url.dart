@@ -1,6 +1,3 @@
-import 'dart:io';
-import 'package:flutter/foundation.dart';
-
 /// Central repository for all API endpoints used in the app.
 ///
 /// Usage:
@@ -13,16 +10,7 @@ class AppUrl {
   //  Base
   // ─────────────────────────────────────────────
   static String get baseUrl {
-    if (kReleaseMode) {
-      return 'https://api.voxiqai.com';
-    }
-    if (kIsWeb) {
-      return 'http://localhost:5004';
-    } else if (Platform.isAndroid) {
-      return 'http://10.0.2.2:5004';
-    } else {
-      return 'http://127.0.0.1:5004';
-    }
+    return 'https://api.voxiqai.com';
   }
 
   // ─────────────────────────────────────────────
