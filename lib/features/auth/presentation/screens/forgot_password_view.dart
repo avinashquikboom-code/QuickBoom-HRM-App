@@ -91,7 +91,7 @@ class _ForgotPasswordViewState extends ConsumerState<ForgotPasswordView> {
         backgroundColor: AppColors.background,
         elevation: 0,
         scrolledUnderElevation: 0,
-        title: const Text(
+        title: Text(
           'Forgot Password',
           style: TextStyle(
             color: AppColors.textPrimary,
@@ -140,7 +140,7 @@ class _ForgotPasswordViewState extends ConsumerState<ForgotPasswordView> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    const Text(
+                    Text(
                       'Forgot Password?',
                       style: TextStyle(
                         fontSize: 20,

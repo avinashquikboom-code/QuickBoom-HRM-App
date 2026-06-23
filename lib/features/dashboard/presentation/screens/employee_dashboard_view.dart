@@ -118,7 +118,7 @@ class EmployeeDashboardView extends ConsumerWidget {
                           Flexible(
                             child: Text(
                               user.name,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 color: AppColors.textPrimary,
                                 fontSize: 16,
                                 fontWeight: FontWeight.w800,
@@ -153,7 +153,7 @@ class EmployeeDashboardView extends ConsumerWidget {
                           const SizedBox(width: 4),
                           Text(
                             DateFormat('EEE, d MMM').format(now),
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: AppColors.textSecondary,
                               fontSize: 12,
                               fontWeight: FontWeight.w500,
@@ -349,7 +349,7 @@ class EmployeeDashboardView extends ConsumerWidget {
                               borderRadius: BorderRadius.circular(20),
                               border: Border.all(color: AppColors.cardBorder),
                             ),
-                            child: const Center(
+                            child: Center(
                               child: Text(
                                 'No upcoming holidays',
                                 style: TextStyle(
@@ -409,7 +409,7 @@ class EmployeeDashboardView extends ConsumerWidget {
                                           children: [
                                             Text(
                                               item.name,
-                                              style: const TextStyle(
+                                              style: TextStyle(
                                                 color: AppColors.textPrimary,
                                                 fontSize: 12.5,
                                                 fontWeight: FontWeight.w800,
@@ -420,7 +420,7 @@ class EmployeeDashboardView extends ConsumerWidget {
                                             const SizedBox(height: 3),
                                             Text(
                                               item.date,
-                                              style: const TextStyle(
+                                              style: TextStyle(
                                                 color: AppColors.textHint,
                                                 fontSize: 10.5,
                                                 fontWeight: FontWeight.w600,
@@ -483,14 +483,14 @@ class EmployeeDashboardView extends ConsumerWidget {
                                 children: [
                                   Text(
                                     DateFormat('MMMM yyyy').format(DateTime.now()),
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontSize: 12,
                                       color: AppColors.textSecondary,
                                       fontWeight: FontWeight.w700,
                                     ),
                                   ),
                                   const SizedBox(height: 2),
-                                  const Text(
+                                  Text(
                                     'Monthly Health',
                                     style: TextStyle(
                                       fontSize: 16,
@@ -676,7 +676,7 @@ class _SectionTitle extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       title,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 15.5,
         fontWeight: FontWeight.w800,
         color: AppColors.textPrimary,
@@ -733,7 +733,7 @@ class _QuickActionBubble extends StatelessWidget {
             Text(
               label,
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 color: AppColors.textPrimary,
                 fontSize: 10.5,
                 fontWeight: FontWeight.w800,
@@ -964,7 +964,7 @@ class _TodayPunchCardState extends ConsumerState<_TodayPunchCard> {
         final double? excessDistance = (distance != null && maxRadius != null) ? (distance - maxRadius) : null;
 
         return Container(
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             color: AppColors.background,
             borderRadius: BorderRadius.only(
               topLeft: Radius.circular(28),
@@ -998,7 +998,7 @@ class _TodayPunchCardState extends ConsumerState<_TodayPunchCard> {
                     child: const Icon(RemixIcons.navigation_line, color: Colors.orange, size: 24),
                   ),
                   const SizedBox(width: 12),
-                  const Expanded(
+                  Expanded(
                     child: Text(
                       'Distance Calculation Detail',
                       style: TextStyle(
@@ -1011,7 +1011,7 @@ class _TodayPunchCardState extends ConsumerState<_TodayPunchCard> {
                 ],
               ),
               const SizedBox(height: 20),
-              const Text(
+              Text(
                 'HAVERSINE FORMULA USED',
                 style: TextStyle(
                   color: AppColors.textSecondary,
@@ -1029,7 +1029,7 @@ class _TodayPunchCardState extends ConsumerState<_TodayPunchCard> {
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: AppColors.cardBorder),
                 ),
-                child: const Column(
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
@@ -1054,7 +1054,7 @@ class _TodayPunchCardState extends ConsumerState<_TodayPunchCard> {
                 ),
               ),
               const SizedBox(height: 20),
-              const Text(
+              Text(
                 'COORDINATES COMPARISON',
                 style: TextStyle(
                   color: AppColors.textSecondary,
@@ -1077,7 +1077,7 @@ class _TodayPunchCardState extends ConsumerState<_TodayPunchCard> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Row(
+                          Row(
                             children: [
                               Icon(RemixIcons.user_location_line, color: AppColors.primary, size: 16),
                               SizedBox(width: 6),
@@ -1088,9 +1088,9 @@ class _TodayPunchCardState extends ConsumerState<_TodayPunchCard> {
                             ],
                           ),
                           const SizedBox(height: 10),
-                          Text('Lat: ${userLat?.toStringAsFixed(6) ?? "N/A"}', style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                          Text('Lat: ${userLat?.toStringAsFixed(6) ?? "N/A"}', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
                           const SizedBox(height: 4),
-                          Text('Lon: ${userLon?.toStringAsFixed(6) ?? "N/A"}', style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                          Text('Lon: ${userLon?.toStringAsFixed(6) ?? "N/A"}', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
                         ],
                       ),
                     ),
@@ -1114,7 +1114,7 @@ class _TodayPunchCardState extends ConsumerState<_TodayPunchCard> {
                               Expanded(
                                 child: Text(
                                   state.nearestOffice ?? 'Office',
-                                  style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w800),
+                                  style: TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w800),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
@@ -1122,9 +1122,9 @@ class _TodayPunchCardState extends ConsumerState<_TodayPunchCard> {
                             ],
                           ),
                           const SizedBox(height: 10),
-                          Text('Lat: ${officeLat?.toStringAsFixed(6) ?? "N/A"}', style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                          Text('Lat: ${officeLat?.toStringAsFixed(6) ?? "N/A"}', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
                           const SizedBox(height: 4),
-                          Text('Lon: ${officeLon?.toStringAsFixed(6) ?? "N/A"}', style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                          Text('Lon: ${officeLon?.toStringAsFixed(6) ?? "N/A"}', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
                         ],
                       ),
                     ),
@@ -1150,13 +1150,13 @@ class _TodayPunchCardState extends ConsumerState<_TodayPunchCard> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
+                        Text(
                           'Calculated Distance:',
                           style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w700, fontSize: 13),
                         ),
                         Text(
                           distance != null ? '${distance.toStringAsFixed(1)} meters' : 'N/A',
-                          style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w800, fontSize: 14),
+                          style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w800, fontSize: 14),
                         ),
                       ],
                     ),
@@ -1164,18 +1164,18 @@ class _TodayPunchCardState extends ConsumerState<_TodayPunchCard> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
+                        Text(
                           'Allowed Geofence Radius:',
                           style: TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.w600, fontSize: 12.5),
                         ),
                         Text(
                           maxRadius != null ? '$maxRadius meters' : 'N/A',
-                          style: const TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.w700, fontSize: 13),
+                          style: TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.w700, fontSize: 13),
                         ),
                       ],
                     ),
                     const SizedBox(height: 10),
-                    const Divider(height: 1, color: AppColors.cardBorder),
+                    Divider(height: 1, color: AppColors.cardBorder),
                     const SizedBox(height: 10),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1279,7 +1279,7 @@ class _TodayPunchCardState extends ConsumerState<_TodayPunchCard> {
                             : (widget.isCheckedIn 
                                 ? (isOnBreak ? 'Currently on Break' : 'Currently Active') 
                                 : 'Not Checked In'),
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: AppColors.textPrimary,
                           fontSize: 13.5,
                           fontWeight: FontWeight.w800,
@@ -1975,7 +1975,7 @@ class _PunchTile extends StatelessWidget {
               Expanded(
                 child: Text(
                   label,
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: AppColors.textSecondary,
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
@@ -1988,7 +1988,7 @@ class _PunchTile extends StatelessWidget {
           const SizedBox(height: 10),
           Text(
             time,
-            style: const TextStyle(
+            style: TextStyle(
               color: AppColors.textPrimary,
               fontSize: 17,
               fontWeight: FontWeight.w800,
@@ -2045,7 +2045,7 @@ class _PunchTileHorizontal extends StatelessWidget {
           Expanded(
             child: Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 color: AppColors.textSecondary,
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
@@ -2107,7 +2107,7 @@ class _LeaveBalanceCard extends StatelessWidget {
             children: [
               Text(
                 label,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w800,
                   color: AppColors.textPrimary,
@@ -2142,7 +2142,7 @@ class _LeaveBalanceCard extends StatelessWidget {
                     ),
                     Text(
                       'of $total days',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 10,
                         color: AppColors.textSecondary,
                         fontWeight: FontWeight.w700,
@@ -2231,7 +2231,7 @@ class _MonthlyDetailChip extends StatelessWidget {
           const SizedBox(height: 2),
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 10.5,
               color: AppColors.textSecondary,
               fontWeight: FontWeight.w800,
@@ -2282,7 +2282,7 @@ class _LeaveRequestTile extends StatelessWidget {
               children: [
                 Text(
                   leave.typeLabel,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontWeight: FontWeight.w800,
                     fontSize: 14.5,
                     color: AppColors.textPrimary,
@@ -2292,7 +2292,7 @@ class _LeaveRequestTile extends StatelessWidget {
                 const SizedBox(height: 3),
                 Text(
                   '${leave.daysCount} day(s) · ${DateFormat('dd MMM yyyy').format(leave.fromDate)}',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 11.5,
                     color: AppColors.textSecondary,
                     fontWeight: FontWeight.w600,
@@ -2408,7 +2408,7 @@ class _AnnouncementTile extends StatelessWidget {
               const Spacer(),
               Text(
                 DateFormat('dd MMM yyyy').format(announcement.date),
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 11,
                   color: AppColors.textHint,
                   fontWeight: FontWeight.w600,
@@ -2419,7 +2419,7 @@ class _AnnouncementTile extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             announcement.title,
-            style: const TextStyle(
+            style: TextStyle(
               fontWeight: FontWeight.w800,
               fontSize: 15,
               color: AppColors.textPrimary,
@@ -2428,7 +2428,7 @@ class _AnnouncementTile extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             announcement.description,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 12,
               color: AppColors.textSecondary,
               height: 1.45,
@@ -2437,7 +2437,7 @@ class _AnnouncementTile extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: 14),
-          const Divider(color: AppColors.cardBorder, height: 1),
+          Divider(color: AppColors.cardBorder, height: 1),
           const SizedBox(height: 12),
           Row(
             children: [
@@ -2449,7 +2449,7 @@ class _AnnouncementTile extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 announcement.postedBy,
-                style: const TextStyle(
+                style: TextStyle(
                   color: AppColors.textSecondary,
                   fontSize: 11.5,
                   fontWeight: FontWeight.w700,
@@ -2458,7 +2458,7 @@ class _AnnouncementTile extends StatelessWidget {
               const Spacer(),
               Icon(RemixIcons.time_line, size: 11, color: AppColors.textHint),
               const SizedBox(width: 3),
-              const Text(
+              Text(
                 '2 min read',
                 style: TextStyle(
                   color: AppColors.textHint,
@@ -2559,7 +2559,7 @@ class _UpcomingWidget extends StatelessWidget {
                 child: const Icon(RemixIcons.calendar_event_line, color: AppColors.primary, size: 16),
               ),
               const SizedBox(width: 10),
-              const Text(
+              Text(
                 'Upcoming Schedule & Events',
                 style: TextStyle(
                   fontSize: 14,
@@ -2581,7 +2581,7 @@ class _UpcomingWidget extends StatelessWidget {
               subtitle: '${uShift.startTime} - ${uShift.endTime}',
             ),
             if (uLeave != null || uHoliday != null || formattedSalaryDate != null || announcement != null)
-              const Divider(height: 20, color: AppColors.cardBorder),
+              Divider(height: 20, color: AppColors.cardBorder),
           ],
 
           if (uLeave != null) ...[
@@ -2593,7 +2593,7 @@ class _UpcomingWidget extends StatelessWidget {
               subtitle: 'From ${uLeave.fromDate} to ${uLeave.toDate}',
             ),
             if (uHoliday != null || formattedSalaryDate != null || announcement != null)
-              const Divider(height: 20, color: AppColors.cardBorder),
+              Divider(height: 20, color: AppColors.cardBorder),
           ],
 
           if (uHoliday != null) ...[
@@ -2605,7 +2605,7 @@ class _UpcomingWidget extends StatelessWidget {
               subtitle: uHoliday.date,
             ),
             if (formattedSalaryDate != null || announcement != null)
-              const Divider(height: 20, color: AppColors.cardBorder),
+              Divider(height: 20, color: AppColors.cardBorder),
           ],
 
           if (formattedSalaryDate != null) ...[
@@ -2617,7 +2617,7 @@ class _UpcomingWidget extends StatelessWidget {
               subtitle: 'Expected paycheck distribution date',
             ),
             if (announcement != null)
-              const Divider(height: 20, color: AppColors.cardBorder),
+              Divider(height: 20, color: AppColors.cardBorder),
           ],
 
           if (announcement != null) ...[
@@ -2659,7 +2659,7 @@ class _UpcomingWidget extends StatelessWidget {
             children: [
               Text(
                 title,
-                style: const TextStyle(
+                style: TextStyle(
                   color: AppColors.textHint,
                   fontSize: 10.5,
                   fontWeight: FontWeight.w700,
@@ -2669,7 +2669,7 @@ class _UpcomingWidget extends StatelessWidget {
               const SizedBox(height: 2),
               Text(
                 value,
-                style: const TextStyle(
+                style: TextStyle(
                   color: AppColors.textPrimary,
                   fontSize: 13,
                   fontWeight: FontWeight.w800,
@@ -2678,7 +2678,7 @@ class _UpcomingWidget extends StatelessWidget {
               const SizedBox(height: 1),
               Text(
                 subtitle,
-                style: const TextStyle(
+                style: TextStyle(
                   color: AppColors.textSecondary,
                   fontSize: 11,
                   fontWeight: FontWeight.w500,

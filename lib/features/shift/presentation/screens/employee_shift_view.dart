@@ -23,7 +23,7 @@ class EmployeeShiftView extends ConsumerWidget {
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
-        title: const Text(
+        title: Text(
           'My Shift Schedule',
           style: TextStyle(
             color: AppColors.textPrimary,
@@ -37,7 +37,7 @@ class EmployeeShiftView extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Current Shift',
               style: TextStyle(
                 fontSize: 16,
@@ -140,7 +140,7 @@ class EmployeeShiftView extends ConsumerWidget {
               ),
 
             const SizedBox(height: 30),
-            const Text(
+            Text(
               'Shift Guidelines',
               style: TextStyle(
                 fontSize: 16,
@@ -211,7 +211,7 @@ class _GuidelineRow extends StatelessWidget {
           child: Icon(RemixIcons.checkbox_blank_circle_fill, size: 6, color: AppColors.textHint),
         ),
         Expanded(
-          child: Text(text, style: const TextStyle(fontSize: 13, color: AppColors.textSecondary, height: 1.4)),
+          child: Text(text, style: TextStyle(fontSize: 13, color: AppColors.textSecondary, height: 1.4)),
         ),
       ],
     );

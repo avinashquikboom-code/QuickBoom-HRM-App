@@ -42,7 +42,7 @@ class _EmployeeTasksViewState extends ConsumerState<EmployeeTasksView>
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
-        title: const Text(
+        title: Text(
           'My Tasks',
           style: TextStyle(
             color: AppColors.textPrimary,
@@ -194,7 +194,7 @@ class _TaskList extends ConsumerWidget {
             Icon(RemixIcons.checkbox_circle_line,
                 size: 52, color: AppColors.textHint.withValues(alpha: 0.4)),
             const SizedBox(height: 12),
-            const Text('No tasks here',
+            Text('No tasks here',
                 style: TextStyle(
                     color: AppColors.textSecondary, fontSize: 14)),
           ],
@@ -291,7 +291,7 @@ class _TaskCard extends ConsumerWidget {
                           const SizedBox(width: 4),
                           Text(
                             task.projectName,
-                            style: const TextStyle(
+                            style: TextStyle(
                                 fontSize: 11, color: AppColors.textSecondary),
                           ),
                           const SizedBox(width: 12),
@@ -301,7 +301,7 @@ class _TaskCard extends ConsumerWidget {
                           Expanded(
                             child: Text(
                               'by ${task.assignedByName}',
-                              style: const TextStyle(
+                              style: TextStyle(
                                   fontSize: 11,
                                   color: AppColors.textSecondary),
                               overflow: TextOverflow.ellipsis,
@@ -534,7 +534,7 @@ class _TaskDetailSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: AppColors.background,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -559,7 +559,7 @@ class _TaskDetailSheet extends StatelessWidget {
               Expanded(
                 child: Text(
                   task.title,
-                  style: const TextStyle(
+                  style: TextStyle(
                       fontSize: 17,
                       fontWeight: FontWeight.w700,
                       color: AppColors.textPrimary),
@@ -571,7 +571,7 @@ class _TaskDetailSheet extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             task.description,
-            style: const TextStyle(
+            style: TextStyle(
                 fontSize: 13, color: AppColors.textSecondary, height: 1.5),
           ),
           const SizedBox(height: 16),
@@ -637,12 +637,12 @@ class _DetailRow extends StatelessWidget {
           SizedBox(
             width: 90,
             child: Text(label,
-                style: const TextStyle(
+                style: TextStyle(
                     fontSize: 12, color: AppColors.textSecondary)),
           ),
           Expanded(
             child: Text(value,
-                style: const TextStyle(
+                style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
                     color: AppColors.textPrimary),

@@ -29,7 +29,7 @@ class EmployeeAttendanceView extends ConsumerWidget {
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
-        title: const Text(
+        title: Text(
           'My Attendance',
           style: TextStyle(
             color: AppColors.textPrimary,
@@ -172,7 +172,7 @@ class EmployeeAttendanceView extends ConsumerWidget {
                 const SizedBox(height: 24),
 
                 // ─── Today's Session Card ──────────────────────────────────
-                const Text(
+                Text(
                   'Today\'s Session',
                   style: TextStyle(
                     fontSize: 15,
@@ -190,7 +190,7 @@ class EmployeeAttendanceView extends ConsumerWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
+                    Text(
                       'Attendance History Feed',
                       style: TextStyle(
                         fontSize: 15,
@@ -711,7 +711,7 @@ class _TodayCardState extends ConsumerState<_TodayCard> {
                     ),
                   )
                 else if (_isLoadingDistance)
-                  const SizedBox(
+                  SizedBox(
                     height: 24,
                     child: Center(
                       child: SizedBox(
@@ -783,7 +783,7 @@ class _LiveTimeDisplay extends StatelessWidget {
             const SizedBox(width: 5),
             Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 11.5,
                 color: AppColors.textSecondary,
                 fontWeight: FontWeight.w700,
@@ -1005,7 +1005,7 @@ class _TimelineAttendanceRow extends StatelessWidget {
                         children: [
                           Text(
                             DateFormat('EEE').format(record.date),
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 12.5,
                               fontWeight: FontWeight.w800,
                               color: AppColors.textPrimary,
@@ -1014,7 +1014,7 @@ class _TimelineAttendanceRow extends StatelessWidget {
                           const SizedBox(height: 2),
                           Text(
                             DateFormat('dd MMM').format(record.date),
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 10.5,
                               color: AppColors.textHint,
                               fontWeight: FontWeight.w700,
@@ -1120,7 +1120,7 @@ class _TimelineTimeChip extends StatelessWidget {
       children: [
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 9,
             color: AppColors.textHint,
             fontWeight: FontWeight.w800,

@@ -33,7 +33,7 @@ class EmployeeDocumentsView extends ConsumerWidget {
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
-        title: const Text(
+        title: Text(
           'My Documents',
           style: TextStyle(
             color: AppColors.textPrimary,
@@ -43,7 +43,7 @@ class EmployeeDocumentsView extends ConsumerWidget {
         ),
         actions: [
           IconButton(
-            icon: const Icon(RemixIcons.refresh_line, color: AppColors.textPrimary),
+            icon: Icon(RemixIcons.refresh_line, color: AppColors.textPrimary),
             onPressed: vm.fetchDocuments,
           ),
         ],
@@ -53,7 +53,7 @@ class EmployeeDocumentsView extends ConsumerWidget {
               child: CircularProgressIndicator(color: AppColors.primary),
             )
           : state.documents.isEmpty
-              ? const Center(
+              ? Center(
                   child: Text(
                     'No documents found.',
                     style: TextStyle(color: AppColors.textSecondary),
@@ -170,7 +170,7 @@ class _DocumentCard extends StatelessWidget {
               children: [
                 Text(
                   doc.title,
-                  style: const TextStyle(
+                  style: TextStyle(
                       fontWeight: FontWeight.w600,
                       fontSize: 14,
                       color: AppColors.textPrimary),
@@ -186,20 +186,20 @@ class _DocumentCard extends StatelessWidget {
                       style: const TextStyle(
                           fontSize: 11, color: AppColors.primary, fontWeight: FontWeight.w600),
                     ),
-                    const Text('•',
+                    Text('•',
                         style: TextStyle(
                             fontSize: 11, color: AppColors.textHint)),
                     Text(
                       DateFormat('MMM yyyy').format(doc.date),
-                      style: const TextStyle(
+                      style: TextStyle(
                           fontSize: 11, color: AppColors.textSecondary),
                     ),
-                    const Text('•',
+                    Text('•',
                         style: TextStyle(
                             fontSize: 11, color: AppColors.textHint)),
                     Text(
                       doc.fileSize,
-                      style: const TextStyle(
+                      style: TextStyle(
                           fontSize: 11, color: AppColors.textSecondary),
                     ),
                   ],

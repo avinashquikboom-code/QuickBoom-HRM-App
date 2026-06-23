@@ -47,7 +47,7 @@ class _HrAttendanceViewState extends ConsumerState<HrAttendanceView> {
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
-        title: const Text(
+        title: Text(
           'Attendance Monitor',
           style: TextStyle(
             color: AppColors.textPrimary,
@@ -160,7 +160,7 @@ class _HrAttendanceViewState extends ConsumerState<HrAttendanceView> {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
               child: Text(
                 '${state.filteredRecords.length} record(s) found',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 12,
                   color: AppColors.textSecondary,
                 ),
@@ -202,7 +202,7 @@ class _HrAttendanceViewState extends ConsumerState<HrAttendanceView> {
                                       state.searchQuery.isNotEmpty
                                           ? 'No matching records'
                                           : 'No attendance logs today',
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         color: AppColors.textSecondary,
                                         fontSize: 14,
                                       ),
@@ -316,7 +316,7 @@ class _HeaderStatPill extends StatelessWidget {
           const SizedBox(width: 6),
           Text(
             '$label: ',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w500,
               color: AppColors.textSecondary,
@@ -388,7 +388,7 @@ class _AttendanceCard extends StatelessWidget {
                   children: [
                     Text(
                       record.employeeName,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontWeight: FontWeight.w700,
                         fontSize: 13.5,
                         color: AppColors.textPrimary,
@@ -398,7 +398,7 @@ class _AttendanceCard extends StatelessWidget {
                     const SizedBox(height: 1),
                     Text(
                       '${record.designation} · ${record.employeeCode}',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 11,
                         color: AppColors.textSecondary,
                       ),
@@ -518,7 +518,7 @@ class _InfoItem extends StatelessWidget {
             const SizedBox(width: 4),
             Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 9,
                 fontWeight: FontWeight.w700,
                 color: AppColors.textHint,
@@ -530,7 +530,7 @@ class _InfoItem extends StatelessWidget {
         const SizedBox(height: 4),
         Text(
           value,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w800,
             color: AppColors.textPrimary,
@@ -839,7 +839,7 @@ class _AttendanceHistoryTabState extends ConsumerState<_AttendanceHistoryTab> {
                         const SizedBox(height: 12),
                         Text(
                           'No attendance history available',
-                          style: const TextStyle(
+                          style: TextStyle(
                             color: AppColors.textSecondary,
                             fontSize: 14,
                           ),

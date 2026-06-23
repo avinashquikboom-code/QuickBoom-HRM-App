@@ -75,7 +75,7 @@ class _HrLeaveApprovalViewState extends ConsumerState<HrLeaveApprovalView>
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
-        title: const Text(
+        title: Text(
           'Leave Management',
           style: TextStyle(
             color: AppColors.textPrimary,
@@ -205,7 +205,7 @@ class _LeaveList extends ConsumerWidget {
               const SizedBox(height: 16),
               Text(
                 emptyMessage,
-                style: const TextStyle(
+                style: TextStyle(
                     color: AppColors.textSecondary, fontSize: 14),
                 textAlign: TextAlign.center,
               ),
@@ -270,7 +270,7 @@ class _LeaveList extends ConsumerWidget {
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Text(
+          Text(
             'Provide a reason for rejection (optional):',
             style: TextStyle(
                 fontSize: 13, color: AppColors.textSecondary),
@@ -379,7 +379,7 @@ class _LeaveCard extends StatelessWidget {
                         children: [
                           Text(
                             leave.employeeName,
-                            style: const TextStyle(
+                            style: TextStyle(
                                 fontWeight: FontWeight.w600,
                                 fontSize: 14,
                                 color: AppColors.textPrimary),
@@ -387,7 +387,7 @@ class _LeaveCard extends StatelessWidget {
                           ),
                           Text(
                             leave.department,
-                            style: const TextStyle(
+                            style: TextStyle(
                                 fontSize: 12,
                                 color: AppColors.textSecondary),
                           ),
@@ -440,7 +440,7 @@ class _LeaveCard extends StatelessWidget {
                     const SizedBox(width: 6),
                     Text(
                       '${DateFormat('dd MMM, yyyy').format(leave.fromDate)} - ${DateFormat('dd MMM, yyyy').format(leave.toDate)}',
-                      style: const TextStyle(
+                      style: TextStyle(
                           fontSize: 12, color: AppColors.textSecondary),
                     ),
                   ],
@@ -455,7 +455,7 @@ class _LeaveCard extends StatelessWidget {
                     Expanded(
                       child: Text(
                         leave.reason,
-                        style: const TextStyle(
+                        style: TextStyle(
                             fontSize: 12,
                             color: AppColors.textSecondary),
                         maxLines: 2,

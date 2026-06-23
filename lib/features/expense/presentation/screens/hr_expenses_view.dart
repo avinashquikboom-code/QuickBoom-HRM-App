@@ -31,7 +31,7 @@ class HrExpensesView extends ConsumerWidget {
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
-        title: const Text(
+        title: Text(
           'Expense Approval',
           style: TextStyle(
             color: AppColors.textPrimary,
@@ -56,7 +56,7 @@ class HrExpensesView extends ConsumerWidget {
                 ),
                 const SizedBox(height: 24),
 
-                const Text(
+                Text(
                   'Pending Approvals',
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
                 ),
@@ -77,7 +77,7 @@ class HrExpensesView extends ConsumerWidget {
                     ],
                   )
                 else if (state.pendingExpenses.isEmpty)
-                  const Padding(
+                  Padding(
                     padding: EdgeInsets.symmetric(vertical: 40),
                     child: Center(child: Text('No pending expenses.', style: TextStyle(color: AppColors.textSecondary))),
                   )
@@ -90,14 +90,14 @@ class HrExpensesView extends ConsumerWidget {
                   ),
 
                 const SizedBox(height: 20),
-                const Text(
+                Text(
                   'Review History',
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
                 ),
                 const SizedBox(height: 10),
 
                 if (state.reviewedExpenses.isEmpty)
-                  const Padding(
+                  Padding(
                     padding: EdgeInsets.symmetric(vertical: 40),
                     child: Center(child: Text('No reviewed expenses.', style: TextStyle(color: AppColors.textSecondary))),
                   )
@@ -170,7 +170,7 @@ class _HrExpenseCard extends ConsumerWidget {
             children: [
               Text(
                 expense.employeeName,
-                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: AppColors.textPrimary),
+                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: AppColors.textPrimary),
               ),
               Text(
                 '₹${NumberFormat('#,##,###').format(expense.amount)}',
@@ -181,12 +181,12 @@ class _HrExpenseCard extends ConsumerWidget {
           const SizedBox(height: 4),
           Text(
             '${expense.department} • ${expense.categoryLabel}',
-            style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+            style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
           ),
           const SizedBox(height: 8),
           Text(
             expense.description,
-            style: const TextStyle(fontSize: 12, color: AppColors.textPrimary),
+            style: TextStyle(fontSize: 12, color: AppColors.textPrimary),
           ),
           const SizedBox(height: 12),
           const Divider(height: 1),
@@ -196,7 +196,7 @@ class _HrExpenseCard extends ConsumerWidget {
             children: [
               Text(
                 'Submitted: ${DateFormat('dd MMM').format(expense.date)}',
-                style: const TextStyle(fontSize: 11, color: AppColors.textHint),
+                style: TextStyle(fontSize: 11, color: AppColors.textHint),
               ),
               if (isPending)
                 Row(

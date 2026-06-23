@@ -40,7 +40,7 @@ class _EmployeeLeaveViewState extends ConsumerState<EmployeeLeaveView> {
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
-        title: const Text(
+        title: Text(
           'My Leave',
           style: TextStyle(
             color: AppColors.textPrimary,
@@ -58,13 +58,16 @@ class _EmployeeLeaveViewState extends ConsumerState<EmployeeLeaveView> {
         ],
       ),
       resizeToAvoidBottomInset: false,
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showApplyLeaveSheet(context),
-        backgroundColor: AppColors.primary,
-        icon: Icon(RemixIcons.add_line, color: Colors.white),
-        label: const Text(
-          'Apply Leave',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 75),
+        child: FloatingActionButton.extended(
+          onPressed: () => _showApplyLeaveSheet(context),
+          backgroundColor: AppColors.primary,
+          icon: Icon(RemixIcons.add_line, color: Colors.white),
+          label: const Text(
+            'Apply Leave',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+          ),
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
@@ -74,7 +77,7 @@ class _EmployeeLeaveViewState extends ConsumerState<EmployeeLeaveView> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // ─── Leave Balance Cards ─────────────────────────────────────
-            const Text(
+            Text(
               'Leave Balance',
               style: TextStyle(
                 fontSize: 16,
@@ -117,7 +120,7 @@ class _EmployeeLeaveViewState extends ConsumerState<EmployeeLeaveView> {
             const SizedBox(height: 24),
 
             // ─── Leave History ────────────────────────────────────────────
-            const Text(
+            Text(
               'Leave History',
               style: TextStyle(
                 fontSize: 16,
@@ -233,7 +236,7 @@ class _BalanceCard extends StatelessWidget {
         children: [
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 11,
               color: AppColors.textSecondary,
               fontWeight: FontWeight.w500,
@@ -250,7 +253,7 @@ class _BalanceCard extends StatelessWidget {
           ),
           Text(
             'of $total days',
-            style: const TextStyle(fontSize: 10, color: AppColors.textHint),
+            style: TextStyle(fontSize: 10, color: AppColors.textHint),
           ),
           const SizedBox(height: 8),
           ClipRRect(
@@ -348,7 +351,7 @@ class _LeaveCard extends StatelessWidget {
               const SizedBox(width: 6),
               Text(
                 '${DateFormat('dd MMM, yyyy').format(leave.fromDate)} - ${DateFormat('dd MMM, yyyy').format(leave.toDate)}',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w500,
                   color: AppColors.textPrimary,
@@ -363,7 +366,7 @@ class _LeaveCard extends StatelessWidget {
                 ),
                 child: Text(
                   '${leave.daysCount}d',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
                     color: AppColors.textPrimary,
@@ -375,7 +378,7 @@ class _LeaveCard extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             leave.reason,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 12,
               color: AppColors.textSecondary,
             ),
@@ -746,7 +749,7 @@ class _EmptyState extends StatelessWidget {
               color: AppColors.textHint.withValues(alpha: 0.5),
             ),
             const SizedBox(height: 12),
-            const Text(
+            Text(
               'No leave requests yet',
               style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
             ),

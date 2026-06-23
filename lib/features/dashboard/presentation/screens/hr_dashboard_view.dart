@@ -140,7 +140,7 @@ class HrDashboardView extends ConsumerWidget {
                         children: [
                           Text(
                             'Hello, ${user.name.split(' ').first}!',
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: AppColors.textPrimary,
                               fontSize: 16,
                               fontWeight: FontWeight.w800,
@@ -148,7 +148,7 @@ class HrDashboardView extends ConsumerWidget {
                           ),
                           Text(
                             DateFormat('EEEE, d MMMM').format(now),
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: AppColors.textSecondary,
                               fontSize: 11,
                               fontWeight: FontWeight.w500,
@@ -256,7 +256,7 @@ class HrDashboardView extends ConsumerWidget {
                 const SizedBox(height: 24),
 
                 // ─── Interactive Quick Actions ───────────────────────────────
-                const Text(
+                Text(
                   'Quick Action Panel',
                   style: TextStyle(
                     fontSize: 16,
@@ -331,7 +331,7 @@ class HrDashboardView extends ConsumerWidget {
                 const SizedBox(height: 24),
 
                 // ─── Department Summary Bars ─────────────────────────────────
-                const Text(
+                Text(
                   'Department Breakdown',
                   style: TextStyle(
                     fontSize: 16,
@@ -348,7 +348,7 @@ class HrDashboardView extends ConsumerWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
+                    Text(
                       'Pending Leave Approvals',
                       style: TextStyle(
                         fontSize: 16,
@@ -504,7 +504,7 @@ class _StatCard extends StatelessWidget {
           const SizedBox(height: 2),
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 10.5,
               color: AppColors.textSecondary,
               fontWeight: FontWeight.w700,
@@ -572,7 +572,7 @@ class _DepartmentOverview extends StatelessWidget {
                   children: [
                     Text(
                       dept,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w800,
                         color: AppColors.textPrimary,
@@ -580,7 +580,7 @@ class _DepartmentOverview extends StatelessWidget {
                     ),
                     Text(
                       '$count Staff (${(progress * 100).round()}%)',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 11.5,
                         color: AppColors.textSecondary,
                         fontWeight: FontWeight.w700,
@@ -667,7 +667,7 @@ class _PendingLeaveCard extends ConsumerWidget {
                   children: [
                     Text(
                       leave.employeeName,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontWeight: FontWeight.w800,
                         fontSize: 14.5,
                         color: AppColors.textPrimary,
@@ -677,7 +677,7 @@ class _PendingLeaveCard extends ConsumerWidget {
                     const SizedBox(height: 3),
                     Text(
                       '${leave.typeLabel} · ${leave.daysCount} day(s)',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 11.5,
                         color: AppColors.textSecondary,
                         fontWeight: FontWeight.w600,
@@ -719,7 +719,7 @@ class _PendingLeaveCard extends ConsumerWidget {
               ),
               child: Text(
                 '"${leave.reason}"',
-                style: const TextStyle(
+                style: TextStyle(
                   color: AppColors.textSecondary,
                   fontSize: 11.5,
                   fontStyle: FontStyle.italic,
@@ -834,7 +834,7 @@ class _QuickActionBtn extends StatelessWidget {
             Text(
               label,
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w800,
                 color: AppColors.textPrimary,

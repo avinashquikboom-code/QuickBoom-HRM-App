@@ -74,7 +74,7 @@ class HrPayrollView extends ConsumerWidget {
 
             const SizedBox(height: 20),
 
-            const Text(
+            Text(
               'Employee Salaries',
               style: TextStyle(
                 fontSize: 16,
@@ -85,7 +85,7 @@ class HrPayrollView extends ConsumerWidget {
             const SizedBox(height: 10),
 
             if (employees.isEmpty)
-              const Center(
+              Center(
                 child: Padding(
                   padding: EdgeInsets.all(40),
                   child: Text(
@@ -186,7 +186,7 @@ class _SalaryCard extends StatelessWidget {
               children: [
                 Text(
                   employee.name,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: 14,
                     color: AppColors.textPrimary,
@@ -195,7 +195,7 @@ class _SalaryCard extends StatelessWidget {
                 ),
                 Text(
                   '${employee.designation} · ${employee.department}',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 11,
                     color: AppColors.textSecondary,
                   ),
@@ -216,7 +216,7 @@ class _SalaryCard extends StatelessWidget {
                   color: AppColors.primary,
                 ),
               ),
-              const Text(
+              Text(
                 '/month',
                 style: TextStyle(fontSize: 10, color: AppColors.textHint),
               ),

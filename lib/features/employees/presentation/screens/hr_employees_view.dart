@@ -22,7 +22,7 @@ class HrEmployeesView extends ConsumerWidget {
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
-        title: const Text(
+        title: Text(
           'Employees',
           style: TextStyle(
             color: AppColors.textPrimary,
@@ -87,7 +87,7 @@ class HrEmployeesView extends ConsumerWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             child: Text(
               '${state.filteredEmployees.length} employee(s)',
-              style: const TextStyle(
+              style: TextStyle(
                   fontSize: 12, color: AppColors.textSecondary),
             ),
           ),
@@ -116,7 +116,7 @@ class HrEmployeesView extends ConsumerWidget {
                             Icon(RemixIcons.group_line,
                                 size: 48, color: AppColors.textHint),
                             const SizedBox(height: 12),
-                            const Text('No employees found',
+                            Text('No employees found',
                                 style: TextStyle(
                                     color: AppColors.textSecondary,
                                 fontSize: 14)),
@@ -226,7 +226,7 @@ class _EmployeeCard extends StatelessWidget {
                 children: [
                   Text(
                     employee.name,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.w600,
                       fontSize: 14,
                       color: AppColors.textPrimary,
@@ -236,7 +236,7 @@ class _EmployeeCard extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     employee.designation,
-                    style: const TextStyle(
+                    style: TextStyle(
                         fontSize: 12, color: AppColors.textSecondary),
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -299,7 +299,7 @@ class _EmployeeDetailSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: AppColors.background,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -343,14 +343,14 @@ class _EmployeeDetailSheet extends StatelessWidget {
                 const SizedBox(height: 12),
                 Text(
                   employee.name,
-                  style: const TextStyle(
+                  style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
                       color: AppColors.textPrimary),
                 ),
                 Text(
                   employee.designation,
-                  style: const TextStyle(
+                  style: TextStyle(
                       fontSize: 13, color: AppColors.textSecondary),
                 ),
                 const SizedBox(height: 8),
@@ -429,13 +429,13 @@ class _DetailRow extends StatelessWidget {
           SizedBox(
             width: 90,
             child: Text(label,
-                style: const TextStyle(
+                style: TextStyle(
                     fontSize: 13, color: AppColors.textSecondary)),
           ),
           Expanded(
             child: Text(
               value,
-              style: const TextStyle(
+              style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                   color: AppColors.textPrimary),

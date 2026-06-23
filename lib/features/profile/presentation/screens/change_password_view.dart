@@ -99,7 +99,7 @@ class _ChangePasswordViewState extends ConsumerState<ChangePasswordView> {
         backgroundColor: AppColors.background,
         elevation: 0,
         scrolledUnderElevation: 0,
-        title: const Text(
+        title: Text(
           'Change Password',
           style: TextStyle(
             color: AppColors.textPrimary,
@@ -148,7 +148,7 @@ class _ChangePasswordViewState extends ConsumerState<ChangePasswordView> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    const Text(
+                    Text(
                       'Change Your Password',
                       style: TextStyle(
                         fontSize: 20,

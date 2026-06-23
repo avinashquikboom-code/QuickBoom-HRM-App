@@ -18,7 +18,7 @@ class HrReportsView extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Attendance Overview',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
             ),
@@ -53,7 +53,7 @@ class HrReportsView extends StatelessWidget {
             ),
             const SizedBox(height: 30),
 
-            const Text(
+            Text(
               'Monthly Expense (₹)',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
             ),
@@ -74,7 +74,7 @@ class HrReportsView extends StatelessWidget {
                           const titles = ['Jan', 'Feb', 'Mar', 'Apr', 'May'];
                           return Padding(
                             padding: const EdgeInsets.only(top: 8),
-                            child: Text(titles[val.toInt()], style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                            child: Text(titles[val.toInt()], style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
                           );
                         },
                       ),
@@ -155,7 +155,7 @@ class _Legend extends StatelessWidget {
       children: [
         Container(width: 10, height: 10, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
         const SizedBox(width: 4),
-        Text(label, style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+        Text(label, style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
       ],
     );
   }

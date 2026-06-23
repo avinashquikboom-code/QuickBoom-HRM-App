@@ -143,6 +143,7 @@ class _EmployeeShellState extends ConsumerState<EmployeeShell> {
         clipBehavior: Clip.antiAlias,
         elevation: 16,
         height: 65,
+        padding: EdgeInsets.zero,
         color: cs.surface,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,

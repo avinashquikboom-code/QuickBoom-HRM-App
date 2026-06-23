@@ -143,6 +143,7 @@ class _HrShellState extends ConsumerState<HrShell> {
         clipBehavior: Clip.antiAlias,
         elevation: 16,
         height: 65,
+        padding: EdgeInsets.zero,
         color: AppColors.surface,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,

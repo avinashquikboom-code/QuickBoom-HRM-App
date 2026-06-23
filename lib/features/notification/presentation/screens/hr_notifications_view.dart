@@ -19,7 +19,7 @@ class HrNotificationsView extends ConsumerWidget {
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
-        title: const Text(
+        title: Text(
           'Notifications',
           style: TextStyle(
             color: AppColors.textPrimary,
@@ -42,7 +42,7 @@ class HrNotificationsView extends ConsumerWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text('No notifications', style: TextStyle(color: AppColors.textSecondary)),
+                  Text('No notifications', style: TextStyle(color: AppColors.textSecondary)),
                   const SizedBox(height: 16),
                   TextButton(
                     onPressed: () => ref.read(notificationViewModelProvider.notifier).fetchNotifications(),
@@ -60,14 +60,14 @@ class HrNotificationsView extends ConsumerWidget {
                 physics: const AlwaysScrollableScrollPhysics(),
                 children: [
                   if (state.todayNotifications.isNotEmpty) ...[
-                    const Padding(
+                    Padding(
                       padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       child: Text('Today', style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
                     ),
                     ...state.todayNotifications.map((n) => _NotificationTile(notification: n)),
                   ],
                   if (state.olderNotifications.isNotEmpty) ...[
-                    const Padding(
+                    Padding(
                       padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       child: Text('Earlier', style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
                     ),

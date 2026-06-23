@@ -19,7 +19,7 @@ class HrShiftsView extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          const Text(
+          Text(
             'Shift Master',
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
           ),
@@ -46,9 +46,9 @@ class HrShiftsView extends ConsumerWidget {
                     children: [
                       Text(s.name, style: TextStyle(fontWeight: FontWeight.w700, color: color)),
                       const SizedBox(height: 8),
-                      Text(s.timingLabel, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+                      Text(s.timingLabel, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
                       const Spacer(),
-                      Text('${s.totalHours} Hrs • ${s.workingDays.length} Days', style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                      Text('${s.totalHours} Hrs • ${s.workingDays.length} Days', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
                     ],
                   ),
                 );
@@ -56,7 +56,7 @@ class HrShiftsView extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 30),
-          const Text(
+          Text(
             'Employee Assignments',
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
           ),
@@ -81,8 +81,8 @@ class HrShiftsView extends ConsumerWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(a.employeeName, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.textPrimary)),
-                          Text(a.department, style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                          Text(a.employeeName, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.textPrimary)),
+                          Text(a.department, style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
                         ],
                       ),
                     ),

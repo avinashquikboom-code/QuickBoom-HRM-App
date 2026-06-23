@@ -26,7 +26,7 @@ class _HrTasksViewState extends ConsumerState<HrTasksView> {
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
-        title: const Text(
+        title: Text(
           'Task Management',
           style: TextStyle(
             color: AppColors.textPrimary,
@@ -58,7 +58,7 @@ class _HrTasksViewState extends ConsumerState<HrTasksView> {
             ),
             const SizedBox(height: 24),
 
-            const Text(
+            Text(
               'All Tasks',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
             ),
@@ -84,7 +84,7 @@ class _HrTasksViewState extends ConsumerState<HrTasksView> {
                 ],
               )
             else if (state.allTasks.isEmpty)
-              const Center(
+              Center(
                 child: Padding(
                   padding: EdgeInsets.all(40),
                   child: Text('No tasks created yet.', style: TextStyle(color: AppColors.textSecondary)),
@@ -160,7 +160,7 @@ class _HrTaskCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   task.title,
-                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: AppColors.textPrimary),
+                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: AppColors.textPrimary),
                 ),
               ),
               const SizedBox(width: 8),
@@ -182,7 +182,7 @@ class _HrTaskCard extends StatelessWidget {
             children: [
               Icon(RemixIcons.user_3_line, size: 14, color: AppColors.textHint),
               const SizedBox(width: 6),
-              Text(task.assignedToName, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+              Text(task.assignedToName, style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
               const Spacer(),
               Icon(RemixIcons.calendar_event_line, size: 14, color: AppColors.textHint),
               const SizedBox(width: 6),

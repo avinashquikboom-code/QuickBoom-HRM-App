@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quickboom_hrm/firebase_options.dart';
+import 'package:quickboom_hrm/core/constants/app_colors.dart';
 import 'package:quickboom_hrm/core/constants/app_theme.dart';
 import 'package:quickboom_hrm/core/services/notification_service.dart';
 import 'package:quickboom_hrm/core/services/theme_service.dart';
@@ -43,6 +44,13 @@ class HrmApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final themeMode = ref.watch(themeModeProvider);
+
+    // Determine if dark mode is active (either explicitly dark, or system dark)
+    final isDark = themeMode == ThemeMode.dark ||
+        (themeMode == ThemeMode.system &&
+            MediaQuery.platformBrightnessOf(context) == Brightness.dark);
+
+    AppColors.updateTheme(isDark);
 
     return MaterialApp(
       title: 'HRM',

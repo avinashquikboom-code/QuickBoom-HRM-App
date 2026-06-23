@@ -40,7 +40,7 @@ class _EmployeeExpensesViewState extends ConsumerState<EmployeeExpensesView> {
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
-        title: const Text(
+        title: Text(
           'My Expenses',
           style: TextStyle(
             color: AppColors.textPrimary,
@@ -85,7 +85,7 @@ class _EmployeeExpensesViewState extends ConsumerState<EmployeeExpensesView> {
                 const SizedBox(height: 20),
 
                 // ─── Expense History ───────────────────────────────────────
-                const Text(
+                Text(
                   'Recent Claims',
                   style: TextStyle(
                     fontSize: 16,
@@ -118,7 +118,7 @@ class _EmployeeExpensesViewState extends ConsumerState<EmployeeExpensesView> {
                     ],
                   )
                 else if (state.myExpenses.isEmpty)
-                  const Padding(
+                  Padding(
                     padding: EdgeInsets.symmetric(vertical: 40),
                     child: Center(
                       child: Text('No expenses found.',
@@ -229,7 +229,7 @@ class _ExpenseCard extends StatelessWidget {
                   const SizedBox(width: 8),
                   Text(
                     expense.categoryLabel,
-                    style: const TextStyle(
+                    style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
                         color: AppColors.textPrimary),
@@ -248,7 +248,7 @@ class _ExpenseCard extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             expense.description,
-            style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+            style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
@@ -261,7 +261,7 @@ class _ExpenseCard extends StatelessWidget {
               Text(
                 DateFormat('dd MMM yyyy').format(expense.date),
                 style:
-                    const TextStyle(fontSize: 11, color: AppColors.textHint),
+                    TextStyle(fontSize: 11, color: AppColors.textHint),
               ),
               Row(
                 children: [
@@ -368,7 +368,7 @@ class _AddExpenseSheetState extends ConsumerState<_AddExpenseSheet> {
     final state = ref.watch(expenseViewModelProvider);
 
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: AppColors.background,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -394,7 +394,7 @@ class _AddExpenseSheetState extends ConsumerState<_AddExpenseSheet> {
               ),
             ),
             const SizedBox(height: 16),
-            const Text(
+            Text(
               'Claim Expense',
               style: TextStyle(
                   fontSize: 18,

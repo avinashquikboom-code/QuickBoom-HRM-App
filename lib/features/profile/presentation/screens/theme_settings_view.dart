@@ -69,7 +69,6 @@ class ThemeSettingsView extends ConsumerWidget {
     
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : AppColors.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isSelected 
@@ -85,62 +84,67 @@ class ThemeSettingsView extends ConsumerWidget {
           ),
         ],
       ),
-      child: ListTile(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        onTap: () async {
-          await ref.read(themeModeProvider.notifier).setThemeMode(mode);
-        },
-        leading: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: isSelected 
-                ? AppColors.primary.withValues(alpha: 0.1) 
-                : (isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9)),
-            shape: BoxShape.circle,
-          ),
-          child: Icon(
-            icon, 
-            color: isSelected ? AppColors.primary : (isDark ? const Color(0xFF94A3B8) : AppColors.textSecondary),
-            size: 20,
-          ),
-        ),
-        title: Text(
-          title,
-          style: TextStyle(
-            fontWeight: FontWeight.w800,
-            fontSize: 14.5,
-            color: Theme.of(context).colorScheme.onSurface,
-          ),
-        ),
-        subtitle: Text(
-          subtitle,
-          style: TextStyle(
-            fontSize: 11.5,
-            color: isDark ? const Color(0xFF94A3B8) : AppColors.textSecondary,
-          ),
-        ),
-        trailing: Container(
-          width: 20,
-          height: 20,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: isSelected ? AppColors.primary : (isDark ? const Color(0xFF475569) : AppColors.inputBorder),
-              width: 2,
+      child: Material(
+        color: isDark ? const Color(0xFF1E293B) : AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        clipBehavior: Clip.antiAlias,
+        child: ListTile(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          onTap: () async {
+            await ref.read(themeModeProvider.notifier).setThemeMode(mode);
+          },
+          leading: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: isSelected 
+                  ? AppColors.primary.withValues(alpha: 0.1) 
+                  : (isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9)),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              icon, 
+              color: isSelected ? AppColors.primary : (isDark ? const Color(0xFF94A3B8) : AppColors.textSecondary),
+              size: 20,
             ),
           ),
-          child: isSelected
-              ? Center(
-                  child: Container(
-                    width: 10,
-                    height: 10,
-                    decoration: const BoxDecoration(
-                      color: AppColors.primary,
-                      shape: BoxShape.circle,
+          title: Text(
+            title,
+            style: TextStyle(
+              fontWeight: FontWeight.w800,
+              fontSize: 14.5,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+          subtitle: Text(
+            subtitle,
+            style: TextStyle(
+              fontSize: 11.5,
+              color: isDark ? const Color(0xFF94A3B8) : AppColors.textSecondary,
+            ),
+          ),
+          trailing: Container(
+            width: 20,
+            height: 20,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: isSelected ? AppColors.primary : (isDark ? const Color(0xFF475569) : AppColors.inputBorder),
+                width: 2,
+              ),
+            ),
+            child: isSelected
+                ? Center(
+                    child: Container(
+                      width: 10,
+                      height: 10,
+                      decoration: const BoxDecoration(
+                        color: AppColors.primary,
+                        shape: BoxShape.circle,
+                      ),
                     ),
-                  ),
-                )
-              : null,
+                  )
+                : null,
+          ),
         ),
       ),
     );
