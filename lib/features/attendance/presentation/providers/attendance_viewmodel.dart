@@ -135,7 +135,7 @@ class AttendanceViewModel extends StateNotifier<AttendanceState> {
     return true;
   }
 
-  Future<bool> checkOut({bool viaFingerprint = false, double? latitude, double? longitude}) async {
+  Future<bool> checkOut({bool viaFingerprint = false, double? latitude, double? longitude, String? notes}) async {
     state = state.copyWith(isLoading: true);
     
     final currentTime = DateTime.now();
@@ -157,7 +157,7 @@ class AttendanceViewModel extends StateNotifier<AttendanceState> {
     final response = await ApiService.post(AppUrl.attendancePunchOut, {
       'latitude': lat,
       'longitude': lon,
-      'notes': viaFingerprint ? 'Punched out via Fingerprint' : 'Punched out via mobile app',
+      'notes': notes ?? (viaFingerprint ? 'Punched out via Fingerprint' : 'Punched out via mobile app'),
       'clientTimestamp': currentTime.toUtc().toIso8601String(),
       'timezone': currentTime.timeZoneName,
       'isFingerprint': viaFingerprint,

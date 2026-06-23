@@ -813,7 +813,8 @@ class _TodayPunchCardState extends ConsumerState<_TodayPunchCard> {
       debugPrint('[PUNCH] Checking location services and permissions');
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
-        throw Exception('Location services are disabled. Please enable them.');
+        await Geolocator.openLocationSettings();
+        throw Exception('Location services are disabled. We have opened settings, please turn them on and try again.');
       }
 
       LocationPermission permission = await Geolocator.checkPermission();
@@ -825,7 +826,8 @@ class _TodayPunchCardState extends ConsumerState<_TodayPunchCard> {
       }
 
       if (permission == LocationPermission.deniedForever) {
-        throw Exception('Location permissions are permanently denied. Please enable them in settings.');
+        await Geolocator.openAppSettings();
+        throw Exception('Location permissions are permanently denied. We have opened settings, please allow location access.');
       }
 
       debugPrint('[PUNCH] Location fetch start');
@@ -950,142 +952,63 @@ class _TodayPunchCardState extends ConsumerState<_TodayPunchCard> {
   }
 
   void _confirmHalfDayPunchOut(BuildContext context) {
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: Theme.of(ctx).colorScheme.surface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text(
-          'Half Day Punch Out',
-          style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
-        ),
-        content: const Text(
-          'Are you sure you want to punch out early and mark it as a Half Day?',
-          style: TextStyle(fontSize: 14),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(
-              'Cancel',
-              style: TextStyle(fontWeight: FontWeight.w700, color: Theme.of(ctx).colorScheme.primary),
-            ),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-              elevation: 0,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-            onPressed: () async {
-              Navigator.pop(ctx);
-              setState(() {
-                _isPunching = true;
-              });
-              try {
-                Position? position;
-                bool isWithinGeofence = false;
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => _HalfDayPunchOutSheet(
+        onSubmit: (String half, String reason) async {
+          Navigator.pop(ctx);
+          setState(() {
+            _isPunching = true;
+          });
+          try {
+            Position? position;
+            bool isWithinGeofence = false;
 
-                // 1. Check and request location permission if needed
-                debugPrint('[PUNCH] Checking location services and permissions for Half Day');
-                bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-                if (!serviceEnabled) {
-                  throw Exception('Location services are disabled. Please enable them.');
-                }
+            // 1. Check and request location permission if needed
+            debugPrint('[PUNCH] Checking location services and permissions for Half Day');
+            bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+            if (!serviceEnabled) {
+              await Geolocator.openLocationSettings();
+              throw Exception('Location services are disabled. We have opened settings, please turn them on and try again.');
+            }
 
-                LocationPermission permission = await Geolocator.checkPermission();
-                if (permission == LocationPermission.denied) {
-                  permission = await Geolocator.requestPermission();
-                  if (permission == LocationPermission.denied) {
-                    throw Exception('Location permissions are denied.');
-                  }
-                }
+            LocationPermission permission = await Geolocator.checkPermission();
+            if (permission == LocationPermission.denied) {
+              permission = await Geolocator.requestPermission();
+              if (permission == LocationPermission.denied) {
+                throw Exception('Location permissions are denied.');
+              }
+            }
 
-                if (permission == LocationPermission.deniedForever) {
-                  throw Exception('Location permissions are permanently denied. Please enable them in settings.');
-                }
+            if (permission == LocationPermission.deniedForever) {
+              await Geolocator.openAppSettings();
+              throw Exception('Location permissions are permanently denied. We have opened settings, please allow location access.');
+            }
 
-                debugPrint('[PUNCH] Location fetch start for Half Day');
-                position = await Geolocator.getCurrentPosition(
-                  locationSettings: const LocationSettings(
-                    accuracy: LocationAccuracy.high,
-                    timeLimit: Duration(seconds: 10),
-                  ),
-                );
-                debugPrint('[PUNCH] Location fetch end: lat=${position.latitude}, lon=${position.longitude}');
+            debugPrint('[PUNCH] Location fetch start for Half Day');
+            position = await Geolocator.getCurrentPosition(
+              locationSettings: const LocationSettings(
+                accuracy: LocationAccuracy.high,
+                timeLimit: Duration(seconds: 10),
+              ),
+            );
+            debugPrint('[PUNCH] Location fetch end: lat=${position.latitude}, lon=${position.longitude}');
 
-                // 2. Validate geofence if required
-                final geofenceState = ref.read(geofenceViewModelProvider);
-                final shouldCheckGeofence = geofenceState.enablePunchOutGeofence;
+            // 2. Validate geofence if required
+            final geofenceState = ref.read(geofenceViewModelProvider);
+            final shouldCheckGeofence = geofenceState.enablePunchOutGeofence;
 
-                if (shouldCheckGeofence) {
-                  debugPrint('[PUNCH] Geofence validation start for Half Day');
-                  isWithinGeofence = await ref.read(geofenceViewModelProvider.notifier).checkGeofenceStatus(
-                    latitude: position.latitude,
-                    longitude: position.longitude,
-                  );
-                  debugPrint('[PUNCH] Geofence validation end: isWithinGeofence = $isWithinGeofence');
+            if (shouldCheckGeofence) {
+              debugPrint('[PUNCH] Geofence validation start for Half Day');
+              isWithinGeofence = await ref.read(geofenceViewModelProvider.notifier).checkGeofenceStatus(
+                latitude: position.latitude,
+                longitude: position.longitude,
+              );
+              debugPrint('[PUNCH] Geofence validation end: isWithinGeofence = $isWithinGeofence');
 
-                  if (!isWithinGeofence) {
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Row(
-                            children: [
-                              Icon(RemixIcons.error_warning_line, color: Colors.white),
-                              const SizedBox(width: 10),
-                              const Expanded(
-                                child: Text('Punch blocked: You are outside the office geofence for punch out.'),
-                              ),
-                            ],
-                          ),
-                          backgroundColor: Colors.orange,
-                          behavior: SnackBarBehavior.floating,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        ),
-                      );
-                    }
-                    setState(() {
-                      _isPunching = false;
-                    });
-                    return;
-                  }
-                }
-
-                // 3. Trigger API call
-                debugPrint('[PUNCH] API request start for Half Day: checkOut');
-                final success = await ref.read(attendanceViewModelProvider.notifier).checkOut(
-                  viaFingerprint: false,
-                  latitude: position.latitude,
-                  longitude: position.longitude,
-                );
-
-                debugPrint('[PUNCH] API response: success = $success');
-
-                if (success) {
-                  debugPrint('[PUNCH] Attendance state refresh');
-                  await ref.read(attendanceViewModelProvider.notifier).fetchAttendanceData();
-
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Row(
-                          children: [
-                            Icon(RemixIcons.checkbox_circle_line, color: Colors.white),
-                            const SizedBox(width: 10),
-                            const Expanded(child: Text('Punched out for Half Day successfully!')),
-                          ],
-                        ),
-                        backgroundColor: AppColors.success,
-                        behavior: SnackBarBehavior.floating,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
-                    );
-                  }
-                }
-              } catch (error) {
-                debugPrint('[PUNCH] Error during Half Day punch flow: $error');
+              if (!isWithinGeofence) {
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
@@ -1093,32 +1016,88 @@ class _TodayPunchCardState extends ConsumerState<_TodayPunchCard> {
                         children: [
                           Icon(RemixIcons.error_warning_line, color: Colors.white),
                           const SizedBox(width: 10),
-                          Expanded(
-                            child: Text(
-                              error.toString().replaceAll('Exception: ', ''),
-                              style: const TextStyle(fontSize: 14),
-                            ),
+                          const Expanded(
+                            child: Text('Punch blocked: You are outside the office geofence for punch out.'),
                           ),
                         ],
                       ),
-                      backgroundColor: AppColors.error,
+                      backgroundColor: Colors.orange,
                       behavior: SnackBarBehavior.floating,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      duration: const Duration(seconds: 4),
                     ),
                   );
                 }
-              } finally {
-                if (mounted) {
-                  setState(() {
-                    _isPunching = false;
-                  });
-                }
+                setState(() {
+                  _isPunching = false;
+                });
+                return;
               }
-            },
-            child: const Text('Confirm', style: TextStyle(fontWeight: FontWeight.w800)),
-          ),
-        ],
+            }
+
+            // 3. Trigger API call
+            debugPrint('[PUNCH] API request start for Half Day: checkOut');
+            final success = await ref.read(attendanceViewModelProvider.notifier).checkOut(
+              viaFingerprint: false,
+              latitude: position.latitude,
+              longitude: position.longitude,
+              notes: 'Half Day - $half. Reason: $reason',
+            );
+
+            debugPrint('[PUNCH] API response: success = $success');
+
+            if (success) {
+              debugPrint('[PUNCH] Attendance state refresh');
+              await ref.read(attendanceViewModelProvider.notifier).fetchAttendanceData();
+
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Row(
+                      children: [
+                        Icon(RemixIcons.checkbox_circle_line, color: Colors.white),
+                        const SizedBox(width: 10),
+                        const Expanded(child: Text('Punched out for Half Day successfully!')),
+                      ],
+                    ),
+                    backgroundColor: AppColors.success,
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                );
+              }
+            }
+          } catch (error) {
+            debugPrint('[PUNCH] Error during Half Day punch flow: $error');
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Row(
+                    children: [
+                      Icon(RemixIcons.error_warning_line, color: Colors.white),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          error.toString().replaceAll('Exception: ', ''),
+                          style: const TextStyle(fontSize: 14),
+                        ),
+                      ),
+                    ],
+                  ),
+                  backgroundColor: AppColors.error,
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  duration: const Duration(seconds: 4),
+                ),
+              );
+            }
+          } finally {
+            if (mounted) {
+              setState(() {
+                _isPunching = false;
+              });
+            }
+          }
+        },
       ),
     );
   }
@@ -2904,6 +2883,311 @@ class _UpcomingWidget extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _HalfDayPunchOutSheet extends StatefulWidget {
+  final Function(String half, String reason) onSubmit;
+
+  const _HalfDayPunchOutSheet({required this.onSubmit});
+
+  @override
+  State<_HalfDayPunchOutSheet> createState() => _HalfDayPunchOutSheetState();
+}
+
+class _HalfDayPunchOutSheetState extends State<_HalfDayPunchOutSheet> {
+  String _selectedHalf = 'First Half';
+  final TextEditingController _reasonController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+
+  @override
+  void dispose() {
+    _reasonController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.background,
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(28),
+          topRight: Radius.circular(28),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.15),
+            blurRadius: 20,
+            offset: const Offset(0, -5),
+          ),
+        ],
+      ),
+      padding: EdgeInsets.fromLTRB(24, 16, 24, 24 + bottomInset),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Handle bar
+            Center(
+              child: Container(
+                width: 40,
+                height: 5,
+                decoration: BoxDecoration(
+                  color: AppColors.cardBorder,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.purple.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(RemixIcons.time_line, color: Colors.purple, size: 24),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Half Day Punch Out Form',
+                    style: TextStyle(
+                      color: AppColors.textPrimary,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            
+            // Selection Title
+            Text(
+              'SELECT HALF',
+              style: TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 11,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.8,
+              ),
+            ),
+            const SizedBox(height: 10),
+            
+            // Choice Row
+            Row(
+              children: [
+                Expanded(
+                  child: _HalfSelectionCard(
+                    title: 'First Half',
+                    subtitle: 'Morning shift leave',
+                    isSelected: _selectedHalf == 'First Half',
+                    icon: RemixIcons.sun_line,
+                    onTap: () {
+                      setState(() {
+                        _selectedHalf = 'First Half';
+                      });
+                    },
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _HalfSelectionCard(
+                    title: 'Second Half',
+                    subtitle: 'Afternoon shift leave',
+                    isSelected: _selectedHalf == 'Second Half',
+                    icon: RemixIcons.moon_line,
+                    onTap: () {
+                      setState(() {
+                        _selectedHalf = 'Second Half';
+                      });
+                    },
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            
+            // Reason Input Title
+            Text(
+              'REASON FOR LEAVE',
+              style: TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 11,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.8,
+              ),
+            ),
+            const SizedBox(height: 10),
+            
+            // TextFormField
+            TextFormField(
+              controller: _reasonController,
+              maxLines: 3,
+              style: TextStyle(color: AppColors.textPrimary, fontSize: 14),
+              decoration: InputDecoration(
+                hintText: 'Describe your reason for taking half day...',
+                hintStyle: TextStyle(color: AppColors.textHint, fontSize: 13.5),
+                fillColor: AppColors.surface,
+                filled: true,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide(color: AppColors.cardBorder, width: 1.5),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide(color: AppColors.cardBorder, width: 1.5),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide(color: AppColors.primary, width: 1.8),
+                ),
+                errorBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: const BorderSide(color: Colors.red, width: 1.5),
+                ),
+                focusedErrorBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: const BorderSide(color: Colors.red, width: 1.8),
+                ),
+              ),
+              validator: (val) {
+                if (val == null || val.trim().isEmpty) {
+                  return 'Please specify a reason';
+                }
+                if (val.trim().length < 5) {
+                  return 'Reason must be at least 5 characters long';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 28),
+            
+            // Action Buttons
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      side: BorderSide(color: AppColors.cardBorder, width: 1.5),
+                    ),
+                    onPressed: () => Navigator.pop(context),
+                    child: Text(
+                      'Cancel',
+                      style: TextStyle(
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.purple,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    onPressed: () {
+                      if (_formKey.currentState!.validate()) {
+                        widget.onSubmit(_selectedHalf, _reasonController.text.trim());
+                      }
+                    },
+                    child: const Text(
+                      'Confirm Punch',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _HalfSelectionCard extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final bool isSelected;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _HalfSelectionCard({
+    required this.title,
+    required this.subtitle,
+    required this.isSelected,
+    required this.icon,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.purple.withValues(alpha: 0.08) : AppColors.surface,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: isSelected ? Colors.purple : AppColors.cardBorder,
+            width: isSelected ? 1.8 : 1.5,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(
+              icon,
+              color: isSelected ? Colors.purple : AppColors.textSecondary,
+              size: 20,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              title,
+              style: TextStyle(
+                color: AppColors.textPrimary,
+                fontSize: 13.5,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              subtitle,
+              style: TextStyle(
+                color: AppColors.textHint,
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
