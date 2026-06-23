@@ -7,6 +7,7 @@ import 'package:quickboom_hrm/features/attendance/presentation/screens/employee_
 import 'package:quickboom_hrm/features/payroll/presentation/screens/employee_payroll_view.dart';
 import 'package:quickboom_hrm/features/leave/presentation/screens/employee_leave_view.dart';
 import 'package:quickboom_hrm/features/profile/presentation/screens/employee_profile_view.dart';
+import 'package:quickboom_hrm/features/wallet/presentation/screens/employee_wallet_view.dart';
 
 class EmployeeShell extends ConsumerStatefulWidget {
   const EmployeeShell({super.key});
@@ -25,7 +26,7 @@ class _EmployeeShellState extends ConsumerState<EmployeeShell> {
       case 1:
         return const EmployeeAttendanceView();
       case 2:
-        return const EmployeePayrollView();
+        return const EmployeeWalletView();
       case 3:
         return const EmployeeLeaveView();
       case 4:
