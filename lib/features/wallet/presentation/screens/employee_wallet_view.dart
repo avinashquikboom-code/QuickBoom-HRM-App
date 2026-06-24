@@ -5,6 +5,7 @@ import 'package:remixicon/remixicon.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
 import 'package:quickboom_hrm/core/constants/app_colors.dart';
+import 'package:quickboom_hrm/core/services/wallet_service.dart';
 import 'package:quickboom_hrm/features/payroll/presentation/screens/employee_payroll_view.dart';
 import 'package:quickboom_hrm/features/expense/presentation/screens/employee_expenses_view.dart';
 import 'package:quickboom_hrm/features/auth/presentation/providers/auth_viewmodel.dart';
@@ -17,65 +18,56 @@ class EmployeeWalletView extends ConsumerStatefulWidget {
 }
 
 class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
-  // Dummy wallet statistics/balance
-  final double _availableBalance = 45850.00;
-  final double _advanceLimit = 25000.00;
-  final double _pendingClaims = 3850.00;
+  Map<String, dynamic>? _walletData;
+  bool _isLoading = true;
+  bool _isError = false;
 
-  // Dummy recent transactions
-  final List<Map<String, dynamic>> _transactions = [
-    {
-      'title': 'Salary Payout - May 2026',
-      'category': 'Salary',
-      'amount': 45000.00,
-      'date': '2026-06-01',
-      'status': 'Paid',
-      'isCredit': true,
-    },
-    {
-      'title': 'Client Travel Reimbursement',
-      'category': 'Travel Expense',
-      'amount': 2450.00,
-      'date': '2026-05-28',
-      'status': 'Paid',
-      'isCredit': true,
-    },
-    {
-      'title': 'Salary Advance Request',
-      'category': 'Advance',
-      'amount': 15000.00,
-      'date': '2026-05-24',
-      'status': 'Processing',
-      'isCredit': false,
-    },
-    {
-      'title': 'Medical Reimbursement claim',
-      'category': 'Medical',
-      'amount': 1400.00,
-      'date': '2026-05-18',
-      'status': 'Approved',
-      'isCredit': true,
-    },
-    {
-      'title': 'Internet Bill Claim',
-      'category': 'Utility',
-      'amount': 999.00,
-      'date': '2026-05-15',
-      'status': 'Rejected',
-      'isCredit': true,
-    },
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _loadWalletData();
+  }
+
+  Future<void> _loadWalletData() async {
+    setState(() {
+      _isLoading = true;
+      _isError = false;
+    });
+
+    final data = await WalletService.fetchEmployeeWallet();
+
+    if (mounted) {
+      setState(() {
+        _walletData = data;
+        _isLoading = false;
+        _isError = data == null;
+      });
+    }
+  }
+
+  Future<void> _onRefresh() async {
+    await _loadWalletData();
+  }
 
   void _showRequestAdvanceSheet(BuildContext context) {
+    final advanceLimit = _walletData?['advanceLimit'] ?? 25000.0;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) => _RequestAdvanceSheet(
-        maxLimit: _advanceLimit,
-        onSubmit: (double amount, int months, String reason) {
+        maxLimit: advanceLimit,
+        onSubmit: (double amount, int months, String reason) async {
           Navigator.pop(ctx);
-          _showSuccessDialog(context, amount, months);
+          final result = await WalletService.requestSalaryAdvance(
+            amount: amount,
+            months: months,
+            reason: reason,
+          );
+          if (result != null && mounted) {
+            _showSuccessDialog(context, amount, months);
+            _loadWalletData();
+          }
         },
       ),
     );
@@ -155,7 +147,62 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
     final user = ref.watch(authViewModelProvider).currentUser;
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final formattedBalance = NumberFormat('#,##,###.00').format(_availableBalance);
+    final availableBalance = _walletData?['availableBalance'] ?? 0.0;
+    final formattedBalance = NumberFormat('#,##,###.00').format(availableBalance);
+
+    if (_isLoading) {
+      return Scaffold(
+        backgroundColor: AppColors.background,
+        appBar: AppBar(
+          backgroundColor: AppColors.background,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+          centerTitle: false,
+          title: Text(
+            'My Wallet',
+            style: TextStyle(
+              color: AppColors.textPrimary,
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_isError) {
+      return Scaffold(
+        backgroundColor: AppColors.background,
+        appBar: AppBar(
+          backgroundColor: AppColors.background,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+          centerTitle: false,
+          title: Text(
+            'My Wallet',
+            style: TextStyle(
+              color: AppColors.textPrimary,
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text('Failed to load wallet data'),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: _loadWalletData,
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -173,17 +220,19 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
           ),
         ),
       ),
-      body: CustomScrollView(
-        physics: const BouncingScrollPhysics(),
-        slivers: [
-          SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            sliver: SliverList(
-              delegate: SliverChildListDelegate([
-                // ─── Glassmorphic Wallet Card ───
-                Container(
-                  height: 200,
-                  margin: const EdgeInsets.only(top: 8),
+      body: RefreshIndicator(
+        onRefresh: _onRefresh,
+        child: CustomScrollView(
+          physics: const BouncingScrollPhysics(),
+          slivers: [
+            SliverPadding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              sliver: SliverList(
+                delegate: SliverChildListDelegate([
+                  // ─── Glassmorphic Wallet Card ───
+                  Container(
+                    height: 200,
+                    margin: const EdgeInsets.only(top: 8),
                   padding: const EdgeInsets.all(22),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(28),
@@ -227,7 +276,7 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    'QUICKBOOM PAY CARD',
+                                    'PAY CARD',
                                     style: TextStyle(
                                       color: Colors.white.withValues(alpha: 0.6),
                                       fontSize: 10,
@@ -310,6 +359,77 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
 
                 const SizedBox(height: 22),
 
+                // ─── Salary Summary Block ───
+                if (_walletData?['salary'] != null)
+                  Container(
+                    padding: const EdgeInsets.all(18),
+                    decoration: BoxDecoration(
+                      color: cs.surface,
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(color: AppColors.cardBorder, width: 1.5),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.cardShadow,
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(RemixIcons.money_rupee_circle_line, size: 18, color: AppColors.primary),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Monthly Salary',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                                color: cs.onSurface,
+                              ),
+                            ),
+                            const Spacer(),
+                            Text(
+                              '₹${NumberFormat('#,##,###').format(_walletData?['salary']?['monthlySalary'] ?? 0.0)}',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.primary,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _SalaryItem(
+                                label: 'Basic',
+                                value: '₹${NumberFormat('#,##,###').format(_walletData?['salary']?['basicSalary'] ?? 0.0)}',
+                              ),
+                            ),
+                            Expanded(
+                              child: _SalaryItem(
+                                label: 'HRA',
+                                value: '₹${NumberFormat('#,##,###').format(_walletData?['salary']?['hra'] ?? 0.0)}',
+                              ),
+                            ),
+                            Expanded(
+                              child: _SalaryItem(
+                                label: 'Medical',
+                                value: '₹${NumberFormat('#,##,###').format(_walletData?['salary']?['medicalAllowance'] ?? 0.0)}',
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ).animate(delay: 50.ms).fadeIn(duration: 400.ms),
+
+                const SizedBox(height: 22),
+
                 // ─── Balance Summary Block ───
                 Container(
                   padding: const EdgeInsets.all(18),
@@ -330,7 +450,7 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
                       Expanded(
                         child: _StatColumn(
                           label: 'Advance Limit',
-                          value: '₹${NumberFormat('#,##,###').format(_advanceLimit)}',
+                          value: '₹${NumberFormat('#,##,###').format(_walletData?['advanceLimit'] ?? 0.0)}',
                           color: Colors.purple,
                         ),
                       ),
@@ -338,7 +458,7 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
                       Expanded(
                         child: _StatColumn(
                           label: 'Pending Claims',
-                          value: '₹${NumberFormat('#,##,###').format(_pendingClaims)}',
+                          value: '₹${NumberFormat('#,##,###').format(_walletData?['pendingClaims'] ?? 0.0)}',
                           color: AppColors.warning,
                         ),
                       ),
@@ -437,7 +557,9 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
             sliver: SliverList(
               delegate: SliverChildBuilderDelegate(
                 (context, index) {
-                  final tx = _transactions[index];
+                  final transactions = _walletData?['transactions'] as List<dynamic>? ?? [];
+                  if (index >= transactions.length) return const SizedBox.shrink();
+                  final tx = transactions[index] as Map<String, dynamic>;
                   final formattedAmt = NumberFormat('#,##,###').format(tx['amount']);
                   final isCredit = tx['isCredit'] as bool;
                   
@@ -532,11 +654,12 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
                     ),
                   ).animate(delay: (index * 60).ms).fadeIn(duration: 450.ms).slideY(begin: 0.05, end: 0);
                 },
-                childCount: _transactions.length,
+                childCount: (_walletData?['transactions'] as List<dynamic>?)?.length ?? 0,
               ),
             ),
           ),
         ],
+      ),
       ),
     );
   }
@@ -572,6 +695,42 @@ class _StatColumn extends StatelessWidget {
             color: color,
             fontSize: 18,
             fontWeight: FontWeight.w900,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SalaryItem extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _SalaryItem({
+    required this.label,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Column(
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            color: AppColors.textHint,
+            fontSize: 10,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: TextStyle(
+            color: cs.onSurface,
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
           ),
         ),
       ],

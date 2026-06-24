@@ -587,58 +587,28 @@ class _EmployeeProfileViewState extends ConsumerState<EmployeeProfileView> {
   void _confirmLogout(BuildContext context, WidgetRef ref) {
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: Theme.of(ctx).colorScheme.surface,
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(
-          'Logout Confirmation',
-          style: TextStyle(
-            fontWeight: FontWeight.w800,
-            fontSize: 16,
-            color: Theme.of(ctx).colorScheme.onSurface,
-          ),
-        ),
-        content: Text(
-          'Are you sure you want to securely end your current session?',
-          style: TextStyle(
-            fontSize: 14,
-            color: Theme.of(ctx)
-                .colorScheme
-                .onSurface
-                .withValues(alpha: 0.7),
-          ),
-        ),
+      builder: (context) => AlertDialog(
+        title: const Text('Logout'),
+        content: const Text('Are you sure you want to logout?'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(
-              'Cancel',
-              style: TextStyle(
-                fontWeight: FontWeight.w700,
-                color: Theme.of(ctx).colorScheme.primary,
-              ),
-            ),
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
           ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.error,
-              foregroundColor: Colors.white,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
-            ),
+          TextButton(
             onPressed: () {
+              Navigator.pop(context);
               ref.read(profileViewModelProvider.notifier).clearCachedData();
               ref.read(authViewModelProvider.notifier).logout();
-              Navigator.of(ctx).pushAndRemoveUntil(
-                MaterialPageRoute(builder: (_) => const LoginView()),
-                (_) => false,
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (context) => const LoginView()),
+                (route) => false,
               );
             },
-            child: const Text(
-              'End Session',
-              style: TextStyle(fontWeight: FontWeight.w800),
+            child: Text(
+              'Logout',
+              style: TextStyle(color: AppColors.error),
             ),
           ),
         ],

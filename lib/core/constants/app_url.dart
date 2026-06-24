@@ -145,6 +145,11 @@ class AppUrl {
   static const String hrPayrollRuns  = '/api/hr/payroll/runs';
 
   // ─────────────────────────────────────────────
+  //  HR – Reports
+  // ─────────────────────────────────────────────
+  static const String hrAttendanceTrend = '/api/hr/attendance-trend';
+
+  // ─────────────────────────────────────────────
   //  Employee – Payroll (Mobile)
   // ─────────────────────────────────────────────
   static const String employeePayslips = '/api/mobile/payroll/slips';
