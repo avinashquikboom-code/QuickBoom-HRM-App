@@ -266,6 +266,21 @@ class _EmployeeProfileViewState extends ConsumerState<EmployeeProfileView> {
                         label: 'Tenure',
                         value: '${user.yearsOfService}+ Years of Service',
                         icon: RemixIcons.pulse_line),
+                    if (user.storeName != null && user.storeName!.isNotEmpty)
+                      _InfoRow(
+                          label: 'Store',
+                          value: user.storeName!,
+                          icon: RemixIcons.store_2_line),
+                    if (user.officeName != null && user.officeName!.isNotEmpty)
+                      _InfoRow(
+                          label: 'Office',
+                          value: user.officeName!,
+                          icon: RemixIcons.building_line),
+                    if (user.reportingManagerName != null && user.reportingManagerName!.isNotEmpty)
+                      _InfoRow(
+                          label: 'Reporting Manager',
+                          value: user.reportingManagerName!,
+                          icon: RemixIcons.user_star_line),
                   ],
                 ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.05, end: 0),
 

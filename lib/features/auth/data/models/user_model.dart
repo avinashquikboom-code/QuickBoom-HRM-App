@@ -1,4 +1,4 @@
-enum UserRole { employee, hrManager }
+enum UserRole { employee, hrManager, salesman, storeManager, helper }
 
 class UserModel {
   final String id;
@@ -12,6 +12,13 @@ class UserModel {
   final DateTime joinDate;
   final double salary;
   final String? avatar;
+  final String? storeId;
+  final String? storeName;
+  final String? officeId;
+  final String? officeName;
+  final String? reportingManagerId;
+  final String? reportingManagerName;
+  final Map<String, bool>? permissions;
 
   const UserModel({
     required this.id,
@@ -25,6 +32,13 @@ class UserModel {
     required this.joinDate,
     required this.salary,
     this.avatar,
+    this.storeId,
+    this.storeName,
+    this.officeId,
+    this.officeName,
+    this.reportingManagerId,
+    this.reportingManagerName,
+    this.permissions,
   });
 
   String get initials {
@@ -40,11 +54,43 @@ class UserModel {
     return 'U';
   }
 
-  String get roleLabel =>
-      role == UserRole.hrManager ? 'HR Manager' : 'Employee';
+  String get roleLabel {
+    switch (role) {
+      case UserRole.hrManager:
+        return 'HR Manager';
+      case UserRole.salesman:
+        return 'Salesman';
+      case UserRole.storeManager:
+        return 'Store Manager';
+      case UserRole.helper:
+        return 'Helper';
+      default:
+        return 'Employee';
+    }
+  }
 
   int get yearsOfService {
     final now = DateTime.now();
     return now.year - joinDate.year;
   }
+
+  bool get isSalesman => role == UserRole.salesman;
+  bool get isStoreManager => role == UserRole.storeManager;
+  bool get isHelper => role == UserRole.helper;
+  bool get isHRManager => role == UserRole.hrManager;
+  bool get isEmployee => role == UserRole.employee;
+
+  bool hasPermission(String permission) {
+    return permissions?[permission] ?? false;
+  }
+
+  bool get canViewCommission => hasPermission('canViewCommission');
+  bool get canViewWallet => hasPermission('canViewWallet');
+  bool get canApproveLeave => hasPermission('canApproveLeave');
+  bool get canApproveExpense => hasPermission('canApproveExpense');
+  bool get canManageEmployees => hasPermission('canManageEmployees');
+  bool get canManageStore => hasPermission('canManageStore');
+  bool get canViewPayroll => hasPermission('canViewPayroll');
+  bool get canViewReports => hasPermission('canViewReports');
+  bool get canViewStoreReports => hasPermission('canViewStoreReports');
 }

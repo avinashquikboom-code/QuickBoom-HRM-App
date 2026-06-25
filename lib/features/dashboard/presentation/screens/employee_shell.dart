@@ -8,6 +8,9 @@ import 'package:quickboom_hrm/features/payroll/presentation/screens/employee_pay
 import 'package:quickboom_hrm/features/leave/presentation/screens/employee_leave_view.dart';
 import 'package:quickboom_hrm/features/profile/presentation/screens/employee_profile_view.dart';
 import 'package:quickboom_hrm/features/wallet/presentation/screens/employee_wallet_view.dart';
+import 'package:quickboom_hrm/features/commission/presentation/screens/commission_wallet_view.dart';
+import 'package:quickboom_hrm/features/auth/presentation/providers/auth_viewmodel.dart';
+import 'package:quickboom_hrm/core/services/permission_service.dart';
 
 class EmployeeShell extends ConsumerStatefulWidget {
   const EmployeeShell({super.key});
@@ -31,6 +34,8 @@ class _EmployeeShellState extends ConsumerState<EmployeeShell> {
         return const EmployeeLeaveView();
       case 4:
         return const EmployeeProfileView();
+      case 5:
+        return const CommissionWalletView();
       default:
         return const EmployeeDashboardView();
     }
@@ -152,7 +157,11 @@ class _EmployeeShellState extends ConsumerState<EmployeeShell> {
             _buildNavItem(0, RemixIcons.home_3_line, RemixIcons.home_3_fill, 'Home', cs),
             _buildNavItem(1, RemixIcons.time_line, RemixIcons.time_fill, 'Attend', cs),
             const SizedBox(width: 44), // Central notch spacing
-            _buildNavItem(3, RemixIcons.calendar_todo_line, RemixIcons.calendar_todo_fill, 'Leave', cs),
+            if (ref.watch(authViewModelProvider).currentUser != null &&
+                PermissionService.canViewCommissionWidget(ref.watch(authViewModelProvider).currentUser))
+              _buildNavItem(5, RemixIcons.money_dollar_circle_line, RemixIcons.money_dollar_circle_fill, 'Commission', cs)
+            else
+              _buildNavItem(3, RemixIcons.calendar_todo_line, RemixIcons.calendar_todo_fill, 'Leave', cs),
             _buildNavItem(4, RemixIcons.user_3_line, RemixIcons.user_3_fill, 'Profile', cs),
           ],
         ),

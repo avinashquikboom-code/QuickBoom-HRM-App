@@ -203,15 +203,14 @@ class _LoginViewState extends ConsumerState<LoginView> with SingleTickerProvider
                               _buildPremiumInput(
                                 r: r,
                                 controller: _emailCtrl,
-                                hint: 'Email address',
+                                hint: 'Email or Employee ID',
                                 icon: RemixIcons.mail_line,
                                 isObscure: false,
-                                keyboardType: TextInputType.emailAddress,
+                                keyboardType: TextInputType.text,
                                 autocorrect: false,
                                 enableSuggestions: false,
                                 validator: (v) {
-                                  if (v == null || v.trim().isEmpty) return 'Email is required';
-                                  if (!v.contains('@')) return 'Enter a valid email';
+                                  if (v == null || v.trim().isEmpty) return 'Email or Employee ID is required';
                                   return null;
                                 },
                               ).animate().fadeIn(delay: 500.ms).slideX(begin: -0.1, end: 0),

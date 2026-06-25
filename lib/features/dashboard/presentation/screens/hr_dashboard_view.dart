@@ -16,6 +16,9 @@ import 'package:quickboom_hrm/features/expense/presentation/screens/hr_expenses_
 import 'package:quickboom_hrm/features/shift/presentation/screens/hr_shifts_view.dart';
 import 'package:quickboom_hrm/features/attendance/presentation/screens/hr_attendance_view.dart';
 import 'package:quickboom_hrm/features/notification/presentation/screens/hr_notifications_view.dart';
+import 'package:quickboom_hrm/features/store/presentation/screens/store_dashboard_view.dart';
+import 'package:quickboom_hrm/features/store/presentation/screens/store_employees_view.dart';
+import 'package:quickboom_hrm/core/services/permission_service.dart';
 
 class HrDashboardView extends ConsumerWidget {
   const HrDashboardView({super.key});
@@ -325,6 +328,34 @@ class HrDashboardView extends ConsumerWidget {
                         );
                       },
                     ),
+                    if (PermissionService.canAccessStoreDashboard(user))
+                      _QuickActionBtn(
+                        label: 'Store Dashboard',
+                        icon: RemixIcons.store_2_line,
+                        color: AppColors.primary,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const StoreDashboardView(),
+                            ),
+                          );
+                        },
+                      ),
+                    if (PermissionService.canManageStoreEmployees(user))
+                      _QuickActionBtn(
+                        label: 'Store Employees',
+                        icon: RemixIcons.team_line,
+                        color: AppColors.success,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const StoreEmployeesView(),
+                            ),
+                          );
+                        },
+                      ),
                   ],
                 ),
 

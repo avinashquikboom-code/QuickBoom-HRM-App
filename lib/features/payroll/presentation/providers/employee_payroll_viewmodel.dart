@@ -22,6 +22,9 @@ class PayslipModel {
   final String officeName;
   final String netInWords;
   final String createdAt;
+  final double? commissionEarned;
+  final double? pendingCommission;
+  final double? paidCommission;
 
   PayslipModel({
     required this.id,
@@ -40,6 +43,9 @@ class PayslipModel {
     required this.officeName,
     required this.netInWords,
     required this.createdAt,
+    this.commissionEarned,
+    this.pendingCommission,
+    this.paidCommission,
   });
 
   factory PayslipModel.fromJson(Map<String, dynamic> json) {
@@ -60,6 +66,9 @@ class PayslipModel {
       officeName: json['officeName']?.toString() ?? '',
       netInWords: json['netInWords']?.toString() ?? '',
       createdAt: json['createdAt']?.toString() ?? '',
+      commissionEarned: (json['commissionEarned'] as num?)?.toDouble(),
+      pendingCommission: (json['pendingCommission'] as num?)?.toDouble(),
+      paidCommission: (json['paidCommission'] as num?)?.toDouble(),
     );
   }
 }

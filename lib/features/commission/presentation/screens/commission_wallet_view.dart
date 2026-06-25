@@ -7,8 +7,8 @@ import 'package:intl/intl.dart';
 import 'package:quickboom_hrm/core/constants/app_colors.dart';
 import 'package:quickboom_hrm/core/services/commission_service.dart';
 import 'package:quickboom_hrm/features/commission/data/commission_models.dart';
-// import 'package:quickboom_hrm/features/commission/presentation/screens/commission_history_view.dart';
-// import 'package:quickboom_hrm/features/commission/presentation/screens/commission_details_view.dart';
+import 'package:quickboom_hrm/features/commission/presentation/screens/commission_history_view.dart';
+import 'package:quickboom_hrm/features/commission/presentation/screens/commission_details_view.dart';
 
 class CommissionWalletView extends ConsumerStatefulWidget {
   const CommissionWalletView({super.key});
@@ -74,21 +74,19 @@ class _CommissionWalletViewState extends ConsumerState<CommissionWalletView> {
           IconButton(
             icon: Icon(RemixIcons.history_line, color: AppColors.textPrimary),
             onPressed: () {
-              // TODO: Navigate to Commission History when screen is created
-              // Navigator.push(
-              //   context,
-              //   MaterialPageRoute(builder: (_) => const CommissionHistoryView()),
-              // );
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const CommissionHistoryView()),
+              );
             },
           ),
           IconButton(
             icon: Icon(RemixIcons.bar_chart_box_line, color: AppColors.textPrimary),
             onPressed: () {
-              // TODO: Navigate to Commission Details when screen is created
-              // Navigator.push(
-              //   context,
-              //   MaterialPageRoute(builder: (_) => const CommissionDetailsView()),
-              // );
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const CommissionDetailsView()),
+              );
             },
           ),
         ],

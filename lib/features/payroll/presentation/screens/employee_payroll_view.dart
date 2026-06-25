@@ -302,21 +302,55 @@ class _EmployeePayrollViewState extends ConsumerState<EmployeePayrollView> {
                                       color: isDark ? const Color(0xFF1E293B) : AppColors.background,
                                       borderRadius: BorderRadius.circular(12),
                                     ),
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    child: Column(
                                       children: [
-                                        _SalaryComponent(
-                                          label: 'Base Pay',
-                                          value: '₹${NumberFormat('#,##,###').format(slip.baseSalary)}',
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            _SalaryComponent(
+                                              label: 'Base Pay',
+                                              value: '₹${NumberFormat('#,##,###').format(slip.baseSalary)}',
+                                            ),
+                                            _SalaryComponent(
+                                              label: 'Allowance',
+                                              value: '₹${NumberFormat('#,##,###').format(slip.allowance)}',
+                                            ),
+                                            _SalaryComponent(
+                                              label: 'Deductions',
+                                              value: '₹${NumberFormat('#,##,###').format(slip.deductions)}',
+                                            ),
+                                          ],
                                         ),
-                                        _SalaryComponent(
-                                          label: 'Allowance',
-                                          value: '₹${NumberFormat('#,##,###').format(slip.allowance)}',
-                                        ),
-                                        _SalaryComponent(
-                                          label: 'Deductions',
-                                          value: '₹${NumberFormat('#,##,###').format(slip.deductions)}',
-                                        ),
+                                        if (slip.commissionEarned != null && slip.commissionEarned! > 0) ...[
+                                          const SizedBox(height: 8),
+                                          Divider(
+                                            height: 1,
+                                            color: isDark ? const Color(0xFF334155) : AppColors.cardBorder,
+                                          ),
+                                          const SizedBox(height: 8),
+                                          Row(
+                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              _SalaryComponent(
+                                                label: 'Commission',
+                                                value: '₹${NumberFormat('#,##,###').format(slip.commissionEarned)}',
+                                                isCommission: true,
+                                              ),
+                                              if (slip.pendingCommission != null && slip.pendingCommission! > 0)
+                                                _SalaryComponent(
+                                                  label: 'Pending',
+                                                  value: '₹${NumberFormat('#,##,###').format(slip.pendingCommission)}',
+                                                  isPending: true,
+                                                ),
+                                              if (slip.paidCommission != null && slip.paidCommission! > 0)
+                                                _SalaryComponent(
+                                                  label: 'Paid',
+                                                  value: '₹${NumberFormat('#,##,###').format(slip.paidCommission)}',
+                                                  isPaid: true,
+                                                ),
+                                            ],
+                                          ),
+                                        ],
                                       ],
                                     ),
                                   ),
@@ -383,12 +417,30 @@ class _StatusChip extends StatelessWidget {
 class _SalaryComponent extends StatelessWidget {
   final String label;
   final String value;
+  final bool isCommission;
+  final bool isPending;
+  final bool isPaid;
 
-  const _SalaryComponent({required this.label, required this.value});
+  const _SalaryComponent({
+    required this.label,
+    required this.value,
+    this.isCommission = false,
+    this.isPending = false,
+    this.isPaid = false,
+  });
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    Color valueColor = cs.onSurface;
+
+    if (isCommission) {
+      valueColor = AppColors.primary;
+    } else if (isPending) {
+      valueColor = AppColors.warning;
+    } else if (isPaid) {
+      valueColor = AppColors.success;
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -406,7 +458,7 @@ class _SalaryComponent extends StatelessWidget {
           value,
           style: TextStyle(
             fontSize: 12,
-            color: cs.onSurface,
+            color: valueColor,
             fontWeight: FontWeight.w800,
           ),
         ),

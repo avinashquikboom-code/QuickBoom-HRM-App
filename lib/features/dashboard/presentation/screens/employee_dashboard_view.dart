@@ -6,6 +6,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:quickboom_hrm/core/constants/app_colors.dart';
+import 'package:quickboom_hrm/core/utils/app_responsive.dart';
 import 'package:quickboom_hrm/features/leave/data/models/leave_request_model.dart';
 import 'package:quickboom_hrm/features/dashboard/data/models/announcement_model.dart';
 import 'package:quickboom_hrm/features/auth/presentation/providers/auth_viewmodel.dart';
@@ -20,6 +21,9 @@ import 'package:quickboom_hrm/features/expense/presentation/screens/employee_exp
 import 'package:quickboom_hrm/features/shift/presentation/screens/employee_shift_view.dart';
 import 'package:remixicon/remixicon.dart';
 import 'package:quickboom_hrm/features/attendance/presentation/providers/geofence_viewmodel.dart';
+import 'package:quickboom_hrm/features/commission/presentation/providers/commission_viewmodel.dart';
+import 'package:quickboom_hrm/features/commission/presentation/screens/commission_wallet_view.dart';
+import 'package:quickboom_hrm/core/services/permission_service.dart';
 
 
 final geofenceProvider = FutureProvider<bool>((ref) async {
@@ -33,6 +37,7 @@ class EmployeeDashboardView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final r = context.r;
     final user = ref.watch(authViewModelProvider).currentUser;
     if (user == null) return const Scaffold();
     final attendanceState = ref.watch(attendanceViewModelProvider);
@@ -40,6 +45,7 @@ class EmployeeDashboardView extends ConsumerWidget {
     final notifState = ref.watch(notificationViewModelProvider);
     final dashboardState = ref.watch(employeeDashboardViewModelProvider);
     final holidayState = ref.watch(holidayViewModelProvider);
+    final commissionState = ref.watch(commissionViewModelProvider);
     final announcements = dashboardState.announcements;
     final now = DateTime.now();
 
@@ -67,16 +73,16 @@ class EmployeeDashboardView extends ConsumerWidget {
             backgroundColor: AppColors.background,
             elevation: 0,
             automaticallyImplyLeading: false,
-            toolbarHeight: 76,
-            titleSpacing: 16,
+            toolbarHeight: r.h(76),
+            titleSpacing: r.w(16),
             title: Row(
               children: [
                 Stack(
                   alignment: Alignment.bottomRight,
                   children: [
                     Container(
-                      width: 44,
-                      height: 44,
+                      width: r.w(44),
+                      height: r.w(44),
                       decoration: BoxDecoration(
                         color: AppColors.primary.withValues(alpha: 0.1),
                         shape: BoxShape.circle,
@@ -88,9 +94,9 @@ class EmployeeDashboardView extends ConsumerWidget {
                       child: Center(
                         child: Text(
                           user.initials,
-                          style: const TextStyle(
+                          style: TextStyle(
                             color: AppColors.primary,
-                            fontSize: 15,
+                            fontSize: r.sp(15),
                             fontWeight: FontWeight.w800,
                           ),
                         ),
@@ -265,6 +271,15 @@ class EmployeeDashboardView extends ConsumerWidget {
                 ).animate().fadeIn(delay: 50.ms),
 
                 const SizedBox(height: 24),
+
+                // ─── Commission Widgets (Salesman Only) ─────────────────────
+                if (PermissionService.canViewCommissionWidget(user))
+                  _CommissionWidgets(
+                    commissionState: commissionState,
+                  ).animate().fadeIn(delay: 100.ms),
+
+                if (PermissionService.canViewCommissionWidget(user))
+                  const SizedBox(height: 24),
 
                 // ─── Double-layered Leave Balance Gauges ───────────────────
                 _SectionTitle(title: 'Leave Balance'),
@@ -667,6 +682,145 @@ class EmployeeDashboardView extends ConsumerWidget {
 }
 
 // ─── Sub Widgets ──────────────────────────────────────────────────────────────
+
+class _CommissionWidgets extends StatelessWidget {
+  final CommissionState commissionState;
+
+  const _CommissionWidgets({required this.commissionState});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _SectionTitle(title: 'Commission Overview'),
+        const SizedBox(height: 12),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          physics: const BouncingScrollPhysics(),
+          child: Row(
+            children: [
+              _CommissionStatCard(
+                label: 'Total Earned',
+                value: commissionState.wallet != null
+                    ? '₹${commissionState.wallet!.lifetimeCommission.toStringAsFixed(0)}'
+                    : '₹0',
+                icon: RemixIcons.money_dollar_circle_line,
+                color: AppColors.success,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const CommissionWalletView()),
+                  );
+                },
+              ),
+              const SizedBox(width: 12),
+              _CommissionStatCard(
+                label: 'Pending',
+                value: commissionState.wallet != null
+                    ? '₹${commissionState.wallet!.pendingCommission.toStringAsFixed(0)}'
+                    : '₹0',
+                icon: RemixIcons.time_line,
+                color: AppColors.warning,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const CommissionWalletView()),
+                  );
+                },
+              ),
+              const SizedBox(width: 12),
+              _CommissionStatCard(
+                label: 'Paid',
+                value: commissionState.wallet != null
+                    ? '₹${commissionState.wallet!.paidCommission.toStringAsFixed(0)}'
+                    : '₹0',
+                icon: RemixIcons.checkbox_circle_line,
+                color: AppColors.primary,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const CommissionWalletView()),
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _CommissionStatCard extends StatelessWidget {
+  final String label;
+  final String value;
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _CommissionStatCard({
+    required this.label,
+    required this.value,
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 110,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.cardBorder),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.cardShadow,
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: color, size: 22),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              value,
+              style: TextStyle(
+                color: AppColors.textPrimary,
+                fontSize: 14,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(
+                color: AppColors.textHint,
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 class _SectionTitle extends StatelessWidget {
   final String title;
