@@ -34,9 +34,8 @@ class WalletService {
           )
           .timeout(_timeout);
 
-      if (kDebugMode) {
-        dev.log('Wallet Response: ${response.body}', name: 'WalletService');
-      }
+      dev.log('Wallet Status: ${response.statusCode}', name: 'WalletService');
+      dev.log('Wallet Response: ${response.body}', name: 'WalletService');
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
