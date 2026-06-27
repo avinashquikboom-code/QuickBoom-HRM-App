@@ -1,4 +1,4 @@
-package com.example.quickboom_hrm
+package org.quickboom.hrm
 
 import io.flutter.embedding.android.FlutterFragmentActivity
 
