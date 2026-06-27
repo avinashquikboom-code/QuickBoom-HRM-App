@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:remixicon/remixicon.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -167,7 +166,6 @@ class _CommissionWalletViewState extends ConsumerState<CommissionWalletView> {
                     ),
                     GestureDetector(
                       onTap: () {
-                        // TODO: Navigate to Commission History when screen is created
                         // Navigator.push(
                         //   context,
                         //   MaterialPageRoute(builder: (_) => const CommissionHistoryView()),

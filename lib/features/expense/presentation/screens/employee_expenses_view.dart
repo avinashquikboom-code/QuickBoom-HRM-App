@@ -57,6 +57,7 @@ class _EmployeeExpensesViewState extends ConsumerState<EmployeeExpensesView> {
             style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
       ),
       body: CustomScrollView(
+        physics: const BouncingScrollPhysics(),
         slivers: [
           SliverPadding(
             padding: const EdgeInsets.all(16),

@@ -72,9 +72,13 @@ class CommissionService {
       final queryParams = <String, String>{
         'page': page.toString(),
         'limit': limit.toString(),
+        // ignore: use_null_aware_elements
         if (status != null) 'status': status,
+        // ignore: use_null_aware_elements
         if (startDate != null) 'startDate': startDate,
+        // ignore: use_null_aware_elements
         if (endDate != null) 'endDate': endDate,
+        // ignore: use_null_aware_elements
         if (month != null) 'month': month,
       };
 

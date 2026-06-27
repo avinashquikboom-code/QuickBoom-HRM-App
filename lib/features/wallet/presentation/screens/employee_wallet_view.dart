@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:remixicon/remixicon.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -65,7 +64,7 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
             reason: reason,
           );
           if (result != null && mounted) {
-            _showSuccessDialog(context, amount, months);
+            _showSuccessDialog(this.context, amount, months);
             _loadWalletData();
           }
         },
@@ -146,7 +145,6 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
   Widget build(BuildContext context) {
     final user = ref.watch(authViewModelProvider).currentUser;
     final cs = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final availableBalance = (_walletData?['availableBalance'] as num?)?.toDouble() ?? 0.0;
     final formattedBalance = NumberFormat('#,##,###.00').format(availableBalance);
 

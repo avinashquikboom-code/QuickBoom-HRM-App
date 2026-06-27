@@ -71,8 +71,11 @@ class StoreService {
       final queryParams = <String, String>{
         'page': page.toString(),
         'limit': limit.toString(),
+        // ignore: use_null_aware_elements
         if (search != null) 'search': search,
+        // ignore: use_null_aware_elements
         if (status != null) 'status': status,
+        // ignore: use_null_aware_elements
         if (role != null) 'role': role,
       };
 
@@ -113,7 +116,9 @@ class StoreService {
       }
 
       final queryParams = <String, String>{
+        // ignore: use_null_aware_elements
         if (month != null) 'month': month,
+        // ignore: use_null_aware_elements
         if (year != null) 'year': year,
       };
 

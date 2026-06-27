@@ -4,7 +4,6 @@ import 'package:remixicon/remixicon.dart';
 import 'package:quickboom_hrm/core/constants/app_colors.dart';
 import 'package:quickboom_hrm/features/dashboard/presentation/screens/employee_dashboard_view.dart';
 import 'package:quickboom_hrm/features/attendance/presentation/screens/employee_attendance_view.dart';
-import 'package:quickboom_hrm/features/payroll/presentation/screens/employee_payroll_view.dart';
 import 'package:quickboom_hrm/features/leave/presentation/screens/employee_leave_view.dart';
 import 'package:quickboom_hrm/features/profile/presentation/screens/employee_profile_view.dart';
 import 'package:quickboom_hrm/features/wallet/presentation/screens/employee_wallet_view.dart';

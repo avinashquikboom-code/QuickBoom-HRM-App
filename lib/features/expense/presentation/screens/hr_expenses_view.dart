@@ -41,6 +41,7 @@ class HrExpensesView extends ConsumerWidget {
         ),
       ),
       body: CustomScrollView(
+        physics: const BouncingScrollPhysics(),
         slivers: [
           SliverPadding(
             padding: const EdgeInsets.all(16),
