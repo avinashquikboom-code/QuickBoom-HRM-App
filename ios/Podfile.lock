@@ -1,0 +1,22 @@
+PODS:
+  - Flutter (1.0.0)
+  - printing (1.0.0):
+    - Flutter
+
+DEPENDENCIES:
+  - Flutter (from `Flutter`)
+  - printing (from `.symlinks/plugins/printing/ios`)
+
+EXTERNAL SOURCES:
+  Flutter:
+    :path: Flutter
+  printing:
+    :path: ".symlinks/plugins/printing/ios"
+
+SPEC CHECKSUMS:
+  Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
+  printing: 233e1b73bd1f4a05615548e9b5a324c98588640b
+
+PODFILE CHECKSUM: f92cc663c67926f5793e8000045cb864d97cdc02
+
+COCOAPODS: 1.16.2

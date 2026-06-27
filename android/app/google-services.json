@@ -9,7 +9,7 @@
       "client_info": {
         "mobilesdk_app_id": "1:49476481566:android:090161fedf802507df340f",
         "android_client_info": {
-          "package_name": "com.example.quickboom_hrm"
+          "package_name": "org.quickboom.hrm"
         }
       },
       "oauth_client": [],
