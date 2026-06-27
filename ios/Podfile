@@ -40,4 +40,7 @@ post_install do |installer|
       config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.0'
     end
   end
+  
+  # Disable Swift Package Manager for plugins that don't support it
+  installer.pods_project.main_group['Pods'].new_file('.spm-disabled')
 end

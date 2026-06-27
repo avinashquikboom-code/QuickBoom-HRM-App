@@ -1,15 +1,14 @@
 import 'dart:async';
-import 'dart:convert';
 import 'package:flutter/foundation.dart';
-import 'package:socket_io_client/socket_io_client.dart' as IO;
-import 'api_service.dart';
+import 'package:socket_io_client/socket_io_client.dart' as socket_io;
+import 'package:quickboom_hrm/core/services/api_service.dart';
 
 class WebSocketService {
   static final WebSocketService _instance = WebSocketService._internal();
   factory WebSocketService() => _instance;
   WebSocketService._internal();
 
-  IO.Socket? _socket;
+  socket_io.Socket? _socket;
   bool _isConnected = false;
   final StreamController<Map<String, dynamic>> _leaveBalanceController = 
       StreamController<Map<String, dynamic>>.broadcast();
@@ -44,13 +43,13 @@ class WebSocketService {
       }
 
       // Configure socket options
-      final options = IO.OptionBuilder()
+      final options = socket_io.OptionBuilder()
           .setTransports(['websocket'])
           .enableAutoConnect()
           .setAuth({'token': token})
           .build();
 
-      _socket = IO.io(baseUrl, options);
+      _socket = socket_io.io(baseUrl, options);
 
       _socket!.onConnect((_) {
         _isConnected = true;

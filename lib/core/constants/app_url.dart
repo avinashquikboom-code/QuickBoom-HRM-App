@@ -9,8 +9,9 @@ class AppUrl {
   // ─────────────────────────────────────────────
   //  Base
   // ─────────────────────────────────────────────
-  static const String baseUrl =
-      'https://api.voxiqai.com';
+  static String get baseUrl {
+    return 'https://api.voxiqai.com';
+  }
 
   // ─────────────────────────────────────────────
   //  Auth
@@ -27,11 +28,14 @@ class AppUrl {
   // ─────────────────────────────────────────────
   static const String employeeProfile  = '/api/mobile/auth/profile';
   static const String employeeAvatar   = '/api/employee/avatar';
+  static const String employeeAvatarUpload = '/api/mobile/auth/profile/avatar';
+  static const String employeeAvatarRemove = '/api/mobile/auth/profile/avatar';
 
   // ─────────────────────────────────────────────
   //  Employee – Dashboard
   // ─────────────────────────────────────────────
   static const String employeeDashboardStats = '/api/employee/dashboard/stats';
+  static const String employeeDashboardUpcoming = '/api/mobile/dashboard/upcoming';
 
   // ─────────────────────────────────────────────
   //  Employee – Attendance  (mobile)
@@ -139,6 +143,11 @@ class AppUrl {
   // ─────────────────────────────────────────────
   static const String hrPayrollStats = '/api/hr/payroll/stats';
   static const String hrPayrollRuns  = '/api/hr/payroll/runs';
+
+  // ─────────────────────────────────────────────
+  //  HR – Reports
+  // ─────────────────────────────────────────────
+  static const String hrAttendanceTrend = '/api/hr/attendance-trend';
 
   // ─────────────────────────────────────────────
   //  Employee – Payroll (Mobile)

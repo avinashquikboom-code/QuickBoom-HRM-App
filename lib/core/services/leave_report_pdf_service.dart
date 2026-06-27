@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
@@ -8,8 +7,8 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 
-import '../../models/leave_request_model.dart';
-import '../../viewmodels/leave_viewmodel.dart';
+import 'package:quickboom_hrm/features/leave/data/models/leave_request_model.dart';
+import 'package:quickboom_hrm/features/leave/presentation/providers/leave_viewmodel.dart';
 
 /// Builds and presents an in-app generated Leave Report PDF that includes the
 /// full leave balance (Casual / Sick / Earned) and the leave history.

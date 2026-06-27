@@ -4,10 +4,10 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'api_service.dart';
-import 'storage_service.dart';
-import '../constants/app_url.dart';
-import 'websocket_service.dart';
+import 'package:quickboom_hrm/core/services/api_service.dart';
+import 'package:quickboom_hrm/core/services/storage_service.dart';
+import 'package:quickboom_hrm/core/constants/app_url.dart';
+import 'package:quickboom_hrm/core/services/websocket_service.dart';
 
 /// Global notification service for handling push notifications
 class NotificationService {
@@ -16,15 +16,18 @@ class NotificationService {
   NotificationService._internal();
 
   final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
-  final FlutterLocalNotificationsPlugin _localNotifications = FlutterLocalNotificationsPlugin();
+  final FlutterLocalNotificationsPlugin _localNotifications =
+      FlutterLocalNotificationsPlugin();
   final WebSocketService _webSocketService = WebSocketService();
-  
+
   // Notification stream controllers
-  static final StreamController<Map<String, dynamic>> _notificationStreamController = 
+  static final StreamController<Map<String, dynamic>>
+  _notificationStreamController =
       StreamController<Map<String, dynamic>>.broadcast();
-  
-  static Stream<Map<String, dynamic>> get notificationStream => _notificationStreamController.stream;
-  
+
+  static Stream<Map<String, dynamic>> get notificationStream =>
+      _notificationStreamController.stream;
+
   // WebSocket notification subscription
   StreamSubscription<Map<String, dynamic>>? _webSocketSubscription;
 
@@ -33,19 +36,19 @@ class NotificationService {
     try {
       // Request notification permissions
       await _requestPermissions();
-      
+
       // Initialize local notifications
       await _initializeLocalNotifications();
-      
+
       // Get FCM token but don't save to backend yet (will be saved after login / session restore)
       await _getFCMToken(saveToBackend: false);
-      
+
       // Set up message handlers
       _setupMessageHandlers();
-      
+
       // Connect to WebSocket for real-time notifications
       await _connectWebSocket();
-      
+
       debugPrint('✅ Notification service initialized successfully');
     } catch (e) {
       debugPrint('❌ Failed to initialize notification service: $e');
@@ -66,7 +69,8 @@ class NotificationService {
 
     if (settings.authorizationStatus == AuthorizationStatus.authorized) {
       debugPrint('✅ Notification permissions granted');
-    } else if (settings.authorizationStatus == AuthorizationStatus.provisional) {
+    } else if (settings.authorizationStatus ==
+        AuthorizationStatus.provisional) {
       debugPrint('⚠️ Provisional notification permissions granted');
     } else {
       debugPrint('❌ Notification permissions denied');
@@ -75,13 +79,15 @@ class NotificationService {
 
   /// Initialize local notifications for foreground messages
   Future<void> _initializeLocalNotifications() async {
-    const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const androidSettings = AndroidInitializationSettings(
+      '@mipmap/ic_launcher',
+    );
     const iosSettings = DarwinInitializationSettings(
       requestAlertPermission: true,
       requestBadgePermission: true,
       requestSoundPermission: true,
     );
-    
+
     const initSettings = InitializationSettings(
       android: androidSettings,
       iOS: iosSettings,
@@ -129,7 +135,9 @@ class NotificationService {
 
     for (final channel in channels) {
       await _localNotifications
-          .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >()
           ?.createNotificationChannel(channel);
     }
   }
@@ -139,7 +147,7 @@ class NotificationService {
     try {
       final token = await _firebaseMessaging.getToken();
       debugPrint('🔑 FCM Token: $token');
-      
+
       if (token != null) {
         // Save to SharedPreferences
         await StorageService.saveFCMToken(token);
@@ -159,10 +167,12 @@ class NotificationService {
       // Check if user is authenticated before saving to backend
       final authToken = await ApiService.getToken();
       if (authToken == null || authToken.isEmpty) {
-        debugPrint('⚠️ No auth token available, skipping FCM token save to backend');
+        debugPrint(
+          '⚠️ No auth token available, skipping FCM token save to backend',
+        );
         return;
       }
-      
+
       await ApiService.post(AppUrl.saveFCMToken, {
         'fcmToken': token,
         'platform': Platform.operatingSystem,
@@ -177,25 +187,28 @@ class NotificationService {
   Future<void> _connectWebSocket() async {
     try {
       await _webSocketService.connect();
-      
+
       // Listen for WebSocket notifications
       _webSocketSubscription = _webSocketService.notifications.listen(
         (notificationData) {
           debugPrint('🔔 WebSocket notification received: $notificationData');
-          
+
           // Show local notification for WebSocket messages
           _showLocalNotification(
             title: notificationData['title'] ?? 'New Notification',
             body: notificationData['message'] ?? notificationData['body'] ?? '',
             data: notificationData,
-            channelId: _getNotificationChannel(notificationData['type'] ?? 'general'),
+            channelId: _getNotificationChannel(
+              notificationData['type'] ?? 'general',
+            ),
           );
-          
+
           // Add to notification stream for real-time UI updates
           _notificationStreamController.add({
             'type': notificationData['type'] ?? 'general',
             'title': notificationData['title'] ?? 'New Notification',
-            'body': notificationData['message'] ?? notificationData['body'] ?? '',
+            'body':
+                notificationData['message'] ?? notificationData['body'] ?? '',
             'data': notificationData,
             'source': 'websocket',
           });
@@ -204,7 +217,7 @@ class NotificationService {
           debugPrint('❌ WebSocket notification error: $error');
         },
       );
-      
+
       debugPrint('✅ WebSocket notifications connected');
     } catch (e) {
       debugPrint('❌ Failed to connect WebSocket notifications: $e');
@@ -215,10 +228,10 @@ class NotificationService {
   void _setupMessageHandlers() {
     // Handle messages when app is in foreground
     FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
-    
+
     // Handle messages when app is in background but opened
     FirebaseMessaging.onMessageOpenedApp.listen(_handleMessageOpenedApp);
-    
+
     // Handle messages when app is opened from terminated state
     FirebaseMessaging.onBackgroundMessage(_handleBackgroundMessage);
 
@@ -233,10 +246,10 @@ class NotificationService {
   /// Handle foreground messages
   void _handleForegroundMessage(RemoteMessage message) {
     debugPrint('📱 Foreground message received: ${message.messageId}');
-    
+
     final notification = message.notification;
     final data = message.data;
-    
+
     // Show local notification for foreground messages
     if (notification != null) {
       _showLocalNotification(
@@ -246,7 +259,7 @@ class NotificationService {
         channelId: _getNotificationChannel(data['type'] ?? 'general'),
       );
     }
-    
+
     // Add to notification stream for real-time UI updates
     _notificationStreamController.add({
       'type': data['type'] ?? 'general',
@@ -278,7 +291,7 @@ class NotificationService {
     try {
       final channelName = _getChannelName(channelId);
       final channelDescription = _getChannelDescription(channelId);
-      
+
       final androidDetails = AndroidNotificationDetails(
         channelId,
         channelName,
@@ -357,7 +370,7 @@ class NotificationService {
   /// Handle notification tap
   void _onNotificationTapped(NotificationResponse response) {
     debugPrint('🔔 Notification tapped: ${response.payload}');
-    
+
     if (response.payload != null) {
       try {
         final data = Map<String, dynamic>.fromEntries(
@@ -377,28 +390,28 @@ class NotificationService {
   /// Navigate to appropriate screen based on notification data
   void _navigateToNotificationScreen(Map<String, dynamic> data) {
     final type = data['type']?.toString().toLowerCase();
-    
+
     switch (type) {
       case 'leave_approved':
       case 'leave_rejected':
         // Navigate to leave status screen
         debugPrint('🔗 Navigating to leave status screen');
-        // TODO: Implement navigation to leave status
+
         break;
       case 'attendance':
         // Navigate to attendance screen
         debugPrint('🔗 Navigating to attendance screen');
-        // TODO: Implement navigation to attendance
+
         break;
       case 'task':
         // Navigate to tasks screen
         debugPrint('🔗 Navigating to tasks screen');
-        // TODO: Implement navigation to tasks
+
         break;
       default:
         // Navigate to notifications list
         debugPrint('🔗 Navigating to notifications list');
-        // TODO: Implement navigation to notifications
+
         break;
     }
   }
@@ -412,7 +425,6 @@ class NotificationService {
   Future<void> printFCMToken() async {
     try {
       final token = await _firebaseMessaging.getToken();
-      print('🔑 FCM Token: $token');
       debugPrint('🔑 FCM Token: $token');
     } catch (e) {
       debugPrint('❌ Failed to get FCM token: $e');
