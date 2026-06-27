@@ -50,7 +50,7 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
   }
 
   void _showRequestAdvanceSheet(BuildContext context) {
-    final advanceLimit = _walletData?['advanceLimit'] ?? 25000.0;
+    final advanceLimit = (_walletData?['advanceLimit'] as num?)?.toDouble() ?? 25000.0;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -147,7 +147,7 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
     final user = ref.watch(authViewModelProvider).currentUser;
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final availableBalance = _walletData?['availableBalance'] ?? 0.0;
+    final availableBalance = (_walletData?['availableBalance'] as num?)?.toDouble() ?? 0.0;
     final formattedBalance = NumberFormat('#,##,###.00').format(availableBalance);
 
     if (_isLoading) {
@@ -392,7 +392,7 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
                             ),
                             const Spacer(),
                             Text(
-                              '₹${NumberFormat('#,##,###').format(_walletData?['salary']?['monthlySalary'] ?? 0.0)}',
+                              '₹${NumberFormat('#,##,###').format((_walletData?['salary']?['monthlySalary'] as num?)?.toDouble() ?? 0.0)}',
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w800,
@@ -407,19 +407,19 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
                             Expanded(
                               child: _SalaryItem(
                                 label: 'Basic',
-                                value: '₹${NumberFormat('#,##,###').format(_walletData?['salary']?['basicSalary'] ?? 0.0)}',
+                                value: '₹${NumberFormat('#,##,###').format((_walletData?['salary']?['basicSalary'] as num?)?.toDouble() ?? 0.0)}',
                               ),
                             ),
                             Expanded(
                               child: _SalaryItem(
                                 label: 'HRA',
-                                value: '₹${NumberFormat('#,##,###').format(_walletData?['salary']?['hra'] ?? 0.0)}',
+                                value: '₹${NumberFormat('#,##,###').format((_walletData?['salary']?['hra'] as num?)?.toDouble() ?? 0.0)}',
                               ),
                             ),
                             Expanded(
                               child: _SalaryItem(
                                 label: 'Medical',
-                                value: '₹${NumberFormat('#,##,###').format(_walletData?['salary']?['medicalAllowance'] ?? 0.0)}',
+                                value: '₹${NumberFormat('#,##,###').format((_walletData?['salary']?['medicalAllowance'] as num?)?.toDouble() ?? 0.0)}',
                               ),
                             ),
                           ],
@@ -450,7 +450,7 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
                       Expanded(
                         child: _StatColumn(
                           label: 'Advance Limit',
-                          value: '₹${NumberFormat('#,##,###').format(_walletData?['advanceLimit'] ?? 0.0)}',
+                          value: '₹${NumberFormat('#,##,###').format((_walletData?['advanceLimit'] as num?)?.toDouble() ?? 0.0)}',
                           color: Colors.purple,
                         ),
                       ),
@@ -458,7 +458,7 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
                       Expanded(
                         child: _StatColumn(
                           label: 'Pending Claims',
-                          value: '₹${NumberFormat('#,##,###').format(_walletData?['pendingClaims'] ?? 0.0)}',
+                          value: '₹${NumberFormat('#,##,###').format((_walletData?['pendingClaims'] as num?)?.toDouble() ?? 0.0)}',
                           color: AppColors.warning,
                         ),
                       ),
@@ -552,15 +552,57 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
           ),
           
           // Transactions list
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 110),
-            sliver: SliverList(
-              delegate: SliverChildBuilderDelegate(
+          if ((_walletData?['transactions'] as List<dynamic>?)?.isEmpty ?? true)
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 110),
+              sliver: SliverToBoxAdapter(
+                child: Container(
+                  padding: const EdgeInsets.all(40),
+                  decoration: BoxDecoration(
+                    color: cs.surface,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: AppColors.cardBorder, width: 1.5),
+                  ),
+                  child: Column(
+                    children: [
+                      Icon(
+                        RemixIcons.exchange_funds_line,
+                        size: 48,
+                        color: AppColors.textHint,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'No Transactions Yet',
+                        style: TextStyle(
+                          color: AppColors.textPrimary,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Your transaction history will appear here once you start using your wallet.',
+                        style: TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: 13,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            )
+          else
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 110),
+              sliver: SliverList(
+                delegate: SliverChildBuilderDelegate(
                 (context, index) {
                   final transactions = _walletData?['transactions'] as List<dynamic>? ?? [];
                   if (index >= transactions.length) return const SizedBox.shrink();
                   final tx = transactions[index] as Map<String, dynamic>;
-                  final formattedAmt = NumberFormat('#,##,###').format(tx['amount']);
+                  final formattedAmt = NumberFormat('#,##,###').format((tx['amount'] as num?)?.toDouble() ?? 0.0);
                   final isCredit = tx['isCredit'] as bool;
                   
                   return Container(
@@ -646,6 +688,15 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
                                 fontWeight: FontWeight.w900,
                               ),
                             ),
+                            if (tx['commission'] != null && (tx['commission'] as num) > 0)
+                              Text(
+                                'Commission: ₹${NumberFormat('#,##,###').format((tx['commission'] as num?)?.toDouble() ?? 0.0)}',
+                                style: TextStyle(
+                                  color: AppColors.textHint,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
                             const SizedBox(height: 4),
                             _StatusBadge(status: tx['status']),
                           ],
