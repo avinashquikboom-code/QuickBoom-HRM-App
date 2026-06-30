@@ -209,4 +209,35 @@ class AppUrl {
   // Comprehensive Attendance Report (Mobile)
   // ─────────────────────────────────────────────
   static const String attendanceComprehensiveReport = '/api/mobile/attendance/comprehensive/comprehensive-report';
+
+  // ─────────────────────────────────────────────
+  // Mobile – Commission (NEW)
+  // ─────────────────────────────────────────────
+  static const String mobileCommissionDashboard = '/api/mobile/commission/dashboard';
+  static const String mobileCommissionTransactions = '/api/mobile/commission/transactions';
+  static const String mobileCommissionTargets = '/api/mobile/commission/targets';
+  static const String mobileCommissionSettlements = '/api/mobile/commission/settlements';
+
+  // ─────────────────────────────────────────────
+  // Mobile – Tasks (NEW)
+  // ─────────────────────────────────────────────
+  static const String mobileTasks = '/api/mobile/tasks';
+  static String mobileTaskById(String id) => '/api/mobile/tasks/$id';
+
+  // ─────────────────────────────────────────────
+  // Mobile – Store (NEW)
+  // ─────────────────────────────────────────────
+  static const String mobileStore = '/api/mobile/store';
+  static const String mobileStoreEmployees = '/api/mobile/store/employees';
+  static const String mobileStoreReports = '/api/mobile/store/reports';
+
+  // ─────────────────────────────────────────────
+  // Mobile – Documents (NEW)
+  // ─────────────────────────────────────────────
+  static const String mobileDocuments = '/api/mobile/documents';
+
+  // ─────────────────────────────────────────────
+  // Mobile – Holidays (NEW)
+  // ─────────────────────────────────────────────
+  static const String mobileHolidays = '/api/mobile/holidays';
 }

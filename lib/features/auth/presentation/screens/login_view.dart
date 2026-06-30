@@ -7,7 +7,6 @@ import 'package:quickboom_hrm/core/constants/app_colors.dart';
 import 'package:quickboom_hrm/core/utils/app_responsive.dart';
 import 'package:quickboom_hrm/features/auth/presentation/providers/auth_viewmodel.dart';
 import 'package:quickboom_hrm/features/dashboard/presentation/screens/employee_shell.dart';
-import 'package:quickboom_hrm/features/dashboard/presentation/screens/hr_shell.dart';
 import 'package:quickboom_hrm/core/widgets/premium_animated_background.dart';
 import 'package:quickboom_hrm/features/auth/presentation/screens/forgot_password_view.dart';
 
@@ -57,18 +56,6 @@ class _LoginViewState extends ConsumerState<LoginView> with SingleTickerProvider
     if (success && mounted) {
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => const EmployeeShell()),
-      );
-    }
-  }
-
-  Future<void> _hrLogin() async {
-    if (!(_formKey.currentState?.validate() ?? false)) return;
-    final success = await ref
-        .read(authViewModelProvider.notifier)
-        .hrLogin(_emailCtrl.text, _passCtrl.text);
-    if (success && mounted) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const HrShell()),
       );
     }
   }
@@ -192,8 +179,8 @@ class _LoginViewState extends ConsumerState<LoginView> with SingleTickerProvider
                                   unselectedLabelColor: const Color(0xFF4A6B63),
                                   labelStyle: TextStyle(fontWeight: FontWeight.w800, fontSize: r.sp(13)),
                                   tabs: const [
-                                    Tab(text: 'Employee'),
-                                    Tab(text: 'HR Manager'),
+                                    Tab(text: 'Store Manager'),
+                                    Tab(text: 'Staff / Salesman'),
                                   ],
                                 ),
                               ).animate().fadeIn(delay: 400.ms),
@@ -315,7 +302,7 @@ class _LoginViewState extends ConsumerState<LoginView> with SingleTickerProvider
                                 child: ElevatedButton(
                                   onPressed: authState.isLoading
                                       ? null
-                                      : (_tabController?.index == 1 ? _hrLogin : _login),
+                                      : _login,
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: AppColors.primary,
                                     foregroundColor: Colors.white,
