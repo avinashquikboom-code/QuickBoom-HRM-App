@@ -179,8 +179,8 @@ class _LoginViewState extends ConsumerState<LoginView> with SingleTickerProvider
                                   unselectedLabelColor: const Color(0xFF4A6B63),
                                   labelStyle: TextStyle(fontWeight: FontWeight.w800, fontSize: r.sp(13)),
                                   tabs: const [
-                                    Tab(text: 'Store Manager'),
-                                    Tab(text: 'Staff / Salesman'),
+                                    Tab(text: 'Employee'),
+                                    Tab(text: 'HR'),
                                   ],
                                 ),
                               ).animate().fadeIn(delay: 400.ms),
