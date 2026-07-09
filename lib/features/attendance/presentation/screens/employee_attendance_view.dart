@@ -9,6 +9,7 @@ import 'package:quickboom_hrm/core/services/distance_service.dart';
 import 'package:quickboom_hrm/features/attendance/data/models/attendance_model.dart';
 import 'package:quickboom_hrm/features/attendance/presentation/providers/attendance_viewmodel.dart';
 import 'package:quickboom_hrm/features/attendance/presentation/providers/geofence_viewmodel.dart';
+import 'package:quickboom_hrm/features/attendance/presentation/screens/monthly_work_schedule_view.dart';
 import 'package:quickboom_hrm/core/widgets/shimmer_loading.dart';
 
 class EmployeeAttendanceView extends ConsumerWidget {
@@ -38,6 +39,14 @@ class EmployeeAttendanceView extends ConsumerWidget {
           ),
         ),
         actions: [
+          IconButton(
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const MonthlyWorkScheduleView()),
+            ),
+            icon: Icon(RemixIcons.calendar_line, color: AppColors.primary),
+            tooltip: 'Work Schedule',
+          ),
           IconButton(
             onPressed: () => _downloadAttendanceReport(ref, context),
             icon: Icon(RemixIcons.download_line, color: AppColors.primary),

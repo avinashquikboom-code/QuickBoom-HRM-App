@@ -75,6 +75,11 @@ class ProfileViewModel extends StateNotifier<ProfileState> {
         joinDate: DateTime.tryParse(prof['createdAt']?.toString() ?? emp['joinDate']?.toString() ?? '') ?? DateTime.now(),
         salary: double.tryParse(user['salary']?.toString() ?? emp['salary']?.toString() ?? '') ?? 0.0,
         avatar: prof['avatarUrl']?.toString() ?? prof['avatar']?.toString(),
+        bankName: emp['bankName']?.toString(),
+        accountNumber: emp['accountNumber']?.toString(),
+        ifscCode: emp['ifscCode']?.toString(),
+        accountType: emp['accountType']?.toString(),
+        branchName: emp['branchName']?.toString(),
       );
 
       debugPrint('✅ [PROFILE] Profile loaded: ${parsedUser.name} (${parsedUser.email})');

@@ -65,10 +65,10 @@ class PermissionService {
         };
       case UserRole.hrManager:
         return {
-          canViewCommission: true,
+          canViewCommission: false, // Only Salesman can view commission
           canViewWallet: true,
-          canViewCommissionHistory: true,
-          canViewCommissionDetails: true,
+          canViewCommissionHistory: false,
+          canViewCommissionDetails: false,
           canApproveLeave: true,
           canApproveExpense: true,
           canManageEmployees: true,

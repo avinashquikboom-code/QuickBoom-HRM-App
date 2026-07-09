@@ -227,6 +227,112 @@ class EmployeeDashboardView extends ConsumerWidget {
             ),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
+                // ─── Date Filter Row ───────────────────────────────────────────
+                Row(
+                  children: [
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () async {
+                          final selected = await showDatePicker(
+                            context: context,
+                            initialDate: dashboardState.selectedMonth ?? DateTime.now(),
+                            firstDate: DateTime(2020),
+                            lastDate: DateTime(2030),
+                          );
+                          if (selected != null) {
+                            ref.read(employeeDashboardViewModelProvider.notifier).setSelectedMonth(selected);
+                          }
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: AppColors.surface,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: AppColors.cardBorder),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(RemixIcons.calendar_line, size: 18, color: AppColors.textSecondary),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  dashboardState.selectedMonth != null
+                                      ? DateFormat('MMMM yyyy').format(dashboardState.selectedMonth!)
+                                      : 'Select Month',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: dashboardState.selectedMonth != null
+                                        ? AppColors.textPrimary
+                                        : AppColors.textSecondary,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                              if (dashboardState.selectedMonth != null)
+                                GestureDetector(
+                                  onTap: () => ref.read(employeeDashboardViewModelProvider.notifier).clearFilters(),
+                                  child: Icon(RemixIcons.close_line, size: 16, color: AppColors.textHint),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () async {
+                          final selected = await showDatePicker(
+                            context: context,
+                            initialDate: dashboardState.selectedYear ?? DateTime.now(),
+                            firstDate: DateTime(2020),
+                            lastDate: DateTime(2030),
+                            initialDatePickerMode: DatePickerMode.year,
+                          );
+                          if (selected != null) {
+                            ref.read(employeeDashboardViewModelProvider.notifier).setSelectedYear(selected);
+                          }
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: AppColors.surface,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: AppColors.cardBorder),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(RemixIcons.calendar_event_line, size: 18, color: AppColors.textSecondary),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  dashboardState.selectedYear != null
+                                      ? DateFormat('yyyy').format(dashboardState.selectedYear!)
+                                      : 'Select Year',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: dashboardState.selectedYear != null
+                                        ? AppColors.textPrimary
+                                        : AppColors.textSecondary,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                              if (dashboardState.selectedYear != null)
+                                GestureDetector(
+                                  onTap: () => ref.read(employeeDashboardViewModelProvider.notifier).clearFilters(),
+                                  child: Icon(RemixIcons.close_line, size: 16, color: AppColors.textHint),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 16),
+
                 // ─── Holographic Attendance Punch Card ─────────────────────
                 _TodayPunchCard(
                   isCheckedIn: attendanceState.isCheckedIn,

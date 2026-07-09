@@ -161,11 +161,13 @@ class AppUrl {
   // ─────────────────────────────────────────────
   static const String mobileMyLeaves = '/api/mobile/leave/my-leaves';
   static const String mobileApplyLeave = '/api/mobile/leave/apply';
+  static const String mobileDownloadMyLeaveReport = '/api/mobile/leave/my-report/download';
 
   // ─────────────────────────────────────────────
   // Mobile – Attendance (HR/Admin)
   // ─────────────────────────────────────────────
   static const String mobileAllAttendance = '/api/mobile/attendance/all';
+  static const String mobileMonthlyWorkSchedule = '/api/mobile/attendance/schedule/monthly';
 
   // ─────────────────────────────────────────────
   // Mobile – Notifications

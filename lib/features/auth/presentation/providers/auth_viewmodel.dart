@@ -116,6 +116,11 @@ class AuthViewModel extends StateNotifier<AuthState> {
           DateTime.now(),
       salary: 0.0,
       avatar: profMap['avatar']?.toString(),
+      bankName: empMap['bankName']?.toString(),
+      accountNumber: empMap['accountNumber']?.toString(),
+      ifscCode: empMap['ifscCode']?.toString(),
+      accountType: empMap['accountType']?.toString(),
+      branchName: empMap['branchName']?.toString(),
     );
   }
 
@@ -245,6 +250,11 @@ class AuthViewModel extends StateNotifier<AuthState> {
           salary:      (prof['salary'] as num?)?.toDouble() ??
               (emp['salary'] as num?)?.toDouble() ?? 0.0,
           avatar:      prof['avatar']?.toString(),
+          bankName:    emp['bankName']?.toString(),
+          accountNumber: emp['accountNumber']?.toString(),
+          ifscCode:    emp['ifscCode']?.toString(),
+          accountType: emp['accountType']?.toString(),
+          branchName:  emp['branchName']?.toString(),
         );
 
         state = AuthState(currentUser: parsedUser);

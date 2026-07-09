@@ -129,6 +129,8 @@ class EmployeeDashboardState {
   final UpcomingData? upcomingData;
   final bool isLoading;
   final String? errorMessage;
+  final DateTime? selectedMonth;
+  final DateTime? selectedYear;
 
   const EmployeeDashboardState({
     this.stats = const DashboardStats(),
@@ -136,6 +138,8 @@ class EmployeeDashboardState {
     this.upcomingData,
     this.isLoading = false,
     this.errorMessage,
+    this.selectedMonth,
+    this.selectedYear,
   });
 
   EmployeeDashboardState copyWith({
@@ -145,6 +149,8 @@ class EmployeeDashboardState {
     bool? isLoading,
     String? errorMessage,
     bool clearError = false,
+    DateTime? selectedMonth,
+    DateTime? selectedYear,
   }) {
     return EmployeeDashboardState(
       stats: stats ?? this.stats,
@@ -152,6 +158,8 @@ class EmployeeDashboardState {
       upcomingData: upcomingData ?? this.upcomingData,
       isLoading: isLoading ?? this.isLoading,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+      selectedMonth: selectedMonth ?? this.selectedMonth,
+      selectedYear: selectedYear ?? this.selectedYear,
     );
   }
 }
@@ -163,10 +171,19 @@ class EmployeeDashboardViewModel extends StateNotifier<EmployeeDashboardState> {
     fetchDashboard();
   }
 
-  Future<void> fetchDashboard() async {
-    state = state.copyWith(isLoading: true, clearError: true);
+  Future<void> fetchDashboard({DateTime? month, DateTime? year}) async {
+    state = state.copyWith(isLoading: true, clearError: true, selectedMonth: month, selectedYear: year);
     try {
-      final res = await ApiService.get(AppUrl.employeeDashboardStats);
+      final queryParams = <String, String>{};
+      if (month != null) {
+        queryParams['month'] = month.month.toString();
+      }
+      if (year != null) {
+        queryParams['year'] = year.year.toString();
+      }
+
+      final queryString = queryParams.isNotEmpty ? '?${queryParams.entries.map((e) => '${e.key}=${e.value}').join('&')}' : '';
+      final res = await ApiService.get('${AppUrl.employeeDashboardStats}$queryString');
       final data = jsonDecode(res.body);
 
       final statsData = data['stats'];
@@ -255,6 +272,8 @@ class EmployeeDashboardViewModel extends StateNotifier<EmployeeDashboardState> {
         announcements: announcements,
         upcomingData: upcomingData,
         isLoading: false,
+        selectedMonth: month,
+        selectedYear: year,
       );
     } catch (error) {
       state = state.copyWith(
@@ -262,6 +281,21 @@ class EmployeeDashboardViewModel extends StateNotifier<EmployeeDashboardState> {
         errorMessage: error.toString().replaceAll('Exception: ', ''),
       );
     }
+  }
+
+  void setSelectedMonth(DateTime month) {
+    state = state.copyWith(selectedMonth: month);
+    fetchDashboard(month: month, year: state.selectedYear);
+  }
+
+  void setSelectedYear(DateTime year) {
+    state = state.copyWith(selectedYear: year);
+    fetchDashboard(month: state.selectedMonth, year: year);
+  }
+
+  void clearFilters() {
+    state = state.copyWith(selectedMonth: null, selectedYear: null);
+    fetchDashboard();
   }
 }
 

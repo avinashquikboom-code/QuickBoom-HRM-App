@@ -71,208 +71,303 @@ class _HrProfileViewState extends ConsumerState<HrProfileView> {
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        automaticallyImplyLeading: false,
-        title: Text(
-          'My Profile',
-          style: TextStyle(
-            color: cs.onSurface,
-            fontSize: 18,
-            fontWeight: FontWeight.w800,
-          ),
-        ),
-        actions: [
-          IconButton(
-            icon: Icon(
-              RemixIcons.logout_box_line,
-              color: AppColors.error,
-              size: 20,
-            ),
-            onPressed: () => _confirmLogout(context, ref),
-          ),
-          const SizedBox(width: 8),
-        ],
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(20, 20, 20, 110),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Profile Header
-            Center(
-              child: Column(
-                children: [
-                  Stack(
-                    children: [
-                      Container(
-                        width: 100,
-                        height: 100,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          gradient: LinearGradient(
-                            colors: [
-                              AppColors.primary,
-                              AppColors.primary.withValues(alpha: 0.7),
-                            ],
+      body: CustomScrollView(
+        physics: const BouncingScrollPhysics(),
+        slivers: [
+          // Custom App Bar Header
+          SliverAppBar(
+            expandedHeight: 180,
+            floating: false,
+            pinned: true,
+            elevation: 0,
+            backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
+            actions: [
+              IconButton(
+                icon: Icon(
+                  RemixIcons.logout_box_line,
+                  color: Colors.white,
+                  size: 20,
+                ),
+                onPressed: () => _confirmLogout(context, ref),
+              ),
+              const SizedBox(width: 8),
+            ],
+            flexibleSpace: FlexibleSpaceBar(
+              background: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      AppColors.primary,
+                      AppColors.primary.withValues(alpha: 0.8),
+                    ],
+                  ),
+                ),
+                child: SafeArea(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Top row with notification and profile
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            // Notification bell with badge
+                            Stack(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.2),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    RemixIcons.notification_3_line,
+                                    color: Colors.white,
+                                    size: 22,
+                                  ),
+                                ),
+                                Positioned(
+                                  right: 0,
+                                  top: 0,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(4),
+                                    decoration: const BoxDecoration(
+                                      color: Colors.red,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Text(
+                                      '9',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            // Profile avatar
+                            Container(
+                              width: 42,
+                              height: 42,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(color: Colors.white, width: 2),
+                              ),
+                              child: ClipOval(
+                                child: _buildAvatarImage(user.avatar, user.initials),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const Spacer(),
+                        // Welcome text
+                        Text(
+                          'Welcome back,',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.9),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
-                        child: _buildAvatarImage(user.avatar, user.initials),
-                      ),
-                      Positioned(
-                        bottom: 0,
-                        right: 0,
-                        child: GestureDetector(
-                          onTap: () => _showAvatarOptions(context, ref),
-                          child: Container(
-                            padding: const EdgeInsets.all(6),
+                        const SizedBox(height: 4),
+                        Text(
+                          user.name,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 24,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 110),
+            sliver: SliverList(
+              delegate: SliverChildListDelegate([
+                // Profile Header
+                Center(
+                  child: Column(
+                    children: [
+                      Stack(
+                        children: [
+                          Container(
+                            width: 100,
+                            height: 100,
                             decoration: BoxDecoration(
-                              color: AppColors.primary,
                               shape: BoxShape.circle,
-                              border: Border.all(color: cs.surface, width: 2),
+                              gradient: LinearGradient(
+                                colors: [
+                                  AppColors.primary,
+                                  AppColors.primary.withValues(alpha: 0.7),
+                                ],
+                              ),
                             ),
-                            child: const Icon(
-                              RemixIcons.camera_line,
-                              color: Colors.white,
-                              size: 14,
+                            child: _buildAvatarImage(user.avatar, user.initials),
+                          ),
+                          Positioned(
+                            bottom: 0,
+                            right: 0,
+                            child: GestureDetector(
+                              onTap: () => _showAvatarOptions(context, ref),
+                              child: Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primary,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: cs.surface, width: 2),
+                                ),
+                                child: const Icon(
+                                  RemixIcons.camera_line,
+                                  color: Colors.white,
+                                  size: 14,
+                                ),
+                              ),
                             ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        user.name,
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: cs.onSurface,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        user.email,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: cs.onSurface.withValues(alpha: 0.6),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          'HR Manager',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.primary,
                           ),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
-                  Text(
-                    user.name,
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: cs.onSurface,
-                    ),
+                ),
+                const SizedBox(height: 32),
+
+                // Profile Options
+                _buildProfileOption(
+                  context,
+                  icon: RemixIcons.user_line,
+                  title: 'Edit Profile',
+                  subtitle: 'Update your personal information',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const EditProfileView()),
+                    );
+                  },
+                ),
+                _buildProfileOption(
+                  context,
+                  icon: RemixIcons.lock_line,
+                  title: 'Change Password',
+                  subtitle: 'Update your password',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const ChangePasswordView()),
+                    );
+                  },
+                ),
+                _buildProfileOption(
+                  context,
+                  icon: RemixIcons.settings_3_line,
+                  title: 'Theme Settings',
+                  subtitle: 'Customize app appearance',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const ThemeSettingsView()),
+                    );
+                  },
+                ),
+                const SizedBox(height: 16),
+
+                // Account Info
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: cs.surfaceContainer,
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    user.email,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: cs.onSurface.withValues(alpha: 0.6),
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Account Information',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: cs.onSurface,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      _buildInfoRow('Employee ID', user.employeeId, cs),
+                      _buildInfoRow('Department', user.department, cs),
+                      _buildInfoRow('Designation', user.designation, cs),
+                      _buildInfoRow(
+                        'Joined Date',
+                        DateFormat('MMM dd, yyyy').format(user.joinDate),
+                        cs,
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
+                ),
+                const SizedBox(height: 24),
+
+                // Logout Button
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () => _confirmLogout(context, ref),
+                    icon: Icon(RemixIcons.logout_box_line, color: Colors.white),
+                    label: Text(
+                      'Logout',
+                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
                     ),
-                    child: Text(
-                      'HR Manager',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.primary,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.error,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
                       ),
                     ),
                   ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 32),
-
-            // Profile Options
-            _buildProfileOption(
-              context,
-              icon: RemixIcons.user_line,
-              title: 'Edit Profile',
-              subtitle: 'Update your personal information',
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const EditProfileView()),
-                );
-              },
-            ),
-            _buildProfileOption(
-              context,
-              icon: RemixIcons.lock_line,
-              title: 'Change Password',
-              subtitle: 'Update your password',
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const ChangePasswordView()),
-                );
-              },
-            ),
-            _buildProfileOption(
-              context,
-              icon: RemixIcons.settings_3_line,
-              title: 'Theme Settings',
-              subtitle: 'Customize app appearance',
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const ThemeSettingsView()),
-                );
-              },
-            ),
-            const SizedBox(height: 16),
-
-            // Account Info
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: cs.surfaceContainer,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Account Information',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: cs.onSurface,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  _buildInfoRow('Employee ID', user.employeeId, cs),
-                  _buildInfoRow('Department', user.department, cs),
-                  _buildInfoRow('Designation', user.designation, cs),
-                  _buildInfoRow(
-                    'Joined Date',
-                    DateFormat('MMM dd, yyyy').format(user.joinDate),
-                    cs,
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            // Logout Button
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: () => _confirmLogout(context, ref),
-                icon: Icon(RemixIcons.logout_box_line, color: Colors.white),
-                label: Text(
-                  'Logout',
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
                 ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.error,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              ),
+              ]),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

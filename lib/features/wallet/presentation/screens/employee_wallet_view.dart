@@ -147,6 +147,10 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
     final cs = Theme.of(context).colorScheme;
     final availableBalance = (_walletData?['availableBalance'] as num?)?.toDouble() ?? 0.0;
     final formattedBalance = NumberFormat('#,##,###.00').format(availableBalance);
+    final monthlySalary = (_walletData?['salary']?['monthlySalary'] as num?)?.toDouble() ?? 0.0;
+    final grossSalary = (_walletData?['salary']?['grossSalary'] as num?)?.toDouble() ?? monthlySalary;
+    final formattedSalary = NumberFormat('#,##,###').format(monthlySalary);
+    final formattedGrossSalary = NumberFormat('#,##,###').format(grossSalary);
 
     if (_isLoading) {
       return Scaffold(
@@ -321,13 +325,9 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
                                       fontWeight: FontWeight.w900,
                                     ),
                                   ),
-                                ],
-                              ),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
+                                  const SizedBox(height: 8),
                                   Text(
-                                    'CARD NO',
+                                    'GROSS SALARY',
                                     style: TextStyle(
                                       color: Colors.white.withValues(alpha: 0.6),
                                       fontSize: 9,
@@ -337,16 +337,41 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
-                                    'QB-${user?.employeeId.replaceAll(RegExp(r'\D'), '') ?? "8902"}-XXXX',
+                                    '₹$formattedGrossSalary',
                                     style: const TextStyle(
                                       color: Colors.white,
-                                      fontSize: 13,
-                                      fontFamily: 'monospace',
+                                      fontSize: 14,
                                       fontWeight: FontWeight.w700,
                                     ),
                                   ),
                                 ],
                               ),
+
+                              // for now keep this hidden
+                              // Column(
+                              //   crossAxisAlignment: CrossAxisAlignment.end,
+                              //   children: [
+                              //     Text(
+                              //       'CARD NO',
+                              //       style: TextStyle(
+                              //         color: Colors.white.withValues(alpha: 0.6),
+                              //         fontSize: 9,
+                              //         fontWeight: FontWeight.w800,
+                              //         letterSpacing: 1.2,
+                              //       ),
+                              //     ),
+                              //     const SizedBox(height: 2),
+                              //     Text(
+                              //       'HK-${user?.employeeId.replaceAll(RegExp(r'\D'), '') ?? "8902"}-XXXX',
+                              //       style: const TextStyle(
+                              //         color: Colors.white,
+                              //         fontSize: 13,
+                              //         fontFamily: 'monospace',
+                              //         fontWeight: FontWeight.w700,
+                              //       ),
+                              //     ),
+                              //   ],
+                              // ),
                             ],
                           ),
                         ],
@@ -358,6 +383,71 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
                 const SizedBox(height: 22),
 
                 // ─── Salary Summary Block ───
+                if (_walletData?['salary'] != null)
+                  Container(
+                    padding: const EdgeInsets.all(18),
+                    decoration: BoxDecoration(
+                      color: cs.surface,
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(color: AppColors.cardBorder, width: 1.5),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.cardShadow,
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'TOTAL SALARY',
+                              style: TextStyle(
+                                color: AppColors.textSecondary,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 0.8,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              '₹$formattedSalary',
+                              style: TextStyle(
+                                color: AppColors.textPrimary,
+                                fontSize: 20,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: AppColors.primary.withValues(alpha: 0.3), width: 1),
+                          ),
+                          child: Text(
+                            'Monthly',
+                            style: TextStyle(
+                              color: AppColors.primary,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.1, end: 0),
+
+                const SizedBox(height: 16),
+
+                // ─── Salary Details Block ───
                 if (_walletData?['salary'] != null)
                   Container(
                     padding: const EdgeInsets.all(18),
@@ -939,12 +1029,13 @@ class _RequestAdvanceSheetState extends State<_RequestAdvanceSheet> {
         ],
       ),
       padding: EdgeInsets.fromLTRB(24, 16, 24, 24 + bottomInset),
-      child: Form(
-        key: _formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+      child: SingleChildScrollView(
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
             Center(
               child: Container(
                 width: 40,
@@ -1158,7 +1249,8 @@ class _RequestAdvanceSheetState extends State<_RequestAdvanceSheet> {
           ],
         ),
       ),
-    );
+    ) 
+      );
   }
 }
 
@@ -1215,8 +1307,34 @@ class _PaybackChoice extends StatelessWidget {
   }
 }
 
-class _BankDetailsSheet extends StatelessWidget {
+class _BankDetailsSheet extends StatefulWidget {
   const _BankDetailsSheet();
+
+  @override
+  State<_BankDetailsSheet> createState() => _BankDetailsSheetState();
+}
+
+class _BankDetailsSheetState extends State<_BankDetailsSheet> {
+  Map<String, dynamic>? _bankDetails;
+  bool _isLoading = true;
+  bool _isError = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadBankDetails();
+  }
+
+  Future<void> _loadBankDetails() async {
+    final data = await WalletService.fetchBankDetails();
+    if (mounted) {
+      setState(() {
+        _bankDetails = data;
+        _isLoading = false;
+        _isError = data == null;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1277,34 +1395,85 @@ class _BankDetailsSheet extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 24),
-          
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: cs.surface,
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: AppColors.cardBorder, width: 1.5),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.cardShadow,
-                  blurRadius: 8,
-                  offset: const Offset(0, 3),
-                ),
-              ],
-            ),
-            child: Column(
-              children: [
-                _BankDetailRow(label: 'Account Holder', value: 'Avinash Magar'),
-                Divider(color: AppColors.divider, height: 24),
-                _BankDetailRow(label: 'Bank Name', value: 'HDFC Bank Ltd'),
-                Divider(color: AppColors.divider, height: 24),
-                _BankDetailRow(label: 'Account Number', value: 'XXXX XXXX 8890 2311', isSecure: true),
-                Divider(color: AppColors.divider, height: 24),
-                _BankDetailRow(label: 'IFSC Code', value: 'HDFC0000104'),
-                Divider(color: AppColors.divider, height: 24),
-                _BankDetailRow(label: 'Account Type', value: 'Savings Account'),
-              ],
-            ),
+
+          if (_isLoading)
+            Container(
+              padding: const EdgeInsets.all(40),
+              child: const Center(child: CircularProgressIndicator()),
+            )
+          else if (_isError)
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: cs.surface,
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: AppColors.cardBorder, width: 1.5),
+              ),
+              child: Column(
+                children: [
+                  Icon(RemixIcons.error_warning_line, color: AppColors.error, size: 48),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Failed to load bank details',
+                    style: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: _loadBankDetails,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                    ),
+                    child: const Text('Retry'),
+                  ),
+                ],
+              ),
+            )
+          else
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: cs.surface,
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: AppColors.cardBorder, width: 1.5),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.cardShadow,
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  if (_bankDetails?['accountHolder'] != null)
+                    _BankDetailRow(label: 'Account Holder', value: _bankDetails!['accountHolder']),
+                  if (_bankDetails?['bankName'] != null && _bankDetails!['bankName'].isNotEmpty)
+                    Divider(color: AppColors.divider, height: 24),
+                  if (_bankDetails?['bankName'] != null && _bankDetails!['bankName'].isNotEmpty)
+                    _BankDetailRow(label: 'Bank Name', value: _bankDetails!['bankName']),
+                  if (_bankDetails?['accountNumber'] != null && _bankDetails!['accountNumber'].isNotEmpty)
+                    Divider(color: AppColors.divider, height: 24),
+                  if (_bankDetails?['accountNumber'] != null && _bankDetails!['accountNumber'].isNotEmpty)
+                    _BankDetailRow(label: 'Account Number', value: _bankDetails!['accountNumber'], isSecure: true),
+                  if (_bankDetails?['ifscCode'] != null && _bankDetails!['ifscCode'].isNotEmpty)
+                    Divider(color: AppColors.divider, height: 24),
+                  if (_bankDetails?['ifscCode'] != null && _bankDetails!['ifscCode'].isNotEmpty)
+                    _BankDetailRow(label: 'IFSC Code', value: _bankDetails!['ifscCode']),
+                  if (_bankDetails?['accountType'] != null && _bankDetails!['accountType'].isNotEmpty)
+                    Divider(color: AppColors.divider, height: 24),
+                  if (_bankDetails?['accountType'] != null && _bankDetails!['accountType'].isNotEmpty)
+                    _BankDetailRow(label: 'Account Type', value: _bankDetails!['accountType']),
+                  if (_bankDetails?['branchName'] != null && _bankDetails!['branchName'].isNotEmpty)
+                    Divider(color: AppColors.divider, height: 24),
+                  if (_bankDetails?['branchName'] != null && _bankDetails!['branchName'].isNotEmpty)
+                    _BankDetailRow(label: 'Branch Name', value: _bankDetails!['branchName']),
+                ],
+              ),
           ),
           const SizedBox(height: 28),
           

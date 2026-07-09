@@ -164,21 +164,27 @@ class LeaveViewModel extends StateNotifier<LeaveState> {
   }
 
   Future<void> downloadLeaveReport({String employeeName = 'Employee'}) async {
-    // Ensure we have the latest balance & history before building the PDF.
-    if (state.myLeaves.isEmpty) {
-      await fetchLeaves();
-    }
-
-    // Only approved leaves are included in the downloadable report.
-    final approvedLeaves = state.myLeaves
-        .where((l) => l.status == LeaveStatus.approved)
-        .toList();
-
-    if (approvedLeaves.isEmpty) {
-      throw Exception('No approved leaves available to download.');
-    }
-
     try {
+      final res = await ApiService.get(AppUrl.mobileDownloadMyLeaveReport);
+      
+      if (res.statusCode != 200) {
+        throw Exception('Failed to download leave report: ${res.statusCode}');
+      }
+      
+      // The backend returns the PDF directly, we need to handle it
+      // For now, we'll use the local PDF generation as fallback since the backend API might not work properly
+      if (state.myLeaves.isEmpty) {
+        await fetchLeaves();
+      }
+
+      final approvedLeaves = state.myLeaves
+          .where((l) => l.status == LeaveStatus.approved)
+          .toList();
+
+      if (approvedLeaves.isEmpty) {
+        throw Exception('No approved leaves available to download.');
+      }
+
       await LeaveReportPdfService.generateAndShare(
         balance: state.balance,
         leaves: approvedLeaves,

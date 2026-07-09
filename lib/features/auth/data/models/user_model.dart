@@ -19,6 +19,11 @@ class UserModel {
   final String? reportingManagerId;
   final String? reportingManagerName;
   final Map<String, bool>? permissions;
+  final String? bankName;
+  final String? accountNumber;
+  final String? ifscCode;
+  final String? accountType;
+  final String? branchName;
 
   const UserModel({
     required this.id,
@@ -39,6 +44,11 @@ class UserModel {
     this.reportingManagerId,
     this.reportingManagerName,
     this.permissions,
+    this.bankName,
+    this.accountNumber,
+    this.ifscCode,
+    this.accountType,
+    this.branchName,
   });
 
   String get initials {

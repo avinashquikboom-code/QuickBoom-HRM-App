@@ -61,11 +61,15 @@ class HRDashboardState {
   final HRDashboardStats stats;
   final bool isLoading;
   final String? errorMessage;
+  final DateTime? selectedMonth;
+  final DateTime? selectedYear;
 
   const HRDashboardState({
     this.stats = const HRDashboardStats(),
     this.isLoading = false,
     this.errorMessage,
+    this.selectedMonth,
+    this.selectedYear,
   });
 
   HRDashboardState copyWith({
@@ -73,11 +77,15 @@ class HRDashboardState {
     bool? isLoading,
     String? errorMessage,
     bool clearError = false,
+    DateTime? selectedMonth,
+    DateTime? selectedYear,
   }) {
     return HRDashboardState(
       stats: stats ?? this.stats,
       isLoading: isLoading ?? this.isLoading,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+      selectedMonth: selectedMonth ?? this.selectedMonth,
+      selectedYear: selectedYear ?? this.selectedYear,
     );
   }
 }
@@ -89,10 +97,19 @@ class HRDashboardViewModel extends StateNotifier<HRDashboardState> {
     fetchDashboardStats();
   }
 
-  Future<void> fetchDashboardStats() async {
-    state = state.copyWith(isLoading: true, clearError: true);
+  Future<void> fetchDashboardStats({DateTime? month, DateTime? year}) async {
+    state = state.copyWith(isLoading: true, clearError: true, selectedMonth: month, selectedYear: year);
     try {
-      final res = await ApiService.get(AppUrl.hrStats);
+      final queryParams = <String, String>{};
+      if (month != null) {
+        queryParams['month'] = month.month.toString();
+      }
+      if (year != null) {
+        queryParams['year'] = year.year.toString();
+      }
+
+      final queryString = queryParams.isNotEmpty ? '?${queryParams.entries.map((e) => '${e.key}=${e.value}').join('&')}' : '';
+      final res = await ApiService.get('${AppUrl.hrStats}$queryString');
       final data = jsonDecode(res.body);
 
       final statsData = data['data'];
@@ -138,6 +155,21 @@ class HRDashboardViewModel extends StateNotifier<HRDashboardState> {
         errorMessage: error.toString().replaceAll('Exception: ', ''),
       );
     }
+  }
+
+  void setSelectedMonth(DateTime month) {
+    state = state.copyWith(selectedMonth: month);
+    fetchDashboardStats(month: month, year: state.selectedYear);
+  }
+
+  void setSelectedYear(DateTime year) {
+    state = state.copyWith(selectedYear: year);
+    fetchDashboardStats(month: state.selectedMonth, year: year);
+  }
+
+  void clearFilters() {
+    state = state.copyWith(selectedMonth: null, selectedYear: null);
+    fetchDashboardStats();
   }
 }
 
