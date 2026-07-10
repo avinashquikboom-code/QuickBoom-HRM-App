@@ -19,6 +19,18 @@ class _EditProfileViewState extends ConsumerState<EditProfileView> {
   final _bioCtrl = TextEditingController();
   bool _initialized = false;
 
+  String? _selectedDepartmentId;
+  String _selectedShiftType = 'MORNING';
+  String _selectedWorkMode = 'OFFICE';
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(profileViewModelProvider.notifier).fetchDepartments();
+    });
+  }
+
   @override
   void dispose() {
     _nameCtrl.dispose();
@@ -31,7 +43,18 @@ class _EditProfileViewState extends ConsumerState<EditProfileView> {
     if (!_initialized && state.user != null) {
       _nameCtrl.text = state.user!.name;
       _phoneCtrl.text = state.user!.phone;
+      _bioCtrl.text = ''; // bio is not stored in UserModel; leave empty for now
+      _selectedShiftType = state.user!.shiftType ?? 'MORNING';
+      _selectedWorkMode = state.user!.workMode ?? 'OFFICE';
+      _selectedDepartmentId = state.user!.departmentId;
       _initialized = true;
+    }
+
+    // Keep selected department valid when the dropdown list loads
+    if (state.departments.isNotEmpty &&
+        _selectedDepartmentId != null &&
+        !state.departments.any((d) => d.id == _selectedDepartmentId)) {
+      _selectedDepartmentId = state.departments.first.id;
     }
   }
 
@@ -41,6 +64,9 @@ class _EditProfileViewState extends ConsumerState<EditProfileView> {
           fullName: _nameCtrl.text.trim(),
           phone: _phoneCtrl.text.trim(),
           bio: _bioCtrl.text.trim(),
+          departmentId: _selectedDepartmentId,
+          shiftType: _selectedShiftType,
+          workMode: _selectedWorkMode,
         );
   }
 
@@ -261,6 +287,65 @@ class _EditProfileViewState extends ConsumerState<EditProfileView> {
                 validator: null,
               ),
 
+              const SizedBox(height: 24),
+
+              _sectionLabel(context, 'Department & Shift'),
+
+              const SizedBox(height: 12),
+
+              // ─── Department ────────────────────────────────────────────
+              _buildDropdown<String?>(
+                context: context,
+                label: 'Department',
+                icon: RemixIcons.building_line,
+                isDark: isDark,
+                value: _selectedDepartmentId,
+                items: state.departments
+                    .map((d) => DropdownMenuItem(
+                          value: d.id,
+                          child: Text(d.name),
+                        ))
+                    .toList(),
+                onChanged: (v) => setState(() => _selectedDepartmentId = v),
+                validator: (v) =>
+                    v == null || v.isEmpty ? 'Department is required' : null,
+              ),
+
+              const SizedBox(height: 16),
+
+              // ─── Shift Type ────────────────────────────────────────────
+              _buildDropdown<String>(
+                context: context,
+                label: 'Shift Type',
+                icon: RemixIcons.time_line,
+                isDark: isDark,
+                value: _selectedShiftType,
+                items: const [
+                  DropdownMenuItem(value: 'MORNING', child: Text('Morning Shift')),
+                  DropdownMenuItem(value: 'EVENING', child: Text('Evening Shift')),
+                  DropdownMenuItem(value: 'NIGHT', child: Text('Night Shift')),
+                  DropdownMenuItem(value: 'ON_FIELD', child: Text('On Field Shift')),
+                ],
+                onChanged: (v) => setState(() => _selectedShiftType = v ?? 'MORNING'),
+              ),
+
+              const SizedBox(height: 16),
+
+              // ─── Work Mode ─────────────────────────────────────────────
+              _buildDropdown<String>(
+                context: context,
+                label: 'Work Mode',
+                icon: RemixIcons.briefcase_line,
+                isDark: isDark,
+                value: _selectedWorkMode,
+                items: const [
+                  DropdownMenuItem(value: 'OFFICE', child: Text('Office (On-site)')),
+                  DropdownMenuItem(value: 'HYBRID', child: Text('Hybrid')),
+                  DropdownMenuItem(value: 'REMOTE', child: Text('Remote')),
+                ],
+                onChanged: (v) => setState(() => _selectedWorkMode = v ?? 'OFFICE'),
+              ),
+
               const SizedBox(height: 32),
 
               // ─── Save Button ───────────────────────────────────────────
@@ -315,7 +400,7 @@ class _EditProfileViewState extends ConsumerState<EditProfileView> {
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        'Department, designation and salary details can only be updated by your HR team.',
+                        'Designation and salary details can only be updated by your HR team.',
                         style: TextStyle(
                           fontSize: 12,
                           color: AppColors.primary.withValues(alpha: 0.85),
@@ -414,6 +499,75 @@ class _EditProfileViewState extends ConsumerState<EditProfileView> {
         contentPadding: EdgeInsets.symmetric(
           horizontal: 16,
           vertical: maxLines > 1 ? 16 : 14,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDropdown<T>({
+    required BuildContext context,
+    required String label,
+    required IconData icon,
+    required bool isDark,
+    required T value,
+    required List<DropdownMenuItem<T>> items,
+    required void Function(T?) onChanged,
+    String? Function(T?)? validator,
+    String? hint,
+  }) {
+    final cs = Theme.of(context).colorScheme;
+
+    return DropdownButtonFormField<T>(
+      key: ValueKey(value),
+      initialValue: value,
+      items: items,
+      onChanged: onChanged,
+      validator: validator,
+      isExpanded: true,
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hint,
+        labelStyle: TextStyle(
+          color: cs.onSurface.withValues(alpha: 0.55),
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+        ),
+        hintStyle: TextStyle(
+          color: cs.onSurface.withValues(alpha: 0.35),
+          fontSize: 13,
+        ),
+        prefixIcon: Icon(icon,
+            size: 18, color: cs.onSurface.withValues(alpha: 0.45)),
+        filled: true,
+        fillColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(
+              color:
+                  isDark ? const Color(0xFF334155) : AppColors.inputBorder),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(
+              color:
+                  isDark ? const Color(0xFF334155) : AppColors.inputBorder),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide:
+              const BorderSide(color: AppColors.primary, width: 1.8),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: AppColors.error),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: AppColors.error, width: 1.8),
+        ),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 4,
         ),
       ),
     );

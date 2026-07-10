@@ -130,14 +130,16 @@ class AuthViewModel extends StateNotifier<AuthState> {
     required bool forceHrRole,
   }) async {
     state = state.copyWith(isLoading: true, clearError: true);
-    debugPrint('🔐 [AUTH] Login attempt for email: $email');
+    debugPrint('🔐 [AUTH] Login attempt for email: $email (${forceHrRole ? "HR" : "Employee"})');
 
     try {
       // Use cached FCM only — do not await FirebaseMessaging.getToken() here
       final fcmToken = await _getCachedFcmToken();
 
+      final loginEndpoint = forceHrRole ? AppUrl.hrLogin : AppUrl.login;
+      debugPrint('🔐 [AUTH] Using endpoint: $loginEndpoint (forceHrRole: $forceHrRole)');
       final loginRes = await ApiService.post(
-        AppUrl.login,
+        loginEndpoint,
         {
           'email': email.trim(),
           'password': password.trim(),
@@ -188,8 +190,10 @@ class AuthViewModel extends StateNotifier<AuthState> {
   Future<bool> login(String employeeId, String password) =>
       _performLogin(employeeId, password, forceHrRole: false);
 
-  Future<bool> hrLogin(String email, String password) =>
-      _performLogin(email, password, forceHrRole: true);
+  Future<bool> hrLogin(String email, String password) {
+    debugPrint('🔐 [AUTH] HR Login called for email: $email');
+    return _performLogin(email, password, forceHrRole: true);
+  }
 
   Future<bool> restoreSession() async {
     state = state.copyWith(isLoading: true, clearError: true);

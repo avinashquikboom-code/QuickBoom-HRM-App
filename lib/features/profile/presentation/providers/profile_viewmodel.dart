@@ -5,10 +5,27 @@ import 'package:quickboom_hrm/core/services/api_service.dart';
 import 'package:quickboom_hrm/core/constants/app_url.dart';
 import 'package:quickboom_hrm/features/auth/data/models/user_model.dart';
 
+// ─── Department Option ──────────────────────────────────────────────────────────
+
+class DepartmentOption {
+  final String id;
+  final String name;
+
+  const DepartmentOption({required this.id, required this.name});
+
+  factory DepartmentOption.fromJson(Map<String, dynamic> json) {
+    return DepartmentOption(
+      id: json['id']?.toString() ?? '',
+      name: json['name']?.toString() ?? '',
+    );
+  }
+}
+
 // ─── Profile State ──────────────────────────────────────────────────────────────
 
 class ProfileState {
   final UserModel? user;
+  final List<DepartmentOption> departments;
   final bool isLoading;
   final bool isUpdating;
   final String? errorMessage;
@@ -16,6 +33,7 @@ class ProfileState {
 
   const ProfileState({
     this.user,
+    this.departments = const [],
     this.isLoading = false,
     this.isUpdating = false,
     this.errorMessage,
@@ -24,6 +42,7 @@ class ProfileState {
 
   ProfileState copyWith({
     UserModel? user,
+    List<DepartmentOption>? departments,
     bool? isLoading,
     bool? isUpdating,
     String? errorMessage,
@@ -32,6 +51,7 @@ class ProfileState {
   }) {
     return ProfileState(
       user: user ?? this.user,
+      departments: departments ?? this.departments,
       isLoading: isLoading ?? this.isLoading,
       isUpdating: isUpdating ?? this.isUpdating,
       errorMessage: clearMessages ? null : (errorMessage ?? this.errorMessage),
@@ -68,9 +88,12 @@ class ProfileViewModel extends StateNotifier<ProfileState> {
         role: (uRole == 'HR' || uRole == 'SUPER_ADMIN' || uRole == 'ADMIN' || uRole == 'PLATFORM_ADMIN')
             ? UserRole.hrManager
             : UserRole.employee,
-        department: (emp['department'] is Map 
-            ? emp['department']['name'] 
+        department: (emp['department'] is Map
+            ? emp['department']['name']
             : emp['department'])?.toString() ?? 'General',
+        departmentId: emp['departmentId']?.toString(),
+        shiftType: emp['shiftTypeId']?.toString(),
+        workMode: emp['workModeId']?.toString(),
         designation: emp['designation']?.toString() ?? prof['bio']?.toString() ?? 'Employee',
         joinDate: DateTime.tryParse(prof['createdAt']?.toString() ?? emp['joinDate']?.toString() ?? '') ?? DateTime.now(),
         salary: double.tryParse(user['salary']?.toString() ?? emp['salary']?.toString() ?? '') ?? 0.0,
@@ -97,14 +120,22 @@ class ProfileViewModel extends StateNotifier<ProfileState> {
     required String fullName,
     required String phone,
     String? bio,
+    String? departmentId,
+    String? shiftType,
+    String? workMode,
   }) async {
     state = state.copyWith(isUpdating: true, clearMessages: true);
     try {
-      await ApiService.put(AppUrl.employeeProfile, {
+      final payload = <String, dynamic>{
         'fullName': fullName.trim(),
         'phone': phone.trim(),
         'bio': bio?.trim() ?? '',
-      });
+      };
+      if (departmentId != null) payload['departmentId'] = departmentId;
+      if (shiftType != null) payload['shiftTypeId'] = shiftType;
+      if (workMode != null) payload['workModeId'] = workMode;
+
+      await ApiService.put(AppUrl.employeeProfile, payload);
 
       await fetchProfile();
       state = state.copyWith(
@@ -154,6 +185,20 @@ class ProfileViewModel extends StateNotifier<ProfileState> {
         isUpdating: false,
         errorMessage: error.toString().replaceAll('Exception: ', ''),
       );
+    }
+  }
+
+  Future<void> fetchDepartments() async {
+    try {
+      final res = await ApiService.get(AppUrl.employeeDepartments);
+      final data = jsonDecode(res.body);
+      final rawDepartments = data['departments'] as List<dynamic>? ?? [];
+      final departments = rawDepartments
+          .map((d) => DepartmentOption.fromJson(d as Map<String, dynamic>))
+          .toList();
+      state = state.copyWith(departments: departments);
+    } catch (error) {
+      debugPrint('❌ [PROFILE] Failed to load departments: $error');
     }
   }
 

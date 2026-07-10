@@ -7,6 +7,7 @@ import 'package:quickboom_hrm/core/constants/app_colors.dart';
 import 'package:quickboom_hrm/core/utils/app_responsive.dart';
 import 'package:quickboom_hrm/features/auth/presentation/providers/auth_viewmodel.dart';
 import 'package:quickboom_hrm/features/dashboard/presentation/screens/employee_shell.dart';
+import 'package:quickboom_hrm/features/dashboard/presentation/screens/hr_shell.dart';
 import 'package:quickboom_hrm/core/widgets/premium_animated_background.dart';
 import 'package:quickboom_hrm/features/auth/presentation/screens/forgot_password_view.dart';
 
@@ -50,12 +51,19 @@ class _LoginViewState extends ConsumerState<LoginView> with SingleTickerProvider
 
   Future<void> _login() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
-    final success = await ref
-        .read(authViewModelProvider.notifier)
-        .login(_emailCtrl.text, _passCtrl.text);
+    
+    final isHrTab = _tabController?.index == 1;
+    debugPrint('🔐 [LOGIN] Tab selected - HR: $isHrTab (index: ${_tabController?.index})');
+    
+    final success = isHrTab
+        ? await ref.read(authViewModelProvider.notifier).hrLogin(_emailCtrl.text, _passCtrl.text)
+        : await ref.read(authViewModelProvider.notifier).login(_emailCtrl.text, _passCtrl.text);
+    
     if (success && mounted) {
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const EmployeeShell()),
+        MaterialPageRoute(
+          builder: (_) => isHrTab ? const HrShell() : const EmployeeShell(),
+        ),
       );
     }
   }
@@ -190,14 +198,19 @@ class _LoginViewState extends ConsumerState<LoginView> with SingleTickerProvider
                               _buildPremiumInput(
                                 r: r,
                                 controller: _emailCtrl,
-                                hint: 'Email or Employee ID',
+                                hint: _tabController?.index == 1 ? 'HR Email' : 'Email or Employee ID',
                                 icon: RemixIcons.mail_line,
                                 isObscure: false,
-                                keyboardType: TextInputType.text,
+                                keyboardType: TextInputType.emailAddress,
                                 autocorrect: false,
                                 enableSuggestions: false,
                                 validator: (v) {
-                                  if (v == null || v.trim().isEmpty) return 'Email or Employee ID is required';
+                                  if (v == null || v.trim().isEmpty) {
+                                    return _tabController?.index == 1 ? 'HR Email is required' : 'Email or Employee ID is required';
+                                  }
+                                  if (_tabController?.index == 1 && !v.contains('@')) {
+                                    return 'Please enter a valid email address';
+                                  }
                                   return null;
                                 },
                               ).animate().fadeIn(delay: 500.ms).slideX(begin: -0.1, end: 0),

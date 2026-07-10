@@ -27,6 +27,7 @@ class AppUrl {
   //  Employee – Profile
   // ─────────────────────────────────────────────
   static const String employeeProfile  = '/api/mobile/auth/profile';
+  static const String employeeDepartments = '/api/mobile/auth/departments';
   static const String employeeAvatar   = '/api/employee/avatar';
   static const String employeeAvatarUpload = '/api/mobile/auth/profile/avatar';
   static const String employeeAvatarRemove = '/api/mobile/auth/profile/avatar';
@@ -230,6 +231,7 @@ class AppUrl {
   // Mobile – Store (NEW)
   // ─────────────────────────────────────────────
   static const String mobileStore = '/api/mobile/store';
+  static const String mobileStoreAll = '/api/mobile/store/all';
   static const String mobileStoreEmployees = '/api/mobile/store/employees';
   static const String mobileStoreReports = '/api/mobile/store/reports';
 

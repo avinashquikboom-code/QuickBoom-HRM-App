@@ -8,6 +8,9 @@ class UserModel {
   final String phone;
   final UserRole role;
   final String department;
+  final String? departmentId;
+  final String? shiftType;
+  final String? workMode;
   final String designation;
   final DateTime joinDate;
   final double salary;
@@ -33,6 +36,9 @@ class UserModel {
     required this.phone,
     required this.role,
     required this.department,
+    this.departmentId,
+    this.shiftType,
+    this.workMode,
     required this.designation,
     required this.joinDate,
     required this.salary,

@@ -18,6 +18,20 @@ class MobileStoreService {
     }
   }
 
+  static Future<Map<String, dynamic>?> getAllStores() async {
+    try {
+      final response = await ApiService.get(AppUrl.mobileStoreAll);
+      final data = jsonDecode(response.body);
+      if (data['success'] == true) {
+        return data;
+      }
+      return null;
+    } catch (e) {
+      dev.log('Error fetching all stores: $e', name: 'MobileStoreService');
+      return null;
+    }
+  }
+
   static Future<Map<String, dynamic>?> getStoreEmployees({String? status}) async {
     try {
       final statusQuery = status != null ? '?status=$status' : '';
