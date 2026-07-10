@@ -10,6 +10,9 @@ class AppUrl {
   //  Base
   // ─────────────────────────────────────────────
   static String get baseUrl {
+    // Local Development
+    // return 'http://192.168.1.104:5004';
+    // Production
     return 'https://api.voxiqai.com';
   }
 
@@ -26,9 +29,9 @@ class AppUrl {
   // ─────────────────────────────────────────────
   //  Employee – Profile
   // ─────────────────────────────────────────────
-  static const String employeeProfile  = '/api/mobile/auth/profile';
+  static const String employeeProfile = '/api/mobile/auth/profile';
   static const String employeeDepartments = '/api/mobile/auth/departments';
-  static const String employeeAvatar   = '/api/employee/avatar';
+  static const String employeeAvatar = '/api/employee/avatar';
   static const String employeeAvatarUpload = '/api/mobile/auth/profile/avatar';
   static const String employeeAvatarRemove = '/api/mobile/auth/profile/avatar';
 
@@ -36,25 +39,31 @@ class AppUrl {
   //  Employee – Dashboard
   // ─────────────────────────────────────────────
   static const String employeeDashboardStats = '/api/employee/dashboard/stats';
-  static const String employeeDashboardUpcoming = '/api/mobile/dashboard/upcoming';
+  static const String employeeDashboardUpcoming =
+      '/api/mobile/dashboard/upcoming';
 
   // ─────────────────────────────────────────────
   //  Employee – Attendance  (mobile)
   // ─────────────────────────────────────────────
-  static const String attendanceToday   = '/api/mobile/attendance/today';
-  static const String attendanceHistory = '/api/mobile/attendance/history?limit=30';
-  static const String attendancePunchIn  = '/api/mobile/attendance/punch-in';
+  static const String attendanceToday = '/api/mobile/attendance/today';
+  static const String attendanceHistory =
+      '/api/mobile/attendance/history?limit=30';
+  static const String attendancePunchIn = '/api/mobile/attendance/punch-in';
   static const String attendancePunchOut = '/api/mobile/attendance/punch-out';
-  static const String attendanceBreakStart = '/api/mobile/attendance/break/start';
-  static const String attendanceBreakEnd   = '/api/mobile/attendance/break/end';
-  static const String attendanceMyReportDownload = '/api/mobile/attendance/my-report/download';
-  static const String attendanceReportDownload = '/api/mobile/attendance/report/download';
+  static const String attendanceBreakStart =
+      '/api/mobile/attendance/break/start';
+  static const String attendanceBreakEnd = '/api/mobile/attendance/break/end';
+  static const String attendanceMyReportDownload =
+      '/api/mobile/attendance/my-report/download';
+  static const String attendanceReportDownload =
+      '/api/mobile/attendance/report/download';
 
   // ─────────────────────────────────────────────
   //  Employee – Leaves
   // ─────────────────────────────────────────────
   static const String employeeLeaves = '/api/employee/leaves';
-  static const String leaveMyReportDownload = '/api/mobile/leave/my-report/download';
+  static const String leaveMyReportDownload =
+      '/api/mobile/leave/my-report/download';
   static const String leaveReportDownload = '/api/mobile/leave/report/download';
 
   // ─────────────────────────────────────────────
@@ -74,7 +83,7 @@ class AppUrl {
   // ─────────────────────────────────────────────
   //  Employee – Notifications
   // ─────────────────────────────────────────────
-  static const String employeeNotifications    = '/api/employee/notifications';
+  static const String employeeNotifications = '/api/employee/notifications';
   static const String employeeNotificationsReadAll =
       '/api/employee/notifications/read-all';
 
@@ -143,7 +152,7 @@ class AppUrl {
   //  HR – Payroll
   // ─────────────────────────────────────────────
   static const String hrPayrollStats = '/api/hr/payroll/stats';
-  static const String hrPayrollRuns  = '/api/hr/payroll/runs';
+  static const String hrPayrollRuns = '/api/hr/payroll/runs';
 
   // ─────────────────────────────────────────────
   //  HR – Reports
@@ -162,13 +171,15 @@ class AppUrl {
   // ─────────────────────────────────────────────
   static const String mobileMyLeaves = '/api/mobile/leave/my-leaves';
   static const String mobileApplyLeave = '/api/mobile/leave/apply';
-  static const String mobileDownloadMyLeaveReport = '/api/mobile/leave/my-report/download';
+  static const String mobileDownloadMyLeaveReport =
+      '/api/mobile/leave/my-report/download';
 
   // ─────────────────────────────────────────────
   // Mobile – Attendance (HR/Admin)
   // ─────────────────────────────────────────────
   static const String mobileAllAttendance = '/api/mobile/attendance/all';
-  static const String mobileMonthlyWorkSchedule = '/api/mobile/attendance/schedule/monthly';
+  static const String mobileMonthlyWorkSchedule =
+      '/api/mobile/attendance/schedule/monthly';
 
   // ─────────────────────────────────────────────
   // Mobile – Notifications
@@ -176,7 +187,8 @@ class AppUrl {
   static const String mobileNotifications = '/api/mobile/notifications';
   static String mobileMarkNotificationRead(String id) =>
       '/api/mobile/notifications/$id/read';
-  static const String mobileMarkAllNotificationsRead = '/api/mobile/notifications/read-all';
+  static const String mobileMarkAllNotificationsRead =
+      '/api/mobile/notifications/read-all';
 
   // ─────────────────────────────────────────────
   // Live Tracking (Mobile)
@@ -211,15 +223,20 @@ class AppUrl {
   // ─────────────────────────────────────────────
   // Comprehensive Attendance Report (Mobile)
   // ─────────────────────────────────────────────
-  static const String attendanceComprehensiveReport = '/api/mobile/attendance/comprehensive/comprehensive-report';
+  static const String attendanceComprehensiveReport =
+      '/api/mobile/attendance/comprehensive/comprehensive-report';
 
   // ─────────────────────────────────────────────
   // Mobile – Commission (NEW)
   // ─────────────────────────────────────────────
-  static const String mobileCommissionDashboard = '/api/mobile/commission/dashboard';
-  static const String mobileCommissionTransactions = '/api/mobile/commission/transactions';
-  static const String mobileCommissionTargets = '/api/mobile/commission/targets';
-  static const String mobileCommissionSettlements = '/api/mobile/commission/settlements';
+  static const String mobileCommissionDashboard =
+      '/api/mobile/commission/dashboard';
+  static const String mobileCommissionTransactions =
+      '/api/mobile/commission/transactions';
+  static const String mobileCommissionTargets =
+      '/api/mobile/commission/targets';
+  static const String mobileCommissionSettlements =
+      '/api/mobile/commission/settlements';
 
   // ─────────────────────────────────────────────
   // Mobile – Tasks (NEW)
