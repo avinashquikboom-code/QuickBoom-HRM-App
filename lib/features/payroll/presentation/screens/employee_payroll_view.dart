@@ -243,6 +243,7 @@ class _EmployeePayrollViewState extends ConsumerState<EmployeePayrollView> {
                                           backgroundColor: AppColors.primary,
                                           foregroundColor: Colors.white,
                                           elevation: 0,
+                                          minimumSize: const Size(0, 36),
                                           shape: RoundedRectangleBorder(
                                             borderRadius: BorderRadius.circular(12),
                                           ),
