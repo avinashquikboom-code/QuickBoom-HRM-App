@@ -9,15 +9,11 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 class StorageService {
   StorageService._(); // prevent instantiation
 
-  // Cached SharedPreferences instance
-  static SharedPreferences? _prefs;
-
   // FlutterSecureStorage instance for tokens
   static const FlutterSecureStorage _secureStorage = FlutterSecureStorage();
 
   static Future<SharedPreferences> _getPrefs() async {
-    _prefs ??= await SharedPreferences.getInstance();
-    return _prefs!;
+    return await SharedPreferences.getInstance();
   }
 
   // ─── Keys ──────────────────────────────────────────────────────────────────
@@ -172,7 +168,8 @@ class StorageService {
   static Future<void> markOnboardingSeen() async {
     try {
       final prefs = await _getPrefs();
-      await prefs.setBool(_onboardingKey, true);
+      final success = await prefs.setBool(_onboardingKey, true);
+      debugPrint('✅ Onboarding marked as seen: $success');
     } catch (e) {
       debugPrint('❌ Failed to mark onboarding: $e');
     }
@@ -182,8 +179,11 @@ class StorageService {
   static Future<bool> hasSeenOnboarding() async {
     try {
       final prefs = await _getPrefs();
-      return prefs.getBool(_onboardingKey) ?? false;
+      final value = prefs.getBool(_onboardingKey) ?? false;
+      debugPrint('🔍 Reading onboarding flag: $value');
+      return value;
     } catch (e) {
+      debugPrint('❌ Failed to read onboarding flag: $e');
       return false;
     }
   }
