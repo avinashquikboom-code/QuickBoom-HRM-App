@@ -64,8 +64,7 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> with Si
       }
     });
 
-    _loadAdvanceData();
-    _loadBankDetails();
+    _loadWalletData();
     
     // Automatically trigger sync of offline queue on load
     SalesService.syncOfflineQueue().then((synced) {
@@ -94,20 +93,15 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> with Si
     }
   }
 
-  Future<void> _loadAdvanceData() async {
-    final data = await WalletService.fetchEmployeeWallet();
+  Future<void> _loadWalletData() async {
+    final results = await Future.wait([
+      WalletService.fetchEmployeeWallet(),
+      WalletService.fetchBankDetails(),
+    ]);
     if (mounted) {
       setState(() {
-        _advanceData = data;
-      });
-    }
-  }
-
-  Future<void> _loadBankDetails() async {
-    final details = await WalletService.fetchBankDetails();
-    if (mounted) {
-      setState(() {
-        _bankDetails = details;
+        _advanceData = results[0];
+        _bankDetails = results[1];
       });
     }
   }
@@ -217,7 +211,7 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> with Si
           );
           if (result != null && mounted) {
             _showSuccessDialog(amount);
-            _loadAdvanceData();
+            _loadWalletData();
           }
         },
       ),
@@ -622,8 +616,7 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> with Si
     
     return RefreshIndicator(
       onRefresh: () async {
-        await _loadAdvanceData();
-        await _loadBankDetails();
+        await _loadWalletData();
         if (!isSalesman) {
           await _fetchPayslips();
         }
