@@ -386,7 +386,7 @@ class HrDashboardView extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(height: 12),
-                _DepartmentOverview(employees: employeeState.employees),
+                _DepartmentOverview(employees: employeeState.filteredEmployees),
 
                 const SizedBox(height: 24),
 
@@ -616,14 +616,19 @@ class _DepartmentOverview extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      dept,
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.textPrimary,
+                    Expanded(
+                      child: Text(
+                        dept,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.textPrimary,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
+                    const SizedBox(width: 8),
                     Text(
                       '$count Staff (${(progress * 100).round()}%)',
                       style: TextStyle(

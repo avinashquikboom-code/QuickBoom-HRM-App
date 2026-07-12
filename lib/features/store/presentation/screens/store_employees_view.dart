@@ -159,8 +159,6 @@ class _StoreEmployeesViewState extends ConsumerState<StoreEmployeesView> {
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(storeDashboardViewModelProvider);
-
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -176,59 +174,71 @@ class _StoreEmployeesViewState extends ConsumerState<StoreEmployeesView> {
             fontWeight: FontWeight.w800,
           ),
         ),
-        actions: [
-          IconButton(
-            icon: Icon(RemixIcons.filter_3_line, color: AppColors.textPrimary),
-            onPressed: _showFilterDialog,
-          ),
-        ],
       ),
-      body: Column(
-        children: [
-          // Search Bar
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Container(
-              decoration: BoxDecoration(
-                color: AppColors.surface,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.cardBorder),
-              ),
-              child: TextField(
-                controller: _searchController,
-                decoration: InputDecoration(
-                  hintText: 'Search by name or code...',
-                  hintStyle: TextStyle(color: AppColors.textHint),
-                  prefixIcon: Icon(RemixIcons.search_line, color: AppColors.textSecondary),
-                  suffixIcon: _searchController.text.isNotEmpty
-                      ? IconButton(
-                          icon: Icon(RemixIcons.close_line, color: AppColors.textSecondary),
-                          onPressed: () {
-                            _searchController.clear();
-                            _loadEmployees();
-                          },
-                        )
-                      : null,
-                  border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 32.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
                 ),
-                onChanged: (value) {
-                  setState(() {});
-                },
-                onSubmitted: (_) => _loadEmployees(),
-              ),
-            ),
+                child: const Icon(
+                  RemixIcons.group_line,
+                  size: 64,
+                  color: AppColors.primary,
+                ),
+              ).animate().scale(delay: 200.ms, duration: 400.ms, curve: Curves.easeOut),
+              const SizedBox(height: 32),
+              Text(
+                'Store Employees',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w900,
+                  color: AppColors.textPrimary,
+                ),
+                textAlign: TextAlign.center,
+              ).animate().fadeIn(delay: 300.ms),
+              const SizedBox(height: 12),
+              Text(
+                'This feature will be available in the next version update. Stay tuned!',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: AppColors.textSecondary,
+                  height: 1.5,
+                ),
+                textAlign: TextAlign.center,
+              ).animate().fadeIn(delay: 400.ms),
+              const SizedBox(height: 24),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: AppColors.info.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(30),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(RemixIcons.code_box_line, size: 16, color: AppColors.info),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Feature Coming Soon',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.info,
+                      ),
+                    ),
+                  ],
+                ),
+              ).animate().fadeIn(delay: 500.ms).slideY(begin: 0.2, end: 0),
+            ],
           ),
-          // Employee List
-          Expanded(
-            child: RefreshIndicator(
-              onRefresh: _onRefresh,
-              color: AppColors.primary,
-              backgroundColor: AppColors.surface,
-              child: _buildEmployeeList(state),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

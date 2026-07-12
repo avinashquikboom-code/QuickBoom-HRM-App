@@ -265,10 +265,11 @@ class _EmployeeCard extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 4),
-                  Row(
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 4,
                     children: [
                       _Tag(label: employee.department, color: AppColors.primary),
-                      const SizedBox(width: 6),
                       _Tag(label: employee.employeeId, color: AppColors.info),
                     ],
                   ),

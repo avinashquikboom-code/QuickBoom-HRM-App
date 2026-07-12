@@ -59,18 +59,75 @@ class _StoreDashboardViewState extends ConsumerState<StoreDashboardView> {
   }
 
   Widget _buildBody(StoreDashboardState state) {
-    if (state.isLoadingDashboard && state.dashboard == null) {
-      return _buildLoadingState();
-    }
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                RemixIcons.store_2_line,
+                size: 64,
+                color: AppColors.primary,
+              ),
+            ).animate().scale(delay: 200.ms, duration: 400.ms, curve: Curves.easeOut),
+            const SizedBox(height: 32),
+            Text(
+              'Store Dashboard',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.w900,
+                color: AppColors.textPrimary,
+              ),
+              textAlign: TextAlign.center,
+            ).animate().fadeIn(delay: 300.ms),
+            const SizedBox(height: 12),
+            Text(
+              'This feature will be available in the next version update. Stay tuned!',
+              style: TextStyle(
+                fontSize: 14,
+                color: AppColors.textSecondary,
+                height: 1.5,
+              ),
+              textAlign: TextAlign.center,
+            ).animate().fadeIn(delay: 400.ms),
+            const SizedBox(height: 24),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: AppColors.info.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(30),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(RemixIcons.code_box_line, size: 16, color: AppColors.info),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Feature Coming Soon',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.info,
+                    ),
+                  ),
+                ],
+              ),
+            ).animate().fadeIn(delay: 500.ms).slideY(begin: 0.2, end: 0),
+          ],
+        ),
+      ),
+    );
+  }
 
-    if (state.errorMessage != null && state.dashboard == null) {
-      return _buildErrorState(state.errorMessage!);
-    }
-
-    if (state.dashboard == null) {
-      return _buildEmptyState();
-    }
-
+  Widget _buildBodyOld(StoreDashboardState state) {
+    if (state.dashboard == null) return const SizedBox.shrink();
     final dashboard = state.dashboard!;
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),

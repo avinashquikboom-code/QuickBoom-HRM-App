@@ -31,7 +31,7 @@ class StoreService {
 
       final response = await http
           .get(
-            Uri.parse('${AppUrl.baseUrl}/api/store/dashboard'),
+            Uri.parse('${AppUrl.baseUrl}/api/mobile/store/dashboard'),
             headers: _getHeaders(token),
           )
           .timeout(_timeout);
@@ -79,7 +79,7 @@ class StoreService {
         if (role != null) 'role': role,
       };
 
-      final uri = Uri.parse('${AppUrl.baseUrl}/api/store/employees')
+      final uri = Uri.parse('${AppUrl.baseUrl}/api/mobile/store/employees')
           .replace(queryParameters: queryParams);
 
       final response = await http
