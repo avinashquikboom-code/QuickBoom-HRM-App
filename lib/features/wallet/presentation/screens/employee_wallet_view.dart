@@ -36,6 +36,8 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> with Si
   bool _isLoadingPayslips = false;
   int? _downloadingPayslipId;
 
+  Map<String, dynamic>? _bankDetails;
+
   @override
   void initState() {
     super.initState();
@@ -63,6 +65,7 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> with Si
     });
 
     _loadAdvanceData();
+    _loadBankDetails();
     
     // Automatically trigger sync of offline queue on load
     SalesService.syncOfflineQueue().then((synced) {
@@ -96,6 +99,15 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> with Si
     if (mounted) {
       setState(() {
         _advanceData = data;
+      });
+    }
+  }
+
+  Future<void> _loadBankDetails() async {
+    final details = await WalletService.fetchBankDetails();
+    if (mounted) {
+      setState(() {
+        _bankDetails = details;
       });
     }
   }
@@ -611,6 +623,7 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> with Si
     return RefreshIndicator(
       onRefresh: () async {
         await _loadAdvanceData();
+        await _loadBankDetails();
         if (!isSalesman) {
           await _fetchPayslips();
         }
@@ -664,7 +677,12 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> with Si
                   ),
                   const SizedBox(height: 20),
                   Text(
-                    '₹${NumberFormat('#,##,###').format(salary)}',
+                    '₹${NumberFormat('#,##,###').format(
+                      (_advanceData?['salary'] != null)
+                          ? ((_advanceData?['salary']['monthlySalary'] as num?)?.toDouble() ?? 
+                             (_advanceData?['salary']['grossSalary'] as num?)?.toDouble() ?? 0.0)
+                          : salary
+                    )}',
                     style: const TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.bold, letterSpacing: 0.5),
                   ),
                   const SizedBox(height: 4),
@@ -818,14 +836,206 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> with Si
               const SizedBox(height: 24),
             ],
 
-            Text('BANK & ACCOUNT DETAILS', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: AppColors.textSecondary, letterSpacing: 0.8)),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('BANK & ACCOUNT DETAILS', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: AppColors.textSecondary, letterSpacing: 0.8)),
+                TextButton.icon(
+                  onPressed: () => _showEditBankDetailsSheet(context),
+                  icon: const Icon(RemixIcons.edit_2_line, size: 14),
+                  label: const Text('Edit', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                ),
+              ],
+            ),
             const SizedBox(height: 8),
-            _DetailRow(label: 'Bank Name', value: user.bankName ?? 'Not Configured'),
-            _DetailRow(label: 'Account Number', value: user.accountNumber ?? 'Not Configured'),
-            _DetailRow(label: 'IFSC Code', value: user.ifscCode ?? 'Not Configured'),
-            _DetailRow(label: 'Account Type', value: user.accountType ?? 'Not Configured'),
-            _DetailRow(label: 'Branch Name', value: user.branchName ?? 'Not Configured'),
+            _DetailRow(label: 'Bank Name', value: _bankDetails?['bankName']?.toString() ?? user.bankName ?? 'Not Configured'),
+            _DetailRow(label: 'Account Number', value: _bankDetails?['accountNumber']?.toString() ?? user.accountNumber ?? 'Not Configured'),
+            _DetailRow(label: 'IFSC Code', value: _bankDetails?['ifscCode']?.toString() ?? user.ifscCode ?? 'Not Configured'),
+            _DetailRow(label: 'Account Type', value: _bankDetails?['accountType']?.toString() ?? user.accountType ?? 'Not Configured'),
+            _DetailRow(label: 'Branch Name', value: _bankDetails?['branchName']?.toString() ?? user.branchName ?? 'Not Configured'),
           ],
+        ),
+      ),
+    );
+  }
+
+  void _showEditBankDetailsSheet(BuildContext context) {
+    final user = ref.read(authViewModelProvider).currentUser;
+    if (user == null) return;
+
+    final bankNameCtrl = TextEditingController(text: _bankDetails?['bankName'] ?? user.bankName ?? '');
+    final accNoCtrl = TextEditingController(text: _bankDetails?['accountNumber'] ?? user.accountNumber ?? '');
+    final ifscCtrl = TextEditingController(text: _bankDetails?['ifscCode'] ?? user.ifscCode ?? '');
+    final branchCtrl = TextEditingController(text: _bankDetails?['branchName'] ?? user.branchName ?? '');
+    String accType = _bankDetails?['accountType'] ?? user.accountType ?? 'Savings';
+
+    final formKey = GlobalKey<FormState>();
+    bool isSaving = false;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setSheetState) => Container(
+          padding: EdgeInsets.only(
+            top: 20,
+            left: 20,
+            right: 20,
+            bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+          ),
+          decoration: BoxDecoration(
+            color: AppColors.background,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Form(
+            key: formKey,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: AppColors.divider,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Update Bank Details',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                      ),
+                      if (isSaving)
+                        const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  TextFormField(
+                    controller: bankNameCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Bank Name',
+                      hintText: 'e.g. HDFC Bank',
+                      prefixIcon: Icon(RemixIcons.bank_line),
+                    ),
+                    validator: (val) => val == null || val.trim().isEmpty ? 'Please enter bank name' : null,
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: accNoCtrl,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: 'Account Number',
+                      hintText: 'e.g. 50100123456789',
+                      prefixIcon: Icon(RemixIcons.wallet_3_line),
+                    ),
+                    validator: (val) => val == null || val.trim().isEmpty ? 'Please enter account number' : null,
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: ifscCtrl,
+                    textCapitalization: TextCapitalization.characters,
+                    decoration: const InputDecoration(
+                      labelText: 'IFSC Code',
+                      hintText: 'e.g. HDFC0000123',
+                      prefixIcon: Icon(RemixIcons.file_shield_2_line),
+                    ),
+                    validator: (val) => val == null || val.trim().isEmpty ? 'Please enter IFSC code' : null,
+                  ),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<String>(
+                    initialValue: accType,
+                    decoration: const InputDecoration(
+                      labelText: 'Account Type',
+                      prefixIcon: Icon(RemixIcons.contacts_line),
+                    ),
+                    items: const [
+                      DropdownMenuItem(value: 'Savings', child: Text('Savings')),
+                      DropdownMenuItem(value: 'Current', child: Text('Current')),
+                    ],
+                    onChanged: (val) {
+                      if (val != null) {
+                        setSheetState(() => accType = val);
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: branchCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Branch Name',
+                      hintText: 'e.g. Andheri West Branch',
+                      prefixIcon: Icon(RemixIcons.map_pin_2_line),
+                    ),
+                    validator: (val) => val == null || val.trim().isEmpty ? 'Please enter branch name' : null,
+                  ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      ),
+                      onPressed: isSaving
+                          ? null
+                          : () async {
+                              if (formKey.currentState?.validate() ?? false) {
+                                final navigator = Navigator.of(context);
+                                final messenger = ScaffoldMessenger.of(context);
+                                
+                                setSheetState(() => isSaving = true);
+                                final result = await WalletService.updateBankDetails(
+                                  bankName: bankNameCtrl.text.trim(),
+                                  accountNumber: accNoCtrl.text.trim(),
+                                  ifscCode: ifscCtrl.text.trim().toUpperCase(),
+                                  accountType: accType,
+                                  branchName: branchCtrl.text.trim(),
+                                );
+                                if (mounted) {
+                                  if (result != null) {
+                                    setState(() {
+                                      _bankDetails = result;
+                                    });
+                                    navigator.pop();
+                                    messenger.showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Bank details updated successfully.'),
+                                        backgroundColor: AppColors.success,
+                                      ),
+                                    );
+                                  } else {
+                                    setSheetState(() => isSaving = false);
+                                    messenger.showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Failed to update bank details. Please try again.'),
+                                        backgroundColor: AppColors.error,
+                                      ),
+                                    );
+                                  }
+                                }
+                              }
+                            },
+                      child: const Text('Save Details', style: TextStyle(fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ),
       ),
     );

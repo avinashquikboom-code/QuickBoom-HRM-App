@@ -122,4 +122,49 @@ class WalletService {
       return null;
     }
   }
+
+  static Future<Map<String, dynamic>?> updateBankDetails({
+    required String bankName,
+    required String accountNumber,
+    required String ifscCode,
+    required String accountType,
+    required String branchName,
+  }) async {
+    try {
+      final token = await _getToken();
+      if (token == null) {
+        dev.log('No token found for bank details update', name: 'WalletService');
+        return null;
+      }
+
+      final response = await http
+          .post(
+            Uri.parse('${AppUrl.baseUrl}/api/employee/wallet/bank-details'),
+            headers: _getHeaders(token),
+            body: json.encode({
+              'bankName': bankName,
+              'accountNumber': accountNumber,
+              'ifscCode': ifscCode,
+              'accountType': accountType,
+              'branchName': branchName,
+            }),
+          )
+          .timeout(_timeout);
+
+      if (kDebugMode) {
+        dev.log('Update Bank Details Response: ${response.body}', name: 'WalletService');
+      }
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success'] == true) {
+          return data['bankDetails'];
+        }
+      }
+      return null;
+    } catch (e) {
+      dev.log('Error updating bank details: $e', name: 'WalletService');
+      return null;
+    }
+  }
 }

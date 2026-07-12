@@ -108,7 +108,15 @@ class AuthViewModel extends StateNotifier<AuthState> {
           userMap['email']?.toString() ??
           fallbackEmail.trim(),
       phone: profMap['phone']?.toString() ?? '',
-      role: isHrRole ? UserRole.hrManager : UserRole.employee,
+      role: isHrRole
+          ? UserRole.hrManager
+          : userRole == 'SALESMAN'
+              ? UserRole.salesman
+              : userRole == 'STORE_MANAGER'
+                  ? UserRole.storeManager
+                  : userRole == 'HELPER'
+                      ? UserRole.helper
+                      : UserRole.employee,
       department: (empMap['department'] is Map 
               ? empMap['department']['name'] 
               : empMap['department'])?.toString() ??
@@ -188,7 +196,7 @@ class AuthViewModel extends StateNotifier<AuthState> {
       );
 
       UserModel hydratedUser = parsedUser;
-      if (parsedUser.role == UserRole.employee) {
+      if (parsedUser.role != UserRole.hrManager) {
         final repo = ref.read(employeeRepositoryProvider);
         List<HopkidEmployeeModel> cache = await repo.getCachedEmployees();
         if (cache.isEmpty) {
@@ -326,7 +334,13 @@ class AuthViewModel extends StateNotifier<AuthState> {
           phone:       prof['phone']?.toString() ?? '',
           role:        (uRole == 'HR' || uRole == 'SUPER_ADMIN' || uRole == 'ADMIN' || uRole == 'PLATFORM_ADMIN')
               ? UserRole.hrManager
-              : UserRole.employee,
+              : uRole == 'SALESMAN'
+                  ? UserRole.salesman
+                  : uRole == 'STORE_MANAGER'
+                      ? UserRole.storeManager
+                      : uRole == 'HELPER'
+                          ? UserRole.helper
+                          : UserRole.employee,
           department:  (emp['department'] is Map ? emp['department']['name'] : emp['department'])?.toString() ?? 'General',
           designation: emp['designation']?.toString() ?? 'Employee',
           joinDate:    DateTime.tryParse(emp['joinDate']?.toString() ?? '') ?? DateTime.now(),
@@ -341,7 +355,7 @@ class AuthViewModel extends StateNotifier<AuthState> {
         );
 
         UserModel hydratedUser = parsedUser;
-        if (parsedUser.role == UserRole.employee) {
+        if (parsedUser.role != UserRole.hrManager) {
           final repo = ref.read(employeeRepositoryProvider);
           List<HopkidEmployeeModel> cache = await repo.getCachedEmployees();
           if (cache.isEmpty) {

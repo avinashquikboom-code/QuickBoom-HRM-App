@@ -87,7 +87,13 @@ class ProfileViewModel extends StateNotifier<ProfileState> {
         phone: prof['phone']?.toString() ?? '',
         role: (uRole == 'HR' || uRole == 'SUPER_ADMIN' || uRole == 'ADMIN' || uRole == 'PLATFORM_ADMIN')
             ? UserRole.hrManager
-            : UserRole.employee,
+            : uRole == 'SALESMAN'
+                ? UserRole.salesman
+                : uRole == 'STORE_MANAGER'
+                    ? UserRole.storeManager
+                    : uRole == 'HELPER'
+                        ? UserRole.helper
+                        : UserRole.employee,
         department: (emp['department'] is Map
             ? emp['department']['name']
             : emp['department'])?.toString() ?? 'General',

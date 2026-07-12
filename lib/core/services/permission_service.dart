@@ -99,7 +99,10 @@ class PermissionService {
   // Check if user has specific permission
   static bool hasPermission(UserModel? user, String permission) {
     if (user == null) return false;
-    return user.hasPermission(permission);
+    if (user.permissions != null && user.permissions!.containsKey(permission)) {
+      return user.permissions![permission] ?? false;
+    }
+    return getDefaultPermissions(user.role)[permission] ?? false;
   }
 
   // Check multiple permissions (all must be true)
