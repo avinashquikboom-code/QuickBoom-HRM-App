@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:developer' as dev;
+import 'dart:io' show SocketException;
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:quickboom_hrm/core/constants/app_url.dart';
@@ -94,6 +95,19 @@ class ApiLogger {
   }
 }
 
+/// Thrown for non-2xx API responses with a user-presentable message.
+/// `toString()` returns only the message so existing
+/// `e.toString().replaceFirst('Exception: ', '')` call sites stay clean.
+class ApiException implements Exception {
+  final int statusCode;
+  final String message;
+
+  ApiException(this.statusCode, this.message);
+
+  @override
+  String toString() => message;
+}
+
 class ApiService {
   static final String _baseUrl = AppUrl.baseUrl;
 
@@ -165,7 +179,13 @@ class ApiService {
       return response;
     } on TimeoutException {
       ApiLogger.logError('GET', path, 'Request timed out after ${requestTimeout.inSeconds}s');
-      throw Exception('Request timed out. Please check your connection and try again.');
+      throw ApiException(0, 'Request timed out. Please check your connection and try again.');
+    } on SocketException catch (e) {
+      ApiLogger.logError('GET', path, e.toString());
+      throw ApiException(0, 'No internet connection. Please check your network and try again.');
+    } on http.ClientException catch (e) {
+      ApiLogger.logError('GET', path, e.toString());
+      throw ApiException(0, 'Could not reach the server. Please check your connection and try again.');
     } catch (e) {
       ApiLogger.logError('GET', path, e.toString());
       rethrow;
@@ -208,7 +228,13 @@ class ApiService {
       return response;
     } on TimeoutException {
       ApiLogger.logError('POST', path, 'Request timed out after ${requestTimeout.inSeconds}s');
-      throw Exception('Request timed out. Please check your connection and try again.');
+      throw ApiException(0, 'Request timed out. Please check your connection and try again.');
+    } on SocketException catch (e) {
+      ApiLogger.logError('POST', path, e.toString());
+      throw ApiException(0, 'No internet connection. Please check your network and try again.');
+    } on http.ClientException catch (e) {
+      ApiLogger.logError('POST', path, e.toString());
+      throw ApiException(0, 'Could not reach the server. Please check your connection and try again.');
     } catch (e) {
       ApiLogger.logError('POST', path, e.toString(), statusCode: null, responseBody: jsonEncode(body));
       rethrow;
@@ -247,7 +273,13 @@ class ApiService {
       return response;
     } on TimeoutException {
       ApiLogger.logError('PUT', path, 'Request timed out after ${requestTimeout.inSeconds}s');
-      throw Exception('Request timed out. Please check your connection and try again.');
+      throw ApiException(0, 'Request timed out. Please check your connection and try again.');
+    } on SocketException catch (e) {
+      ApiLogger.logError('PUT', path, e.toString());
+      throw ApiException(0, 'No internet connection. Please check your network and try again.');
+    } on http.ClientException catch (e) {
+      ApiLogger.logError('PUT', path, e.toString());
+      throw ApiException(0, 'Could not reach the server. Please check your connection and try again.');
     } catch (e) {
       ApiLogger.logError('PUT', path, e.toString(), statusCode: null, responseBody: jsonEncode(body));
       rethrow;
@@ -282,7 +314,13 @@ class ApiService {
       return response;
     } on TimeoutException {
       ApiLogger.logError('DELETE', path, 'Request timed out after ${requestTimeout.inSeconds}s');
-      throw Exception('Request timed out. Please check your connection and try again.');
+      throw ApiException(0, 'Request timed out. Please check your connection and try again.');
+    } on SocketException catch (e) {
+      ApiLogger.logError('DELETE', path, e.toString());
+      throw ApiException(0, 'No internet connection. Please check your network and try again.');
+    } on http.ClientException catch (e) {
+      ApiLogger.logError('DELETE', path, e.toString());
+      throw ApiException(0, 'Could not reach the server. Please check your connection and try again.');
     } catch (e) {
       ApiLogger.logError('DELETE', path, e.toString());
       rethrow;
@@ -298,22 +336,34 @@ class ApiService {
 
   static void _checkResponse(http.Response response) {
     if (response.statusCode >= 400) {
-      String message = 'API Request failed with status ${response.statusCode}';
+      String message = 'Something went wrong. Please try again.';
       try {
         final data = jsonDecode(response.body);
-        if (data is Map && data.containsKey('message')) {
-          message = data['message'];
+        if (data is Map && data['message'] is String) {
+          message = (data['message'] as String).trim();
         }
       } catch (_) {}
-      
+
+      // Never surface raw server internals (stack traces, DB errors) to the UI.
+      // 5xx bodies and multi-line/technical messages get a generic message instead.
+      if (response.statusCode >= 500 ||
+          message.isEmpty ||
+          message.contains('\n') ||
+          message.length > 200 ||
+          RegExp(r'prisma|sql|stack|Error:', caseSensitive: false).hasMatch(message)) {
+        message = response.statusCode >= 500
+            ? 'Server error. Please try again in a few minutes.'
+            : 'Something went wrong. Please try again.';
+      }
+
       // Enhanced error logging
       if (kDebugMode) {
         debugPrint('❌ API Error: $message');
         debugPrint('Response Body: ${response.body}');
         debugPrint('Status Code: ${response.statusCode}');
       }
-      
-      throw Exception(message);
+
+      throw ApiException(response.statusCode, message);
     }
   }
 

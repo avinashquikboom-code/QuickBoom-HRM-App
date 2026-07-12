@@ -155,14 +155,22 @@ class AuthViewModel extends StateNotifier<AuthState> {
       );
 
       final loginData = jsonDecode(loginRes.body);
-      if (loginData['success'] != true) {
-        final msg = loginData['message'] ?? 'Login failed';
+      if (loginData is! Map<String, dynamic> || loginData['success'] != true) {
+        final msg = (loginData is Map ? loginData['message'] : null) ?? 'Login failed. Please try again.';
         debugPrint('❌ [AUTH] Login failed: $msg');
-        state = state.copyWith(isLoading: false, errorMessage: msg);
+        state = state.copyWith(isLoading: false, errorMessage: msg.toString());
         return false;
       }
 
-      final token = loginData['token'] as String;
+      final token = loginData['token'] as String?;
+      if (token == null || token.isEmpty || loginData['user'] is! Map<String, dynamic>) {
+        debugPrint('❌ [AUTH] Login response missing token/user: ${loginRes.body}');
+        state = state.copyWith(
+          isLoading: false,
+          errorMessage: 'Login failed due to an unexpected server response. Please try again.',
+        );
+        return false;
+      }
       final refreshToken = loginData['refreshToken'] as String? ?? '';
       final userRole = loginData['user']['role'].toString().toUpperCase();
       
@@ -231,10 +239,29 @@ class AuthViewModel extends StateNotifier<AuthState> {
       // Sync FCM in background (handles missing cached token without blocking login)
       _syncFcmTokenInBackground();
       return true;
+    } on ApiException catch (e) {
+      // Already sanitized user-facing message from ApiService
+      debugPrint('❌ [AUTH] Login error (${e.statusCode}): ${e.message}');
+      state = state.copyWith(isLoading: false, errorMessage: e.message);
+      return false;
+    } on FormatException catch (e) {
+      debugPrint('❌ [AUTH] Login response parse error: $e');
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: 'Unexpected response from the server. Please try again later.',
+      );
+      return false;
     } catch (e) {
-      final msg = e.toString().replaceFirst('Exception: ', '');
-      debugPrint('❌ [AUTH] Login error: $msg');
-      state = state.copyWith(isLoading: false, errorMessage: msg);
+      debugPrint('❌ [AUTH] Login error: $e');
+      final raw = e.toString().replaceFirst('Exception: ', '');
+      // Only show raw messages that look user-presentable; hide type/cast errors etc.
+      final presentable = raw.length <= 200 &&
+          !raw.contains('\n') &&
+          !RegExp(r"type '|subtype|Null|Instance of", caseSensitive: false).hasMatch(raw);
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: presentable ? raw : 'Login failed. Please try again.',
+      );
       return false;
     }
   }

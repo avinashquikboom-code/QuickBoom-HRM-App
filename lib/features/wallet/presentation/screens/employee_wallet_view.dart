@@ -12,6 +12,7 @@ import 'package:quickboom_hrm/core/services/mobile_store_service.dart';
 import 'package:quickboom_hrm/core/services/permission_service.dart';
 import 'package:quickboom_hrm/features/auth/presentation/providers/auth_viewmodel.dart';
 import 'package:quickboom_hrm/features/auth/data/models/user_model.dart';
+import 'package:quickboom_hrm/features/payroll/presentation/providers/employee_payroll_viewmodel.dart';
 
 class EmployeeWalletView extends ConsumerStatefulWidget {
   const EmployeeWalletView({super.key});
@@ -30,6 +31,10 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> with Si
   
   Map<String, dynamic>? _advanceData;
   List<dynamic> _stores = [];
+  
+  List<dynamic> _payslips = [];
+  bool _isLoadingPayslips = false;
+  int? _downloadingPayslipId;
 
   @override
   void initState() {
@@ -39,9 +44,25 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> with Si
       if (mounted) setState(() {});
     });
     
-    _fetchCommissionReport();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final user = ref.read(authViewModelProvider).currentUser;
+      if (user != null) {
+        final isSalesman = PermissionService.canViewCommissionWidget(user);
+        if (isSalesman) {
+          _fetchCommissionReport();
+          _loadStores();
+          SalesService.syncOfflineQueue().then((synced) {
+            if (synced > 0 && mounted) {
+              _fetchCommissionReport();
+            }
+          });
+        } else {
+          _fetchPayslips();
+        }
+      }
+    });
+
     _loadAdvanceData();
-    _loadStores();
     
     // Automatically trigger sync of offline queue on load
     SalesService.syncOfflineQueue().then((synced) {
@@ -97,6 +118,57 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> with Si
       debugPrint('Error fetching employee report: $e');
     } finally {
       setState(() => _isLoadingComm = false);
+    }
+  }
+
+  Future<void> _fetchPayslips() async {
+    setState(() => _isLoadingPayslips = true);
+    try {
+      final res = await ApiService.get(AppUrl.employeePayslips);
+      final body = jsonDecode(res.body);
+      if (body['success'] == true) {
+        setState(() {
+          _payslips = body['data'] ?? [];
+        });
+      }
+    } catch (e) {
+      debugPrint('Error fetching payslips in wallet: $e');
+    } finally {
+      setState(() => _isLoadingPayslips = false);
+    }
+  }
+
+  String _getMonthName(int month) {
+    const months = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    if (month >= 1 && month <= 12) {
+      return months[month - 1];
+    }
+    return '';
+  }
+
+  Future<void> _downloadPayslip(int id) async {
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() => _downloadingPayslipId = id);
+    try {
+      final success = await ref.read(employeePayrollViewModelProvider.notifier).downloadPayslip(id);
+      if (!success && mounted) {
+        final errorMsg = ref.read(employeePayrollViewModelProvider).errorMessage;
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text(errorMsg ?? 'Failed to download payslip PDF.'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('Error downloading payslip: $e');
+    } finally {
+      if (mounted) {
+        setState(() => _downloadingPayslipId = null);
+      }
     }
   }
 
@@ -331,25 +403,29 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> with Si
             fontWeight: FontWeight.w800,
           ),
         ),
-        bottom: TabBar(
-          controller: _tabController,
-          labelColor: AppColors.primary,
-          unselectedLabelColor: AppColors.textSecondary,
-          indicatorColor: AppColors.primary,
-          tabs: const [
-            Tab(text: 'Commission'),
-            Tab(text: 'Salary'),
-          ],
-        ),
+        bottom: isSalesman
+            ? TabBar(
+                controller: _tabController,
+                labelColor: AppColors.primary,
+                unselectedLabelColor: AppColors.textSecondary,
+                indicatorColor: AppColors.primary,
+                tabs: const [
+                  Tab(text: 'Commission'),
+                  Tab(text: 'Salary'),
+                ],
+              )
+            : null,
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _buildCommissionTab(),
-          _buildSalaryTab(user),
-        ],
-      ),
-      floatingActionButton: _tabController?.index == 0 && isSalesman
+      body: isSalesman
+          ? TabBarView(
+              controller: _tabController,
+              children: [
+                _buildCommissionTab(),
+                _buildSalaryTab(user),
+              ],
+            )
+          : _buildSalaryTab(user),
+      floatingActionButton: isSalesman && _tabController?.index == 0
           ? FloatingActionButton.extended(
               onPressed: () => _showSalesActionSheet(context),
               backgroundColor: AppColors.primary,
@@ -530,11 +606,14 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> with Si
 
   Widget _buildSalaryTab(UserModel user) {
     final double salary = user.salary;
-    final double commPercent = user.commissionPercentage ?? 0.0;
+    final isSalesman = PermissionService.canViewCommissionWidget(user);
     
     return RefreshIndicator(
       onRefresh: () async {
         await _loadAdvanceData();
+        if (!isSalesman) {
+          await _fetchPayslips();
+        }
       },
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
@@ -542,27 +621,81 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> with Si
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Salary Card
+            // Salary Card (Credit Card Style)
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                gradient: AppColors.primaryGradient,
-                borderRadius: BorderRadius.circular(16),
+                gradient: LinearGradient(
+                  colors: [
+                    AppColors.primary,
+                    AppColors.primary.withValues(alpha: 0.85),
+                    Theme.of(context).colorScheme.secondary,
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primary.withValues(alpha: 0.25),
+                    blurRadius: 15,
+                    offset: const Offset(0, 8),
+                  )
+                ]
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Monthly Salary', style: TextStyle(color: Colors.white70, fontSize: 12)),
-                  const SizedBox(height: 4),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'HopKid Wallet Card',
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.7),
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1.0,
+                        ),
+                      ),
+                      Icon(RemixIcons.bank_card_2_fill, color: Colors.white.withValues(alpha: 0.7), size: 22),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
                   Text(
                     '₹${NumberFormat('#,##,###').format(salary)}',
-                    style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+                    style: const TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.bold, letterSpacing: 0.5),
                   ),
-                  const SizedBox(height: 12),
-                  Text(
-                    'Commission Rate: ${commPercent.toStringAsFixed(2)}%',
-                    style: TextStyle(color: Colors.white.withValues(alpha: 0.9), fontSize: 13, fontWeight: FontWeight.w600),
+                  const SizedBox(height: 4),
+                  const Text('Total Salary', style: TextStyle(color: Colors.white70, fontSize: 11)),
+                  const SizedBox(height: 24),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            user.name.toUpperCase(),
+                            style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w800, letterSpacing: 0.5),
+                          ),
+                          const SizedBox(height: 2),
+                          Text('CARDHOLDER', style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 9, fontWeight: FontWeight.w600)),
+                        ],
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            'HK - ${user.employeeId} - ${user.phone.length >= 4 ? user.phone.substring(user.phone.length - 4) : "1234"}',
+                            style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w800, letterSpacing: 1.2),
+                          ),
+                          const SizedBox(height: 2),
+                          Text('CARD NUMBER', style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 9, fontWeight: FontWeight.w600)),
+                        ],
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -604,6 +737,84 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> with Si
                   ],
                 ),
               ),
+              const SizedBox(height: 24),
+            ],
+
+            // Payslips Section for non-salesman
+            if (!isSalesman) ...[
+              Text('MY PAYSLIPS', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: AppColors.textSecondary, letterSpacing: 0.8)),
+              const SizedBox(height: 8),
+              if (_isLoadingPayslips)
+                const Center(child: Padding(padding: EdgeInsets.all(16), child: CircularProgressIndicator()))
+              else if (_payslips.isEmpty)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppColors.cardBorder),
+                  ),
+                  child: Center(
+                    child: Text(
+                      'No payslips generated yet',
+                      style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                    ),
+                  ),
+                )
+              else
+                ListView.separated(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: _payslips.length,
+                  separatorBuilder: (context, index) => const SizedBox(height: 8),
+                  itemBuilder: (context, idx) {
+                    final slip = _payslips[idx];
+                    final slipId = slip['id'] as int? ?? 0;
+                    final month = slip['month'] as int? ?? 1;
+                    final year = slip['year'] as int? ?? 2026;
+                    final netSalary = (slip['netSalary'] as num?)?.toDouble() ?? 0.0;
+                    final isDownloading = _downloadingPayslipId == slipId;
+                    
+                    return Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppColors.cardBorder),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '${_getMonthName(month)} $year',
+                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textPrimary),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Net Salary: ₹${NumberFormat('#,##,###').format(netSalary)}',
+                                style: TextStyle(color: AppColors.textSecondary, fontSize: 11),
+                              ),
+                            ],
+                          ),
+                          isDownloading
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                )
+                              : IconButton(
+                                  icon: const Icon(RemixIcons.download_2_line, color: AppColors.primary, size: 20),
+                                  onPressed: () => _downloadPayslip(slipId),
+                                ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
               const SizedBox(height: 24),
             ],
 
