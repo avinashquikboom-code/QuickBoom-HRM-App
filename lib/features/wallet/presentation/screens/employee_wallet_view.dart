@@ -105,7 +105,15 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> with Si
       });
     }
   }
-
+  String _getBankValue(String? apiValue, String? userValue) {
+    if (apiValue != null && apiValue.trim().isNotEmpty) {
+      return apiValue;
+    }
+    if (userValue != null && userValue.trim().isNotEmpty) {
+      return userValue;
+    }
+    return 'Not Configured';
+  }
   Future<void> _fetchCommissionReport() async {
     setState(() => _isLoadingComm = true);
     try {
@@ -841,11 +849,11 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> with Si
               ],
             ),
             const SizedBox(height: 8),
-            _DetailRow(label: 'Bank Name', value: _bankDetails?['bankName']?.toString() ?? user.bankName ?? 'Not Configured'),
-            _DetailRow(label: 'Account Number', value: _bankDetails?['accountNumber']?.toString() ?? user.accountNumber ?? 'Not Configured'),
-            _DetailRow(label: 'IFSC Code', value: _bankDetails?['ifscCode']?.toString() ?? user.ifscCode ?? 'Not Configured'),
-            _DetailRow(label: 'Account Type', value: _bankDetails?['accountType']?.toString() ?? user.accountType ?? 'Not Configured'),
-            _DetailRow(label: 'Branch Name', value: _bankDetails?['branchName']?.toString() ?? user.branchName ?? 'Not Configured'),
+            _DetailRow(label: 'Bank Name', value: _getBankValue(_bankDetails?['bankName']?.toString(), user.bankName)),
+            _DetailRow(label: 'Account Number', value: _getBankValue(_bankDetails?['accountNumber']?.toString(), user.accountNumber)),
+            _DetailRow(label: 'IFSC Code', value: _getBankValue(_bankDetails?['ifscCode']?.toString(), user.ifscCode)),
+            _DetailRow(label: 'Account Type', value: _getBankValue(_bankDetails?['accountType']?.toString(), user.accountType)),
+            _DetailRow(label: 'Branch Name', value: _getBankValue(_bankDetails?['branchName']?.toString(), user.branchName)),
           ],
         ),
       ),
@@ -856,11 +864,18 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> with Si
     final user = ref.read(authViewModelProvider).currentUser;
     if (user == null) return;
 
-    final bankNameCtrl = TextEditingController(text: _bankDetails?['bankName'] ?? user.bankName ?? '');
-    final accNoCtrl = TextEditingController(text: _bankDetails?['accountNumber'] ?? user.accountNumber ?? '');
-    final ifscCtrl = TextEditingController(text: _bankDetails?['ifscCode'] ?? user.ifscCode ?? '');
-    final branchCtrl = TextEditingController(text: _bankDetails?['branchName'] ?? user.branchName ?? '');
-    String accType = _bankDetails?['accountType'] ?? user.accountType ?? 'Savings';
+    String getVal(String? apiVal, String? userVal) {
+      if (apiVal != null && apiVal.trim().isNotEmpty) return apiVal;
+      if (userVal != null && userVal.trim().isNotEmpty) return userVal;
+      return '';
+    }
+
+    final bankNameCtrl = TextEditingController(text: getVal(_bankDetails?['bankName']?.toString(), user.bankName));
+    final accNoCtrl = TextEditingController(text: getVal(_bankDetails?['accountNumber']?.toString(), user.accountNumber));
+    final ifscCtrl = TextEditingController(text: getVal(_bankDetails?['ifscCode']?.toString(), user.ifscCode));
+    final branchCtrl = TextEditingController(text: getVal(_bankDetails?['branchName']?.toString(), user.branchName));
+    String accType = getVal(_bankDetails?['accountType']?.toString(), user.accountType);
+    if (accType.isEmpty) accType = 'Savings';
 
     final formKey = GlobalKey<FormState>();
     bool isSaving = false;
