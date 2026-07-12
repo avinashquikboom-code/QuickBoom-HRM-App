@@ -13,7 +13,7 @@ class HrPayrollView extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final payrollState = ref.watch(hrPayrollViewModelProvider);
     final employeeState = ref.watch(employeeListViewModelProvider);
-    final employees = employeeState.employees;
+    final employees = employeeState.filteredEmployees;
     final stats = payrollState.stats;
 
     final totalPayroll = stats.totalMonthlyPayroll;

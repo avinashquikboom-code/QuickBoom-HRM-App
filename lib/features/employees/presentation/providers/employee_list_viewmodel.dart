@@ -1,56 +1,82 @@
-import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:quickboom_hrm/core/services/api_service.dart';
-import 'package:quickboom_hrm/core/constants/app_url.dart';
 import 'package:quickboom_hrm/features/auth/data/models/user_model.dart';
+import 'package:quickboom_hrm/features/employees/data/models/hopkid_employee_model.dart';
+import 'package:quickboom_hrm/features/employees/presentation/providers/employee_repository_provider.dart';
 
 // ─── Employee List State ──────────────────────────────────────────────────────
 
 class EmployeeListState {
-  final List<UserModel> employees;
+  final List<HopkidEmployeeModel> employees;
   final String searchQuery;
-  final String? selectedDepartment;
+  final String? selectedBranch;
+  final bool showOnlyActive;
   final bool isLoading;
 
   const EmployeeListState({
     this.employees = const [],
     this.searchQuery = '',
-    this.selectedDepartment,
+    this.selectedBranch,
+    this.showOnlyActive = true,
     this.isLoading = false,
   });
 
   List<UserModel> get filteredEmployees {
-    return employees.where((emp) {
-      final q = searchQuery.toLowerCase();
+    final list = employees.where((emp) {
+      final q = searchQuery.toLowerCase().trim();
       final matchesSearch = q.isEmpty ||
-          emp.name.toLowerCase().contains(q) ||
-          emp.employeeId.toLowerCase().contains(q) ||
-          emp.designation.toLowerCase().contains(q) ||
-          emp.department.toLowerCase().contains(q);
-      final matchesDept = selectedDepartment == null ||
-          emp.department == selectedDepartment;
-      return matchesSearch && matchesDept;
-    }).toList();
+          emp.employeeName.toLowerCase().contains(q) ||
+          emp.employeeCode.toLowerCase().contains(q) ||
+          emp.branchName.toLowerCase().contains(q);
+      
+      final matchesActive = !showOnlyActive || emp.isActive;
+      
+      final matchesBranch = selectedBranch == null ||
+          emp.branchName == selectedBranch;
+      
+      return matchesSearch && matchesActive && matchesBranch;
+    });
+
+    return list.map((emp) => UserModel(
+      id: emp.employeeID,
+      employeeId: emp.employeeCode,
+      name: emp.employeeName,
+      email: emp.email ?? '',
+      phone: emp.mobileNo,
+      role: UserRole.employee,
+      department: emp.branchName,
+      designation: emp.isActive ? 'Active Employee' : 'Inactive Employee',
+      joinDate: DateTime.tryParse(emp.dateofJoining ?? '') ?? DateTime.now(),
+      salary: emp.salary,
+      branchName: emp.branchName,
+      hopkidEmployeeId: emp.employeeID,
+      commissionPercentage: emp.commissionPercentage,
+    )).toList();
   }
 
-  List<String> get departments {
-    final depts = employees.map((e) => e.department).toSet().toList();
-    depts.sort();
-    return depts;
+  List<String> get branches {
+    final distinct = employees
+        .map((e) => e.branchName)
+        .where((b) => b.isNotEmpty)
+        .toSet()
+        .toList();
+    distinct.sort();
+    return distinct;
   }
 
   EmployeeListState copyWith({
-    List<UserModel>? employees,
+    List<HopkidEmployeeModel>? employees,
     String? searchQuery,
-    String? selectedDepartment,
+    String? selectedBranch,
+    bool? showOnlyActive,
     bool? isLoading,
-    bool clearDeptFilter = false,
+    bool clearBranchFilter = false,
   }) {
     return EmployeeListState(
       employees: employees ?? this.employees,
       searchQuery: searchQuery ?? this.searchQuery,
-      selectedDepartment:
-          clearDeptFilter ? null : (selectedDepartment ?? this.selectedDepartment),
+      selectedBranch:
+          clearBranchFilter ? null : (selectedBranch ?? this.selectedBranch),
+      showOnlyActive: showOnlyActive ?? this.showOnlyActive,
       isLoading: isLoading ?? this.isLoading,
     );
   }
@@ -59,19 +85,18 @@ class EmployeeListState {
 // ─── Employee List ViewModel (HR) ─────────────────────────────────────────────
 
 class EmployeeListViewModel extends StateNotifier<EmployeeListState> {
-  EmployeeListViewModel() : super(const EmployeeListState()) {
+  final Ref ref;
+
+  EmployeeListViewModel(this.ref) : super(const EmployeeListState()) {
     fetchEmployees();
   }
 
-  Future<void> fetchEmployees() async {
+  Future<void> fetchEmployees({bool forceRefresh = false}) async {
     state = state.copyWith(isLoading: true);
     try {
-      final res = await ApiService.get(AppUrl.hrEmployees);
-      final data = jsonDecode(res.body);
-      final List rawEmployees = data['employees'] ?? [];
-      final employees = rawEmployees.map((e) => _parseEmployee(e)).toList();
-
-      state = state.copyWith(employees: employees, isLoading: false);
+      final repo = ref.read(employeeRepositoryProvider);
+      final list = forceRefresh ? await repo.refresh() : await repo.fetchAndCache();
+      state = state.copyWith(employees: list, isLoading: false);
     } catch (_) {
       state = state.copyWith(isLoading: false);
     }
@@ -81,31 +106,20 @@ class EmployeeListViewModel extends StateNotifier<EmployeeListState> {
     state = state.copyWith(searchQuery: query);
   }
 
-  void filterByDepartment(String? department) {
-    if (department == null) {
-      state = state.copyWith(clearDeptFilter: true);
+  void filterByBranch(String? branch) {
+    if (branch == null) {
+      state = state.copyWith(clearBranchFilter: true);
     } else {
-      state = state.copyWith(selectedDepartment: department);
+      state = state.copyWith(selectedBranch: branch);
     }
+  }
+
+  void toggleShowOnlyActive(bool val) {
+    state = state.copyWith(showOnlyActive: val);
   }
 
   void clearSearch() {
     state = state.copyWith(searchQuery: '');
-  }
-
-  UserModel _parseEmployee(Map<String, dynamic> e) {
-    return UserModel(
-      id: e['id']?.toString() ?? '',
-      employeeId: e['employeeCode']?.toString() ?? e['employeeId']?.toString() ?? '',
-      name: e['name']?.toString() ?? '',
-      email: e['email']?.toString() ?? '',
-      phone: e['phone']?.toString() ?? '',
-      role: UserRole.employee,
-      department: (e['department'] is Map ? e['department']['name'] : e['department'])?.toString() ?? '',
-      designation: e['designation']?.toString() ?? '',
-      joinDate: e['joinDate'] != null ? DateTime.tryParse(e['joinDate'].toString()) ?? DateTime.now() : DateTime.now(),
-      salary: (e['salary'] as num?)?.toDouble() ?? 0.0,
-    );
   }
 }
 
@@ -113,5 +127,5 @@ class EmployeeListViewModel extends StateNotifier<EmployeeListState> {
 
 final employeeListViewModelProvider =
     StateNotifierProvider<EmployeeListViewModel, EmployeeListState>((ref) {
-  return EmployeeListViewModel();
+  return EmployeeListViewModel(ref);
 });

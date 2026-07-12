@@ -1,13 +1,17 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:remixicon/remixicon.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
+import 'package:remixicon/remixicon.dart';
 import 'package:quickboom_hrm/core/constants/app_colors.dart';
+import 'package:quickboom_hrm/core/constants/app_url.dart';
+import 'package:quickboom_hrm/core/services/api_service.dart';
 import 'package:quickboom_hrm/core/services/wallet_service.dart';
-import 'package:quickboom_hrm/features/payroll/presentation/screens/employee_payroll_view.dart';
-import 'package:quickboom_hrm/features/expense/presentation/screens/employee_expenses_view.dart';
+import 'package:quickboom_hrm/core/services/sales_service.dart';
+import 'package:quickboom_hrm/core/services/mobile_store_service.dart';
+import 'package:quickboom_hrm/core/services/permission_service.dart';
 import 'package:quickboom_hrm/features/auth/presentation/providers/auth_viewmodel.dart';
+import 'package:quickboom_hrm/features/auth/data/models/user_model.dart';
 
 class EmployeeWalletView extends ConsumerStatefulWidget {
   const EmployeeWalletView({super.key});
@@ -16,40 +20,104 @@ class EmployeeWalletView extends ConsumerStatefulWidget {
   ConsumerState<EmployeeWalletView> createState() => _EmployeeWalletViewState();
 }
 
-class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
-  Map<String, dynamic>? _walletData;
-  bool _isLoading = true;
-  bool _isError = false;
+class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> with SingleTickerProviderStateMixin {
+  TabController? _tabController;
+  List<dynamic> _commissionData = [];
+  bool _isLoadingComm = false;
+  String _groupBy = 'day';
+  DateTime _fromDate = DateTime.now().subtract(const Duration(days: 30));
+  DateTime _toDate = DateTime.now();
+  
+  Map<String, dynamic>? _advanceData;
+  List<dynamic> _stores = [];
 
   @override
   void initState() {
     super.initState();
-    _loadWalletData();
+    _tabController = TabController(length: 2, vsync: this);
+    _tabController!.addListener(() {
+      if (mounted) setState(() {});
+    });
+    
+    _fetchCommissionReport();
+    _loadAdvanceData();
+    _loadStores();
+    
+    // Automatically trigger sync of offline queue on load
+    SalesService.syncOfflineQueue().then((synced) {
+      if (synced > 0 && mounted) {
+        _fetchCommissionReport();
+      }
+    });
   }
 
-  Future<void> _loadWalletData() async {
-    setState(() {
-      _isLoading = true;
-      _isError = false;
-    });
+  @override
+  void dispose() {
+    _tabController?.dispose();
+    super.dispose();
+  }
 
+  Future<void> _loadStores() async {
+    try {
+      final res = await MobileStoreService.getAllStores();
+      if (res != null && res['success'] == true) {
+        setState(() {
+          _stores = res['data'] ?? [];
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading stores: $e');
+    }
+  }
+
+  Future<void> _loadAdvanceData() async {
     final data = await WalletService.fetchEmployeeWallet();
-
     if (mounted) {
       setState(() {
-        _walletData = data;
-        _isLoading = false;
-        _isError = data == null;
+        _advanceData = data;
       });
     }
   }
 
-  Future<void> _onRefresh() async {
-    await _loadWalletData();
+  Future<void> _fetchCommissionReport() async {
+    setState(() => _isLoadingComm = true);
+    try {
+      final fromStr = DateFormat('yyyy-MM-dd').format(_fromDate);
+      final toStr = DateFormat('yyyy-MM-dd').format(_toDate);
+      final url = '${AppUrl.commissionReport}?from=$fromStr&to=$toStr&groupBy=$_groupBy';
+      
+      final res = await ApiService.get(url);
+      final body = jsonDecode(res.body);
+      if (body['success'] == true) {
+        setState(() {
+          _commissionData = body['data'] ?? [];
+        });
+      }
+    } catch (e) {
+      debugPrint('Error fetching employee report: $e');
+    } finally {
+      setState(() => _isLoadingComm = false);
+    }
+  }
+
+  Future<void> _selectDateRange() async {
+    final picked = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2100),
+      initialDateRange: DateTimeRange(start: _fromDate, end: _toDate),
+    );
+    if (picked != null) {
+      setState(() {
+        _fromDate = picked.start;
+        _toDate = picked.end;
+      });
+      _fetchCommissionReport();
+    }
   }
 
   void _showRequestAdvanceSheet(BuildContext context) {
-    final advanceLimit = (_walletData?['advanceLimit'] as num?)?.toDouble() ?? 25000.0;
+    final advanceLimit = (_advanceData?['advanceLimit'] as num?)?.toDouble() ?? 25000.0;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -64,24 +132,15 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
             reason: reason,
           );
           if (result != null && mounted) {
-            _showSuccessDialog(this.context, amount, months);
-            _loadWalletData();
+            _showSuccessDialog(amount);
+            _loadAdvanceData();
           }
         },
       ),
     );
   }
 
-  void _showBankDetailsSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => const _BankDetailsSheet(),
-    );
-  }
-
-  void _showSuccessDialog(BuildContext context, double amount, int months) {
+  void _showSuccessDialog(double amount) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -97,26 +156,18 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
                 color: AppColors.success.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
-              child: Icon(RemixIcons.checkbox_circle_fill, color: AppColors.success, size: 48),
+              child: const Icon(RemixIcons.checkbox_circle_fill, color: AppColors.success, size: 48),
             ),
             const SizedBox(height: 24),
-            Text(
+            const Text(
               'Request Submitted',
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.onSurface,
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-              ),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 8),
             Text(
               'Your salary advance request of ₹${NumberFormat('#,##,###').format(amount)} has been sent to HR for approval.',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: 13,
-                height: 1.4,
-              ),
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 13, height: 1.4),
             ),
             const SizedBox(height: 24),
             SizedBox(
@@ -126,9 +177,7 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
                   backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   elevation: 0,
                 ),
                 onPressed: () => Navigator.pop(ctx),
@@ -141,70 +190,131 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
     );
   }
 
+  void _showSalesActionSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        padding: const EdgeInsets.symmetric(vertical: 20),
+        decoration: BoxDecoration(
+          color: AppColors.background,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.divider,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Sales Transactions',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+            ),
+            const SizedBox(height: 8),
+            _SalesActionTile(
+              icon: RemixIcons.money_dollar_circle_line,
+              title: 'Add New Sale',
+              subtitle: 'Log a new sale and earn commission',
+              color: AppColors.success,
+              onTap: () {
+                Navigator.pop(ctx);
+                _showTransactionFormSheet(context, 'AddSale');
+              },
+            ),
+            _SalesActionTile(
+              icon: RemixIcons.edit_line,
+              title: 'Update Sale',
+              subtitle: 'Modify an existing sale amount/details',
+              color: AppColors.primary,
+              onTap: () {
+                Navigator.pop(ctx);
+                _showTransactionFormSheet(context, 'UpdateSale');
+              },
+            ),
+            _SalesActionTile(
+              icon: RemixIcons.file_warning_line,
+              title: 'Add Credit Note',
+              subtitle: 'Process a return/refund adjustment',
+              color: AppColors.error,
+              onTap: () {
+                Navigator.pop(ctx);
+                _showTransactionFormSheet(context, 'CreditNote');
+              },
+            ),
+            _SalesActionTile(
+              icon: RemixIcons.swap_line,
+              title: 'Sales Exchange',
+              subtitle: 'Swap a returned item for a new purchase',
+              color: AppColors.warning,
+              onTap: () {
+                Navigator.pop(ctx);
+                _showTransactionFormSheet(context, 'Exchange');
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showTransactionFormSheet(BuildContext context, String type) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => _SalesTransactionFormSheet(
+        type: type,
+        stores: _stores,
+        onSubmit: (Map<String, dynamic> payload) async {
+          Navigator.pop(ctx);
+          
+          String endpoint = '';
+          if (type == 'AddSale') {
+            endpoint = '/api/Sales/AddSales';
+          } else if (type == 'UpdateSale') {
+            endpoint = '/api/Sales/UpdateSales';
+          } else if (type == 'CreditNote') {
+            endpoint = '/api/Sales/AddCreditNote';
+          } else if (type == 'Exchange') {
+            endpoint = '/api/Sales/AddSalesExchange';
+          }
+
+          final messenger = ScaffoldMessenger.of(context);
+          final result = await SalesService.submitTransaction(
+            endpoint: endpoint,
+            payload: payload,
+          );
+
+          if (mounted) {
+            messenger.showSnackBar(
+              SnackBar(
+                content: Text(result['message']),
+                backgroundColor: result['success']
+                    ? (result['offline'] ? AppColors.warning : AppColors.success)
+                    : AppColors.error,
+              ),
+            );
+            _fetchCommissionReport();
+          }
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(authViewModelProvider).currentUser;
-    final cs = Theme.of(context).colorScheme;
-    final availableBalance = (_walletData?['availableBalance'] as num?)?.toDouble() ?? 0.0;
-    final formattedBalance = NumberFormat('#,##,###.00').format(availableBalance);
-    final monthlySalary = (_walletData?['salary']?['monthlySalary'] as num?)?.toDouble() ?? 0.0;
-    final grossSalary = (_walletData?['salary']?['grossSalary'] as num?)?.toDouble() ?? monthlySalary;
-    final formattedSalary = NumberFormat('#,##,###').format(monthlySalary);
-    final formattedGrossSalary = NumberFormat('#,##,###').format(grossSalary);
+    if (user == null) return const Scaffold();
 
-    if (_isLoading) {
-      return Scaffold(
-        backgroundColor: AppColors.background,
-        appBar: AppBar(
-          backgroundColor: AppColors.background,
-          elevation: 0,
-          scrolledUnderElevation: 0,
-          centerTitle: false,
-          title: Text(
-            'My Wallet',
-            style: TextStyle(
-              color: AppColors.textPrimary,
-              fontSize: 18,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-        ),
-        body: const Center(child: CircularProgressIndicator()),
-      );
-    }
-
-    if (_isError) {
-      return Scaffold(
-        backgroundColor: AppColors.background,
-        appBar: AppBar(
-          backgroundColor: AppColors.background,
-          elevation: 0,
-          scrolledUnderElevation: 0,
-          centerTitle: false,
-          title: Text(
-            'My Wallet',
-            style: TextStyle(
-              color: AppColors.textPrimary,
-              fontSize: 18,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-        ),
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text('Failed to load wallet data'),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: _loadWalletData,
-                child: const Text('Retry'),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
+    final isSalesman = PermissionService.canViewCommissionWidget(user);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -221,1282 +331,483 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
             fontWeight: FontWeight.w800,
           ),
         ),
+        bottom: TabBar(
+          controller: _tabController,
+          labelColor: AppColors.primary,
+          unselectedLabelColor: AppColors.textSecondary,
+          indicatorColor: AppColors.primary,
+          tabs: const [
+            Tab(text: 'Commission'),
+            Tab(text: 'Salary'),
+          ],
+        ),
       ),
-      body: RefreshIndicator(
-        onRefresh: _onRefresh,
-        child: CustomScrollView(
-          physics: const BouncingScrollPhysics(),
-          slivers: [
-            SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              sliver: SliverList(
-                delegate: SliverChildListDelegate([
-                  // ─── Glassmorphic Wallet Card ───
-                  Container(
-                    height: 200,
-                    margin: const EdgeInsets.only(top: 8),
-                  padding: const EdgeInsets.all(22),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(28),
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF3BA38B), Color(0xFF1E6B5A)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
+      body: TabBarView(
+        controller: _tabController,
+        children: [
+          _buildCommissionTab(),
+          _buildSalaryTab(user),
+        ],
+      ),
+      floatingActionButton: _tabController?.index == 0 && isSalesman
+          ? FloatingActionButton.extended(
+              onPressed: () => _showSalesActionSheet(context),
+              backgroundColor: AppColors.primary,
+              icon: const Icon(RemixIcons.add_line, color: Colors.white),
+              label: const Text(
+                'Add Transaction',
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              ),
+            )
+          : null,
+    );
+  }
+
+  Widget _buildCommissionTab() {
+    final netSales = _commissionData.fold<double>(0.0, (sum, item) => sum + (item['netSales'] as num).toDouble());
+    final commissionEarned = _commissionData.fold<double>(0.0, (sum, item) => sum + (item['commissionAmount'] as num).toDouble());
+
+    return RefreshIndicator(
+      onRefresh: () async {
+        await _fetchCommissionReport();
+        await SalesService.syncOfflineQueue();
+      },
+      child: Column(
+        children: [
+          // Filter bar
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: _selectDateRange,
+                    icon: const Icon(RemixIcons.calendar_2_line, size: 16),
+                    label: Text(
+                      '${DateFormat('dd MMM').format(_fromDate)} - ${DateFormat('dd MMM').format(_toDate)}',
+                      style: const TextStyle(fontSize: 12),
                     ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF1E6B5A).withValues(alpha: 0.35),
-                        blurRadius: 20,
-                        spreadRadius: 2,
-                        offset: const Offset(0, 10),
-                      ),
-                    ],
                   ),
-                  child: Stack(
-                    children: [
-                      // Circular Background Glow
-                      Positioned(
-                        right: -50,
-                        top: -50,
-                        child: Container(
-                          width: 150,
-                          height: 150,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.white.withValues(alpha: 0.08),
-                          ),
-                        ),
-                      ),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'PAY CARD',
-                                    style: TextStyle(
-                                      color: Colors.white.withValues(alpha: 0.6),
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w900,
-                                      letterSpacing: 1.5,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    user?.name ?? 'Employee Name',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 16.5,
-                                      fontWeight: FontWeight.w800,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              Icon(RemixIcons.vip_crown_line, color: Colors.amber.shade300, size: 24),
-                            ],
-                          ),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'BALANCE',
-                                    style: TextStyle(
-                                      color: Colors.white.withValues(alpha: 0.6),
-                                      fontSize: 9,
-                                      fontWeight: FontWeight.w800,
-                                      letterSpacing: 1.2,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    '₹$formattedBalance',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 26,
-                                      fontWeight: FontWeight.w900,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    'GROSS SALARY',
-                                    style: TextStyle(
-                                      color: Colors.white.withValues(alpha: 0.6),
-                                      fontSize: 9,
-                                      fontWeight: FontWeight.w800,
-                                      letterSpacing: 1.2,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    '₹$formattedGrossSalary',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                ],
-                              ),
+                ),
+                const SizedBox(width: 10),
+                DropdownButton<String>(
+                  value: _groupBy,
+                  onChanged: (val) {
+                    if (val != null) {
+                      setState(() => _groupBy = val);
+                      _fetchCommissionReport();
+                    }
+                  },
+                  items: const [
+                    DropdownMenuItem(value: 'day', child: Text('Daily', style: TextStyle(fontSize: 13))),
+                    DropdownMenuItem(value: 'week', child: Text('Weekly', style: TextStyle(fontSize: 13))),
+                    DropdownMenuItem(value: 'month', child: Text('Monthly', style: TextStyle(fontSize: 13))),
+                  ],
+                ),
+              ],
+            ),
+          ),
 
-                              // for now keep this hidden
-                              // Column(
-                              //   crossAxisAlignment: CrossAxisAlignment.end,
-                              //   children: [
-                              //     Text(
-                              //       'CARD NO',
-                              //       style: TextStyle(
-                              //         color: Colors.white.withValues(alpha: 0.6),
-                              //         fontSize: 9,
-                              //         fontWeight: FontWeight.w800,
-                              //         letterSpacing: 1.2,
-                              //       ),
-                              //     ),
-                              //     const SizedBox(height: 2),
-                              //     Text(
-                              //       'HK-${user?.employeeId.replaceAll(RegExp(r'\D'), '') ?? "8902"}-XXXX',
-                              //       style: const TextStyle(
-                              //         color: Colors.white,
-                              //         fontSize: 13,
-                              //         fontFamily: 'monospace',
-                              //         fontWeight: FontWeight.w700,
-                              //       ),
-                              //     ),
-                              //   ],
-                              // ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ).animate().fadeIn(duration: 400.ms).scaleXY(begin: 0.95, end: 1.0),
-
-                const SizedBox(height: 22),
-
-                // ─── Salary Summary Block ───
-                if (_walletData?['salary'] != null)
-                  Container(
-                    padding: const EdgeInsets.all(18),
+          // Summary cards
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: cs.surface,
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(color: AppColors.cardBorder, width: 1.5),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.cardShadow,
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'TOTAL SALARY',
-                              style: TextStyle(
-                                color: AppColors.textSecondary,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: 0.8,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              '₹$formattedSalary',
-                              style: TextStyle(
-                                color: AppColors.textPrimary,
-                                fontSize: 20,
-                                fontWeight: FontWeight.w900,
-                              ),
-                            ),
-                          ],
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: AppColors.primary.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: AppColors.primary.withValues(alpha: 0.3), width: 1),
-                          ),
-                          child: Text(
-                            'Monthly',
-                            style: TextStyle(
-                              color: AppColors.primary,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: 0.5,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.1, end: 0),
-
-                const SizedBox(height: 16),
-
-                // ─── Salary Details Block ───
-                if (_walletData?['salary'] != null)
-                  Container(
-                    padding: const EdgeInsets.all(18),
-                    decoration: BoxDecoration(
-                      color: cs.surface,
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(color: AppColors.cardBorder, width: 1.5),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.cardShadow,
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.cardBorder),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          children: [
-                            Icon(RemixIcons.money_rupee_circle_line, size: 18, color: AppColors.primary),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Monthly Salary',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w700,
-                                color: cs.onSurface,
-                              ),
-                            ),
-                            const Spacer(),
-                            Text(
-                              '₹${NumberFormat('#,##,###').format((_walletData?['salary']?['monthlySalary'] as num?)?.toDouble() ?? 0.0)}',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w800,
-                                color: AppColors.primary,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _SalaryItem(
-                                label: 'Basic',
-                                value: '₹${NumberFormat('#,##,###').format((_walletData?['salary']?['basicSalary'] as num?)?.toDouble() ?? 0.0)}',
-                              ),
-                            ),
-                            Expanded(
-                              child: _SalaryItem(
-                                label: 'HRA',
-                                value: '₹${NumberFormat('#,##,###').format((_walletData?['salary']?['hra'] as num?)?.toDouble() ?? 0.0)}',
-                              ),
-                            ),
-                            Expanded(
-                              child: _SalaryItem(
-                                label: 'Medical',
-                                value: '₹${NumberFormat('#,##,###').format((_walletData?['salary']?['medicalAllowance'] as num?)?.toDouble() ?? 0.0)}',
-                              ),
-                            ),
-                          ],
-                        ),
+                        Text('Net Sales', style: TextStyle(color: AppColors.textSecondary, fontSize: 11)),
+                        const SizedBox(height: 4),
+                        Text('₹${NumberFormat('#,##,###').format(netSales)}', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppColors.textPrimary)),
                       ],
                     ),
-                  ).animate(delay: 50.ms).fadeIn(duration: 400.ms),
-
-                const SizedBox(height: 22),
-
-                // ─── Balance Summary Block ───
-                Container(
-                  padding: const EdgeInsets.all(18),
-                  decoration: BoxDecoration(
-                    color: cs.surface,
-                    borderRadius: BorderRadius.circular(24),
-                    border: Border.all(color: AppColors.cardBorder, width: 1.5),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.cardShadow,
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: _StatColumn(
-                          label: 'Advance Limit',
-                          value: '₹${NumberFormat('#,##,###').format((_walletData?['advanceLimit'] as num?)?.toDouble() ?? 0.0)}',
-                          color: Colors.purple,
-                        ),
-                      ),
-                      Container(width: 1.5, height: 40, color: AppColors.divider),
-                      Expanded(
-                        child: _StatColumn(
-                          label: 'Pending Claims',
-                          value: '₹${NumberFormat('#,##,###').format((_walletData?['pendingClaims'] as num?)?.toDouble() ?? 0.0)}',
-                          color: AppColors.warning,
-                        ),
-                      ),
-                    ],
-                  ),
-                ).animate(delay: 100.ms).fadeIn(duration: 400.ms),
-
-                const SizedBox(height: 28),
-
-                // ─── Quick Actions ───
-                Text(
-                  'QUICK ACTIONS',
-                  style: TextStyle(
-                    color: AppColors.textSecondary,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.8,
                   ),
                 ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _ActionCard(
-                        title: 'Request\nAdvance',
-                        icon: RemixIcons.hand_coin_line,
-                        color: Colors.purple,
-                        onTap: () => _showRequestAdvanceSheet(context),
-                      ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.primarySurface,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _ActionCard(
-                        title: 'Claim\nExpense',
-                        icon: RemixIcons.ticket_line,
-                        color: AppColors.warning,
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => const EmployeeExpensesView()),
-                        ),
-                      ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Commission', style: TextStyle(color: AppColors.primary, fontSize: 11, fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 4),
+                        Text('₹${NumberFormat('#,##,###').format(commissionEarned)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppColors.primary)),
+                      ],
                     ),
-                  ],
-                ).animate(delay: 150.ms).fadeIn(duration: 400.ms),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _ActionCard(
-                        title: 'Payslips &\nPayroll',
-                        icon: RemixIcons.file_list_3_line,
-                        color: AppColors.primary,
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => const EmployeePayrollView()),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _ActionCard(
-                        title: 'Bank\nDetails',
-                        icon: RemixIcons.bank_line,
-                        color: Colors.blue,
-                        onTap: () => _showBankDetailsSheet(context),
-                      ),
-                    ),
-                  ],
-                ).animate(delay: 200.ms).fadeIn(duration: 400.ms),
-
-                const SizedBox(height: 28),
-
-                // ─── Recent Transactions Feed ───
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'RECENT TRANSACTIONS',
-                      style: TextStyle(
-                        color: AppColors.textSecondary,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.8,
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
-                const SizedBox(height: 12),
-              ]),
+              ],
             ),
           ),
-          
-          // Transactions list
-          if ((_walletData?['transactions'] as List<dynamic>?)?.isEmpty ?? true)
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 110),
-              sliver: SliverToBoxAdapter(
-                child: Container(
-                  padding: const EdgeInsets.all(40),
-                  decoration: BoxDecoration(
-                    color: cs.surface,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: AppColors.cardBorder, width: 1.5),
-                  ),
-                  child: Column(
-                    children: [
-                      Icon(
-                        RemixIcons.exchange_funds_line,
-                        size: 48,
-                        color: AppColors.textHint,
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'No Transactions Yet',
-                        style: TextStyle(
-                          color: AppColors.textPrimary,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Your transaction history will appear here once you start using your wallet.',
-                        style: TextStyle(
-                          color: AppColors.textSecondary,
-                          fontSize: 13,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            )
-          else
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 110),
-              sliver: SliverList(
-                delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  final transactions = _walletData?['transactions'] as List<dynamic>? ?? [];
-                  if (index >= transactions.length) return const SizedBox.shrink();
-                  final tx = transactions[index] as Map<String, dynamic>;
-                  final formattedAmt = NumberFormat('#,##,###').format((tx['amount'] as num?)?.toDouble() ?? 0.0);
-                  final isCredit = tx['isCredit'] as bool;
-                  
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: cs.surface,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: AppColors.cardBorder, width: 1.5),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.cardShadow,
-                          blurRadius: 8,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: (isCredit ? AppColors.success : Colors.purple).withValues(alpha: 0.08),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            isCredit ? RemixIcons.arrow_left_down_line : RemixIcons.arrow_right_up_line,
-                            color: isCredit ? AppColors.success : Colors.purple,
-                            size: 18,
-                          ),
-                        ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                tx['title'],
-                                style: TextStyle(
-                                  color: AppColors.textPrimary,
-                                  fontSize: 13.5,
-                                  fontWeight: FontWeight.w800,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const SizedBox(height: 2),
-                              Row(
-                                children: [
-                                  Text(
-                                    tx['category'],
-                                    style: TextStyle(
-                                      color: AppColors.textHint,
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Container(width: 4, height: 4, decoration: BoxDecoration(shape: BoxShape.circle, color: AppColors.divider)),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    DateFormat('dd MMM yyyy').format(DateTime.parse(tx['date'])),
-                                    style: TextStyle(
-                                      color: AppColors.textHint,
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Text(
-                              '${isCredit ? "+" : "-"}₹$formattedAmt',
-                              style: TextStyle(
-                                color: isCredit ? AppColors.success : AppColors.textPrimary,
-                                fontSize: 14.5,
-                                fontWeight: FontWeight.w900,
-                              ),
+          const SizedBox(height: 16),
+
+          // Report list
+          Expanded(
+            child: _isLoadingComm
+                ? const Center(child: CircularProgressIndicator())
+                : _commissionData.isEmpty
+                    ? ListView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        children: [
+                          SizedBox(height: MediaQuery.of(context).size.height * 0.15),
+                          Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(RemixIcons.bar_chart_box_line, size: 40, color: AppColors.textHint),
+                                const SizedBox(height: 8),
+                                Text('No commission records found', style: TextStyle(color: AppColors.textSecondary)),
+                              ],
                             ),
-                            if (tx['commission'] != null && (tx['commission'] as num) > 0)
-                              Text(
-                                'Commission: ₹${NumberFormat('#,##,###').format((tx['commission'] as num?)?.toDouble() ?? 0.0)}',
-                                style: TextStyle(
-                                  color: AppColors.textHint,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w600,
+                          ),
+                        ],
+                      )
+                    : ListView.separated(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 110), // Leave space for FAB
+                        itemCount: _commissionData.length,
+                        separatorBuilder: (context, index) => const SizedBox(height: 8),
+                        itemBuilder: (context, i) {
+                          final item = _commissionData[i];
+                          final rate = item['commissionRate'] as num? ?? 0.0;
+                          final comm = item['commissionAmount'] as num? ?? 0.0;
+                          final net = item['netSales'] as num? ?? 0.0;
+                          
+                          return Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: AppColors.surface,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: AppColors.cardBorder),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      item['periodStart'] == item['periodEnd']
+                                          ? DateFormat('dd MMM yyyy').format(DateTime.parse(item['periodStart']))
+                                          : '${DateFormat('dd MMM').format(DateTime.parse(item['periodStart']))} - ${DateFormat('dd MMM yyyy').format(DateTime.parse(item['periodEnd']))}',
+                                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textPrimary),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'Net Sales: ₹${NumberFormat('#,##,###').format(net)} (Rate: $rate%)',
+                                      style: TextStyle(color: AppColors.textSecondary, fontSize: 11),
+                                    ),
+                                  ],
                                 ),
-                              ),
-                            const SizedBox(height: 4),
-                            _StatusBadge(status: tx['status']),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ).animate(delay: (index * 60).ms).fadeIn(duration: 450.ms).slideY(begin: 0.05, end: 0);
-                },
-                childCount: (_walletData?['transactions'] as List<dynamic>?)?.length ?? 0,
-              ),
-            ),
+                                Text(
+                                  '₹${NumberFormat('#,##,###').format(comm)}',
+                                  style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary, fontSize: 14),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildSalaryTab(UserModel user) {
+    final double salary = user.salary;
+    final double commPercent = user.commissionPercentage ?? 0.0;
+    
+    return RefreshIndicator(
+      onRefresh: () async {
+        await _loadAdvanceData();
+      },
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Salary Card
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                gradient: AppColors.primaryGradient,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Monthly Salary', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                  const SizedBox(height: 4),
+                  Text(
+                    '₹${NumberFormat('#,##,###').format(salary)}',
+                    style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Commission Rate: ${commPercent.toStringAsFixed(2)}%',
+                    style: TextStyle(color: Colors.white.withValues(alpha: 0.9), fontSize: 13, fontWeight: FontWeight.w600),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+            
+            // Advance Limit Option
+            if (_advanceData != null) ...[
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.cardBorder),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Salary Advance Limit', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                        const SizedBox(height: 4),
+                        Text(
+                          '₹${NumberFormat('#,##,###').format((_advanceData?['advanceLimit'] as num?)?.toDouble() ?? 25000.0)}',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textPrimary),
+                        ),
+                      ],
+                    ),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      onPressed: () => _showRequestAdvanceSheet(context),
+                      child: const Text('Request'),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+            ],
+
+            Text('BANK & ACCOUNT DETAILS', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: AppColors.textSecondary, letterSpacing: 0.8)),
+            const SizedBox(height: 8),
+            _DetailRow(label: 'Bank Name', value: user.bankName ?? 'Not Configured'),
+            _DetailRow(label: 'Account Number', value: user.accountNumber ?? 'Not Configured'),
+            _DetailRow(label: 'IFSC Code', value: user.ifscCode ?? 'Not Configured'),
+            _DetailRow(label: 'Account Type', value: user.accountType ?? 'Not Configured'),
+            _DetailRow(label: 'Branch Name', value: user.branchName ?? 'Not Configured'),
+          ],
+        ),
       ),
     );
   }
 }
 
-class _StatColumn extends StatelessWidget {
-  final String label;
-  final String value;
-  final Color color;
-
-  const _StatColumn({
-    required this.label,
-    required this.value,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            color: AppColors.textHint,
-            fontSize: 10.5,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          value,
-          style: TextStyle(
-            color: color,
-            fontSize: 18,
-            fontWeight: FontWeight.w900,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _SalaryItem extends StatelessWidget {
-  final String label;
-  final String value;
-
-  const _SalaryItem({
-    required this.label,
-    required this.value,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return Column(
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            color: AppColors.textHint,
-            fontSize: 10,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: TextStyle(
-            color: cs.onSurface,
-            fontSize: 12,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _ActionCard extends StatelessWidget {
-  final String title;
+class _SalesActionTile extends StatelessWidget {
   final IconData icon;
+  final String title;
+  final String subtitle;
   final Color color;
   final VoidCallback onTap;
 
-  const _ActionCard({
-    required this.title,
+  const _SalesActionTile({
     required this.icon,
+    required this.title,
+    required this.subtitle,
     required this.color,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(16),
+    return ListTile(
+      leading: Container(
+        padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(22),
-          border: Border.all(color: AppColors.cardBorder, width: 1.5),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.cardShadow,
-              blurRadius: 8,
-              offset: const Offset(0, 3),
-            ),
-          ],
+          color: color.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(10),
         ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Icon(icon, color: color, size: 20),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Text(
-                title,
-                style: TextStyle(
-                  color: AppColors.textPrimary,
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w800,
-                  height: 1.3,
-                ),
-              ),
-            ),
-          ],
-        ),
+        child: Icon(icon, color: color, size: 20),
       ),
+      title: Text(
+        title,
+        style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary, fontSize: 14),
+      ),
+      subtitle: Text(
+        subtitle,
+        style: TextStyle(color: AppColors.textSecondary, fontSize: 11),
+      ),
+      trailing: Icon(RemixIcons.arrow_right_s_line, color: AppColors.textHint, size: 18),
+      onTap: onTap,
     );
   }
 }
 
-class _StatusBadge extends StatelessWidget {
-  final String status;
-  const _StatusBadge({required this.status});
+class _DetailRow extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _DetailRow({required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) {
-    Color bg;
-    Color text;
-
-    switch (status.toLowerCase()) {
-      case 'paid':
-        bg = AppColors.successSurface;
-        text = AppColors.success;
-        break;
-      case 'approved':
-        bg = Colors.blue.shade50;
-        text = Colors.blue.shade700;
-        break;
-      case 'processing':
-        bg = Colors.amber.shade50;
-        text = Colors.amber.shade700;
-        break;
-      case 'rejected':
-      default:
-        bg = AppColors.errorSurface;
-        text = AppColors.error;
-        break;
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: Text(
-        status,
-        style: TextStyle(
-          color: text,
-          fontSize: 9,
-          fontWeight: FontWeight.w800,
-        ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+          Text(
+            value,
+            style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 13),
+          ),
+        ],
       ),
     );
   }
 }
 
+// ─── Salary Advance Form Sheet (Kept from original code) ───────────────────
 class _RequestAdvanceSheet extends StatefulWidget {
   final double maxLimit;
   final Function(double amount, int months, String reason) onSubmit;
 
-  const _RequestAdvanceSheet({
-    required this.maxLimit,
-    required this.onSubmit,
-  });
+  const _RequestAdvanceSheet({required this.maxLimit, required this.onSubmit});
 
   @override
   State<_RequestAdvanceSheet> createState() => _RequestAdvanceSheetState();
 }
 
 class _RequestAdvanceSheetState extends State<_RequestAdvanceSheet> {
-  double _requestedAmount = 10000;
-  int _paybackMonths = 1;
-  final TextEditingController _reasonController = TextEditingController();
-  final _formKey = GlobalKey<FormState>();
+  final _amountCtrl = TextEditingController();
+  final _reasonCtrl = TextEditingController();
+  int _repaymentMonths = 3;
+  String? _error;
 
   @override
   void dispose() {
-    _reasonController.dispose();
+    _amountCtrl.dispose();
+    _reasonCtrl.dispose();
     super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
-    
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.background,
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(28),
-          topRight: Radius.circular(28),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.15),
-            blurRadius: 20,
-            offset: const Offset(0, -5),
-          ),
-        ],
-      ),
-      padding: EdgeInsets.fromLTRB(24, 16, 24, 24 + bottomInset),
-      child: SingleChildScrollView(
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 5,
-                decoration: BoxDecoration(
-                  color: AppColors.cardBorder,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: Colors.purple.withValues(alpha: 0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(RemixIcons.hand_coin_line, color: Colors.purple, size: 24),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'Salary Advance Request',
-                    style: TextStyle(
-                      color: AppColors.textPrimary,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            
-            Text(
-              'AMOUNT (MAX ₹${NumberFormat('#,##,###').format(widget.maxLimit)})',
-              style: TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: 11,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 0.8,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surface,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.cardBorder, width: 1.5),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    '₹',
-                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Colors.purple),
-                  ),
-                  Text(
-                    NumberFormat('#,##,###').format(_requestedAmount),
-                    style: TextStyle(
-                      color: AppColors.textPrimary,
-                      fontSize: 22,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Slider(
-              value: _requestedAmount,
-              min: 2000,
-              max: widget.maxLimit,
-              divisions: 23,
-              activeColor: Colors.purple,
-              inactiveColor: AppColors.cardBorder,
-              onChanged: (val) {
-                setState(() {
-                  _requestedAmount = val;
-                });
-              },
-            ),
-            
-            const SizedBox(height: 18),
-            Text(
-              'PAYBACK DURATION',
-              style: TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: 11,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 0.8,
-              ),
-            ),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                _PaybackChoice(
-                  months: 1,
-                  isSelected: _paybackMonths == 1,
-                  onTap: () => setState(() => _paybackMonths = 1),
-                ),
-                const SizedBox(width: 8),
-                _PaybackChoice(
-                  months: 2,
-                  isSelected: _paybackMonths == 2,
-                  onTap: () => setState(() => _paybackMonths = 2),
-                ),
-                const SizedBox(width: 8),
-                _PaybackChoice(
-                  months: 3,
-                  isSelected: _paybackMonths == 3,
-                  onTap: () => setState(() => _paybackMonths = 3),
-                ),
-              ],
-            ),
-            
-            const SizedBox(height: 24),
-            Text(
-              'REASON FOR ADVANCE',
-              style: TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: 11,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 0.8,
-              ),
-            ),
-            const SizedBox(height: 10),
-            TextFormField(
-              controller: _reasonController,
-              maxLines: 2,
-              style: TextStyle(color: AppColors.textPrimary, fontSize: 14),
-              decoration: InputDecoration(
-                hintText: 'Enter reason (e.g. medical emergency)...',
-                hintStyle: TextStyle(color: AppColors.textHint, fontSize: 13.5),
-                fillColor: Theme.of(context).colorScheme.surface,
-                filled: true,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide(color: AppColors.cardBorder, width: 1.5),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide(color: AppColors.cardBorder, width: 1.5),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide(color: Colors.purple, width: 1.8),
-                ),
-              ),
-              validator: (val) {
-                if (val == null || val.trim().isEmpty) {
-                  return 'Please specify a reason';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 28),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      side: BorderSide(color: AppColors.cardBorder, width: 1.5),
-                    ),
-                    onPressed: () => Navigator.pop(context),
-                    child: Text(
-                      'Cancel',
-                      style: TextStyle(
-                        color: AppColors.textPrimary,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.purple,
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                    ),
-                    onPressed: () {
-                      if (_formKey.currentState!.validate()) {
-                        widget.onSubmit(_requestedAmount, _paybackMonths, _reasonController.text.trim());
-                      }
-                    },
-                    child: const Text(
-                      'Submit Request',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w800,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    ) 
-      );
-  }
-}
-
-class _PaybackChoice extends StatelessWidget {
-  final int months;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const _PaybackChoice({
-    required this.months,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          decoration: BoxDecoration(
-            color: isSelected ? Colors.purple.withValues(alpha: 0.08) : Theme.of(context).colorScheme.surface,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: isSelected ? Colors.purple : AppColors.cardBorder,
-              width: isSelected ? 1.8 : 1.5,
-            ),
-          ),
-          child: Column(
-            children: [
-              Text(
-                '$months ${months == 1 ? "Month" : "Months"}',
-                style: TextStyle(
-                  color: isSelected ? Colors.purple : AppColors.textPrimary,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                'EMI Payback',
-                style: TextStyle(
-                  color: AppColors.textHint,
-                  fontSize: 8.5,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _BankDetailsSheet extends StatefulWidget {
-  const _BankDetailsSheet();
-
-  @override
-  State<_BankDetailsSheet> createState() => _BankDetailsSheetState();
-}
-
-class _BankDetailsSheetState extends State<_BankDetailsSheet> {
-  Map<String, dynamic>? _bankDetails;
-  bool _isLoading = true;
-  bool _isError = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadBankDetails();
-  }
-
-  Future<void> _loadBankDetails() async {
-    final data = await WalletService.fetchBankDetails();
-    if (mounted) {
-      setState(() {
-        _bankDetails = data;
-        _isLoading = false;
-        _isError = data == null;
-      });
+  void _submit() {
+    setState(() => _error = null);
+    final amt = double.tryParse(_amountCtrl.text.replaceAll(',', ''));
+    if (amt == null || amt <= 0) {
+      setState(() => _error = 'Enter a valid amount');
+      return;
     }
+    if (amt > widget.maxLimit) {
+      setState(() => _error = 'Amount exceeds your limit of ₹${NumberFormat('#,##,###').format(widget.maxLimit)}');
+      return;
+    }
+    if (_reasonCtrl.text.trim().isEmpty) {
+      setState(() => _error = 'Please enter a reason');
+      return;
+    }
+    widget.onSubmit(amt, _repaymentMonths, _reasonCtrl.text.trim());
   }
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-
     return Container(
+      padding: EdgeInsets.fromLTRB(20, 12, 20, MediaQuery.of(context).viewInsets.bottom + 24),
       decoration: BoxDecoration(
         color: AppColors.background,
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(28),
-          topRight: Radius.circular(28),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.15),
-            blurRadius: 20,
-            offset: const Offset(0, -5),
-          ),
-        ],
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Center(
-            child: Container(
-              width: 40,
-              height: 5,
-              decoration: BoxDecoration(
-                color: AppColors.cardBorder,
-                borderRadius: BorderRadius.circular(10),
+            child: Container(width: 40, height: 4, decoration: BoxDecoration(color: AppColors.divider, borderRadius: BorderRadius.circular(2))),
+          ),
+          const SizedBox(height: 20),
+          Text('Request Salary Advance', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+          const SizedBox(height: 16),
+          if (_error != null) ...[
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              decoration: BoxDecoration(color: AppColors.error.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
+              child: Row(
+                children: [
+                  const Icon(RemixIcons.error_warning_line, color: AppColors.error, size: 16),
+                  const SizedBox(width: 8),
+                  Expanded(child: Text(_error!, style: const TextStyle(color: AppColors.error, fontSize: 12))),
+                ],
               ),
+            ),
+            const SizedBox(height: 16),
+          ],
+          TextField(
+            controller: _amountCtrl,
+            keyboardType: TextInputType.number,
+            decoration: const InputDecoration(
+              labelText: 'Advance Amount',
+              prefixText: '₹ ',
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text('Repayment Tenure', style: TextStyle(color: AppColors.textSecondary, fontSize: 13, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [3, 6, 12].map((m) {
+              final isSel = _repaymentMonths == m;
+              return GestureDetector(
+                onTap: () => setState(() => _repaymentMonths = m),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: isSel ? AppColors.primary : AppColors.surface,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: isSel ? AppColors.primary : AppColors.inputBorder),
+                  ),
+                  child: Text('$m Months', style: TextStyle(color: isSel ? Colors.white : AppColors.textSecondary, fontWeight: FontWeight.bold)),
+                ),
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _reasonCtrl,
+            maxLines: 3,
+            decoration: const InputDecoration(
+              labelText: 'Reason for Advance',
             ),
           ),
           const SizedBox(height: 24),
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: Colors.blue.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(RemixIcons.bank_line, color: Colors.blue, size: 24),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  'Linked Bank Account',
-                  style: TextStyle(
-                    color: AppColors.textPrimary,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-
-          if (_isLoading)
-            Container(
-              padding: const EdgeInsets.all(40),
-              child: const Center(child: CircularProgressIndicator()),
-            )
-          else if (_isError)
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: cs.surface,
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: AppColors.cardBorder, width: 1.5),
-              ),
-              child: Column(
-                children: [
-                  Icon(RemixIcons.error_warning_line, color: AppColors.error, size: 48),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Failed to load bank details',
-                    style: TextStyle(
-                      color: AppColors.textSecondary,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: _loadBankDetails,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
-                    ),
-                    child: const Text('Retry'),
-                  ),
-                ],
-              ),
-            )
-          else
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: cs.surface,
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: AppColors.cardBorder, width: 1.5),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.cardShadow,
-                    blurRadius: 8,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
-              ),
-              child: Column(
-                children: [
-                  if (_bankDetails?['accountHolder'] != null)
-                    _BankDetailRow(label: 'Account Holder', value: _bankDetails!['accountHolder']),
-                  if (_bankDetails?['bankName'] != null && _bankDetails!['bankName'].isNotEmpty)
-                    Divider(color: AppColors.divider, height: 24),
-                  if (_bankDetails?['bankName'] != null && _bankDetails!['bankName'].isNotEmpty)
-                    _BankDetailRow(label: 'Bank Name', value: _bankDetails!['bankName']),
-                  if (_bankDetails?['accountNumber'] != null && _bankDetails!['accountNumber'].isNotEmpty)
-                    Divider(color: AppColors.divider, height: 24),
-                  if (_bankDetails?['accountNumber'] != null && _bankDetails!['accountNumber'].isNotEmpty)
-                    _BankDetailRow(label: 'Account Number', value: _bankDetails!['accountNumber'], isSecure: true),
-                  if (_bankDetails?['ifscCode'] != null && _bankDetails!['ifscCode'].isNotEmpty)
-                    Divider(color: AppColors.divider, height: 24),
-                  if (_bankDetails?['ifscCode'] != null && _bankDetails!['ifscCode'].isNotEmpty)
-                    _BankDetailRow(label: 'IFSC Code', value: _bankDetails!['ifscCode']),
-                  if (_bankDetails?['accountType'] != null && _bankDetails!['accountType'].isNotEmpty)
-                    Divider(color: AppColors.divider, height: 24),
-                  if (_bankDetails?['accountType'] != null && _bankDetails!['accountType'].isNotEmpty)
-                    _BankDetailRow(label: 'Account Type', value: _bankDetails!['accountType']),
-                  if (_bankDetails?['branchName'] != null && _bankDetails!['branchName'].isNotEmpty)
-                    Divider(color: AppColors.divider, height: 24),
-                  if (_bankDetails?['branchName'] != null && _bankDetails!['branchName'].isNotEmpty)
-                    _BankDetailRow(label: 'Branch Name', value: _bankDetails!['branchName']),
-                ],
-              ),
-          ),
-          const SizedBox(height: 28),
-          
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
-                elevation: 0,
                 padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               ),
-              onPressed: () => Navigator.pop(context),
-              child: const Text(
-                'Close Details',
-                style: TextStyle(
-                  fontWeight: FontWeight.w800,
-                  fontSize: 14,
-                ),
-              ),
+              onPressed: _submit,
+              child: const Text('Submit Request', style: TextStyle(fontWeight: FontWeight.bold)),
             ),
           ),
         ],
@@ -1505,47 +816,205 @@ class _BankDetailsSheetState extends State<_BankDetailsSheet> {
   }
 }
 
-class _BankDetailRow extends StatelessWidget {
-  final String label;
-  final String value;
-  final bool isSecure;
+class _SalesTransactionFormSheet extends StatefulWidget {
+  final String type;
+  final List<dynamic> stores;
+  final Function(Map<String, dynamic> payload) onSubmit;
 
-  const _BankDetailRow({
-    required this.label,
-    required this.value,
-    this.isSecure = false,
+  const _SalesTransactionFormSheet({
+    required this.type,
+    required this.stores,
+    required this.onSubmit,
   });
 
   @override
+  State<_SalesTransactionFormSheet> createState() => _SalesTransactionFormSheetState();
+}
+
+class _SalesTransactionFormSheetState extends State<_SalesTransactionFormSheet> {
+  final _invoiceCtrl = TextEditingController();
+  final _amountCtrl = TextEditingController();
+  final _returnAmountCtrl = TextEditingController(); // for exchange
+  final _notesCtrl = TextEditingController();
+  String? _selectedStoreId;
+  String? _error;
+
+  @override
+  void dispose() {
+    _invoiceCtrl.dispose();
+    _amountCtrl.dispose();
+    _returnAmountCtrl.dispose();
+    _notesCtrl.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    setState(() => _error = null);
+    
+    final invoice = _invoiceCtrl.text.trim();
+    if (invoice.isEmpty) {
+      setState(() => _error = 'Enter Invoice Number or Bill ID');
+      return;
+    }
+
+    final amt = double.tryParse(_amountCtrl.text.replaceAll(',', ''));
+    if (widget.type != 'Exchange') {
+      if (amt == null || amt <= 0) {
+        setState(() => _error = 'Enter a valid amount');
+        return;
+      }
+    } else {
+      // Exchange validation
+      if (amt == null || amt < 0) {
+        setState(() => _error = 'Enter a valid purchase amount');
+        return;
+      }
+      final retAmt = double.tryParse(_returnAmountCtrl.text.replaceAll(',', ''));
+      if (retAmt == null || retAmt < 0) {
+        setState(() => _error = 'Enter a valid return amount');
+        return;
+      }
+    }
+
+    if (widget.type == 'AddSale' || widget.type == 'UpdateSale') {
+      if (_selectedStoreId == null) {
+        setState(() => _error = 'Please select a store');
+        return;
+      }
+    }
+
+    final Map<String, dynamic> payload = {
+      'invoiceNumber': invoice,
+      'billId': invoice, // pass both to satisfy backend controller checks
+      'notes': _notesCtrl.text.trim(),
+    };
+
+    if (widget.type == 'AddSale' || widget.type == 'UpdateSale') {
+      payload['saleAmount'] = amt;
+      payload['storeId'] = _selectedStoreId;
+    } else if (widget.type == 'CreditNote') {
+      payload['creditAmount'] = amt;
+    } else if (widget.type == 'Exchange') {
+      payload['newSaleAmount'] = amt;
+      payload['returnAmount'] = double.parse(_returnAmountCtrl.text.replaceAll(',', ''));
+    }
+
+    widget.onSubmit(payload);
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            color: AppColors.textHint,
-            fontSize: 12,
-            fontWeight: FontWeight.w700,
+    String title = '';
+    String amountLabel = '';
+    if (widget.type == 'AddSale') {
+      title = 'Add New Sale';
+      amountLabel = 'Sale Amount';
+    } else if (widget.type == 'UpdateSale') {
+      title = 'Update Sale';
+      amountLabel = 'New Sale Amount';
+    } else if (widget.type == 'CreditNote') {
+      title = 'Add Credit Note';
+      amountLabel = 'Credit Amount';
+    } else if (widget.type == 'Exchange') {
+      title = 'Sales Exchange';
+      amountLabel = 'New Purchase Amount';
+    }
+
+    return Container(
+      padding: EdgeInsets.fromLTRB(20, 12, 20, MediaQuery.of(context).viewInsets.bottom + 24),
+      decoration: BoxDecoration(
+        color: AppColors.background,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(
+            child: Container(width: 40, height: 4, decoration: BoxDecoration(color: AppColors.divider, borderRadius: BorderRadius.circular(2))),
           ),
-        ),
-        Row(
-          children: [
-            if (isSecure) ...[
-              Icon(RemixIcons.lock_2_line, color: AppColors.success, size: 13),
-              const SizedBox(width: 6),
-            ],
-            Text(
-              value,
-              style: TextStyle(
-                color: AppColors.textPrimary,
-                fontSize: 13,
-                fontWeight: FontWeight.w800,
+          const SizedBox(height: 20),
+          Text(title, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+          const SizedBox(height: 16),
+          if (_error != null) ...[
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              decoration: BoxDecoration(color: AppColors.error.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
+              child: Row(
+                children: [
+                  const Icon(RemixIcons.error_warning_line, color: AppColors.error, size: 16),
+                  const SizedBox(width: 8),
+                  Expanded(child: Text(_error!, style: const TextStyle(color: AppColors.error, fontSize: 12))),
+                ],
               ),
             ),
+            const SizedBox(height: 16),
           ],
-        ),
-      ],
+          TextField(
+            controller: _invoiceCtrl,
+            decoration: const InputDecoration(
+              labelText: 'Invoice / Bill ID',
+            ),
+          ),
+          const SizedBox(height: 16),
+          if (widget.type == 'AddSale' || widget.type == 'UpdateSale') ...[
+            DropdownButtonFormField<String>(
+              initialValue: _selectedStoreId,
+              hint: const Text('Select Store'),
+              decoration: const InputDecoration(contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
+              items: widget.stores.map((s) {
+                return DropdownMenuItem<String>(
+                  value: s['id'].toString(),
+                  child: Text(s['name'] ?? 'Store'),
+                );
+              }).toList(),
+              onChanged: (val) => setState(() => _selectedStoreId = val),
+            ),
+            const SizedBox(height: 16),
+          ],
+          if (widget.type == 'Exchange') ...[
+            TextField(
+              controller: _returnAmountCtrl,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'Return Amount',
+                prefixText: '₹ ',
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
+          TextField(
+            controller: _amountCtrl,
+            keyboardType: TextInputType.number,
+            decoration: InputDecoration(
+              labelText: amountLabel,
+              prefixText: '₹ ',
+            ),
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _notesCtrl,
+            maxLines: 2,
+            decoration: const InputDecoration(
+              labelText: 'Notes',
+            ),
+          ),
+          const SizedBox(height: 24),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              ),
+              onPressed: _submit,
+              child: const Text('Submit', style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

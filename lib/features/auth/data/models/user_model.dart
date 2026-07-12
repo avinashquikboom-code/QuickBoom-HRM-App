@@ -27,6 +27,8 @@ class UserModel {
   final String? ifscCode;
   final String? accountType;
   final String? branchName;
+  final String? hopkidEmployeeId;
+  final double? commissionPercentage;
 
   const UserModel({
     required this.id,
@@ -55,6 +57,8 @@ class UserModel {
     this.ifscCode,
     this.accountType,
     this.branchName,
+    this.hopkidEmployeeId,
+    this.commissionPercentage,
   });
 
   String get initials {
@@ -109,4 +113,66 @@ class UserModel {
   bool get canViewPayroll => hasPermission('canViewPayroll');
   bool get canViewReports => hasPermission('canViewReports');
   bool get canViewStoreReports => hasPermission('canViewStoreReports');
+
+  UserModel copyWith({
+    String? id,
+    String? employeeId,
+    String? name,
+    String? email,
+    String? phone,
+    UserRole? role,
+    String? department,
+    String? departmentId,
+    String? shiftType,
+    String? workMode,
+    String? designation,
+    DateTime? joinDate,
+    double? salary,
+    String? avatar,
+    String? storeId,
+    String? storeName,
+    String? officeId,
+    String? officeName,
+    String? reportingManagerId,
+    String? reportingManagerName,
+    Map<String, bool>? permissions,
+    String? bankName,
+    String? accountNumber,
+    String? ifscCode,
+    String? accountType,
+    String? branchName,
+    String? hopkidEmployeeId,
+    double? commissionPercentage,
+  }) {
+    return UserModel(
+      id: id ?? this.id,
+      employeeId: employeeId ?? this.employeeId,
+      name: name ?? this.name,
+      email: email ?? this.email,
+      phone: phone ?? this.phone,
+      role: role ?? this.role,
+      department: department ?? this.department,
+      departmentId: departmentId ?? this.departmentId,
+      shiftType: shiftType ?? this.shiftType,
+      workMode: workMode ?? this.workMode,
+      designation: designation ?? this.designation,
+      joinDate: joinDate ?? this.joinDate,
+      salary: salary ?? this.salary,
+      avatar: avatar ?? this.avatar,
+      storeId: storeId ?? this.storeId,
+      storeName: storeName ?? this.storeName,
+      officeId: officeId ?? this.officeId,
+      officeName: officeName ?? this.officeName,
+      reportingManagerId: reportingManagerId ?? this.reportingManagerId,
+      reportingManagerName: reportingManagerName ?? this.reportingManagerName,
+      permissions: permissions ?? this.permissions,
+      bankName: bankName ?? this.bankName,
+      accountNumber: accountNumber ?? this.accountNumber,
+      ifscCode: ifscCode ?? this.ifscCode,
+      accountType: accountType ?? this.accountType,
+      branchName: branchName ?? this.branchName,
+      hopkidEmployeeId: hopkidEmployeeId ?? this.hopkidEmployeeId,
+      commissionPercentage: commissionPercentage ?? this.commissionPercentage,
+    );
+  }
 }

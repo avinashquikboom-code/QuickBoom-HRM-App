@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quickboom_hrm/core/services/api_service.dart';
 import 'package:quickboom_hrm/core/constants/app_url.dart';
 import 'package:quickboom_hrm/features/attendance/data/models/hr_attendance_record_model.dart';
+import 'package:quickboom_hrm/features/employees/presentation/providers/employee_repository_provider.dart';
+import 'package:quickboom_hrm/features/employees/data/models/hopkid_employee_model.dart';
 
 // ─── HR Attendance State ──────────────────────────────────────────────────────
 
@@ -57,8 +59,39 @@ class HrAttendanceState {
 // ─── HR Attendance ViewModel ───────────────────────────────────────────────────
 
 class HrAttendanceViewModel extends StateNotifier<HrAttendanceState> {
-  HrAttendanceViewModel() : super(const HrAttendanceState()) {
+  final Ref ref;
+
+  HrAttendanceViewModel(this.ref) : super(const HrAttendanceState()) {
     fetchTodayAttendance();
+  }
+
+  Future<List<HrAttendanceRecord>> _joinWithHopKidEmployees(List<HrAttendanceRecord> list) async {
+    try {
+      final repo = ref.read(employeeRepositoryProvider);
+      final cache = await repo.getCachedEmployees();
+      if (cache.isEmpty) return list;
+
+      final Map<String, HopkidEmployeeModel> lookup = {};
+      for (final emp in cache) {
+        if (emp.employeeCode.isNotEmpty) {
+          lookup[emp.employeeCode.toUpperCase()] = emp;
+        }
+      }
+
+      return list.map((record) {
+        final matched = lookup[record.employeeCode.toUpperCase()];
+        if (matched != null) {
+          return record.copyWith(
+            employeeName: matched.employeeName,
+            officeName: matched.branchName,
+          );
+        }
+        return record;
+      }).toList();
+    } catch (e) {
+      debugPrint('⚠️ Error joining attendance records with HopKid cache: $e');
+      return list;
+    }
   }
 
   Future<void> fetchTodayAttendance() async {
@@ -86,8 +119,9 @@ class HrAttendanceViewModel extends StateNotifier<HrAttendanceState> {
       // Handle both response structures
       final List rawRecords = data['records'] ?? data['attendances'] ?? [];
       final records = rawRecords.map((r) => HrAttendanceRecord.fromJson(r)).toList();
+      final joined = await _joinWithHopKidEmployees(records);
 
-      state = state.copyWith(records: records, isLoading: false);
+      state = state.copyWith(records: joined, isLoading: false);
       debugPrint('✅ HR attendance logs fetched: ${records.length} records.');
     } catch (e) {
       debugPrint('❌ Error fetching HR attendance logs: $e');
@@ -133,8 +167,9 @@ class HrAttendanceViewModel extends StateNotifier<HrAttendanceState> {
 
       final List rawRecords = data['records'] ?? data['attendances'] ?? [];
       final records = rawRecords.map((r) => HrAttendanceRecord.fromJson(r)).toList();
+      final joined = await _joinWithHopKidEmployees(records);
 
-      state = state.copyWith(records: records, isLoading: false);
+      state = state.copyWith(records: joined, isLoading: false);
       debugPrint('✅ HR attendance history fetched: ${records.length} records.');
     } catch (e) {
       debugPrint('❌ Error fetching HR attendance history: $e');
@@ -220,8 +255,9 @@ class HrAttendanceViewModel extends StateNotifier<HrAttendanceState> {
 
       final List rawRecords = data['records'] ?? [];
       final records = rawRecords.map((r) => HrAttendanceRecord.fromJson(r)).toList();
+      final joined = await _joinWithHopKidEmployees(records);
 
-      state = state.copyWith(records: records, isLoading: false);
+      state = state.copyWith(records: joined, isLoading: false);
       debugPrint('✅ All employees attendance fetched: ${records.length} records.');
     } catch (e) {
       debugPrint('❌ Error fetching all employees attendance: $e');
@@ -237,5 +273,5 @@ class HrAttendanceViewModel extends StateNotifier<HrAttendanceState> {
 
 final hrAttendanceViewModelProvider =
     StateNotifierProvider<HrAttendanceViewModel, HrAttendanceState>((ref) {
-  return HrAttendanceViewModel();
+  return HrAttendanceViewModel(ref);
 });

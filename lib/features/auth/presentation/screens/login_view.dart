@@ -5,6 +5,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:remixicon/remixicon.dart';
 import 'package:quickboom_hrm/core/constants/app_colors.dart';
 import 'package:quickboom_hrm/core/utils/app_responsive.dart';
+import 'package:quickboom_hrm/features/auth/data/models/user_model.dart';
 import 'package:quickboom_hrm/features/auth/presentation/providers/auth_viewmodel.dart';
 import 'package:quickboom_hrm/features/dashboard/presentation/screens/employee_shell.dart';
 import 'package:quickboom_hrm/features/dashboard/presentation/screens/hr_shell.dart';
@@ -60,9 +61,11 @@ class _LoginViewState extends ConsumerState<LoginView> with SingleTickerProvider
         : await ref.read(authViewModelProvider.notifier).login(_emailCtrl.text, _passCtrl.text);
     
     if (success && mounted) {
+      final user = ref.read(authViewModelProvider).currentUser;
+      final isActuallyHr = user?.role == UserRole.hrManager;
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
-          builder: (_) => isHrTab ? const HrShell() : const EmployeeShell(),
+          builder: (_) => isActuallyHr ? const HrShell() : const EmployeeShell(),
         ),
       );
     }

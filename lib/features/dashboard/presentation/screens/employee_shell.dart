@@ -7,7 +7,6 @@ import 'package:quickboom_hrm/features/attendance/presentation/screens/employee_
 import 'package:quickboom_hrm/features/leave/presentation/screens/employee_leave_view.dart';
 import 'package:quickboom_hrm/features/profile/presentation/screens/employee_profile_view.dart';
 import 'package:quickboom_hrm/features/wallet/presentation/screens/employee_wallet_view.dart';
-import 'package:quickboom_hrm/features/commission/presentation/screens/commission_wallet_view.dart';
 import 'package:quickboom_hrm/features/auth/presentation/providers/auth_viewmodel.dart';
 import 'package:quickboom_hrm/core/services/permission_service.dart';
 
@@ -34,7 +33,7 @@ class _EmployeeShellState extends ConsumerState<EmployeeShell> {
       case 4:
         return const EmployeeProfileView();
       case 5:
-        return const CommissionWalletView();
+        return const EmployeeWalletView();
       default:
         return const EmployeeDashboardView();
     }

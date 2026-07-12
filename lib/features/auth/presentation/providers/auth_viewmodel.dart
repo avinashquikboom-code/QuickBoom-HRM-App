@@ -6,6 +6,8 @@ import 'package:quickboom_hrm/core/services/storage_service.dart';
 import 'package:quickboom_hrm/core/constants/app_url.dart';
 import 'package:quickboom_hrm/core/services/notification_service.dart';
 import 'package:quickboom_hrm/features/auth/data/models/user_model.dart';
+import 'package:quickboom_hrm/features/employees/presentation/providers/employee_repository_provider.dart';
+import 'package:quickboom_hrm/features/employees/data/models/hopkid_employee_model.dart';
 
 // Import all user-specific view models for session invalidation on logout
 import 'package:quickboom_hrm/features/attendance/presentation/providers/attendance_viewmodel.dart';
@@ -35,25 +37,29 @@ class AuthState {
   final bool isLoading;
   final UserModel? currentUser;
   final String? errorMessage;
+  final bool isNotRegistered;
 
   const AuthState({
     this.isLoading = false,
     this.currentUser,
     this.errorMessage,
+    this.isNotRegistered = false,
   });
 
-  bool get isAuthenticated => currentUser != null;
+  bool get isAuthenticated => currentUser != null && !isNotRegistered;
 
   AuthState copyWith({
     bool? isLoading,
     UserModel? currentUser,
     String? errorMessage,
+    bool? isNotRegistered,
     bool clearError = false,
   }) {
     return AuthState(
       isLoading: isLoading ?? this.isLoading,
       currentUser: currentUser ?? this.currentUser,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+      isNotRegistered: isNotRegistered ?? this.isNotRegistered,
     );
   }
 }
@@ -173,8 +179,60 @@ class AuthViewModel extends StateNotifier<AuthState> {
         forceHrRole: forceHrRole,
       );
 
-      debugPrint('👤 [AUTH] Parsed user: ${parsedUser.name} (${parsedUser.email})');
-      state = AuthState(currentUser: parsedUser);
+      UserModel hydratedUser = parsedUser;
+      if (parsedUser.role == UserRole.employee) {
+        final repo = ref.read(employeeRepositoryProvider);
+        List<HopkidEmployeeModel> cache = await repo.getCachedEmployees();
+        if (cache.isEmpty) {
+          try {
+            cache = await repo.refresh();
+          } catch (e) {
+            debugPrint('⚠️ Cold employee sync failed: $e');
+          }
+        }
+
+        final cleanedPhone = parsedUser.phone.replaceAll(RegExp(r'\D'), '');
+        HopkidEmployeeModel? matched;
+        
+        for (final emp in cache) {
+          final cleanedEmpPhone = emp.mobileNo.replaceAll(RegExp(r'\D'), '');
+          if (cleanedEmpPhone.isNotEmpty && cleanedPhone.isNotEmpty && cleanedPhone == cleanedEmpPhone) {
+            matched = emp;
+            break;
+          }
+        }
+        
+        if (matched == null) {
+          for (final emp in cache) {
+            if (emp.employeeCode.toUpperCase() == parsedUser.employeeId.toUpperCase()) {
+              matched = emp;
+              break;
+            }
+          }
+        }
+
+        if (matched == null) {
+          debugPrint('❌ [AUTH] Employee user is not registered in HopKid master list: ${parsedUser.phone} / ${parsedUser.employeeId}');
+          await ApiService.clearToken();
+          state = state.copyWith(
+            isLoading: false,
+            isNotRegistered: true,
+            errorMessage: 'Your account is not registered in the HopKid employee master list.',
+          );
+          return false;
+        }
+
+        hydratedUser = parsedUser.copyWith(
+          hopkidEmployeeId: matched.employeeID,
+          salary: matched.salary,
+          commissionPercentage: matched.commissionPercentage,
+          branchName: matched.branchName,
+        );
+        debugPrint('✅ [AUTH] Mapped employee to HopKid ID: ${matched.employeeID}');
+      }
+
+      debugPrint('👤 [AUTH] Hydrated user: ${hydratedUser.name} (${hydratedUser.email})');
+      state = AuthState(currentUser: hydratedUser);
 
       // Sync FCM in background (handles missing cached token without blocking login)
       _syncFcmTokenInBackground();
@@ -261,7 +319,52 @@ class AuthViewModel extends StateNotifier<AuthState> {
           branchName:  emp['branchName']?.toString(),
         );
 
-        state = AuthState(currentUser: parsedUser);
+        UserModel hydratedUser = parsedUser;
+        if (parsedUser.role == UserRole.employee) {
+          final repo = ref.read(employeeRepositoryProvider);
+          List<HopkidEmployeeModel> cache = await repo.getCachedEmployees();
+          if (cache.isEmpty) {
+            try {
+              cache = await repo.refresh();
+            } catch (e) {
+              debugPrint('⚠️ Cold employee sync failed: $e');
+            }
+          }
+
+          final cleanedPhone = parsedUser.phone.replaceAll(RegExp(r'\D'), '');
+          HopkidEmployeeModel? matched;
+          
+          for (final emp in cache) {
+            final cleanedEmpPhone = emp.mobileNo.replaceAll(RegExp(r'\D'), '');
+            if (cleanedEmpPhone.isNotEmpty && cleanedPhone.isNotEmpty && cleanedPhone == cleanedEmpPhone) {
+              matched = emp;
+              break;
+            }
+          }
+          
+          if (matched == null) {
+            for (final emp in cache) {
+              if (emp.employeeCode.toUpperCase() == parsedUser.employeeId.toUpperCase()) {
+                matched = emp;
+                break;
+              }
+            }
+          }
+
+          if (matched != null) {
+            hydratedUser = parsedUser.copyWith(
+              hopkidEmployeeId: matched.employeeID,
+              salary: matched.salary,
+              commissionPercentage: matched.commissionPercentage,
+              branchName: matched.branchName,
+            );
+            debugPrint('✅ [AUTH] Restored and mapped employee to HopKid ID: ${matched.employeeID}');
+          } else {
+            debugPrint('⚠️ [AUTH] Restored employee not found in HopKid master list: ${parsedUser.phone} / ${parsedUser.employeeId}');
+          }
+        }
+
+        state = AuthState(currentUser: hydratedUser);
         _syncFcmTokenInBackground();
         return true;
       }

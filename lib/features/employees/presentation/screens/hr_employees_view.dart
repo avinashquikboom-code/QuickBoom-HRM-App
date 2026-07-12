@@ -56,27 +56,41 @@ class HrEmployeesView extends ConsumerWidget {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ─── Department Filter ────────────────────────────────────────
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          // ─── Filters Row ──────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             child: Row(
               children: [
-                _DeptChip(
-                  label: 'All',
-                  isSelected: state.selectedDepartment == null,
-                  onTap: () => vm.filterByDepartment(null),
-                ),
-                const SizedBox(width: 8),
-                ...state.departments.map(
-                  (dept) => Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: _DeptChip(
-                      label: dept,
-                      isSelected: state.selectedDepartment == dept,
-                      onTap: () => vm.filterByDepartment(dept),
+                Expanded(
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        _DeptChip(
+                          label: 'All Branches',
+                          isSelected: state.selectedBranch == null,
+                          onTap: () => vm.filterByBranch(null),
+                        ),
+                        const SizedBox(width: 8),
+                        ...state.branches.map(
+                          (branch) => Padding(
+                            padding: const EdgeInsets.only(right: 8),
+                            child: _DeptChip(
+                              label: branch,
+                              isSelected: state.selectedBranch == branch,
+                              onTap: () => vm.filterByBranch(branch),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
+                ),
+                const SizedBox(width: 8),
+                _DeptChip(
+                  label: 'Active Only',
+                  isSelected: state.showOnlyActive,
+                  onTap: () => vm.toggleShowOnlyActive(!state.showOnlyActive),
                 ),
               ],
             ),
@@ -94,44 +108,54 @@ class HrEmployeesView extends ConsumerWidget {
 
           // ─── Employee List ────────────────────────────────────────────
           Expanded(
-            child: state.isLoading && state.filteredEmployees.isEmpty
-                ? ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: 5,
-                    itemBuilder: (context, index) {
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 10),
-                        child: ShimmerLoading(
-                          height: 80,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      );
-                    },
-                  )
-                : state.filteredEmployees.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
+            child: RefreshIndicator(
+              onRefresh: () => vm.fetchEmployees(forceRefresh: true),
+              child: state.isLoading && state.filteredEmployees.isEmpty
+                  ? ListView.builder(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: 5,
+                      itemBuilder: (context, index) {
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: ShimmerLoading(
+                            height: 80,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        );
+                      },
+                    )
+                  : state.filteredEmployees.isEmpty
+                      ? ListView(
+                          physics: const AlwaysScrollableScrollPhysics(),
                           children: [
-                            Icon(RemixIcons.group_line,
-                                size: 48, color: AppColors.textHint),
-                            const SizedBox(height: 12),
-                            Text('No employees found',
-                                style: TextStyle(
-                                    color: AppColors.textSecondary,
-                                fontSize: 14)),
-                      ],
-                    ),
-                  )
-                : ListView.separated(
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 110),
-                    itemCount: state.filteredEmployees.length,
-                    separatorBuilder: (_, _) => const SizedBox(height: 10),
-                    itemBuilder: (_, i) {
-                      return _EmployeeCard(
-                          employee: state.filteredEmployees[i]);
-                    },
-                  ),
+                            SizedBox(height: MediaQuery.of(context).size.height * 0.25),
+                            Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(RemixIcons.group_line,
+                                      size: 48, color: AppColors.textHint),
+                                  const SizedBox(height: 12),
+                                  Text('No employees found',
+                                      style: TextStyle(
+                                          color: AppColors.textSecondary,
+                                      fontSize: 14)),
+                                ],
+                              ),
+                            ),
+                          ],
+                        )
+                      : ListView.separated(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 110),
+                          itemCount: state.filteredEmployees.length,
+                          separatorBuilder: (_, _) => const SizedBox(height: 10),
+                          itemBuilder: (_, i) {
+                            return _EmployeeCard(
+                                employee: state.filteredEmployees[i]);
+                          },
+                        ),
+            ),
           ),
         ],
       ),

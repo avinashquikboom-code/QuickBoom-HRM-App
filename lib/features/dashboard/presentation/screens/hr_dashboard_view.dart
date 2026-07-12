@@ -12,6 +12,7 @@ import 'package:quickboom_hrm/features/dashboard/presentation/providers/hr_dashb
 import 'package:quickboom_hrm/core/widgets/shimmer_loading.dart';
 import 'package:quickboom_hrm/features/auth/presentation/screens/login_view.dart';
 import 'package:quickboom_hrm/features/reports/presentation/screens/hr_reports_view.dart';
+import 'package:quickboom_hrm/features/wallet/presentation/screens/hr_wallet_view.dart';
 import 'package:quickboom_hrm/features/expense/presentation/screens/hr_expenses_view.dart';
 import 'package:quickboom_hrm/features/shift/presentation/screens/hr_shifts_view.dart';
 import 'package:quickboom_hrm/features/attendance/presentation/screens/hr_attendance_view.dart';
@@ -325,6 +326,19 @@ class HrDashboardView extends ConsumerWidget {
                           context,
                           MaterialPageRoute(
                             builder: (_) => const HrShiftsView(),
+                          ),
+                        );
+                      },
+                    ),
+                    _QuickActionBtn(
+                      label: 'Wallets & Comm.',
+                      icon: RemixIcons.wallet_line,
+                      color: AppColors.primary,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const HrWalletView(),
                           ),
                         );
                       },

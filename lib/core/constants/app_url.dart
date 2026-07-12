@@ -17,6 +17,12 @@ class AppUrl {
   }
 
   // ─────────────────────────────────────────────
+  //  HopKid Upstream
+  // ─────────────────────────────────────────────
+  static String get hopkidBaseUrl => 'https://hopkidapi.3dweb.in';
+  static String get hopkidApiKey => 'HOPKID-MOBILE-ACCESS-API-KEY';
+
+  // ─────────────────────────────────────────────
   //  Auth
   // ─────────────────────────────────────────────
   static const String login = '/api/mobile/auth/login';
@@ -25,6 +31,7 @@ class AppUrl {
   static const String refreshToken = '/api/mobile/auth/refresh';
   static const String changePassword = '/api/mobile/auth/change-password';
   static const String forgotPassword = '/api/mobile/auth/forgot-password';
+  static const String commissionReport = '/api/commission/report';
 
   // ─────────────────────────────────────────────
   //  Employee – Profile

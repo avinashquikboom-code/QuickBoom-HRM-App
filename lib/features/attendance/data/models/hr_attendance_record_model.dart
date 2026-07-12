@@ -115,4 +115,36 @@ class HrAttendanceRecord {
     }
     return '${finalDuration.inHours}h ${finalDuration.inMinutes.remainder(60)}m';
   }
+
+  HrAttendanceRecord copyWith({
+    String? id,
+    String? date,
+    DateTime? checkIn,
+    DateTime? checkOut,
+    String? status,
+    String? employeeId,
+    String? employeeCode,
+    String? employeeName,
+    String? designation,
+    String? officeName,
+    bool? isOnBreak,
+    DateTime? breakStartTime,
+    int? totalBreakSeconds,
+  }) {
+    return HrAttendanceRecord(
+      id: id ?? this.id,
+      date: date ?? this.date,
+      checkIn: checkIn ?? this.checkIn,
+      checkOut: checkOut ?? this.checkOut,
+      status: status ?? this.status,
+      employeeId: employeeId ?? this.employeeId,
+      employeeCode: employeeCode ?? this.employeeCode,
+      employeeName: employeeName ?? this.employeeName,
+      designation: designation ?? this.designation,
+      officeName: officeName ?? this.officeName,
+      isOnBreak: isOnBreak ?? this.isOnBreak,
+      breakStartTime: breakStartTime ?? this.breakStartTime,
+      totalBreakSeconds: totalBreakSeconds ?? this.totalBreakSeconds,
+    );
+  }
 }
