@@ -212,23 +212,17 @@ class AuthViewModel extends StateNotifier<AuthState> {
         }
 
         if (matched == null) {
-          debugPrint('❌ [AUTH] Employee user is not registered in HopKid master list: ${parsedUser.phone} / ${parsedUser.employeeId}');
-          await ApiService.clearToken();
-          state = state.copyWith(
-            isLoading: false,
-            isNotRegistered: true,
-            errorMessage: 'Your account is not registered in the HopKid employee master list.',
+          debugPrint('⚠️ [AUTH] Employee user is not in HopKid master list, continuing as local employee: ${parsedUser.phone} / ${parsedUser.employeeId}');
+          hydratedUser = parsedUser;
+        } else {
+          hydratedUser = parsedUser.copyWith(
+            hopkidEmployeeId: matched.employeeID,
+            salary: matched.salary,
+            commissionPercentage: matched.commissionPercentage,
+            branchName: matched.branchName,
           );
-          return false;
+          debugPrint('✅ [AUTH] Mapped employee to HopKid ID: ${matched.employeeID}');
         }
-
-        hydratedUser = parsedUser.copyWith(
-          hopkidEmployeeId: matched.employeeID,
-          salary: matched.salary,
-          commissionPercentage: matched.commissionPercentage,
-          branchName: matched.branchName,
-        );
-        debugPrint('✅ [AUTH] Mapped employee to HopKid ID: ${matched.employeeID}');
       }
 
       debugPrint('👤 [AUTH] Hydrated user: ${hydratedUser.name} (${hydratedUser.email})');
