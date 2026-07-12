@@ -219,6 +219,9 @@ class AppUrl {
   // FCM Token
   // ─────────────────────────────────────────────
   static const String saveFCMToken = '/api/mobile/notifications/fcm-token';
+  static const String registerDevice = '/api/devices/register';
+  static const String unregisterDevice = '/api/devices/unregister';
+  static const String syncSales = '/api/Sales/Sync';
 
   // ─────────────────────────────────────────────
   // Distance Tracking (Mobile)

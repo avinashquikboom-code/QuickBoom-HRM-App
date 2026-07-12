@@ -417,6 +417,11 @@ class AuthViewModel extends StateNotifier<AuthState> {
 
   Future<void> _performCleanup() async {
     try {
+      await NotificationService().deleteFCMToken();
+    } catch (e) {
+      debugPrint('⚠️ FCM token unregistration failed: $e');
+    }
+    try {
       await ApiService.post(AppUrl.logout, {});
       debugPrint('✅ Backend logout successful');
     } catch (e) {

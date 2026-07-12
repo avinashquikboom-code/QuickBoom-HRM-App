@@ -7,6 +7,7 @@ import 'package:quickboom_hrm/features/employees/presentation/screens/hr_employe
 import 'package:quickboom_hrm/features/payroll/presentation/screens/hr_payroll_view.dart';
 import 'package:quickboom_hrm/features/leave/presentation/screens/hr_leave_approval_view.dart';
 import 'package:quickboom_hrm/features/profile/presentation/screens/hr_profile_view.dart';
+import 'package:quickboom_hrm/core/services/notification_service.dart';
 
 class HrShell extends ConsumerStatefulWidget {
   const HrShell({super.key});
@@ -17,6 +18,14 @@ class HrShell extends ConsumerStatefulWidget {
 
 class _HrShellState extends ConsumerState<HrShell> {
   int _currentIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      NotificationService().handlePendingNotification();
+    });
+  }
 
   Widget _buildPage(int index) {
     switch (index) {

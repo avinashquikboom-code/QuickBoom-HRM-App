@@ -117,51 +117,54 @@ class SalesService {
     }
   }
 
-  /// Sync all pending offline transactions
+  /// Sync all pending offline transactions in a single batch request
   static Future<int> syncOfflineQueue() async {
     final queue = await getOfflineQueue();
     if (queue.isEmpty) return 0;
 
-    dev.log('Syncing ${queue.length} offline transactions...', name: 'SalesService');
+    dev.log('Syncing ${queue.length} offline transactions in a batch...', name: 'SalesService');
     final prefs = await SharedPreferences.getInstance();
-    
-    int syncedCount = 0;
-    final List<String> remainingQueue = [];
 
     final token = await _getToken();
     final headers = _getHeaders(token);
+    final url = Uri.parse('${AppUrl.baseUrl}${AppUrl.syncSales}');
 
-    for (final item in queue) {
-      final endpoint = item['endpoint'] as String;
-      final payload = item['payload'] as Map<String, dynamic>;
-      final url = Uri.parse('${AppUrl.baseUrl}$endpoint');
+    final transactionsList = queue.map((item) {
+      return {
+        'endpoint': item['endpoint'],
+        'payload': item['payload'],
+      };
+    }).toList();
 
-      try {
-        final response = await http
-            .post(
-              url,
-              headers: headers,
-              body: jsonEncode(payload),
-            )
-            .timeout(_timeout);
+    try {
+      final response = await http
+          .post(
+            url,
+            headers: headers,
+            body: jsonEncode({
+              'transactions': transactionsList,
+            }),
+          )
+          .timeout(_timeout);
 
-        if (response.statusCode >= 200 && response.statusCode < 300) {
-          syncedCount++;
-          dev.log('Synced successfully: $endpoint', name: 'SalesService');
-        } else if (response.statusCode >= 400 && response.statusCode < 500) {
-          // Client error - discard from queue since retrying won't help
-          dev.log('Discarding invalid transaction ($endpoint) - Status ${response.statusCode}: ${response.body}', name: 'SalesService');
-        } else {
-          // Server error - keep in queue for next sync
-          remainingQueue.add(jsonEncode(item));
-        }
-      } catch (e) {
-        dev.log('Sync error for $endpoint: $e', name: 'SalesService');
-        remainingQueue.add(jsonEncode(item));
+      dev.log('Batch Sync Response: ${response.statusCode} - ${response.body}', name: 'SalesService');
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final resBody = jsonDecode(response.body);
+        final results = resBody['results'] as List?;
+        final syncedCount = results?.length ?? queue.length;
+
+        // Success: clear queue
+        await prefs.setStringList(_queueKey, []);
+        dev.log('Batch sync successfully completed. Synced $syncedCount items.', name: 'SalesService');
+        return syncedCount;
+      } else {
+        dev.log('Batch sync failed with status ${response.statusCode}: ${response.body}', name: 'SalesService');
+        return 0;
       }
+    } catch (e) {
+      dev.log('Batch sync exception: $e', name: 'SalesService');
+      return 0;
     }
-
-    await prefs.setStringList(_queueKey, remainingQueue);
-    return syncedCount;
   }
 }

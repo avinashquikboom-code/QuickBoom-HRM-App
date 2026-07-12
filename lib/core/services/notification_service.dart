@@ -1,7 +1,7 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:quickboom_hrm/core/services/api_service.dart';
@@ -9,11 +9,23 @@ import 'package:quickboom_hrm/core/services/storage_service.dart';
 import 'package:quickboom_hrm/core/constants/app_url.dart';
 import 'package:quickboom_hrm/core/services/websocket_service.dart';
 
+// Deep link screen imports
+import 'package:quickboom_hrm/features/leave/presentation/screens/hr_leave_approval_view.dart';
+import 'package:quickboom_hrm/features/leave/presentation/screens/employee_leave_view.dart';
+import 'package:quickboom_hrm/features/profile/presentation/screens/employee_profile_view.dart';
+import 'package:quickboom_hrm/features/profile/presentation/screens/hr_profile_view.dart';
+import 'package:quickboom_hrm/features/commission/presentation/screens/commission_wallet_view.dart';
+import 'package:quickboom_hrm/features/task/presentation/screens/employee_tasks_view.dart';
+import 'package:quickboom_hrm/features/task/presentation/screens/hr_tasks_view.dart';
+
 /// Global notification service for handling push notifications
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
   factory NotificationService() => _instance;
   NotificationService._internal();
+
+  static final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+  static Map<String, dynamic>? pendingNotification;
 
   final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
   final FlutterLocalNotificationsPlugin _localNotifications =
@@ -42,6 +54,9 @@ class NotificationService {
 
       // Get FCM token but don't save to backend yet (will be saved after login / session restore)
       await _getFCMToken(saveToBackend: false);
+
+      // Check if opened from a terminated state
+      await checkForInitialMessage();
 
       // Set up message handlers
       _setupMessageHandlers();
@@ -173,13 +188,37 @@ class NotificationService {
         return;
       }
 
-      await ApiService.post(AppUrl.saveFCMToken, {
-        'fcmToken': token,
+      await ApiService.post(AppUrl.registerDevice, {
+        'token': token,
         'platform': Platform.operatingSystem,
       });
-      debugPrint('✅ FCM token saved to backend');
+      debugPrint('✅ FCM token saved to backend (devices/register)');
     } catch (e) {
       debugPrint('❌ Failed to save FCM token to backend: $e');
+    }
+  }
+
+  /// Delete FCM token from backend (unregister)
+  Future<void> deleteFCMToken() async {
+    try {
+      final token = await StorageService.getFCMToken();
+      if (token == null || token.isEmpty) {
+        debugPrint('⚠️ No local FCM token found to unregister');
+        return;
+      }
+
+      final authToken = await ApiService.getToken();
+      if (authToken == null || authToken.isEmpty) {
+        debugPrint('⚠️ No auth token available, skipping FCM token unregistration');
+        return;
+      }
+
+      await ApiService.post(AppUrl.unregisterDevice, {
+        'token': token,
+      });
+      debugPrint('✅ FCM token unregistered from backend successfully');
+    } catch (e) {
+      debugPrint('❌ Failed to unregister FCM token from backend: $e');
     }
   }
 
@@ -318,7 +357,7 @@ class NotificationService {
         title: title,
         body: body,
         notificationDetails: details,
-        payload: data.toString(),
+        payload: jsonEncode(data),
       );
     } catch (e) {
       debugPrint('❌ Failed to show local notification: $e');
@@ -373,13 +412,7 @@ class NotificationService {
 
     if (response.payload != null) {
       try {
-        final data = Map<String, dynamic>.fromEntries(
-          // Parse the payload string back to Map
-          response.payload!.split(',').map((e) {
-            final parts = e.split(':');
-            return MapEntry(parts[0].trim(), parts[1].trim());
-          }),
-        );
+        final data = jsonDecode(response.payload!) as Map<String, dynamic>;
         _navigateToNotificationScreen(data);
       } catch (e) {
         debugPrint('❌ Failed to parse notification payload: $e');
@@ -388,31 +421,83 @@ class NotificationService {
   }
 
   /// Navigate to appropriate screen based on notification data
-  void _navigateToNotificationScreen(Map<String, dynamic> data) {
-    final type = data['type']?.toString().toLowerCase();
+  Future<void> _navigateToNotificationScreen(Map<String, dynamic> data) async {
+    final screen = data['screen']?.toString().toLowerCase() ?? data['type']?.toString().toLowerCase();
+    final id = data['id']?.toString();
 
-    switch (type) {
-      case 'leave_approved':
-      case 'leave_rejected':
-        // Navigate to leave status screen
-        debugPrint('🔗 Navigating to leave status screen');
+    debugPrint('🔗 Navigating to screen: $screen, id: $id');
+    Widget? targetView;
+    final role = await StorageService.getUserRole();
 
+    switch (screen) {
+      case 'leave_requests':
+      case 'leave_request':
+        if (role == 'HR' || role == 'SUPER_ADMIN' || role == 'ADMIN' || role == 'PLATFORM_ADMIN') {
+          targetView = const HrLeaveApprovalView();
+        } else {
+          targetView = const EmployeeLeaveView();
+        }
         break;
-      case 'attendance':
-        // Navigate to attendance screen
-        debugPrint('🔗 Navigating to attendance screen');
-
+      case 'leave':
+        targetView = const EmployeeLeaveView();
+        break;
+      case 'profile':
+        if (role == 'HR' || role == 'SUPER_ADMIN' || role == 'ADMIN' || role == 'PLATFORM_ADMIN') {
+          targetView = const HrProfileView();
+        } else {
+          targetView = const EmployeeProfileView();
+        }
+        break;
+      case 'commission':
+      case 'sales':
+        targetView = const CommissionWalletView();
         break;
       case 'task':
-        // Navigate to tasks screen
-        debugPrint('🔗 Navigating to tasks screen');
-
+      case 'tasks':
+        if (role == 'HR' || role == 'SUPER_ADMIN' || role == 'ADMIN' || role == 'PLATFORM_ADMIN') {
+          targetView = const HrTasksView();
+        } else {
+          targetView = const EmployeeTasksView();
+        }
         break;
       default:
-        // Navigate to notifications list
-        debugPrint('🔗 Navigating to notifications list');
-
+        // No specific screen or general notifications fallback
         break;
+    }
+
+    if (targetView != null) {
+      final context = navigatorKey.currentContext;
+      if (context == null || !context.mounted) {
+        debugPrint('⚠️ Navigator context is null or unmounted, storing as pending notification');
+        pendingNotification = data;
+        return;
+      }
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => targetView!),
+      );
+    }
+  }
+
+  /// Handle pending notifications that were received in cold start (terminated state)
+  Future<void> handlePendingNotification() async {
+    if (pendingNotification != null) {
+      final data = pendingNotification!;
+      pendingNotification = null;
+      debugPrint('🚀 Consuming pending cold-start notification: $data');
+      await _navigateToNotificationScreen(data);
+    }
+  }
+
+  /// Check if there was an initial message when the app was launched from a terminated state
+  Future<void> checkForInitialMessage() async {
+    try {
+      final initialMessage = await _firebaseMessaging.getInitialMessage();
+      if (initialMessage != null) {
+        debugPrint('📱 Terminated state initial message payload: ${initialMessage.data}');
+        pendingNotification = initialMessage.data;
+      }
+    } catch (e) {
+      debugPrint('❌ Error checking initial message: $e');
     }
   }
 

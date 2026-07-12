@@ -54,6 +54,7 @@ class HrmApp extends ConsumerWidget {
 
     return MaterialApp(
       title: 'HRM',
+      navigatorKey: NotificationService.navigatorKey,
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,

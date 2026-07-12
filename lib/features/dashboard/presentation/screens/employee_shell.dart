@@ -9,6 +9,7 @@ import 'package:quickboom_hrm/features/profile/presentation/screens/employee_pro
 import 'package:quickboom_hrm/features/wallet/presentation/screens/employee_wallet_view.dart';
 import 'package:quickboom_hrm/features/auth/presentation/providers/auth_viewmodel.dart';
 import 'package:quickboom_hrm/core/services/permission_service.dart';
+import 'package:quickboom_hrm/core/services/notification_service.dart';
 
 class EmployeeShell extends ConsumerStatefulWidget {
   const EmployeeShell({super.key});
@@ -19,6 +20,14 @@ class EmployeeShell extends ConsumerStatefulWidget {
 
 class _EmployeeShellState extends ConsumerState<EmployeeShell> {
   int _currentIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      NotificationService().handlePendingNotification();
+    });
+  }
 
   Widget _buildPage(int index) {
     switch (index) {
