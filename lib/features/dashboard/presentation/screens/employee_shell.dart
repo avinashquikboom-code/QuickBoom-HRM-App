@@ -10,6 +10,7 @@ import 'package:quickboom_hrm/features/wallet/presentation/screens/employee_wall
 import 'package:quickboom_hrm/features/auth/presentation/providers/auth_viewmodel.dart';
 import 'package:quickboom_hrm/core/services/permission_service.dart';
 import 'package:quickboom_hrm/core/services/notification_service.dart';
+import 'package:quickboom_hrm/core/services/location_tracking_service.dart';
 
 class EmployeeShell extends ConsumerStatefulWidget {
   const EmployeeShell({super.key});
@@ -24,8 +25,14 @@ class _EmployeeShellState extends ConsumerState<EmployeeShell> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       NotificationService().handlePendingNotification();
+      
+      // Request always location permission & start geofencing ping service
+      final allowed = await LocationTrackingService.initialize(context);
+      if (allowed) {
+        LocationTrackingService.startTracking();
+      }
     });
   }
 

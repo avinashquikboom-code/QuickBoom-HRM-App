@@ -455,6 +455,7 @@ class _ApplyLeaveSheet extends ConsumerStatefulWidget {
 
 class _ApplyLeaveSheetState extends ConsumerState<_ApplyLeaveSheet> {
   LeaveType _selectedType = LeaveType.casual;
+  String _leaveCategory = 'PLANNED'; // PLANNED or UNPLANNED
   DateTime? _fromDate;
   DateTime? _toDate;
   final _reasonCtrl = TextEditingController();
@@ -466,12 +467,30 @@ class _ApplyLeaveSheetState extends ConsumerState<_ApplyLeaveSheet> {
     super.dispose();
   }
 
+  bool _isAdjacentToHoliday(DateTime start, DateTime end, List<String> holidays) {
+    bool checkDay(DateTime d) {
+      if (d.weekday == DateTime.sunday) return true;
+      final dateStr = DateFormat('yyyy-MM-dd').format(d);
+      return holidays.contains(dateStr);
+    }
+    final dayBefore = start.subtract(const Duration(days: 1));
+    final dayAfter = end.add(const Duration(days: 1));
+    return checkDay(dayBefore) || checkDay(dayAfter);
+  }
+
   Future<void> _pickDate(bool isFrom) async {
+    final leaveState = ref.read(leaveViewModelProvider);
     final picked = await showDatePicker(
       context: context,
       initialDate: DateTime.now().add(const Duration(days: 1)),
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 365)),
+      selectableDayPredicate: (date) {
+        if (date.weekday == DateTime.sunday) return false;
+        final dateStr = DateFormat('yyyy-MM-dd').format(date);
+        if (leaveState.holidays.contains(dateStr)) return false;
+        return true;
+      },
       builder: (ctx, child) => Theme(
         data: Theme.of(ctx).copyWith(
           colorScheme: const ColorScheme.light(primary: AppColors.primary),
@@ -508,6 +527,7 @@ class _ApplyLeaveSheetState extends ConsumerState<_ApplyLeaveSheet> {
           fromDate: _fromDate!,
           toDate: _toDate!,
           reason: _reasonCtrl.text.trim(),
+          leaveCategory: _leaveCategory,
         );
     if (mounted) Navigator.pop(context);
   }
@@ -602,6 +622,56 @@ class _ApplyLeaveSheetState extends ConsumerState<_ApplyLeaveSheet> {
 
             const SizedBox(height: 14),
 
+            // Leave Category
+            Text(
+              'Leave Category',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                ChoiceChip(
+                  label: const Text('Planned'),
+                  selected: _leaveCategory == 'PLANNED',
+                  selectedColor: AppColors.primary,
+                  backgroundColor: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                  labelStyle: TextStyle(
+                    color: _leaveCategory == 'PLANNED'
+                        ? Colors.white
+                        : (Theme.of(context).brightness == Brightness.dark ? const Color(0xFF94A3B8) : AppColors.textSecondary),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  onSelected: (selected) {
+                    if (selected) setState(() => _leaveCategory = 'PLANNED');
+                  },
+                ),
+                const SizedBox(width: 8),
+                ChoiceChip(
+                  label: const Text('Unplanned'),
+                  selected: _leaveCategory == 'UNPLANNED',
+                  selectedColor: AppColors.primary,
+                  backgroundColor: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                  labelStyle: TextStyle(
+                    color: _leaveCategory == 'UNPLANNED'
+                        ? Colors.white
+                        : (Theme.of(context).brightness == Brightness.dark ? const Color(0xFF94A3B8) : AppColors.textSecondary),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  onSelected: (selected) {
+                    if (selected) setState(() => _leaveCategory = 'UNPLANNED');
+                  },
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 14),
+
             // Date Range
             Row(
               children: [
@@ -645,6 +715,36 @@ class _ApplyLeaveSheetState extends ConsumerState<_ApplyLeaveSheet> {
                   ? 'Please enter a reason (min 5 characters)'
                   : null,
             ),
+
+            if (_fromDate != null &&
+                _toDate != null &&
+                _leaveCategory == 'UNPLANNED' &&
+                _isAdjacentToHoliday(_fromDate!, _toDate!, leaveState.holidays))
+              Container(
+                margin: const EdgeInsets.only(bottom: 16),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: AppColors.error.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(RemixIcons.error_warning_line, color: AppColors.error, size: 20),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        'Company rule: salary deduction may apply',
+                        style: TextStyle(
+                          color: AppColors.error,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
 
             const SizedBox(height: 20),
 

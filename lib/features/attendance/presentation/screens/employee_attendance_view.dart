@@ -8,6 +8,7 @@ import 'package:quickboom_hrm/core/constants/app_colors.dart';
 import 'package:quickboom_hrm/core/services/distance_service.dart';
 import 'package:quickboom_hrm/features/attendance/data/models/attendance_model.dart';
 import 'package:quickboom_hrm/features/attendance/presentation/providers/attendance_viewmodel.dart';
+import 'package:quickboom_hrm/features/attendance/presentation/providers/break_viewmodel.dart';
 import 'package:quickboom_hrm/features/attendance/presentation/providers/geofence_viewmodel.dart';
 import 'package:quickboom_hrm/features/attendance/presentation/screens/monthly_work_schedule_view.dart';
 import 'package:quickboom_hrm/core/widgets/shimmer_loading.dart';
@@ -192,7 +193,7 @@ class EmployeeAttendanceView extends ConsumerWidget {
                 ),
                 const SizedBox(height: 12),
                 _TodayCard(state: state),
-
+                _BreakSectionCard(),
                 const SizedBox(height: 28),
 
                 // ─── Timeline History ──────────────────────────────────────
@@ -519,23 +520,6 @@ class _TodayCardState extends ConsumerState<_TodayCard> {
               children: [
                 Row(
                   children: [
-                    if (hasCheckIn) ...[
-                      Expanded(
-                        child: _AttendanceActionButton(
-                          label: isOnBreak ? 'End Break' : 'Take Break',
-                          icon: isOnBreak ? RemixIcons.play_line : RemixIcons.cup_line,
-                          color: AppColors.warning,
-                          onTap: () {
-                            if (isOnBreak) {
-                              ref.read(attendanceViewModelProvider.notifier).endBreak();
-                            } else {
-                              ref.read(attendanceViewModelProvider.notifier).startBreak();
-                            }
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                    ],
                     Expanded(
                       child: _SimplifiedAttendancePunchButton(
                         isCheckedIn: hasCheckIn,
@@ -814,53 +798,7 @@ class _LiveTimeDisplay extends StatelessWidget {
   }
 }
 
-class _AttendanceActionButton extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final Color color;
-  final VoidCallback onTap;
 
-  const _AttendanceActionButton({
-    required this.label,
-    required this.icon,
-    required this.color,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: color.withValues(alpha: 0.22),
-            width: 1,
-          ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: color, size: 18),
-            const SizedBox(width: 8),
-            Text(
-              label,
-              style: TextStyle(
-                color: color,
-                fontSize: 13,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 0.3,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 class _SimplifiedAttendancePunchButton extends StatelessWidget {
   final bool isCheckedIn;
@@ -1182,5 +1120,266 @@ Future<void> _downloadAttendanceReport(WidgetRef ref, BuildContext context) asyn
         ),
       );
     }
+  }
+}
+
+class _BreakSectionCard extends ConsumerWidget {
+  const _BreakSectionCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final attendanceState = ref.watch(attendanceViewModelProvider);
+    final breakState = ref.watch(breakViewModelProvider);
+
+    final hasCheckIn = attendanceState.todayRecord?.checkIn != null;
+    final hasCheckOut = attendanceState.todayRecord?.checkOut != null;
+    final isPunchedIn = hasCheckIn && !hasCheckOut;
+
+    // Only visible when punched in (and not punched out yet)
+    if (!isPunchedIn) return const SizedBox.shrink();
+
+    final activeBreak = breakState.activeBreak;
+
+    return Container(
+      margin: const EdgeInsets.only(top: 16),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppColors.cardBorder, width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withValues(alpha: 0.04),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Break Session',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              if (activeBreak != null)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppColors.warning.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    'Active: ${activeBreak.typeLabel}',
+                    style: const TextStyle(
+                      color: AppColors.warning,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          if (activeBreak == null) ...[
+            Text(
+              'Select a break type to start:',
+              style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(child: _BreakTypeButton(type: 'LUNCH', icon: RemixIcons.restaurant_line, label: 'Lunch')),
+                const SizedBox(width: 8),
+                Expanded(child: _BreakTypeButton(type: 'TEA', icon: RemixIcons.cup_line, label: 'Tea')),
+                const SizedBox(width: 8),
+                Expanded(child: _BreakTypeButton(type: 'PERSONAL', icon: RemixIcons.user_smile_line, label: 'Personal')),
+                const SizedBox(width: 8),
+                Expanded(child: _BreakTypeButton(type: 'MEETING', icon: RemixIcons.group_line, label: 'Meeting')),
+              ],
+            ),
+          ] else ...[
+            Center(
+              child: Column(
+                children: [
+                  _ActiveBreakTimer(startAt: activeBreak.startAt),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.error,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      onPressed: () => ref.read(breakViewModelProvider.notifier).endBreak(),
+                      icon: const Icon(RemixIcons.stop_circle_line),
+                      label: const Text('End Break', style: TextStyle(fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          if (breakState.todayBreaks.isNotEmpty) ...[
+            const SizedBox(height: 20),
+            const Divider(),
+            const SizedBox(height: 12),
+            Text(
+              'Today\'s Breaks History',
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textSecondary),
+            ),
+            const SizedBox(height: 8),
+            ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: breakState.todayBreaks.length,
+              itemBuilder: (context, index) {
+                final b = breakState.todayBreaks[index];
+                final isEnded = b.endAt != null;
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(_getBreakIcon(b.type), size: 14, color: AppColors.primary),
+                          const SizedBox(width: 6),
+                          Text(b.typeLabel, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+                        ],
+                      ),
+                      Text(
+                        isEnded ? b.durationLabel : 'Active',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: isEnded ? AppColors.textSecondary : AppColors.warning,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  IconData _getBreakIcon(String type) {
+    switch (type.toUpperCase()) {
+      case 'LUNCH':
+        return RemixIcons.restaurant_line;
+      case 'TEA':
+        return RemixIcons.cup_line;
+      case 'PERSONAL':
+        return RemixIcons.user_smile_line;
+      case 'MEETING':
+        return RemixIcons.group_line;
+      default:
+        return RemixIcons.cup_line;
+    }
+  }
+}
+
+class _BreakTypeButton extends ConsumerWidget {
+  final String type;
+  final IconData icon;
+  final String label;
+
+  const _BreakTypeButton({
+    required this.type,
+    required this.icon,
+    required this.label,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return InkWell(
+      onTap: () => ref.read(breakViewModelProvider.notifier).startBreak(type),
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.cardBorder),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color: AppColors.primary, size: 20),
+            const SizedBox(height: 6),
+            Text(
+              label,
+              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ActiveBreakTimer extends StatefulWidget {
+  final DateTime startAt;
+  const _ActiveBreakTimer({required this.startAt});
+
+  @override
+  State<_ActiveBreakTimer> createState() => _ActiveBreakTimerState();
+}
+
+class _ActiveBreakTimerState extends State<_ActiveBreakTimer> {
+  late Timer _timer;
+  late Duration _duration;
+
+  @override
+  void initState() {
+    super.initState();
+    _updateDuration();
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (mounted) {
+        setState(() {
+          _updateDuration();
+        });
+      }
+    });
+  }
+
+  void _updateDuration() {
+    _duration = DateTime.now().difference(widget.startAt);
+  }
+
+  @override
+  void dispose() {
+    _timer.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    String twoDigits(int n) => n.toString().padLeft(2, '0');
+    final hours = twoDigits(_duration.inHours);
+    final minutes = twoDigits(_duration.inMinutes.remainder(60));
+    final seconds = twoDigits(_duration.inSeconds.remainder(60));
+
+    return Text(
+      '$hours:$minutes:$seconds',
+      style: const TextStyle(
+        fontSize: 32,
+        fontWeight: FontWeight.w900,
+        color: AppColors.warning,
+        letterSpacing: 1.2,
+      ),
+    );
   }
 }

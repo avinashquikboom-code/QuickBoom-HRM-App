@@ -39,6 +39,7 @@ class LeaveBalance {
 class LeaveState {
   final List<LeaveRequestModel> myLeaves;
   final LeaveBalance balance;
+  final List<String> holidays; // list of date strings (YYYY-MM-DD)
   final bool isLoading;
   final bool isSubmitting;
   final String? errorMessage;
@@ -47,6 +48,7 @@ class LeaveState {
   const LeaveState({
     this.myLeaves = const [],
     this.balance = const LeaveBalance(),
+    this.holidays = const [],
     this.isLoading = false,
     this.isSubmitting = false,
     this.errorMessage,
@@ -56,6 +58,7 @@ class LeaveState {
   LeaveState copyWith({
     List<LeaveRequestModel>? myLeaves,
     LeaveBalance? balance,
+    List<String>? holidays,
     bool? isLoading,
     bool? isSubmitting,
     String? errorMessage,
@@ -65,6 +68,7 @@ class LeaveState {
     return LeaveState(
       myLeaves: myLeaves ?? this.myLeaves,
       balance: balance ?? this.balance,
+      holidays: holidays ?? this.holidays,
       isLoading: isLoading ?? this.isLoading,
       isSubmitting: isSubmitting ?? this.isSubmitting,
       errorMessage: clearMessages ? null : (errorMessage ?? this.errorMessage),
@@ -83,6 +87,22 @@ class LeaveViewModel extends StateNotifier<LeaveState> {
   LeaveViewModel() : super(const LeaveState()) {
     _initializeWebSocket();
     fetchLeaves();
+    fetchHolidays();
+  }
+
+  Future<void> fetchHolidays() async {
+    try {
+      final res = await ApiService.get('/api/holidays');
+      final data = jsonDecode(res.body);
+      if (data['success'] == true) {
+        final List rawHolidays = data['holidays'] ?? [];
+        final holidayDates = rawHolidays
+            .map((h) => h['date']?.toString() ?? '')
+            .where((d) => d.isNotEmpty)
+            .toList();
+        state = state.copyWith(holidays: holidayDates);
+      }
+    } catch (_) {}
   }
 
   @override
@@ -201,6 +221,7 @@ class LeaveViewModel extends StateNotifier<LeaveState> {
     required DateTime fromDate,
     required DateTime toDate,
     required String reason,
+    required String leaveCategory,
   }) async {
     state = state.copyWith(isSubmitting: true, clearMessages: true);
 
@@ -210,6 +231,7 @@ class LeaveViewModel extends StateNotifier<LeaveState> {
         'fromDate': fromDate.toIso8601String(),
         'toDate': toDate.toIso8601String(),
         'reason': reason.trim(),
+        'leaveCategory': leaveCategory.toUpperCase(),
       });
 
       state = state.copyWith(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import 'package:quickboom_hrm/core/constants/app_colors.dart';
 import 'package:remixicon/remixicon.dart';
 import 'package:quickboom_hrm/features/shift/presentation/providers/shift_viewmodel.dart';
@@ -13,6 +14,27 @@ class EmployeeShiftView extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(shiftViewModelProvider);
     final user = ref.watch(authViewModelProvider).currentUser;
+
+    ref.listen<ShiftState>(shiftViewModelProvider, (prev, next) {
+      if (next.successMessage != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(next.successMessage!),
+            backgroundColor: AppColors.primary,
+          ),
+        );
+        ref.read(shiftViewModelProvider.notifier).clearMessages();
+      }
+      if (next.errorMessage != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(next.errorMessage!),
+            backgroundColor: AppColors.error,
+          ),
+        );
+        ref.read(shiftViewModelProvider.notifier).clearMessages();
+      }
+    });
 
     final myAssignment = state.assignments.where((a) => a.employeeId == user?.employeeId && a.isActive).firstOrNull;
 
@@ -193,6 +215,106 @@ class EmployeeShiftView extends ConsumerWidget {
                 ],
               ),
             ),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                onPressed: () {
+                  showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    backgroundColor: Colors.transparent,
+                    builder: (_) => _RequestShiftChangeSheet(
+                      currentShiftName: myAssignment?.shift.name ?? 'None',
+                    ),
+                  );
+                },
+                icon: const Icon(RemixIcons.refresh_line),
+                label: const Text('Request Shift Change', style: TextStyle(fontWeight: FontWeight.bold)),
+              ),
+            ),
+            if (state.myRequests.isNotEmpty) ...[
+              const SizedBox(height: 30),
+              Text(
+                'My Requests History',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 10),
+              ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: state.myRequests.length,
+                itemBuilder: (context, index) {
+                  final req = state.myRequests[index];
+                  final statusColor = _statusColor(req.status);
+                  final statusBg = _statusBg(req.status);
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: AppColors.cardBorder),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              '${req.currentShift} ➔ ${req.requestedShift}',
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: statusBg,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                req.statusLabel,
+                                style: TextStyle(color: statusColor, fontSize: 11, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          req.reason,
+                          style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Requested: ${DateFormat('dd MMM yyyy').format(req.createdAt)}',
+                              style: TextStyle(color: AppColors.textHint, fontSize: 11),
+                            ),
+                            if (req.decidedAt != null)
+                              Text(
+                                'Decided: ${DateFormat('dd MMM yyyy').format(req.decidedAt!)}',
+                                style: TextStyle(color: AppColors.textHint, fontSize: 11),
+                              ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ],
           ],
         ),
       ),
@@ -242,5 +364,166 @@ class _GuidelineRow extends StatelessWidget {
         ),
       ],
     );
+  }
+}
+
+class _RequestShiftChangeSheet extends ConsumerStatefulWidget {
+  final String currentShiftName;
+  const _RequestShiftChangeSheet({required this.currentShiftName});
+
+  @override
+  ConsumerState<_RequestShiftChangeSheet> createState() => _RequestShiftChangeSheetState();
+}
+
+class _RequestShiftChangeSheetState extends ConsumerState<_RequestShiftChangeSheet> {
+  String? _selectedShiftName;
+  final _reasonCtrl = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+
+  @override
+  void dispose() {
+    _reasonCtrl.dispose();
+    super.dispose();
+  }
+
+  void _submit() async {
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+    if (_selectedShiftName == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a shift')),
+      );
+      return;
+    }
+
+    final success = await ref.read(shiftViewModelProvider.notifier).submitShiftRequest(
+      _selectedShiftName!,
+      _reasonCtrl.text.trim(),
+    );
+
+    if (success && mounted) {
+      Navigator.pop(context);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final shiftState = ref.watch(shiftViewModelProvider);
+    final availableShifts = shiftState.shifts.where((s) => s.name != widget.currentShiftName).toList();
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      padding: EdgeInsets.only(
+        left: 20,
+        right: 20,
+        top: 20,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+      ),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.divider,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Request Shift Change',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'Current Shift: ${widget.currentShiftName}',
+              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+            ),
+            const SizedBox(height: 16),
+            DropdownButtonFormField<String>(
+              value: _selectedShiftName,
+              decoration: const InputDecoration(
+                labelText: 'Select Requested Shift',
+                border: OutlineInputBorder(),
+              ),
+              items: availableShifts.map((s) {
+                return DropdownMenuItem<String>(
+                  value: s.name,
+                  child: Text('${s.name} (${s.timingLabel})'),
+                );
+              }).toList(),
+              onChanged: (val) => setState(() => _selectedShiftName = val),
+              validator: (val) => val == null ? 'Please select a shift' : null,
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _reasonCtrl,
+              maxLines: 3,
+              decoration: const InputDecoration(
+                labelText: 'Reason for request',
+                hintText: 'Describe why you need this shift change...',
+                border: OutlineInputBorder(),
+              ),
+              validator: (v) => (v == null || v.trim().length < 5)
+                  ? 'Please enter a reason (min 5 characters)'
+                  : null,
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                ),
+                onPressed: shiftState.isSubmitting ? null : _submit,
+                child: shiftState.isSubmitting
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      )
+                    : const Text('Submit Request'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+Color _statusColor(String status) {
+  switch (status.toUpperCase()) {
+    case 'APPROVED':
+      return AppColors.success;
+    case 'REJECTED':
+      return AppColors.error;
+    default:
+      return AppColors.warning;
+  }
+}
+
+Color _statusBg(String status) {
+  switch (status.toUpperCase()) {
+    case 'APPROVED':
+      return AppColors.successSurface;
+    case 'REJECTED':
+      return AppColors.errorSurface;
+    default:
+      return AppColors.warningSurface;
   }
 }
