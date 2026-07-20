@@ -20,8 +20,8 @@ class EmployeeRepositoryImpl implements EmployeeRepository {
       final lastSync = await localDatasource.getLastSyncedAt();
       if (lastSync != null) {
         final age = DateTime.now().difference(lastSync);
-        if (age.inHours < 24) {
-          dev.log('ℹ️ [EmployeeRepository] Cache is fresh (age: ${age.inHours}h). Using cached data.', name: 'EmployeeRepository');
+        if (age.inMinutes < 5) {
+          dev.log('ℹ️ [EmployeeRepository] Cache is fresh (age: ${age.inMinutes}m). Using cached data.', name: 'EmployeeRepository');
           final cached = await localDatasource.getCachedEmployees();
           if (cached.isNotEmpty) return cached;
         }

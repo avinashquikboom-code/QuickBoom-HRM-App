@@ -244,6 +244,14 @@ class _AssignTaskSheetState extends ConsumerState<_AssignTaskSheet> {
   String _employeeSearchQuery = '';
 
   @override
+  void initState() {
+    super.initState();
+    Future.microtask(() {
+      ref.read(employeeListViewModelProvider.notifier).fetchEmployees(forceRefresh: true);
+    });
+  }
+
+  @override
   void dispose() {
     _titleController.dispose();
     _descController.dispose();
