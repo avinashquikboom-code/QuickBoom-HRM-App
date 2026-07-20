@@ -26,6 +26,8 @@ class StorageService {
   static const String _lastEmailKey        = 'last_login_email';
   static const String _userRoleKey         = 'cached_user_role';
   static const String _fcmTokenKey         = 'fcm_token';
+  /// HopKid upstream employee GUID — persisted on login after master-list match.
+  static const String _hopkidEmployeeIdKey = 'hopkid_employee_id';
 
   /// Public alias so ApiService can reference the token key constant.
   static const String tokenKeyPublic = _empTokenKey;
@@ -256,6 +258,43 @@ class StorageService {
     }
   }
 
+  // ─── HopKid Employee GUID ────────────────────────────────────────────────────
+
+  /// Persist the HopKid employee GUID returned after matching with the
+  /// employee master list during login. Used as SalesMan/CreatedBy in sales DTOs.
+  static Future<void> saveHopkidEmployeeId(String guid) async {
+    try {
+      final prefs = await _getPrefs();
+      await prefs.setString(_hopkidEmployeeIdKey, guid);
+      debugPrint('✅ HopKid employee ID saved: $guid');
+    } catch (e) {
+      debugPrint('❌ Failed to save HopKid employee ID: $e');
+    }
+  }
+
+  /// Read the persisted HopKid employee GUID. Returns null if not yet matched.
+  /// Falls back to zero-GUID caller-side when null.
+  static Future<String?> getHopkidEmployeeId() async {
+    try {
+      final prefs = await _getPrefs();
+      final val = prefs.getString(_hopkidEmployeeIdKey);
+      return (val != null && val.isNotEmpty) ? val : null;
+    } catch (e) {
+      debugPrint('❌ Failed to read HopKid employee ID: $e');
+      return null;
+    }
+  }
+
+  /// Clear the stored HopKid employee GUID (called on full logout).
+  static Future<void> clearHopkidEmployeeId() async {
+    try {
+      final prefs = await _getPrefs();
+      await prefs.remove(_hopkidEmployeeIdKey);
+    } catch (e) {
+      debugPrint('❌ Failed to clear HopKid employee ID: $e');
+    }
+  }
+
   // ─── SharedPreferences Instance ───────────────────────────────────────────────
 
   /// Get the SharedPreferences instance (used by ApiService for WebSocket)
@@ -265,9 +304,11 @@ class StorageService {
 
   // ─── Full Logout Clear ──────────────────────────────────────────────────────
 
-  /// Clears token and cached role on logout. Keeps onboarding flag.
+  /// Clears token, cached role, and HopKid employee ID on logout.
+  /// Keeps onboarding flag.
   static Future<void> clearSessionData() async {
     await clearToken();
+    await clearHopkidEmployeeId();
     try {
       final prefs = await _getPrefs();
       await prefs.remove(_userRoleKey);

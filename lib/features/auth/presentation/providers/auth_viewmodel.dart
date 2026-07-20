@@ -237,6 +237,8 @@ class AuthViewModel extends StateNotifier<AuthState> {
             commissionPercentage: matched.commissionPercentage,
             branchName: matched.branchName,
           );
+          // Persist the HopKid GUID so SalesService can use it across restarts.
+          await StorageService.saveHopkidEmployeeId(matched.employeeID);
           debugPrint('✅ [AUTH] Mapped employee to HopKid ID: ${matched.employeeID}');
         }
       }

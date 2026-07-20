@@ -16,11 +16,17 @@ class AppUrl {
     return 'https://api.voxiqai.com';
   }
 
-  // ─────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────
   //  HopKid Upstream
-  // ─────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────
   static String get hopkidBaseUrl => 'https://hopkidapi.3dweb.in';
   static String get hopkidApiKey => 'HOPKID-MOBILE-ACCESS-API-KEY';
+
+  // HopKid Sales endpoints (relative paths used with hopkidBaseUrl via HopkidClient)
+  static const String hopkidAddSales        = '/api/Sales/AddSales';
+  static const String hopkidUpdateSales     = '/api/Sales/UpdateSales';
+  static const String hopkidAddCreditNote   = '/api/Sales/AddCreditNote';
+  static const String hopkidAddSalesExchange = '/api/Sales/AddSalesExchange';
 
   // ─────────────────────────────────────────────
   //  Auth
