@@ -370,29 +370,24 @@ class _TaskCard extends ConsumerWidget {
                                 label: 'Start',
                                  icon: RemixIcons.play_line,
                                 color: AppColors.info,
-                                onTap: () => ref
-                                    .read(taskViewModelProvider.notifier)
-                                    .updateStatus(
-                                        task.id, TaskStatus.inProgress),
+                                onTap: () => _showStatusRemarkDialog(
+                                    context, ref, task.id, TaskStatus.inProgress),
                               ),
                             if (task.status == TaskStatus.inProgress) ...[
                               _QuickAction(
                                 label: 'Done',
                                  icon: RemixIcons.check_line,
                                 color: AppColors.success,
-                                onTap: () => ref
-                                    .read(taskViewModelProvider.notifier)
-                                    .updateStatus(
-                                        task.id, TaskStatus.completed),
+                                onTap: () => _showStatusRemarkDialog(
+                                    context, ref, task.id, TaskStatus.completed),
                               ),
                               const SizedBox(width: 8),
                               _QuickAction(
                                 label: 'Pause',
                                  icon: RemixIcons.pause_line,
                                 color: AppColors.warning,
-                                onTap: () => ref
-                                    .read(taskViewModelProvider.notifier)
-                                    .updateStatus(task.id, TaskStatus.todo),
+                                onTap: () => _showStatusRemarkDialog(
+                                    context, ref, task.id, TaskStatus.todo),
                               ),
                             ],
                           ],
@@ -604,10 +599,8 @@ class _TaskDetailSheet extends StatelessWidget {
                 style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.success),
                 onPressed: () {
-                  ref
-                      .read(taskViewModelProvider.notifier)
-                      .updateStatus(task.id, TaskStatus.completed);
                   Navigator.pop(context);
+                  _showStatusRemarkDialog(context, ref, task.id, TaskStatus.completed);
                 },
               ),
             ),
@@ -653,4 +646,98 @@ class _DetailRow extends StatelessWidget {
       ),
     );
   }
+}
+
+Future<void> _showStatusRemarkDialog(
+    BuildContext context, WidgetRef ref, String taskId, TaskStatus status,
+    {VoidCallback? onSuccess}) async {
+  final noteCtrl = TextEditingController();
+
+  String actionLabel = 'Update Task';
+  if (status == TaskStatus.inProgress) {
+    actionLabel = 'Start Task';
+  } else if (status == TaskStatus.completed) {
+    actionLabel = 'Complete Task';
+  } else if (status == TaskStatus.todo) {
+    actionLabel = 'Pause Task';
+  }
+
+  await showDialog(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      backgroundColor: AppColors.background,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      title: Row(
+        children: [
+          Icon(
+            status == TaskStatus.completed
+                ? RemixIcons.checkbox_circle_line
+                : RemixIcons.chat_4_line,
+            color: status == TaskStatus.completed ? AppColors.success : AppColors.primary,
+            size: 20,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            actionLabel,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
+            ),
+          ),
+        ],
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Add a remark or comment (optional):',
+            style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: noteCtrl,
+            maxLines: 3,
+            decoration: InputDecoration(
+              hintText: 'e.g. Started working on this, completed tasks...',
+              hintStyle: TextStyle(fontSize: 12, color: AppColors.textHint),
+              contentPadding: const EdgeInsets.all(12),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: AppColors.cardBorder),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: AppColors.primary),
+              ),
+            ),
+            style: TextStyle(fontSize: 13, color: AppColors.textPrimary),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(ctx),
+          child: Text('Cancel', style: TextStyle(color: AppColors.textSecondary)),
+        ),
+        ElevatedButton(
+          onPressed: () {
+            ref.read(taskViewModelProvider.notifier).updateStatus(
+                  taskId,
+                  status,
+                  comment: noteCtrl.text.trim(),
+                );
+            Navigator.pop(ctx);
+            if (onSuccess != null) onSuccess();
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: status == TaskStatus.completed ? AppColors.success : AppColors.primary,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          ),
+          child: const Text('Confirm', style: TextStyle(color: Colors.white)),
+        ),
+      ],
+    ),
+  );
 }

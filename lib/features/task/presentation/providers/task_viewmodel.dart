@@ -113,7 +113,7 @@ class TaskViewModel extends StateNotifier<TaskState> {
     }
   }
 
-  Future<void> updateStatus(String taskId, TaskStatus newStatus) async {
+  Future<void> updateStatus(String taskId, TaskStatus newStatus, {String? comment}) async {
     state = state.copyWith(isUpdating: true);
     try {
       String statusStr = 'todo';
@@ -125,7 +125,12 @@ class TaskViewModel extends StateNotifier<TaskState> {
         statusStr = 'overdue';
       }
 
-      await ApiService.put(AppUrl.employeeTaskById(taskId), {'status': statusStr});
+      final body = <String, dynamic>{'status': statusStr};
+      if (comment != null && comment.trim().isNotEmpty) {
+        body['comment'] = comment.trim();
+      }
+
+      await ApiService.put(AppUrl.employeeTaskById(taskId), body);
 
       final updated = state.myTasks.map((t) {
         if (t.id == taskId) return t.copyWith(status: newStatus);

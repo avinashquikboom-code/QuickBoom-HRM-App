@@ -20,6 +20,7 @@ import 'package:quickboom_hrm/features/notification/presentation/screens/hr_noti
 import 'package:quickboom_hrm/features/store/presentation/screens/store_dashboard_view.dart';
 import 'package:quickboom_hrm/features/store/presentation/screens/store_employees_view.dart';
 import 'package:quickboom_hrm/core/services/permission_service.dart';
+import 'package:quickboom_hrm/features/task/presentation/screens/hr_tasks_view.dart';
 
 class HrDashboardView extends ConsumerWidget {
   const HrDashboardView({super.key});
@@ -371,6 +372,19 @@ class HrDashboardView extends ConsumerWidget {
                           );
                         },
                       ),
+                    _QuickActionBtn(
+                      label: 'Task Management',
+                      icon: RemixIcons.list_check_2,
+                      color: AppColors.primary,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const HrTasksView(),
+                          ),
+                        );
+                      },
+                    ),
                   ],
                 ),
 

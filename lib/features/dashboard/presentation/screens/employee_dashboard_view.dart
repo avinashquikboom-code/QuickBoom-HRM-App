@@ -24,6 +24,7 @@ import 'package:quickboom_hrm/features/attendance/presentation/providers/geofenc
 import 'package:quickboom_hrm/features/commission/presentation/providers/commission_viewmodel.dart';
 import 'package:quickboom_hrm/features/commission/presentation/screens/commission_wallet_view.dart';
 import 'package:quickboom_hrm/core/services/permission_service.dart';
+import 'package:quickboom_hrm/features/task/presentation/screens/employee_tasks_view.dart';
 
 
 final geofenceProvider = FutureProvider<bool>((ref) async {
@@ -264,6 +265,18 @@ class EmployeeDashboardView extends ConsumerWidget {
                           Navigator.push(
                             context,
                             MaterialPageRoute(builder: (_) => const EmployeeShiftView()),
+                          );
+                        },
+                      ),
+                      const SizedBox(width: 14),
+                      _QuickActionBubble(
+                        label: 'My Tasks',
+                        icon: RemixIcons.checkbox_line,
+                        color: AppColors.success,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const EmployeeTasksView()),
                           );
                         },
                       ),
