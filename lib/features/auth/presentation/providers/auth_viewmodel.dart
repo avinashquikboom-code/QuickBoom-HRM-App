@@ -89,6 +89,8 @@ class AuthViewModel extends StateNotifier<AuthState> {
     required bool forceHrRole,
   }) {
     final userMap = loginData['user'] as Map<String, dynamic>;
+    // HR login (/api/auth/hr/login) returns a flat profile with no 'employee' key.
+    // Mobile login (/api/mobile/auth/login) returns an 'employee' key.
     final profMap = userMap['profile'] as Map<String, dynamic>? ?? {};
     final empMap = userMap['employee'] as Map<String, dynamic>? ?? {};
     final userRole = userMap['role'].toString().toUpperCase();
@@ -99,11 +101,26 @@ class AuthViewModel extends StateNotifier<AuthState> {
         userRole == 'ADMIN' ||
         userRole == 'PLATFORM_ADMIN';
 
+    // Profile avatar: mobile login uses 'avatarUrl', hr login also uses 'avatarUrl'.
+    // Some older paths may use 'avatar'. Check both.
+    final avatarVal = profMap['avatarUrl']?.toString() ?? profMap['avatar']?.toString();
+
+    // Name: try profile.fullName → employee firstName+lastName → fallback
+    final fullNameFromProfile = profMap['fullName']?.toString();
+    final nameFromEmployee = [
+      empMap['firstName']?.toString() ?? '',
+      empMap['lastName']?.toString() ?? '',
+    ].where((s) => s.isNotEmpty).join(' ');
+    final resolvedName = (fullNameFromProfile?.isNotEmpty == true)
+        ? fullNameFromProfile!
+        : nameFromEmployee.isNotEmpty
+            ? nameFromEmployee
+            : (isHrRole ? 'HR Manager' : 'Employee');
+
     return UserModel(
       id: userMap['id'].toString(),
       employeeId: empMap['employeeCode']?.toString() ?? userMap['id'].toString(),
-      name: profMap['fullName']?.toString() ??
-          '${empMap['firstName']?.toString() ?? ''} ${empMap['lastName']?.toString() ?? ''}'.trim(),
+      name: resolvedName,
       email: profMap['email']?.toString() ??
           userMap['email']?.toString() ??
           fallbackEmail.trim(),
@@ -117,8 +134,8 @@ class AuthViewModel extends StateNotifier<AuthState> {
                   : userRole == 'HELPER'
                       ? UserRole.helper
                       : UserRole.employee,
-      department: (empMap['department'] is Map 
-              ? empMap['department']['name'] 
+      department: (empMap['department'] is Map
+              ? empMap['department']['name']
               : empMap['department'])?.toString() ??
           (isHrRole ? 'Human Resources' : 'General'),
       designation: empMap['designation']?.toString() ??
@@ -129,7 +146,7 @@ class AuthViewModel extends StateNotifier<AuthState> {
           ) ??
           DateTime.now(),
       salary: 0.0,
-      avatar: profMap['avatar']?.toString(),
+      avatar: avatarVal,
       bankName: empMap['bankName']?.toString(),
       accountNumber: empMap['accountNumber']?.toString(),
       ifscCode: empMap['ifscCode']?.toString(),
@@ -182,12 +199,17 @@ class AuthViewModel extends StateNotifier<AuthState> {
       final refreshToken = loginData['refreshToken'] as String? ?? '';
       final userRole = loginData['user']['role'].toString().toUpperCase();
       
+      // For token storage: treat all admin/HR roles as 'HR' so they go in the hr_token slot.
+      final storageRole = (userRole == 'HR' || userRole == 'ADMIN' || userRole == 'SUPER_ADMIN' || userRole == 'PLATFORM_ADMIN')
+          ? 'HR'
+          : userRole;
+      
       debugPrint('✅ [AUTH] Login successful for email: $email');
-      debugPrint('👤 [AUTH] User role: $userRole');
+      debugPrint('👤 [AUTH] User role: $userRole (stored as: $storageRole)');
       debugPrint('🔑 [AUTH] Token saved to storage');
       
-      await ApiService.saveTokens(token, refreshToken, userRole);
-      await StorageService.saveUserRole(userRole);
+      await ApiService.saveTokens(token, refreshToken, storageRole);
+      await StorageService.saveUserRole(storageRole);
 
       final parsedUser = _parseUserFromLoginResponse(
         loginData,
@@ -290,7 +312,13 @@ class AuthViewModel extends StateNotifier<AuthState> {
     try {
       final activeRole = await StorageService.getUserRole();
 
-      if (activeRole == 'HR') {
+      // Treat HR, ADMIN, SUPER_ADMIN as the "HR" role for session restoration.
+      final isHrSessionRole = activeRole == 'HR' ||
+          activeRole == 'ADMIN' ||
+          activeRole == 'SUPER_ADMIN' ||
+          activeRole == 'PLATFORM_ADMIN';
+
+      if (isHrSessionRole) {
         // ── HR session restore ─────────────────────────────────────
         // HR token is stored; fetch HR profile via employee/profile endpoint
         // using the hr_token that getToken() will now return.
