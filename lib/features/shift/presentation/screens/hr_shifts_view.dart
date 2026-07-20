@@ -14,15 +14,30 @@ class HrShiftsView extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Shift Management'),
+        backgroundColor: AppColors.background,
+        elevation: 0,
+        scrolledUnderElevation: 0,
         centerTitle: false,
+        title: Text(
+          'Shift Management',
+          style: TextStyle(
+            color: AppColors.textPrimary,
+            fontSize: 20,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
       ),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         children: [
           Text(
-            'Shift Master',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+            'SHIFT MASTER',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w800,
+              color: AppColors.textSecondary,
+              letterSpacing: 0.8,
+            ),
           ),
           const SizedBox(height: 10),
           if (state.shifts.isEmpty)
@@ -30,7 +45,7 @@ class HrShiftsView extends ConsumerWidget {
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
                 color: AppColors.surface,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(20),
                 border: Border.all(color: AppColors.cardBorder),
               ),
               child: Column(
@@ -38,14 +53,14 @@ class HrShiftsView extends ConsumerWidget {
                   Icon(
                     RemixIcons.time_line,
                     size: 48,
-                    color: AppColors.textHint,
+                    color: AppColors.textHint.withValues(alpha: 0.7),
                   ),
                   const SizedBox(height: 12),
                   Text(
                     'No Shifts Created',
                     style: TextStyle(
                       fontSize: 16,
-                      fontWeight: FontWeight.w700,
+                      fontWeight: FontWeight.w800,
                       color: AppColors.textPrimary,
                     ),
                   ),
@@ -64,7 +79,7 @@ class HrShiftsView extends ConsumerWidget {
             )
           else
             SizedBox(
-              height: 120,
+              height: 130,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 itemCount: state.shifts.length,
@@ -73,31 +88,67 @@ class HrShiftsView extends ConsumerWidget {
                   final s = state.shifts[i];
                   final color = Color(int.parse(s.color.replaceFirst('#', '0xFF')));
                   return Container(
-                    width: 180,
-                    padding: const EdgeInsets.all(12),
+                    width: 190,
+                    padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
-                      color: color.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: color.withValues(alpha: 0.3)),
+                      color: color.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: color.withValues(alpha: 0.2), width: 1.5),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(s.name, style: TextStyle(fontWeight: FontWeight.w700, color: color)),
-                        const SizedBox(height: 8),
-                        Text(s.timingLabel, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+                        Text(
+                          s.name.toUpperCase(),
+                          style: TextStyle(
+                            fontWeight: FontWeight.w800,
+                            fontSize: 10,
+                            color: color,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          s.timingLabel,
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
                         const Spacer(),
-                        Text('${s.totalHours} Hrs • ${s.workingDays.length} Days', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                        Row(
+                          children: [
+                            Icon(RemixIcons.calendar_2_line, size: 12, color: AppColors.textHint),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                '${s.totalHours} Hrs • ${s.workingDays.length} Days',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w500,
+                                  color: AppColors.textSecondary,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
                       ],
                     ),
                   );
                 },
               ),
             ),
-          const SizedBox(height: 30),
+          const SizedBox(height: 32),
           Text(
-            'Employee Assignments',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+            'EMPLOYEE ASSIGNMENTS',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w800,
+              color: AppColors.textSecondary,
+              letterSpacing: 0.8,
+            ),
           ),
           const SizedBox(height: 10),
           if (state.assignments.isEmpty)
@@ -105,7 +156,7 @@ class HrShiftsView extends ConsumerWidget {
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
                 color: AppColors.surface,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(20),
                 border: Border.all(color: AppColors.cardBorder),
               ),
               child: Column(
@@ -113,14 +164,14 @@ class HrShiftsView extends ConsumerWidget {
                   Icon(
                     RemixIcons.user_unfollow_line,
                     size: 48,
-                    color: AppColors.textHint,
+                    color: AppColors.textHint.withValues(alpha: 0.7),
                   ),
                   const SizedBox(height: 12),
                   Text(
                     'No Assignments',
                     style: TextStyle(
                       fontSize: 16,
-                      fontWeight: FontWeight.w700,
+                      fontWeight: FontWeight.w800,
                       color: AppColors.textPrimary,
                     ),
                   ),
@@ -138,45 +189,83 @@ class HrShiftsView extends ConsumerWidget {
               ),
             )
           else
-            ...state.assignments.map((a) => Container(
-                  margin: const EdgeInsets.only(bottom: 10),
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: AppColors.surface,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.cardBorder),
-                  ),
-                  child: Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 16,
-                        backgroundColor: AppColors.primarySurface,
-                        child: Text(a.employeeName[0], style: const TextStyle(fontSize: 12, color: AppColors.primary)),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(a.employeeName, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.textPrimary)),
-                            Text(a.department, style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
-                          ],
+            ...state.assignments.map((a) {
+              final colorValue = Color(int.parse(a.shift.color.replaceFirst('#', '0xFF')));
+              return Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.cardBorder),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.02),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 18,
+                      backgroundColor: AppColors.primary.withValues(alpha: 0.08),
+                      child: Text(
+                        a.employeeName.isNotEmpty ? a.employeeName[0].toUpperCase() : 'E',
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.primary,
                         ),
                       ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Color(int.parse(a.shift.color.replaceFirst('#', '0xFF'))).withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          a.shift.name,
-                          style: TextStyle(color: Color(int.parse(a.shift.color.replaceFirst('#', '0xFF'))), fontSize: 11, fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            a.employeeName,
+                            style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 14,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            a.department,
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: colorValue.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: colorValue.withValues(alpha: 0.15), width: 1),
+                      ),
+                      child: Text(
+                        a.shift.name,
+                        style: TextStyle(
+                          color: colorValue,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.3,
                         ),
                       ),
-                    ],
-                  ),
-                )),
+                    ),
+                  ],
+                ),
+              );
+            }),
         ],
       ),
     );

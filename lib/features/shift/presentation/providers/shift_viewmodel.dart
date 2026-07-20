@@ -1,10 +1,13 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quickboom_hrm/core/services/api_service.dart';
 import 'package:quickboom_hrm/core/constants/app_url.dart';
 import 'package:quickboom_hrm/features/shift/data/models/shift_model.dart';
 import 'package:quickboom_hrm/features/shift/data/models/shift_request_model.dart';
+import 'package:quickboom_hrm/features/auth/data/models/user_model.dart';
+import 'package:quickboom_hrm/features/auth/presentation/providers/auth_viewmodel.dart';
 
 // ─── Shift State ───────────────────────────────────────────────────────────────
 
@@ -52,7 +55,9 @@ class ShiftState {
 // ─── Shift ViewModel ──────────────────────────────────────────────────────────
 
 class ShiftViewModel extends StateNotifier<ShiftState> {
-  ShiftViewModel() : super(const ShiftState()) {
+  final Ref _ref;
+
+  ShiftViewModel(this._ref) : super(const ShiftState()) {
     fetchShiftAssignment();
     fetchShifts();
     fetchMyRequests();
@@ -61,6 +66,72 @@ class ShiftViewModel extends StateNotifier<ShiftState> {
   Future<void> fetchShiftAssignment() async {
     state = state.copyWith(isLoading: true);
     try {
+      final user = _ref.read(authViewModelProvider).currentUser;
+      final isHR = user != null &&
+          (user.role == UserRole.hrManager || user.role == UserRole.storeManager);
+
+      if (isHR) {
+        debugPrint('👥 [ShiftViewModel] HR Mode: Fetching all employee shifts...');
+        final res = await ApiService.get('/api/hr/employees');
+        final data = jsonDecode(res.body);
+        if (data['success'] == true && data['employees'] is List) {
+          final List employeesList = data['employees'];
+          final List<EmployeeShiftAssignment> allAssignments = [];
+
+          for (var emp in employeesList) {
+            final shiftData = emp['shift'];
+            ShiftModel shift;
+            if (shiftData != null) {
+              final workingDaysRaw = shiftData['workingDays'];
+              final List<String> workingDays = workingDaysRaw is List
+                  ? workingDaysRaw.map((d) => d.toString()).toList()
+                  : [];
+              shift = ShiftModel(
+                id: shiftData['id']?.toString() ?? '',
+                name: shiftData['name']?.toString() ?? '',
+                startTime: shiftData['startTime']?.toString() ?? '09:00',
+                endTime: shiftData['endTime']?.toString() ?? '18:00',
+                workingDays: workingDays,
+                graceMinutes: shiftData['graceMinutes'] as int? ?? 15,
+                breakMinutes: shiftData['breakMinutes'] as int? ?? 60,
+                color: shiftData['color']?.toString() ?? '#3BA38B',
+              );
+            } else {
+              shift = const ShiftModel(
+                id: 'unassigned',
+                name: 'No Shift Assigned',
+                startTime: '',
+                endTime: '',
+                workingDays: [],
+                graceMinutes: 0,
+                breakMinutes: 0,
+                color: '#9E9E9E',
+              );
+            }
+
+            allAssignments.add(
+              EmployeeShiftAssignment(
+                employeeId: emp['id']?.toString() ?? '',
+                employeeName: emp['fullName']?.toString() ?? '',
+                department: emp['department']?.toString() ?? 'Unassigned',
+                shift: shift,
+                effectiveFrom: emp['joinedAt'] != null
+                    ? DateTime.tryParse(emp['joinedAt']) ?? DateTime.now()
+                    : DateTime.now(),
+              ),
+            );
+          }
+
+          state = state.copyWith(
+            assignments: allAssignments,
+            isLoading: false,
+          );
+          return;
+        }
+      }
+
+      // Default (Employee Mode)
+      debugPrint('👤 [ShiftViewModel] Employee Mode: Fetching current shift...');
       final res = await ApiService.get(AppUrl.employeeShifts);
       final data = jsonDecode(res.body);
       final rawAssignment = data['assignment'];
@@ -190,5 +261,5 @@ class ShiftViewModel extends StateNotifier<ShiftState> {
 
 final shiftViewModelProvider =
     StateNotifierProvider<ShiftViewModel, ShiftState>((ref) {
-  return ShiftViewModel();
+  return ShiftViewModel(ref);
 });

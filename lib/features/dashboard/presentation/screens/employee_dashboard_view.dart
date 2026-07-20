@@ -1787,11 +1787,68 @@ class _TodayPunchCardState extends ConsumerState<_TodayPunchCard> {
                         size: 19,
                       ),
                       label: Text(isOnBreak ? 'End Break' : 'Take Break'),
-                      onPressed: () {
-                        if (isOnBreak) {
-                          ref.read(attendanceViewModelProvider.notifier).endBreak();
-                        } else {
-                          ref.read(attendanceViewModelProvider.notifier).startBreak();
+                      onPressed: () async {
+                        try {
+                          if (isOnBreak) {
+                            await ref.read(attendanceViewModelProvider.notifier).endBreak();
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: const Row(
+                                    children: [
+                                      Icon(RemixIcons.checkbox_circle_line, color: Colors.white),
+                                      SizedBox(width: 10),
+                                      Expanded(child: Text('Break ended successfully!')),
+                                    ],
+                                  ),
+                                  backgroundColor: AppColors.success,
+                                  behavior: SnackBarBehavior.floating,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                ),
+                              );
+                            }
+                          } else {
+                            await ref.read(attendanceViewModelProvider.notifier).startBreak();
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: const Row(
+                                    children: [
+                                      Icon(RemixIcons.cup_line, color: Colors.white),
+                                      SizedBox(width: 10),
+                                      Expanded(child: Text('Break started successfully!')),
+                                    ],
+                                  ),
+                                  backgroundColor: AppColors.warning,
+                                  behavior: SnackBarBehavior.floating,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                ),
+                              );
+                            }
+                          }
+                        } catch (error) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Row(
+                                  children: [
+                                    const Icon(RemixIcons.error_warning_line, color: Colors.white),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: Text(
+                                        error.toString().replaceAll('Exception: ', '').replaceAll('ApiException: ', ''),
+                                        style: const TextStyle(fontSize: 14),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                backgroundColor: AppColors.error,
+                                behavior: SnackBarBehavior.floating,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                duration: const Duration(seconds: 4),
+                              ),
+                            );
+                          }
                         }
                       },
                     ),

@@ -30,6 +30,16 @@ class AppColors {
   static const Color info = Color(0xFF3B82F6);
   static const Color infoSurface = Color(0xFFDBEAFE);
 
+  // Wallet
+  static const Color walletGreenLight = Color(0xFF10B981);
+  static const Color walletGreenDark = Color(0xFF059669);
+
+  static const LinearGradient walletGradient = LinearGradient(
+    colors: [walletGreenLight, walletGreenDark],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
   static const Color cardShadow = Color(0x14000000);
 
   // Gradients

@@ -174,77 +174,99 @@ class AttendanceViewModel extends StateNotifier<AttendanceState> {
   /// Returns the device's current GPS position, requesting permission if needed.
   /// Returns null if location is unavailable or permission is denied.
   Future<Position?> _getCurrentPosition() async {
-    debugPrint('🔍 Checking location services...');
-    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      debugPrint('❌ Location services are disabled.');
+    try {
+      debugPrint('🔍 Checking location services...');
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        debugPrint('❌ Location services are disabled.');
+        return null;
+      }
+      
+      debugPrint('🔍 Checking location permissions...');
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        debugPrint('📋 Requesting location permission...');
+        permission = await Geolocator.requestPermission();
+      }
+
+      if (permission == LocationPermission.denied || permission == LocationPermission.deniedForever) {
+        debugPrint('❌ Location permission denied.');
+        return null;
+      }
+
+      debugPrint('📍 Getting current GPS position...');
+      final position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 10),
+        ),
+      );
+      
+      debugPrint('✅ GPS Position obtained: lat=${position.latitude}, lon=${position.longitude}');
+      debugPrint('📊 GPS Accuracy: ${position.accuracy}m');
+      debugPrint('⏰ GPS Timestamp: ${position.timestamp}');
+      
+      return position;
+    } catch (e) {
+      debugPrint('❌ Error getting current position: $e');
       return null;
     }
-    
-    debugPrint('🔍 Checking location permissions...');
-    LocationPermission permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      debugPrint('📋 Requesting location permission...');
-      permission = await Geolocator.requestPermission();
-    }
-
-    debugPrint('📍 Getting current GPS position...');
-    final position = await Geolocator.getCurrentPosition(
-      locationSettings: const LocationSettings(
-        accuracy: LocationAccuracy.high,
-        timeLimit: Duration(seconds: 10),
-      ),
-    );
-    
-    debugPrint('✅ GPS Position obtained: lat=${position.latitude}, lon=${position.longitude}');
-    debugPrint('📊 GPS Accuracy: ${position.accuracy}m');
-    debugPrint('⏰ GPS Timestamp: ${position.timestamp}');
-    
-    return position;
   }
 
   Future<void> startBreak() async {
     state = state.copyWith(isLoading: true);
     
-    debugPrint('☕ Starting break...');
-    final currentTime = DateTime.now();
-    debugPrint('🕒 LOCAL TIME BEFORE API CALL: ${currentTime.toIso8601String()}');
-    
-    final position = await _getCurrentPosition();
-    debugPrint('📍 GPS Position: lat=${position?.latitude}, lon=${position?.longitude}');
+    try {
+      debugPrint('☕ Starting break...');
+      final currentTime = DateTime.now();
+      debugPrint('🕒 LOCAL TIME BEFORE API CALL: ${currentTime.toIso8601String()}');
+      
+      final position = await _getCurrentPosition();
+      debugPrint('📍 GPS Position: lat=${position?.latitude}, lon=${position?.longitude}');
 
-    // Use the new mobile API endpoint for starting break
-    final response = await ApiService.post(AppUrl.attendanceBreakStart, {
-      'latitude': position?.latitude ?? 0.0,
-      'longitude': position?.longitude ?? 0.0,
-      'clientTimestamp': currentTime.toUtc().toIso8601String(),
-      'timezone': currentTime.timeZoneName,
-    });
-    debugPrint('✅ Break start response: ${response.body}');
-    
-    await fetchAttendanceData();
+      // Use the new mobile API endpoint for starting break
+      final response = await ApiService.post(AppUrl.attendanceBreakStart, {
+        'latitude': position?.latitude ?? 0.0,
+        'longitude': position?.longitude ?? 0.0,
+        'clientTimestamp': currentTime.toUtc().toIso8601String(),
+        'timezone': currentTime.timeZoneName,
+      });
+      debugPrint('✅ Break start response: ${response.body}');
+      
+      await fetchAttendanceData();
+    } catch (e) {
+      debugPrint('❌ Error starting break: $e');
+      state = state.copyWith(isLoading: false);
+      rethrow;
+    }
   }
 
   Future<void> endBreak() async {
     state = state.copyWith(isLoading: true);
     
-    debugPrint('🔄 Ending break...');
-    final currentTime = DateTime.now();
-    debugPrint('🕒 LOCAL TIME BEFORE API CALL: ${currentTime.toIso8601String()}');
-    
-    final position = await _getCurrentPosition();
-    debugPrint('📍 GPS Position: lat=${position?.latitude}, lon=${position?.longitude}');
+    try {
+      debugPrint('🔄 Ending break...');
+      final currentTime = DateTime.now();
+      debugPrint('🕒 LOCAL TIME BEFORE API CALL: ${currentTime.toIso8601String()}');
+      
+      final position = await _getCurrentPosition();
+      debugPrint('📍 GPS Position: lat=${position?.latitude}, lon=${position?.longitude}');
 
-    // Use the new mobile API endpoint for ending break
-    final response = await ApiService.post(AppUrl.attendanceBreakEnd, {
-      'latitude': position?.latitude ?? 0.0,
-      'longitude': position?.longitude ?? 0.0,
-      'clientTimestamp': currentTime.toUtc().toIso8601String(),
-      'timezone': currentTime.timeZoneName,
-    });
-    debugPrint('✅ Break end response: ${response.body}');
-    
-    await fetchAttendanceData();
+      // Use the new mobile API endpoint for ending break
+      final response = await ApiService.post(AppUrl.attendanceBreakEnd, {
+        'latitude': position?.latitude ?? 0.0,
+        'longitude': position?.longitude ?? 0.0,
+        'clientTimestamp': currentTime.toUtc().toIso8601String(),
+        'timezone': currentTime.timeZoneName,
+      });
+      debugPrint('✅ Break end response: ${response.body}');
+      
+      await fetchAttendanceData();
+    } catch (e) {
+      debugPrint('❌ Error ending break: $e');
+      state = state.copyWith(isLoading: false);
+      rethrow;
+    }
   }
 
   AttendanceModel _parseRecord(Map<String, dynamic> data) {

@@ -46,47 +46,63 @@ class _EmployeeTasksViewState extends ConsumerState<EmployeeTasksView>
           'My Tasks',
           style: TextStyle(
             color: AppColors.textPrimary,
-            fontSize: 18,
+            fontSize: 20,
             fontWeight: FontWeight.w800,
           ),
         ),
         actions: [
           Padding(
-            padding: const EdgeInsets.only(right: 14),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: AppColors.primarySurface,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                '${state.myTasks.length} Tasks',
-                style: const TextStyle(
-                  color: AppColors.primary,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
+            padding: const EdgeInsets.only(right: 16),
+            child: Center(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '${state.myTasks.length} Active',
+                  style: const TextStyle(
+                    color: AppColors.primary,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
               ),
             ),
           ),
         ],
-        bottom: TabBar(
-          controller: _tabController,
-          isScrollable: true,
-          tabAlignment: TabAlignment.start,
-          indicatorColor: AppColors.primary,
-          labelColor: AppColors.primary,
-          unselectedLabelColor: AppColors.textSecondary,
-          labelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
-          tabs: [
-            _buildTab('All', state.myTasks.length),
-            _buildTab('In Progress', state.inProgressTasks.length,
-                color: AppColors.info),
-            _buildTab('To Do', state.todoTasks.length,
-                color: AppColors.warning),
-            _buildTab('Done', state.completedTasks.length,
-                color: AppColors.success),
-          ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(56),
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: AppColors.primarySurface,
+              borderRadius: BorderRadius.circular(28),
+            ),
+            child: TabBar(
+              controller: _tabController,
+              isScrollable: true,
+              tabAlignment: TabAlignment.start,
+              indicator: BoxDecoration(
+                color: AppColors.primary,
+                borderRadius: BorderRadius.circular(24),
+              ),
+              indicatorSize: TabBarIndicatorSize.tab,
+              labelColor: Colors.white,
+              unselectedLabelColor: AppColors.textSecondary,
+              labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12),
+              unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
+              dividerColor: Colors.transparent,
+              tabs: [
+                _buildTab('All', state.myTasks.length),
+                _buildTab('In Progress', state.inProgressTasks.length, color: AppColors.info),
+                _buildTab('To Do', state.todoTasks.length, color: AppColors.warning),
+                _buildTab('Done', state.completedTasks.length, color: AppColors.success),
+              ],
+            ),
+          ),
         ),
       ),
       body: Column(
@@ -94,20 +110,26 @@ class _EmployeeTasksViewState extends ConsumerState<EmployeeTasksView>
           // ─── Overdue Banner ─────────────────────────────────────────
           if (state.overdueTasks.isNotEmpty)
             Container(
-              width: double.infinity,
-              color: AppColors.errorSurface,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              margin: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: AppColors.error.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.error.withValues(alpha: 0.2)),
+              ),
               child: Row(
                 children: [
-                  Icon(RemixIcons.error_warning_line,
-                      color: AppColors.error, size: 16),
-                  const SizedBox(width: 8),
-                  Text(
-                    '${state.overdueTasks.length} task(s) overdue — please complete them',
-                    style: const TextStyle(
-                      color: AppColors.error,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
+                  Icon(RemixIcons.error_warning_fill,
+                      color: AppColors.error, size: 18),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      '${state.overdueTasks.length} task(s) overdue — please complete them',
+                      style: const TextStyle(
+                        color: AppColors.error,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
                 ],
@@ -132,28 +154,32 @@ class _EmployeeTasksViewState extends ConsumerState<EmployeeTasksView>
 
   Tab _buildTab(String label, int count, {Color? color}) {
     return Tab(
-      child: Row(
-        children: [
-          Text(label),
-          if (count > 0) ...[
-            const SizedBox(width: 6),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                color: (color ?? AppColors.primary).withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Text(
-                '$count',
-                style: TextStyle(
-                  color: color ?? AppColors.primary,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w700,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(label),
+            if (count > 0) ...[
+              const SizedBox(width: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: color?.withValues(alpha: 0.15) ?? AppColors.primary.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  '$count',
+                  style: TextStyle(
+                    color: color ?? AppColors.primary,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
               ),
-            ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
@@ -235,17 +261,18 @@ class _TaskCard extends ConsumerWidget {
           border: Border.all(color: AppColors.cardBorder),
           boxShadow: [
             BoxShadow(
-                color: AppColors.cardShadow,
-                blurRadius: 6,
-                offset: const Offset(0, 2)),
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
           ],
         ),
         child: IntrinsicHeight(
           child: Row(
             children: [
-              // Priority Bar
+              // Priority vertical line indicator
               Container(
-                width: 4,
+                width: 5,
                 decoration: BoxDecoration(
                   color: task.isOverdue ? AppColors.error : priorityColor,
                   borderRadius: const BorderRadius.only(
@@ -256,69 +283,81 @@ class _TaskCard extends ConsumerWidget {
               ),
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.all(14),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Expanded(
                             child: Text(
                               task.title,
                               style: TextStyle(
                                 fontSize: 14,
-                                fontWeight: FontWeight.w600,
+                                fontWeight: FontWeight.w700,
                                 color: task.status == TaskStatus.completed
                                     ? AppColors.textSecondary
                                     : AppColors.textPrimary,
                                 decoration: task.status == TaskStatus.completed
                                     ? TextDecoration.lineThrough
                                     : null,
+                                height: 1.3,
                               ),
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                          const SizedBox(width: 8),
+                          const SizedBox(width: 12),
                           _PriorityBadge(priority: task.priority),
                         ],
                       ),
-                      const SizedBox(height: 6),
+                      const SizedBox(height: 8),
                       Row(
                         children: [
                           Icon(RemixIcons.folder_open_line,
-                              size: 12, color: AppColors.textHint),
+                              size: 13, color: AppColors.textHint),
                           const SizedBox(width: 4),
                           Text(
                             task.projectName,
                             style: TextStyle(
-                                fontSize: 11, color: AppColors.textSecondary),
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textSecondary,
+                            ),
                           ),
-                          const SizedBox(width: 12),
+                          const SizedBox(width: 16),
                           Icon(RemixIcons.user_3_line,
-                              size: 12, color: AppColors.textHint),
+                              size: 13, color: AppColors.textHint),
                           const SizedBox(width: 4),
                           Expanded(
                             child: Text(
                               'by ${task.assignedByName}',
                               style: TextStyle(
-                                  fontSize: 11,
-                                  color: AppColors.textSecondary),
+                                fontSize: 11,
+                                fontWeight: FontWeight.w500,
+                                color: AppColors.textSecondary,
+                              ),
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 14),
                       Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          // Status
+                          // Status Badge
                           Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 9, vertical: 4),
+                                horizontal: 10, vertical: 5),
                             decoration: BoxDecoration(
-                              color: statusColor.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(20),
+                              color: statusColor.withValues(alpha: 0.08),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: statusColor.withValues(alpha: 0.15),
+                                width: 1,
+                              ),
                             ),
                             child: Text(
                               task.isOverdue &&
@@ -326,65 +365,80 @@ class _TaskCard extends ConsumerWidget {
                                   ? 'Overdue'
                                   : task.statusLabel,
                               style: TextStyle(
-                                  color: task.isOverdue &&
-                                          task.status != TaskStatus.completed
-                                      ? AppColors.error
-                                      : statusColor,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w600),
+                                color: task.isOverdue &&
+                                        task.status != TaskStatus.completed
+                                    ? AppColors.error
+                                    : statusColor,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 0.3,
+                              ),
                             ),
                           ),
-                          const Spacer(),
-                          // Due Date
-                          Icon(
-                           RemixIcons.calendar_event_line,
-                            size: 12,
-                            color: task.isOverdue
-                                ? AppColors.error
-                                : AppColors.textHint,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            'Due ${DateFormat('dd MMM').format(task.dueDate)}',
-                            style: TextStyle(
-                                fontSize: 11,
-                                color: task.isOverdue
-                                    ? AppColors.error
-                                    : AppColors.textSecondary,
-                                fontWeight: task.isOverdue
-                                    ? FontWeight.w600
-                                    : FontWeight.normal),
+                          // Due Date Badge
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: task.isOverdue
+                                  ? AppColors.error.withValues(alpha: 0.08)
+                                  : AppColors.primary.withValues(alpha: 0.06),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  RemixIcons.calendar_event_line,
+                                  size: 12,
+                                  color: task.isOverdue
+                                      ? AppColors.error
+                                      : AppColors.primary,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  'Due ${DateFormat('dd MMM').format(task.dueDate)}',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w700,
+                                    color: task.isOverdue
+                                        ? AppColors.error
+                                        : AppColors.primary,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ],
                       ),
 
                       // Quick Action Buttons
                       if (task.status != TaskStatus.completed) ...[
+                        const SizedBox(height: 12),
+                        Divider(height: 1, color: AppColors.cardBorder),
                         const SizedBox(height: 10),
-                        const Divider(height: 1),
-                        const SizedBox(height: 8),
                         Row(
                           children: [
                             if (task.status == TaskStatus.todo)
                               _QuickAction(
-                                label: 'Start',
-                                 icon: RemixIcons.play_line,
-                                color: AppColors.info,
+                                label: 'Start Task',
+                                icon: RemixIcons.play_line,
+                                color: AppColors.primary,
                                 onTap: () => _showStatusRemarkDialog(
                                     context, ref, task.id, TaskStatus.inProgress),
                               ),
                             if (task.status == TaskStatus.inProgress) ...[
                               _QuickAction(
-                                label: 'Done',
-                                 icon: RemixIcons.check_line,
+                                label: 'Complete',
+                                icon: RemixIcons.checkbox_circle_line,
                                 color: AppColors.success,
                                 onTap: () => _showStatusRemarkDialog(
                                     context, ref, task.id, TaskStatus.completed),
                               ),
-                              const SizedBox(width: 8),
+                              const SizedBox(width: 10),
                               _QuickAction(
                                 label: 'Pause',
-                                 icon: RemixIcons.pause_line,
+                                icon: RemixIcons.pause_line,
                                 color: AppColors.warning,
                                 onTap: () => _showStatusRemarkDialog(
                                     context, ref, task.id, TaskStatus.todo),
@@ -459,15 +513,16 @@ class _PriorityBadge extends StatelessWidget {
         break;
     }
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(6),
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withValues(alpha: 0.15), width: 1),
       ),
       child: Text(
         priority.name.toUpperCase(),
         style: TextStyle(
-            color: color, fontSize: 9, fontWeight: FontWeight.w700),
+            color: color, fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: 0.5),
       ),
     );
   }
@@ -493,23 +548,24 @@ class _QuickAction extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: color.withValues(alpha: 0.3)),
+          color: color.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: color.withValues(alpha: 0.15)),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 13, color: color),
-            const SizedBox(width: 4),
+            Icon(icon, size: 14, color: color),
+            const SizedBox(width: 6),
             Text(
               label,
               style: TextStyle(
-                  color: color,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600),
+                color: color,
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ],
         ),

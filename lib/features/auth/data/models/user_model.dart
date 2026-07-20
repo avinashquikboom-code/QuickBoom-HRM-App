@@ -94,6 +94,8 @@ class UserModel {
     return now.year - joinDate.year;
   }
 
+  String get employeeCode => employeeId;
+
   bool get isSalesman => role == UserRole.salesman;
   bool get isStoreManager => role == UserRole.storeManager;
   bool get isHelper => role == UserRole.helper;
