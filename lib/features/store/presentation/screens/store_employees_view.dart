@@ -24,7 +24,11 @@ class _StoreEmployeesViewState extends ConsumerState<StoreEmployeesView> {
   @override
   void initState() {
     super.initState();
-    _loadEmployees();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _loadEmployees();
+      }
+    });
     _scrollController.addListener(_onScroll);
   }
 

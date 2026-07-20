@@ -18,7 +18,11 @@ class _StoreDashboardViewState extends ConsumerState<StoreDashboardView> {
   @override
   void initState() {
     super.initState();
-    _loadDashboard();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _loadDashboard();
+      }
+    });
   }
 
   Future<void> _loadDashboard() async {
