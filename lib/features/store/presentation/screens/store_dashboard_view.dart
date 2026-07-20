@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:remixicon/remixicon.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:remixicon/remixicon.dart';
 import 'package:quickboom_hrm/core/constants/app_colors.dart';
 import 'package:quickboom_hrm/core/widgets/shimmer_loading.dart';
 import 'package:quickboom_hrm/features/store/data/store_models.dart';
@@ -48,10 +48,16 @@ class _StoreDashboardViewState extends ConsumerState<StoreDashboardView> {
           'Store Dashboard',
           style: TextStyle(
             color: AppColors.textPrimary,
-            fontSize: 18,
+            fontSize: 20,
             fontWeight: FontWeight.w800,
           ),
         ),
+        actions: [
+          IconButton(
+            icon: Icon(RemixIcons.refresh_line, color: AppColors.textSecondary),
+            onPressed: _onRefresh,
+          ),
+        ],
       ),
       body: RefreshIndicator(
         onRefresh: _onRefresh,
@@ -63,266 +69,212 @@ class _StoreDashboardViewState extends ConsumerState<StoreDashboardView> {
   }
 
   Widget _buildBody(StoreDashboardState state) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 32.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                RemixIcons.store_2_line,
-                size: 64,
-                color: AppColors.primary,
-              ),
-            ).animate().scale(delay: 200.ms, duration: 400.ms, curve: Curves.easeOut),
-            const SizedBox(height: 32),
-            Text(
-              'Store Dashboard',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.w900,
-                color: AppColors.textPrimary,
-              ),
-              textAlign: TextAlign.center,
-            ).animate().fadeIn(delay: 300.ms),
-            const SizedBox(height: 12),
-            Text(
-              'This feature will be available in the next version update. Stay tuned!',
-              style: TextStyle(
-                fontSize: 14,
-                color: AppColors.textSecondary,
-                height: 1.5,
-              ),
-              textAlign: TextAlign.center,
-            ).animate().fadeIn(delay: 400.ms),
-            const SizedBox(height: 24),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(
-                color: AppColors.info.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(30),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(RemixIcons.code_box_line, size: 16, color: AppColors.info),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Feature Coming Soon',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.info,
-                    ),
-                  ),
-                ],
-              ),
-            ).animate().fadeIn(delay: 500.ms).slideY(begin: 0.2, end: 0),
-          ],
-        ),
-      ),
-    );
+    if (state.isLoadingDashboard && state.dashboard == null) {
+      return _buildLoadingState();
+    }
+
+    if (state.errorMessage != null && state.dashboard == null) {
+      return _buildErrorState(state.errorMessage!);
+    }
+
+    if (state.dashboard == null) {
+      return _buildEmptyState();
+    }
+
+    return _buildDashboard(state.dashboard!);
   }
 
-  Widget _buildBodyOld(StoreDashboardState state) {
-    if (state.dashboard == null) return const SizedBox.shrink();
-    final dashboard = state.dashboard!;
+  Widget _buildDashboard(StoreDashboard dashboard) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Store Header Card
-          _StoreHeaderCard(
+          // ── Store Hero Card ─────────────────────────────────────
+          _StoreHeroCard(
             storeName: dashboard.storeName,
             performance: dashboard.storePerformance,
-          ).animate().fadeIn().slideY(begin: 0.1, end: 0),
+            totalEmployees: dashboard.totalEmployees,
+          ).animate().fadeIn().slideY(begin: 0.08, end: 0),
 
-          const SizedBox(height: 16),
+          const SizedBox(height: 24),
 
-          // Today's Stats
+          // ── Today's Attendance Strip ─────────────────────────────
           Text(
-            'Today\'s Overview',
+            "TODAY'S OVERVIEW",
             style: TextStyle(
-              color: AppColors.textPrimary,
-              fontSize: 16,
+              fontSize: 11,
               fontWeight: FontWeight.w800,
+              color: AppColors.textSecondary,
+              letterSpacing: 0.8,
             ),
           ).animate().fadeIn(delay: 100.ms),
           const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: _StatCard(
-                  label: 'Today\'s Sales',
-                  value: '₹${dashboard.todaySales.toStringAsFixed(0)}',
-                  icon: RemixIcons.money_dollar_box_line,
-                  color: AppColors.success,
-                ).animate().fadeIn(delay: 150.ms).slideX(begin: -0.1, end: 0),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _StatCard(
-                  label: 'Revenue',
-                  value: '₹${dashboard.todayRevenue.toStringAsFixed(0)}',
-                  icon: RemixIcons.line_chart_line,
-                  color: AppColors.primary,
-                ).animate().fadeIn(delay: 150.ms).slideX(begin: 0.1, end: 0),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 12),
 
           Row(
             children: [
               Expanded(
-                child: _StatCard(
+                child: _AttendanceChip(
                   label: 'Present',
-                  value: '${dashboard.presentEmployees}/${dashboard.totalEmployees}',
-                  icon: RemixIcons.checkbox_circle_line,
-                  color: AppColors.success,
-                ).animate().fadeIn(delay: 200.ms).slideX(begin: -0.1, end: 0),
+                  value: dashboard.presentEmployees,
+                  color: const Color(0xFF22C55E),
+                  icon: RemixIcons.user_follow_line,
+                ).animate().fadeIn(delay: 150.ms).slideX(begin: -0.08, end: 0),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
               Expanded(
-                child: _StatCard(
+                child: _AttendanceChip(
                   label: 'Absent',
-                  value: dashboard.absentEmployees.toString(),
-                  icon: RemixIcons.close_circle_line,
-                  color: AppColors.error,
-                ).animate().fadeIn(delay: 200.ms).slideX(begin: 0.1, end: 0),
+                  value: dashboard.absentEmployees,
+                  color: const Color(0xFFEF4444),
+                  icon: RemixIcons.user_unfollow_line,
+                ).animate().fadeIn(delay: 200.ms),
               ),
-            ],
-          ),
-
-          const SizedBox(height: 12),
-
-          Row(
-            children: [
+              const SizedBox(width: 10),
               Expanded(
-                child: _StatCard(
+                child: _AttendanceChip(
                   label: 'Late',
-                  value: dashboard.lateEmployees.toString(),
+                  value: dashboard.lateEmployees,
+                  color: const Color(0xFFF59E0B),
                   icon: RemixIcons.time_line,
-                  color: AppColors.warning,
-                ).animate().fadeIn(delay: 250.ms).slideX(begin: -0.1, end: 0),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _StatCard(
-                  label: 'Pending Leaves',
-                  value: dashboard.pendingLeaves.toString(),
-                  icon: RemixIcons.calendar_check_line,
-                  color: AppColors.info,
-                ).animate().fadeIn(delay: 250.ms).slideX(begin: 0.1, end: 0),
+                ).animate().fadeIn(delay: 250.ms).slideX(begin: 0.08, end: 0),
               ),
             ],
           ),
 
-          const SizedBox(height: 16),
+          const SizedBox(height: 24),
 
-          // Monthly Overview
+          // ── Sales Overview ────────────────────────────────────────
           Text(
-            'Monthly Overview',
+            "SALES OVERVIEW",
             style: TextStyle(
-              color: AppColors.textPrimary,
-              fontSize: 16,
+              fontSize: 11,
               fontWeight: FontWeight.w800,
+              color: AppColors.textSecondary,
+              letterSpacing: 0.8,
             ),
           ).animate().fadeIn(delay: 300.ms),
           const SizedBox(height: 12),
+
           Row(
             children: [
               Expanded(
-                child: _StatCard(
-                  label: 'Monthly Sales',
-                  value: '₹${dashboard.monthlySales.toStringAsFixed(0)}',
-                  icon: RemixIcons.bar_chart_box_line,
+                child: _SalesCard(
+                  label: "Today's Sales",
+                  value: '₹${_formatNumber(dashboard.todaySales)}',
+                  subtitle: 'Transactions today',
                   color: AppColors.primary,
-                ).animate().fadeIn(delay: 350.ms).slideX(begin: -0.1, end: 0),
+                  icon: RemixIcons.shopping_bag_line,
+                ).animate().fadeIn(delay: 350.ms).slideX(begin: -0.08, end: 0),
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: _StatCard(
-                  label: 'Monthly Revenue',
-                  value: '₹${dashboard.monthlyRevenue.toStringAsFixed(0)}',
-                  icon: RemixIcons.funds_box_line,
-                  color: AppColors.success,
-                ).animate().fadeIn(delay: 350.ms).slideX(begin: 0.1, end: 0),
+                child: _SalesCard(
+                  label: "Today's Commission",
+                  value: '₹${_formatNumber(dashboard.todayRevenue)}',
+                  subtitle: 'Earnings today',
+                  color: const Color(0xFF8B5CF6),
+                  icon: RemixIcons.percent_line,
+                ).animate().fadeIn(delay: 400.ms).slideX(begin: 0.08, end: 0),
               ),
             ],
           ),
 
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
 
-          // Pending Actions
-          Text(
-            'Pending Actions',
-            style: TextStyle(
-              color: AppColors.textPrimary,
-              fontSize: 16,
-              fontWeight: FontWeight.w800,
-            ),
-          ).animate().fadeIn(delay: 400.ms),
-          const SizedBox(height: 12),
-          _PendingActionsCard(
-            pendingLeaves: dashboard.pendingLeaves,
-            pendingExpenses: dashboard.pendingExpenses,
-          ).animate().fadeIn(delay: 450.ms).slideY(begin: 0.1, end: 0),
-
-          const SizedBox(height: 16),
-
-          // Daily Sales Summary
-          if (dashboard.dailySalesSummary.isNotEmpty) ...[
-            Text(
-              'Daily Sales Summary',
-              style: TextStyle(
-                color: AppColors.textPrimary,
-                fontSize: 16,
-                fontWeight: FontWeight.w800,
+          Row(
+            children: [
+              Expanded(
+                child: _SalesCard(
+                  label: 'Monthly Sales',
+                  value: '₹${_formatNumber(dashboard.monthlySales)}',
+                  subtitle: 'Last 30 days',
+                  color: const Color(0xFF06B6D4),
+                  icon: RemixIcons.bar_chart_2_line,
+                ).animate().fadeIn(delay: 450.ms).slideX(begin: -0.08, end: 0),
               ),
-            ).animate().fadeIn(delay: 500.ms),
-            const SizedBox(height: 12),
-            SizedBox(
-              height: 120,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                itemCount: dashboard.dailySalesSummary.length,
-                itemBuilder: (context, index) {
-                  final summary = dashboard.dailySalesSummary[index];
-                  return _DailySalesCard(summary: summary)
-                      .animate()
-                      .fadeIn(delay: (500 + index * 50).ms)
-                      .slideX(begin: 0.1, end: 0);
-                },
+              const SizedBox(width: 12),
+              Expanded(
+                child: _SalesCard(
+                  label: 'Monthly Commission',
+                  value: '₹${_formatNumber(dashboard.monthlyRevenue)}',
+                  subtitle: 'Last 30 days',
+                  color: const Color(0xFF10B981),
+                  icon: RemixIcons.funds_line,
+                ).animate().fadeIn(delay: 500.ms).slideX(begin: 0.08, end: 0),
               ),
-            ),
-          ],
+            ],
+          ),
 
           const SizedBox(height: 24),
+
+          // ── Pending Actions ───────────────────────────────────────
+          Text(
+            "PENDING ACTIONS",
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+              color: AppColors.textSecondary,
+              letterSpacing: 0.8,
+            ),
+          ).animate().fadeIn(delay: 550.ms),
+          const SizedBox(height: 12),
+
+          Row(
+            children: [
+              Expanded(
+                child: _PendingCard(
+                  label: 'Leave Requests',
+                  count: dashboard.pendingLeaves,
+                  icon: RemixIcons.calendar_check_line,
+                  color: const Color(0xFFF59E0B),
+                ).animate().fadeIn(delay: 600.ms).slideX(begin: -0.08, end: 0),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _PendingCard(
+                  label: 'Expense Claims',
+                  count: dashboard.pendingExpenses,
+                  icon: RemixIcons.receipt_line,
+                  color: const Color(0xFF6366F1),
+                ).animate().fadeIn(delay: 650.ms).slideX(begin: 0.08, end: 0),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 32),
         ],
       ),
     );
   }
 
   Widget _buildLoadingState() {
-    return ListView.builder(
+    return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
-      itemCount: 5,
-      itemBuilder: (context, index) => Padding(
-        padding: const EdgeInsets.only(bottom: 16),
-        child: ShimmerLoading(
-          height: 100,
-          width: double.infinity,
-          borderRadius: BorderRadius.circular(16),
-        ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ShimmerLoading(height: 160, width: double.infinity, borderRadius: BorderRadius.circular(24)),
+          const SizedBox(height: 24),
+          Row(
+            children: List.generate(3, (i) => Expanded(
+              child: Padding(
+                padding: EdgeInsets.only(right: i < 2 ? 10 : 0),
+                child: ShimmerLoading(height: 80, width: double.infinity, borderRadius: BorderRadius.circular(16)),
+              ),
+            )),
+          ),
+          const SizedBox(height: 24),
+          Row(
+            children: List.generate(2, (i) => Expanded(
+              child: Padding(
+                padding: EdgeInsets.only(right: i == 0 ? 12 : 0),
+                child: ShimmerLoading(height: 100, width: double.infinity, borderRadius: BorderRadius.circular(16)),
+              ),
+            )),
+          ),
+        ],
       ),
     );
   }
@@ -332,21 +284,36 @@ class _StoreDashboardViewState extends ConsumerState<StoreDashboardView> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(RemixIcons.error_warning_line, size: 48, color: AppColors.error),
-          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: AppColors.error.withValues(alpha: 0.08),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(RemixIcons.error_warning_line, size: 48, color: AppColors.error),
+          ),
+          const SizedBox(height: 20),
+          Text(
+            'Failed to load dashboard',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
+          ),
+          const SizedBox(height: 8),
           Text(
             message,
-            style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
+            style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 16),
-          ElevatedButton(
+          const SizedBox(height: 24),
+          ElevatedButton.icon(
             onPressed: _loadDashboard,
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
             ),
-            child: const Text('Retry'),
+            icon: const Icon(RemixIcons.refresh_line, size: 16),
+            label: const Text('Retry', style: TextStyle(fontWeight: FontWeight.w700)),
           ),
         ],
       ),
@@ -358,39 +325,63 @@ class _StoreDashboardViewState extends ConsumerState<StoreDashboardView> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(RemixIcons.store_2_line, size: 48, color: AppColors.textHint),
-          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.08),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(RemixIcons.store_2_line, size: 48, color: AppColors.primary),
+          ),
+          const SizedBox(height: 20),
+          Text('No Store Assigned', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
+          const SizedBox(height: 8),
           Text(
-            'No store data available',
-            style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
+            'You are not assigned to any store.\nPlease contact your administrator.',
+            style: TextStyle(color: AppColors.textSecondary, fontSize: 13, height: 1.5),
+            textAlign: TextAlign.center,
           ),
         ],
       ),
     );
   }
+
+  String _formatNumber(double value) {
+    if (value >= 100000) return '${(value / 100000).toStringAsFixed(1)}L';
+    if (value >= 1000) return '${(value / 1000).toStringAsFixed(1)}K';
+    return value.toStringAsFixed(0);
+  }
 }
 
-class _StoreHeaderCard extends StatelessWidget {
+// ─── Store Hero Card ─────────────────────────────────────────────────────────
+
+class _StoreHeroCard extends StatelessWidget {
   final String storeName;
   final double performance;
+  final int totalEmployees;
 
-  const _StoreHeaderCard({
+  const _StoreHeroCard({
     required this.storeName,
     required this.performance,
+    required this.totalEmployees,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
-        gradient: AppColors.primaryGradient,
-        borderRadius: BorderRadius.circular(20),
+        gradient: const LinearGradient(
+          colors: [Color(0xFF6366F1), Color(0xFF4338CA)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withValues(alpha: 0.3),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
+            color: const Color(0xFF4338CA).withValues(alpha: 0.35),
+            blurRadius: 24,
+            offset: const Offset(0, 10),
           ),
         ],
       ),
@@ -400,14 +391,14 @@ class _StoreHeaderCard extends StatelessWidget {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(12),
+                  color: Colors.white.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(14),
                 ),
-                child: Icon(RemixIcons.store_2_line, color: Colors.white, size: 24),
+                child: const Icon(RemixIcons.store_2_line, color: Colors.white, size: 24),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -418,43 +409,72 @@ class _StoreHeaderCard extends StatelessWidget {
                         color: Colors.white,
                         fontSize: 18,
                         fontWeight: FontWeight.w800,
+                        letterSpacing: 0.3,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 2),
                     Text(
-                      'Store Performance',
+                      '$totalEmployees Active Employees',
                       style: TextStyle(
-                        color: AppColors.primaryLight.withValues(alpha: 0.8),
-                        fontSize: 13,
+                        color: Colors.white.withValues(alpha: 0.7),
+                        fontSize: 12,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
                   ],
                 ),
               ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(RemixIcons.checkbox_circle_fill, color: Colors.white, size: 11),
+                    SizedBox(width: 4),
+                    Text('Active', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w800)),
+                  ],
+                ),
+              ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
+          Text(
+            'ATTENDANCE RATE',
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.6),
+              fontSize: 9,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.8,
+            ),
+          ),
+          const SizedBox(height: 8),
           Row(
             children: [
               Expanded(
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(8),
                   child: LinearProgressIndicator(
-                    value: performance / 100,
-                    backgroundColor: Colors.white.withValues(alpha: 0.3),
-                    valueColor: AlwaysStoppedAnimation(Colors.white),
+                    value: (performance / 100).clamp(0.0, 1.0),
+                    backgroundColor: Colors.white.withValues(alpha: 0.2),
+                    valueColor: const AlwaysStoppedAnimation(Colors.white),
                     minHeight: 8,
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 14),
               Text(
                 '${performance.toStringAsFixed(0)}%',
                 style: const TextStyle(
                   color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
                 ),
               ),
             ],
@@ -465,46 +485,55 @@ class _StoreHeaderCard extends StatelessWidget {
   }
 }
 
-class _StatCard extends StatelessWidget {
-  final String label;
-  final String value;
-  final IconData icon;
-  final Color color;
+// ─── Attendance Chip ──────────────────────────────────────────────────────────
 
-  const _StatCard({
+class _AttendanceChip extends StatelessWidget {
+  final String label;
+  final int value;
+  final Color color;
+  final IconData icon;
+
+  const _AttendanceChip({
     required this.label,
     required this.value,
-    required this.icon,
     required this.color,
+    required this.icon,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: color.withValues(alpha: 0.06),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.cardBorder),
+        border: Border.all(color: color.withValues(alpha: 0.12), width: 1.5),
       ),
       child: Column(
         children: [
-          Icon(icon, color: color, size: 24),
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, color: color, size: 16),
+          ),
           const SizedBox(height: 8),
           Text(
-            value,
+            value.toString(),
             style: TextStyle(
               color: AppColors.textPrimary,
-              fontSize: 16,
-              fontWeight: FontWeight.w800,
+              fontSize: 20,
+              fontWeight: FontWeight.w900,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 2),
           Text(
             label,
             style: TextStyle(
-              color: AppColors.textHint,
-              fontSize: 11,
+              color: AppColors.textSecondary,
+              fontSize: 10,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -514,13 +543,21 @@ class _StatCard extends StatelessWidget {
   }
 }
 
-class _PendingActionsCard extends StatelessWidget {
-  final int pendingLeaves;
-  final int pendingExpenses;
+// ─── Sales Card ───────────────────────────────────────────────────────────────
 
-  const _PendingActionsCard({
-    required this.pendingLeaves,
-    required this.pendingExpenses,
+class _SalesCard extends StatelessWidget {
+  final String label;
+  final String value;
+  final String subtitle;
+  final Color color;
+  final IconData icon;
+
+  const _SalesCard({
+    required this.label,
+    required this.value,
+    required this.subtitle,
+    required this.color,
+    required this.icon,
   });
 
   @override
@@ -529,26 +566,51 @@ class _PendingActionsCard extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(color: AppColors.cardBorder),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.025),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: _PendingActionItem(
-              label: 'Pending Leaves',
-              count: pendingLeaves,
-              icon: RemixIcons.calendar_check_line,
-              color: AppColors.warning,
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: color, size: 18),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            value,
+            style: TextStyle(
+              color: AppColors.textPrimary,
+              fontSize: 18,
+              fontWeight: FontWeight.w900,
             ),
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: _PendingActionItem(
-              label: 'Pending Expenses',
-              count: pendingExpenses,
-              icon: RemixIcons.receipt_line,
-              color: AppColors.info,
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            subtitle,
+            style: TextStyle(
+              color: AppColors.textHint,
+              fontSize: 10,
             ),
           ),
         ],
@@ -557,13 +619,15 @@ class _PendingActionsCard extends StatelessWidget {
   }
 }
 
-class _PendingActionItem extends StatelessWidget {
+// ─── Pending Card ─────────────────────────────────────────────────────────────
+
+class _PendingCard extends StatelessWidget {
   final String label;
   final int count;
   final IconData icon;
   final Color color;
 
-  const _PendingActionItem({
+  const _PendingCard({
     required this.label,
     required this.count,
     required this.icon,
@@ -573,82 +637,65 @@ class _PendingActionItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        children: [
-          Icon(icon, color: color, size: 20),
-          const SizedBox(height: 8),
-          Text(
-            count.toString(),
-            style: TextStyle(
-              color: AppColors.textPrimary,
-              fontSize: 18,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(
-              color: AppColors.textHint,
-              fontSize: 10,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _DailySalesCard extends StatelessWidget {
-  final StoreSalesSummary summary;
-
-  const _DailySalesCard({required this.summary});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 140,
-      margin: const EdgeInsets.only(right: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(color: AppColors.cardBorder),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.025),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          Text(
-            summary.date,
-            style: TextStyle(
-              color: AppColors.textSecondary,
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: color, size: 20),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  count.toString(),
+                  style: TextStyle(
+                    color: count > 0 ? color : AppColors.textPrimary,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            '₹${summary.sales.toStringAsFixed(0)}',
-            style: TextStyle(
-              color: AppColors.primary,
-              fontSize: 16,
-              fontWeight: FontWeight.w800,
+          if (count > 0)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                'Action',
+                style: TextStyle(color: color, fontSize: 9, fontWeight: FontWeight.w800),
+              ),
             ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            '${summary.billsGenerated} bills',
-            style: TextStyle(
-              color: AppColors.textHint,
-              fontSize: 10,
-            ),
-          ),
         ],
       ),
     );
