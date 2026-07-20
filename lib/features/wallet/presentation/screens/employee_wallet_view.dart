@@ -276,6 +276,16 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> with Si
     );
   }
 
+  void _showBankDetailsSheet(BuildContext context) {
+    final user = ref.read(authViewModelProvider).currentUser;
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => _BankDetailsSheet(bankDetails: _bankDetails, userName: user?.name ?? 'User'),
+    );
+  }
+
   void _showSalesActionSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -619,8 +629,8 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> with Si
   }
 
   Widget _buildSalaryTab(UserModel user) {
-    final double salary = user.salary;
     final isSalesman = PermissionService.canViewCommissionWidget(user);
+    final pendingClaims = (_advanceData?['pendingClaims'] as num?)?.toDouble() ?? 0.0;
     
     return RefreshIndicator(
       onRefresh: () async {
@@ -631,20 +641,19 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> with Si
       },
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Salary Card (Credit Card Style)
+            // Green Wallet Card
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                gradient: LinearGradient(
+                gradient: const LinearGradient(
                   colors: [
-                    AppColors.primary,
-                    AppColors.primary.withValues(alpha: 0.85),
-                    Theme.of(context).colorScheme.secondary,
+                    Color(0xFF10B981),
+                    Color(0xFF059669),
                   ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
@@ -652,9 +661,9 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> with Si
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.primary.withValues(alpha: 0.25),
-                    blurRadius: 15,
-                    offset: const Offset(0, 8),
+                    color: const Color(0xFF10B981).withValues(alpha: 0.3),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
                   )
                 ]
               ),
@@ -665,104 +674,233 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> with Si
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'HopKid Wallet Card',
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.7),
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 1.0,
+                        user.name,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
-                      Icon(RemixIcons.bank_card_2_fill, color: Colors.white.withValues(alpha: 0.7), size: 22),
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.2),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          RemixIcons.vip_crown_fill,
+                          color: Colors.white,
+                          size: 18,
+                        ),
+                      ),
                     ],
                   ),
-                  const SizedBox(height: 20),
-                  Text(
-                    '₹${NumberFormat('#,##,###').format(
-                      (_advanceData?['salary'] != null)
-                          ? ((_advanceData?['salary']['monthlySalary'] as num?)?.toDouble() ?? 
-                             (_advanceData?['salary']['grossSalary'] as num?)?.toDouble() ?? 0.0)
-                          : salary
-                    )}',
-                    style: const TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.bold, letterSpacing: 0.5),
+                  const SizedBox(height: 24),
+                  const Text(
+                    '₹.00',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 4),
-                  const Text('Total Salary', style: TextStyle(color: Colors.white70, fontSize: 11)),
+                  Text(
+                    'Current Balance',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.8),
+                      fontSize: 12,
+                    ),
+                  ),
                   const SizedBox(height: 24),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            user.name.toUpperCase(),
-                            style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w800, letterSpacing: 0.5),
-                          ),
-                          const SizedBox(height: 2),
-                          Text('CARDHOLDER', style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 9, fontWeight: FontWeight.w600)),
-                        ],
-                      ),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            'HK - ${user.employeeId} - ${user.phone.length >= 4 ? user.phone.substring(user.phone.length - 4) : "1234"}',
-                            style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w800, letterSpacing: 1.2),
-                          ),
-                          const SizedBox(height: 2),
-                          Text('CARD NUMBER', style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 9, fontWeight: FontWeight.w600)),
-                        ],
-                      ),
-                    ],
+                  Text(
+                    'QB-${user.employeeId}-XXXX',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 1.0,
+                    ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 24),
-            
-            // Advance Limit Option
-            if (_advanceData != null) ...[
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.cardBorder),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Column(
+            const SizedBox(height: 20),
+
+            // Financial Overview
+            Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: AppColors.cardBorder),
+                    ),
+                    child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Salary Advance Limit', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
-                        const SizedBox(height: 4),
+                        Text(
+                          'Advance Limit',
+                          style: TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 12,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
                         Text(
                           '₹${NumberFormat('#,##,###').format((_advanceData?['advanceLimit'] as num?)?.toDouble() ?? 25000.0)}',
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textPrimary),
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                            color: AppColors.textPrimary,
+                          ),
                         ),
                       ],
                     ),
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: AppColors.cardBorder),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Pending Claims',
+                          style: TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 12,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          '₹${NumberFormat('#,##,###').format(pendingClaims)}',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+
+            // Quick Actions
+            Text(
+              'QUICK ACTIONS',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+                color: AppColors.textSecondary,
+                letterSpacing: 0.8,
+              ),
+            ),
+            const SizedBox(height: 12),
+            GridView.count(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisCount: 2,
+              mainAxisSpacing: 12,
+              crossAxisSpacing: 12,
+              childAspectRatio: 1.3,
+              children: [
+                _QuickActionButton(
+                  icon: RemixIcons.money_dollar_circle_line,
+                  label: 'Request Advance',
+                  color: const Color(0xFF10B981),
+                  onTap: () => _showRequestAdvanceSheet(context),
+                ),
+                _QuickActionButton(
+                  icon: RemixIcons.file_list_3_line,
+                  label: 'Claim Expense',
+                  color: const Color(0xFF3B82F6),
+                  onTap: () {
+                    // TODO: Navigate to claim expense screen
+                  },
+                ),
+                _QuickActionButton(
+                  icon: RemixIcons.file_text_line,
+                  label: 'Payslips & Payroll',
+                  color: const Color(0xFFF59E0B),
+                  onTap: () {
+                    // Scroll to payslips section
+                  },
+                ),
+                _QuickActionButton(
+                  icon: RemixIcons.bank_line,
+                  label: 'Bank Details',
+                  color: const Color(0xFF8B5CF6),
+                  onTap: () => _showBankDetailsSheet(context),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+
+            // Recent Transactions
+            Text(
+              'RECENT TRANSACTIONS',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+                color: AppColors.textSecondary,
+                letterSpacing: 0.8,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppColors.cardBorder),
+              ),
+              child: Center(
+                child: Column(
+                  children: [
+                    Icon(
+                      RemixIcons.history_line,
+                      size: 40,
+                      color: AppColors.textHint,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'No transactions yet',
+                      style: TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 13,
                       ),
-                      onPressed: () => _showRequestAdvanceSheet(context),
-                      child: const Text('Request'),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
-            ],
+            ),
+            const SizedBox(height: 24),
 
             // Payslips Section for non-salesman
             if (!isSalesman) ...[
-              Text('MY PAYSLIPS', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: AppColors.textSecondary, letterSpacing: 0.8)),
-              const SizedBox(height: 8),
+              Text(
+                'MY PAYSLIPS',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                  color: AppColors.textSecondary,
+                  letterSpacing: 0.8,
+                ),
+              ),
+              const SizedBox(height: 12),
               if (_isLoadingPayslips)
                 const Center(child: Padding(padding: EdgeInsets.all(16), child: CircularProgressIndicator()))
               else if (_payslips.isEmpty)
@@ -1114,6 +1252,61 @@ class _DetailRow extends StatelessWidget {
   }
 }
 
+class _QuickActionButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _QuickActionButton({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.cardBorder),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                icon,
+                color: color,
+                size: 24,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              label,
+              style: TextStyle(
+                color: AppColors.textPrimary,
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 // ─── Salary Advance Form Sheet (Kept from original code) ───────────────────
 class _RequestAdvanceSheet extends StatefulWidget {
   final double maxLimit;
@@ -1444,6 +1637,146 @@ class _SalesTransactionFormSheetState extends State<_SalesTransactionFormSheet> 
           ),
         ],
       ),
+    );
+  }
+}
+
+class _BankDetailsSheet extends StatelessWidget {
+  final Map<String, dynamic>? bankDetails;
+  final String userName;
+
+  const _BankDetailsSheet({required this.bankDetails, required this.userName});
+
+  String _maskAccountNumber(String? accountNumber) {
+    if (accountNumber == null || accountNumber.length < 4) return 'XXXX';
+    final lastFour = accountNumber.substring(accountNumber.length - 4);
+    return 'XXXX XXXX XXXX $lastFour';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bankName = _getBankValue(bankDetails?['bankName']);
+    final accountNumber = _getBankValue(bankDetails?['accountNumber']);
+    final ifscCode = _getBankValue(bankDetails?['ifscCode']);
+    final accountType = _getBankValue(bankDetails?['accountType']);
+
+    return Container(
+      padding: EdgeInsets.fromLTRB(20, 12, 20, MediaQuery.of(context).viewInsets.bottom + 24),
+      decoration: BoxDecoration(
+        color: AppColors.background,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(
+            child: Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.divider,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          Text(
+            'Linked Bank Account',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 24),
+          _BankDetailRow(
+            label: 'Account Holder',
+            value: userName,
+          ),
+          const SizedBox(height: 16),
+          _BankDetailRow(
+            label: 'Bank Name',
+            value: bankName,
+          ),
+          const SizedBox(height: 16),
+          _BankDetailRow(
+            label: 'Account Number',
+            value: _maskAccountNumber(accountNumber != 'Not Configured' ? accountNumber : null),
+          ),
+          const SizedBox(height: 16),
+          _BankDetailRow(
+            label: 'IFSC Code',
+            value: ifscCode,
+          ),
+          const SizedBox(height: 16),
+          _BankDetailRow(
+            label: 'Account Type',
+            value: accountType,
+          ),
+          const SizedBox(height: 24),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.surface,
+                foregroundColor: AppColors.textPrimary,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  side: BorderSide(color: AppColors.cardBorder),
+                ),
+                elevation: 0,
+              ),
+              onPressed: () => Navigator.pop(context),
+              child: const Text(
+                'Close Details',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _getBankValue(dynamic value) {
+    if (value == null || value.toString().trim().isEmpty) {
+      return 'Not Configured';
+    }
+    return value.toString();
+  }
+}
+
+class _BankDetailRow extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _BankDetailRow({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            color: AppColors.textSecondary,
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: TextStyle(
+            color: AppColors.textPrimary,
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
     );
   }
 }

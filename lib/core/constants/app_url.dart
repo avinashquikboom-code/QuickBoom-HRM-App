@@ -277,4 +277,9 @@ class AppUrl {
   // Mobile – Holidays (NEW)
   // ─────────────────────────────────────────────
   static const String mobileHolidays = '/api/mobile/holidays';
+
+  // ─────────────────────────────────────────────
+  // Employee – Wallet (NEW)
+  // ─────────────────────────────────────────────
+  static const String employeeWallet = '/api/employee/wallet';
 }
