@@ -8,7 +8,6 @@ import 'package:quickboom_hrm/core/services/commission_service.dart';
 import 'package:quickboom_hrm/features/commission/data/commission_models.dart';
 import 'package:quickboom_hrm/features/commission/presentation/screens/commission_history_view.dart';
 import 'package:quickboom_hrm/features/commission/presentation/screens/commission_details_view.dart';
-import 'package:quickboom_hrm/core/services/invoice_service.dart';
 
 class CommissionWalletView extends ConsumerStatefulWidget {
   const CommissionWalletView({super.key});
@@ -974,25 +973,6 @@ class _CommissionTransactionCard extends StatelessWidget {
               _TransactionDetail(
                 label: 'Date',
                 value: DateFormat('dd MMM yyyy').format(transaction.generatedDate),
-              ),
-              IconButton(
-                icon: const Icon(RemixIcons.file_download_line, size: 20),
-                color: AppColors.primary,
-                tooltip: 'Download Invoice',
-                onPressed: () {
-                  InvoiceService.downloadAndOpenInvoice(
-                    context: context,
-                    invoiceNumber: transaction.invoiceNumber.isNotEmpty
-                        ? transaction.invoiceNumber
-                        : 'INV-${transaction.id}',
-                    orderId: 'ORD-${transaction.id}',
-                    date: DateFormat('dd MMM yyyy').format(transaction.generatedDate),
-                    customerName: transaction.customerName,
-                    customerPhone: '',
-                    customerAddress: 'HopKid Main Store',
-                    totalAmount: transaction.billAmount,
-                  );
-                },
               ),
             ],
           ),
