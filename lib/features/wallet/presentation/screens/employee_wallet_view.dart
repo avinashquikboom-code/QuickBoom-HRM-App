@@ -758,7 +758,7 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView>
             // Green Wallet Card
             Container(
               width: double.infinity,
-              height: 185,
+              height: 215,
               decoration: BoxDecoration(
                 gradient: AppColors.heroGradient,
                 borderRadius: BorderRadius.circular(24),
@@ -788,7 +788,7 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView>
                       ),
                     ),
                     Padding(
-                      padding: const EdgeInsets.all(24),
+                      padding: const EdgeInsets.all(20),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -811,7 +811,7 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView>
                                       letterSpacing: 1.2,
                                     ),
                                   ),
-                                  const SizedBox(height: 6),
+                                  const SizedBox(height: 4),
                                   Text(
                                     user.name,
                                     style: const TextStyle(
@@ -833,30 +833,60 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView>
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                              Row(
                                 children: [
-                                  Text(
-                                    'BALANCE',
-                                    style: TextStyle(
-                                      color: Colors.white.withValues(
-                                        alpha: 0.65,
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'GROSS SALARY',
+                                        style: TextStyle(
+                                          color: Colors.white.withValues(
+                                            alpha: 0.65,
+                                          ),
+                                          fontSize: 9,
+                                          fontWeight: FontWeight.bold,
+                                          letterSpacing: 1.0,
+                                        ),
                                       ),
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.bold,
-                                      letterSpacing: 1.2,
-                                    ),
+                                      const SizedBox(height: 1),
+                                      Text(
+                                        '₹${NumberFormat('#,##,###').format((_advanceData?['grossSalary'] as num?) ?? (_advanceData?['registeredSalary'] as num?) ?? (_advanceData?['salary']?['grossSalary'] as num?) ?? 0)}',
+                                        style: TextStyle(
+                                          color: Colors.white.withValues(
+                                            alpha: 0.95,
+                                          ),
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    _advanceData?['balance'] != null
-                                        ? '₹${NumberFormat('#,##,###').format(_advanceData!['balance'])}'
-                                        : '₹.00',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 28,
-                                      fontWeight: FontWeight.bold,
-                                    ),
+                                  const SizedBox(width: 14),
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'NET SALARY',
+                                        style: TextStyle(
+                                          color: Colors.white.withValues(
+                                            alpha: 0.65,
+                                          ),
+                                          fontSize: 9,
+                                          fontWeight: FontWeight.bold,
+                                          letterSpacing: 1.0,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 1),
+                                      Text(
+                                        '₹${NumberFormat('#,##,###').format((_advanceData?['netSalary'] as num?) ?? (_advanceData?['upcomingSalary'] as num?) ?? 0)}',
+                                        style: const TextStyle(
+                                          color: Color(0xFFFBBF24),
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ],
                               ),
@@ -1180,239 +1210,6 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView>
       ),
     );
   }
-
-  void _showEditBankDetailsSheet(BuildContext context) {
-    final user = ref.read(authViewModelProvider).currentUser;
-    if (user == null) return;
-
-    String getVal(String? apiVal, String? userVal) {
-      if (apiVal != null && apiVal.trim().isNotEmpty) return apiVal;
-      if (userVal != null && userVal.trim().isNotEmpty) return userVal;
-      return '';
-    }
-
-    final bankNameCtrl = TextEditingController(
-      text: getVal(_bankDetails?['bankName']?.toString(), user.bankName),
-    );
-    final accNoCtrl = TextEditingController(
-      text: getVal(
-        _bankDetails?['accountNumber']?.toString(),
-        user.accountNumber,
-      ),
-    );
-    final ifscCtrl = TextEditingController(
-      text: getVal(_bankDetails?['ifscCode']?.toString(), user.ifscCode),
-    );
-    final branchCtrl = TextEditingController(
-      text: getVal(_bankDetails?['branchName']?.toString(), user.branchName),
-    );
-    String accType = getVal(
-      _bankDetails?['accountType']?.toString(),
-      user.accountType,
-    );
-    if (accType.isEmpty) accType = 'Savings';
-
-    final formKey = GlobalKey<FormState>();
-    bool isSaving = false;
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => StatefulBuilder(
-        builder: (context, setSheetState) => Container(
-          padding: EdgeInsets.only(
-            top: 20,
-            left: 20,
-            right: 20,
-            bottom: MediaQuery.of(context).viewInsets.bottom + 20,
-          ),
-          decoration: BoxDecoration(
-            color: AppColors.background,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          child: Form(
-            key: formKey,
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Center(
-                    child: Container(
-                      width: 40,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: AppColors.divider,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Update Bank Details',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                      if (isSaving)
-                        const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  TextFormField(
-                    controller: bankNameCtrl,
-                    decoration: const InputDecoration(
-                      labelText: 'Bank Name',
-                      hintText: 'e.g. HDFC Bank',
-                      prefixIcon: Icon(RemixIcons.bank_line),
-                    ),
-                    validator: (val) => val == null || val.trim().isEmpty
-                        ? 'Please enter bank name'
-                        : null,
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: accNoCtrl,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      labelText: 'Account Number',
-                      hintText: 'e.g. 50100123456789',
-                      prefixIcon: Icon(RemixIcons.wallet_3_line),
-                    ),
-                    validator: (val) => val == null || val.trim().isEmpty
-                        ? 'Please enter account number'
-                        : null,
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: ifscCtrl,
-                    textCapitalization: TextCapitalization.characters,
-                    decoration: const InputDecoration(
-                      labelText: 'IFSC Code',
-                      hintText: 'e.g. HDFC0000123',
-                      prefixIcon: Icon(RemixIcons.file_shield_2_line),
-                    ),
-                    validator: (val) => val == null || val.trim().isEmpty
-                        ? 'Please enter IFSC code'
-                        : null,
-                  ),
-                  const SizedBox(height: 12),
-                  DropdownButtonFormField<String>(
-                    initialValue: accType,
-                    decoration: const InputDecoration(
-                      labelText: 'Account Type',
-                      prefixIcon: Icon(RemixIcons.contacts_line),
-                    ),
-                    items: const [
-                      DropdownMenuItem(
-                        value: 'Savings',
-                        child: Text('Savings'),
-                      ),
-                      DropdownMenuItem(
-                        value: 'Current',
-                        child: Text('Current'),
-                      ),
-                    ],
-                    onChanged: (val) {
-                      if (val != null) {
-                        setSheetState(() => accType = val);
-                      }
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: branchCtrl,
-                    decoration: const InputDecoration(
-                      labelText: 'Branch Name',
-                      hintText: 'e.g. Andheri West Branch',
-                      prefixIcon: Icon(RemixIcons.map_pin_2_line),
-                    ),
-                    validator: (val) => val == null || val.trim().isEmpty
-                        ? 'Please enter branch name'
-                        : null,
-                  ),
-                  const SizedBox(height: 24),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                      ),
-                      onPressed: isSaving
-                          ? null
-                          : () async {
-                              if (formKey.currentState?.validate() ?? false) {
-                                final navigator = Navigator.of(context);
-                                final messenger = ScaffoldMessenger.of(context);
-
-                                setSheetState(() => isSaving = true);
-                                final result =
-                                    await WalletService.updateBankDetails(
-                                      bankName: bankNameCtrl.text.trim(),
-                                      accountNumber: accNoCtrl.text.trim(),
-                                      ifscCode: ifscCtrl.text
-                                          .trim()
-                                          .toUpperCase(),
-                                      accountType: accType,
-                                      branchName: branchCtrl.text.trim(),
-                                    );
-                                if (mounted) {
-                                  if (result != null) {
-                                    setState(() {
-                                      _bankDetails = result;
-                                    });
-                                    navigator.pop();
-                                    messenger.showSnackBar(
-                                      const SnackBar(
-                                        content: Text(
-                                          'Bank details updated successfully.',
-                                        ),
-                                        backgroundColor: AppColors.success,
-                                      ),
-                                    );
-                                  } else {
-                                    setSheetState(() => isSaving = false);
-                                    messenger.showSnackBar(
-                                      const SnackBar(
-                                        content: Text(
-                                          'Failed to update bank details. Please try again.',
-                                        ),
-                                        backgroundColor: AppColors.error,
-                                      ),
-                                    );
-                                  }
-                                }
-                              }
-                            },
-                      child: const Text(
-                        'Save Details',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
 }
 
 class _SalesActionTile extends StatelessWidget {
@@ -1463,46 +1260,7 @@ class _SalesActionTile extends StatelessWidget {
   }
 }
 
-class _DetailRow extends StatelessWidget {
-  final String label;
-  final String value;
-  final Widget? trailing;
 
-  const _DetailRow({required this.label, required this.value, this.trailing});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            label,
-            style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
-          ),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                value,
-                style: TextStyle(
-                  color: AppColors.textPrimary,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 13,
-                ),
-              ),
-              if (trailing != null) ...[
-                const SizedBox(width: 8),
-                trailing!,
-              ],
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 class _QuickActionButton extends StatelessWidget {
   final IconData icon;
@@ -2172,7 +1930,9 @@ class _SalesTransactionFormSheetState
           const SizedBox(height: 16),
           if (widget.type == 'AddSale' || widget.type == 'UpdateSale') ...[
             DropdownButtonFormField<String>(
-              initialValue: _selectedStoreId,
+              value: widget.stores.any((s) => s['id'].toString() == _selectedStoreId)
+                  ? _selectedStoreId
+                  : null,
               hint: const Text('Select Store'),
               decoration: const InputDecoration(
                 contentPadding: EdgeInsets.symmetric(

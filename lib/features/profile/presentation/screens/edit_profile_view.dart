@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -177,15 +178,9 @@ class _EditProfileViewState extends ConsumerState<EditProfileView> {
                           width: 3,
                         ),
                       ),
-                      child: Center(
-                        child: Text(
-                          state.user?.initials ?? '?',
-                          style: const TextStyle(
-                            color: AppColors.primary,
-                            fontSize: 34,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
+                      child: _buildAvatarImage(
+                        state.user?.avatar,
+                        state.user?.initials ?? '?',
                       ),
                     ),
                     Positioned(
@@ -517,10 +512,22 @@ class _EditProfileViewState extends ConsumerState<EditProfileView> {
   }) {
     final cs = Theme.of(context).colorScheme;
 
+    // Deduplicate items by value to prevent duplicate value errors
+    final Map<T, DropdownMenuItem<T>> uniqueItems = {};
+    for (final item in items) {
+      if (item.value != null && !uniqueItems.containsKey(item.value)) {
+        uniqueItems[item.value as T] = item;
+      }
+    }
+    final List<DropdownMenuItem<T>> cleanItems = uniqueItems.values.toList();
+
+    // Ensure selected value is present in cleanItems
+    final T? validValue = cleanItems.any((item) => item.value == value) ? value : null;
+
     return DropdownButtonFormField<T>(
-      key: ValueKey(value),
-      initialValue: value,
-      items: items,
+      key: ValueKey(validValue),
+      value: validValue,
+      items: cleanItems,
       onChanged: onChanged,
       validator: validator,
       isExpanded: true,
@@ -571,5 +578,93 @@ class _EditProfileViewState extends ConsumerState<EditProfileView> {
         ),
       ),
     );
+  }
+
+  Widget _buildAvatarImage(String? avatar, String initials) {
+    if (avatar == null || avatar.isEmpty || avatar == '/favicon.svg') {
+      return Center(
+        child: Text(
+          initials,
+          style: const TextStyle(
+            color: AppColors.primary,
+            fontSize: 34,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+      );
+    }
+
+    try {
+      if (avatar.startsWith('data:image')) {
+        final base64Content = avatar.split(',').last;
+        return ClipOval(
+          child: Image.memory(
+            base64Decode(base64Content),
+            fit: BoxFit.cover,
+            width: 90,
+            height: 90,
+            errorBuilder: (context, error, stackTrace) => Center(
+              child: Text(
+                initials,
+                style: const TextStyle(
+                  color: AppColors.primary,
+                  fontSize: 34,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ),
+          ),
+        );
+      } else if (avatar.startsWith('http://') || avatar.startsWith('https://')) {
+        return ClipOval(
+          child: Image.network(
+            avatar,
+            fit: BoxFit.cover,
+            width: 90,
+            height: 90,
+            errorBuilder: (context, error, stackTrace) => Center(
+              child: Text(
+                initials,
+                style: const TextStyle(
+                  color: AppColors.primary,
+                  fontSize: 34,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ),
+          ),
+        );
+      } else {
+        return ClipOval(
+          child: Image.memory(
+            base64Decode(avatar),
+            fit: BoxFit.cover,
+            width: 90,
+            height: 90,
+            errorBuilder: (context, error, stackTrace) => Center(
+              child: Text(
+                initials,
+                style: const TextStyle(
+                  color: AppColors.primary,
+                  fontSize: 34,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ),
+          ),
+        );
+      }
+    } catch (_) {
+      return Center(
+        child: Text(
+          initials,
+          style: const TextStyle(
+            color: AppColors.primary,
+            fontSize: 34,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+      );
+    }
   }
 }

@@ -36,7 +36,7 @@ class EmployeeShiftView extends ConsumerWidget {
       }
     });
 
-    final myAssignment = state.assignments.where((a) => a.employeeId == user?.employeeId && a.isActive).firstOrNull;
+    final myAssignment = state.assignments.where((a) => (a.employeeId == user?.employeeId || a.employeeId == user?.id) && a.isActive).firstOrNull ?? state.assignments.firstOrNull;
 
     return Scaffold(
       backgroundColor: AppColors.background,
