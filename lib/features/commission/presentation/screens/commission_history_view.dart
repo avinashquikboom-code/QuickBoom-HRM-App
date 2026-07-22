@@ -7,6 +7,7 @@ import 'package:quickboom_hrm/core/constants/app_colors.dart';
 import 'package:quickboom_hrm/core/widgets/shimmer_loading.dart';
 import 'package:quickboom_hrm/features/commission/data/commission_models.dart';
 import 'package:quickboom_hrm/features/commission/presentation/providers/commission_viewmodel.dart';
+import 'package:quickboom_hrm/core/services/invoice_service.dart';
 
 class CommissionHistoryView extends ConsumerStatefulWidget {
   const CommissionHistoryView({super.key});
@@ -384,6 +385,39 @@ class _CommissionTransactionTile extends StatelessWidget {
                 ),
               ),
             ],
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.primary,
+                side: BorderSide(color: AppColors.primary.withValues(alpha: 0.5)),
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              icon: const Icon(RemixIcons.file_download_line, size: 16),
+              label: const Text(
+                'Download Order Invoice (PDF)',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+              ),
+              onPressed: () {
+                InvoiceService.downloadAndOpenInvoice(
+                  context: context,
+                  invoiceNumber: transaction.invoiceNumber.isNotEmpty
+                      ? transaction.invoiceNumber
+                      : 'INV-${transaction.id}',
+                  orderId: 'ORD-${transaction.id}',
+                  date: DateFormat('dd MMM yyyy').format(transaction.generatedDate),
+                  customerName: transaction.customerName,
+                  customerPhone: '',
+                  customerAddress: 'HopKid Main Store',
+                  totalAmount: transaction.billAmount,
+                );
+              },
+            ),
           ),
         ],
       ),
