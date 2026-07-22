@@ -40,7 +40,6 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView>
   int? _downloadingPayslipId;
 
   Map<String, dynamic>? _bankDetails;
-  bool _obscureAccountNumber = true;
 
   @override
   void initState() {
@@ -108,24 +107,6 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView>
         _bankDetails = results[1];
       });
     }
-  }
-
-  String _getBankValue(String? apiValue, String? userValue) {
-    if (apiValue != null && apiValue.trim().isNotEmpty) {
-      return apiValue;
-    }
-    if (userValue != null && userValue.trim().isNotEmpty) {
-      return userValue;
-    }
-    return 'Not Configured';
-  }
-
-  String _maskAccountNumber(String val) {
-    if (val.isEmpty || val == 'Not Configured' || val == 'N/A') return val;
-    if (val.length <= 4) return val;
-    final last4 = val.substring(val.length - 4);
-    final stars = '*' * (val.length - 4);
-    return '$stars$last4';
   }
 
   Future<void> _fetchCommissionReport() async {
@@ -1194,79 +1175,6 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView>
                 ),
               const SizedBox(height: 20),
             ],
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'BANK & ACCOUNT DETAILS',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 11,
-                    color: AppColors.textSecondary,
-                    letterSpacing: 0.8,
-                  ),
-                ),
-                TextButton.icon(
-                  onPressed: () => _showEditBankDetailsSheet(context),
-                  icon: const Icon(RemixIcons.edit_2_line, size: 14),
-                  label: const Text(
-                    'Edit',
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            _DetailRow(
-              label: 'Bank Name',
-              value: _getBankValue(
-                _bankDetails?['bankName']?.toString(),
-                user.bankName,
-              ),
-            ),
-            _DetailRow(
-              label: 'Account Number',
-              value: _obscureAccountNumber
-                  ? _maskAccountNumber(
-                      _getBankValue(
-                        _bankDetails?['accountNumber']?.toString(),
-                        user.accountNumber,
-                      ),
-                    )
-                  : _getBankValue(
-                      _bankDetails?['accountNumber']?.toString(),
-                      user.accountNumber,
-                    ),
-              trailing: GestureDetector(
-                onTap: () => setState(() => _obscureAccountNumber = !_obscureAccountNumber),
-                child: Icon(
-                  _obscureAccountNumber ? RemixIcons.eye_off_line : RemixIcons.eye_line,
-                  size: 16,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-            ),
-            _DetailRow(
-              label: 'IFSC Code',
-              value: _getBankValue(
-                _bankDetails?['ifscCode']?.toString(),
-                user.ifscCode,
-              ),
-            ),
-            _DetailRow(
-              label: 'Account Type',
-              value: _getBankValue(
-                _bankDetails?['accountType']?.toString(),
-                user.accountType,
-              ),
-            ),
-            _DetailRow(
-              label: 'Branch Name',
-              value: _getBankValue(
-                _bankDetails?['branchName']?.toString(),
-                user.branchName,
-              ),
-            ),
           ],
         ),
       ),
