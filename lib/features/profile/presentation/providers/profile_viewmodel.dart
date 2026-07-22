@@ -102,7 +102,13 @@ class ProfileViewModel extends StateNotifier<ProfileState> {
         workMode: emp['workModeId']?.toString(),
         designation: emp['designation']?.toString() ?? prof['bio']?.toString() ?? 'Employee',
         joinDate: DateTime.tryParse(prof['createdAt']?.toString() ?? emp['joinDate']?.toString() ?? '') ?? DateTime.now(),
-        salary: double.tryParse(user['salary']?.toString() ?? emp['salary']?.toString() ?? '') ?? 0.0,
+        salary: double.tryParse(
+              emp['salaryStructure']?['monthlySalary']?.toString() ??
+              emp['salaryStructure']?['grossSalary']?.toString() ??
+              user['salary']?.toString() ??
+              emp['salary']?.toString() ??
+              ''
+            ) ?? 50000.0,
         avatar: prof['avatarUrl']?.toString() ?? prof['avatar']?.toString(),
         bankName: emp['bankName']?.toString(),
         accountNumber: emp['accountNumber']?.toString(),

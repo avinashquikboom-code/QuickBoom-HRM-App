@@ -233,7 +233,7 @@ class NotificationService {
           debugPrint('🔔 WebSocket notification received: $notificationData');
 
           // Show local notification for WebSocket messages
-          _showLocalNotification(
+          showLocalNotification(
             title: notificationData['title'] ?? 'New Notification',
             body: notificationData['message'] ?? notificationData['body'] ?? '',
             data: notificationData,
@@ -291,7 +291,7 @@ class NotificationService {
 
     // Show local notification for foreground messages
     if (notification != null) {
-      _showLocalNotification(
+      showLocalNotification(
         title: notification.title ?? 'New Notification',
         body: notification.body ?? '',
         data: data,
@@ -321,13 +321,14 @@ class NotificationService {
   }
 
   /// Show local notification
-  Future<void> _showLocalNotification({
+  Future<void> showLocalNotification({
     required String title,
     required String body,
-    required Map<String, dynamic> data,
-    required String channelId,
+    Map<String, dynamic>? data,
+    String channelId = 'general',
   }) async {
     try {
+      final payloadData = data ?? {};
       final channelName = _getChannelName(channelId);
       final channelDescription = _getChannelDescription(channelId);
 
@@ -523,7 +524,7 @@ class NotificationService {
 
   /// Test local notification (for debugging)
   Future<void> showTestNotification() async {
-    await _showLocalNotification(
+    await showLocalNotification(
       title: 'Test Notification',
       body: 'This is a test local notification',
       data: {'type': 'test'},

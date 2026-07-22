@@ -113,12 +113,49 @@ class WalletService {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['success'] == true) {
-          return data['bankDetails'];
+          return data;
         }
       }
       return null;
     } catch (e) {
       dev.log('Error fetching bank details: $e', name: 'WalletService');
+      return null;
+    }
+  }
+
+  static Future<Map<String, dynamic>?> requestBankDetailsEdit({
+    String? reason,
+    String? bankName,
+    String? accountNumber,
+    String? ifscCode,
+    String? accountType,
+    String? branchName,
+  }) async {
+    try {
+      final token = await _getToken();
+      if (token == null) return null;
+
+      final response = await http
+          .post(
+            Uri.parse('${AppUrl.baseUrl}/api/employee/wallet/bank-details/request'),
+            headers: _getHeaders(token),
+            body: json.encode({
+              'reason': reason ?? 'Requested permission to edit bank details',
+              'bankName': bankName,
+              'accountNumber': accountNumber,
+              'ifscCode': ifscCode,
+              'accountType': accountType,
+              'branchName': branchName,
+            }),
+          )
+          .timeout(_timeout);
+
+      if (response.statusCode == 200 || response.statusCode == 400) {
+        return jsonDecode(response.body);
+      }
+      return null;
+    } catch (e) {
+      dev.log('Error requesting bank details edit: $e', name: 'WalletService');
       return null;
     }
   }
@@ -155,13 +192,8 @@ class WalletService {
         dev.log('Update Bank Details Response: ${response.body}', name: 'WalletService');
       }
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        if (data['success'] == true) {
-          return data['bankDetails'];
-        }
-      }
-      return null;
+      final data = jsonDecode(response.body);
+      return data;
     } catch (e) {
       dev.log('Error updating bank details: $e', name: 'WalletService');
       return null;

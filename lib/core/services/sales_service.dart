@@ -89,6 +89,8 @@ class SalesService {
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
         final resBody = jsonDecode(response.body);
+        // Sync with local backend asynchronously so commission transactions are recorded in DB
+        _syncToBackend(path, body);
         return {
           'success': true,
           'data': resBody,
@@ -322,6 +324,37 @@ class SalesService {
   // ──────────────────────────────────────────────────────────────────────────
   //  Internal helpers
   // ──────────────────────────────────────────────────────────────────────────
+
+  /// Synchronizes a transaction to our local backend asynchronously so it is saved
+  /// in the CommissionTransaction database and visible in mobile/admin reports.
+  static Future<void> _syncToBackend(String endpoint, Map<String, dynamic> payload) async {
+    try {
+      final token = await _getToken();
+      final headers = _getHeaders(token);
+      final url = Uri.parse('${AppUrl.baseUrl}${AppUrl.syncSales}');
+      final response = await http
+          .post(
+            url,
+            headers: headers,
+            body: jsonEncode({
+              'transactions': [
+                {
+                  'endpoint': endpoint,
+                  'payload': payload,
+                }
+              ]
+            }),
+          )
+          .timeout(const Duration(seconds: 10));
+      dev.log(
+        '🔄 [SalesService] Local backend sync response: ${response.statusCode}',
+        name: 'SalesService',
+      );
+    } catch (e) {
+      dev.log('⚠️ [SalesService] Local backend sync failed, queuing offline: $e', name: 'SalesService');
+      await queueOffline(endpoint, payload);
+    }
+  }
 
   /// Maps an old legacy payload (from queued entries before the DTO rebuild)
   /// to the shape expected by our backend batch sync.

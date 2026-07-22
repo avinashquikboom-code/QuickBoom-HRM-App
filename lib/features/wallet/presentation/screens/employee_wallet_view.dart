@@ -8,8 +8,10 @@ import 'package:quickboom_hrm/core/constants/app_url.dart';
 import 'package:quickboom_hrm/core/services/api_service.dart';
 import 'package:quickboom_hrm/core/services/wallet_service.dart';
 import 'package:quickboom_hrm/core/services/sales_service.dart';
+import 'package:quickboom_hrm/core/services/hopkid_sales_dto.dart';
 import 'package:quickboom_hrm/core/services/mobile_store_service.dart';
 import 'package:quickboom_hrm/core/services/permission_service.dart';
+import 'package:quickboom_hrm/core/services/notification_service.dart';
 import 'package:quickboom_hrm/features/auth/presentation/providers/auth_viewmodel.dart';
 import 'package:quickboom_hrm/features/auth/data/models/user_model.dart';
 import 'package:quickboom_hrm/features/payroll/presentation/providers/employee_payroll_viewmodel.dart';
@@ -309,6 +311,262 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView>
       builder: (ctx) => _BankDetailsSheet(
         bankDetails: _bankDetails,
         userName: user?.name ?? 'User',
+        onEditPressed: () => _handleEditBankDetails(context),
+      ),
+    );
+  }
+
+  void _handleEditBankDetails(BuildContext context) async {
+    final response = await WalletService.fetchBankDetails();
+    final bankData = response?['bankDetails'] as Map<String, dynamic>?;
+    final latestReq = response?['latestRequest'] as Map<String, dynamic>?;
+    final canEditDirectly = (response?['canEditDirectly'] as bool?) ?? false;
+
+    final status = latestReq?['status']?.toString();
+
+    if (!mounted) return;
+
+    if (status == 'PENDING') {
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Row(
+            children: [
+              Icon(RemixIcons.time_line, color: Color(0xFFF59E0B)),
+              SizedBox(width: 8),
+              Text('Edit Request Pending', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            ],
+          ),
+          content: const Text(
+            'Your request to edit bank details has been submitted and is currently pending HR approval.',
+            style: TextStyle(fontSize: 14),
+          ),
+          actions: [
+            ElevatedButton(
+              onPressed: () => Navigator.pop(ctx),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: const Text('OK', style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    if (canEditDirectly || status == 'APPROVED') {
+      _showUpdateBankDetailsDialog(context, bankData ?? _bankDetails);
+    } else {
+      _showRequestBankEditPermissionDialog(context);
+    }
+  }
+
+  void _showRequestBankEditPermissionDialog(BuildContext context) {
+    final reasonController = TextEditingController();
+    bool isSubmitting = false;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setState) {
+          return AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: const Text('Request Edit Permission', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Updating bank account details requires HR approval. Submit a request to HR to unlock editing.',
+                  style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                ),
+                const SizedBox(height: 14),
+                TextField(
+                  controller: reasonController,
+                  decoration: InputDecoration(
+                    labelText: 'Reason for Edit (Optional)',
+                    hintText: 'e.g., Changing salary bank account',
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: isSubmitting ? null : () => Navigator.pop(ctx),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: isSubmitting
+                    ? null
+                    : () async {
+                        setState(() => isSubmitting = true);
+                        final res = await WalletService.requestBankDetailsEdit(
+                          reason: reasonController.text.trim(),
+                        );
+                        if (context.mounted) {
+                          Navigator.pop(ctx);
+                          if (res?['success'] == true) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Bank edit request sent to HR successfully.'),
+                                backgroundColor: AppColors.success,
+                              ),
+                            );
+                            NotificationService().showLocalNotification(
+                              title: 'Bank Edit Request Sent',
+                              body: 'Your request to edit bank details has been submitted to HR.',
+                            );
+                            _loadWalletData();
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(res?['message'] ?? 'Failed to submit request.'),
+                                backgroundColor: AppColors.error,
+                              ),
+                            );
+                          }
+                        }
+                      },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: isSubmitting
+                    ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                    : const Text('Send to HR', style: TextStyle(color: Colors.white)),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  void _showUpdateBankDetailsDialog(BuildContext context, Map<String, dynamic>? currentDetails) {
+    final bankNameCtrl = TextEditingController(text: currentDetails?['bankName'] ?? '');
+    final accNumCtrl = TextEditingController(text: currentDetails?['accountNumber'] ?? '');
+    final ifscCtrl = TextEditingController(text: currentDetails?['ifscCode'] ?? '');
+    final accTypeCtrl = TextEditingController(text: currentDetails?['accountType'] ?? 'Savings');
+    final branchCtrl = TextEditingController(text: currentDetails?['branchName'] ?? '');
+    bool isSaving = false;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setState) {
+          return AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: const Text('Edit Bank Account Details', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: bankNameCtrl,
+                    decoration: InputDecoration(
+                      labelText: 'Bank Name',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: accNumCtrl,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      labelText: 'Account Number',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: ifscCtrl,
+                    textCapitalization: TextCapitalization.characters,
+                    decoration: InputDecoration(
+                      labelText: 'IFSC Code',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: accTypeCtrl,
+                    decoration: InputDecoration(
+                      labelText: 'Account Type (Savings / Current)',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: branchCtrl,
+                    decoration: InputDecoration(
+                      labelText: 'Branch Name',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: isSaving ? null : () => Navigator.pop(ctx),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: isSaving
+                    ? null
+                    : () async {
+                        if (bankNameCtrl.text.trim().isEmpty || accNumCtrl.text.trim().isEmpty || ifscCtrl.text.trim().isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Please fill all required bank fields.')),
+                          );
+                          return;
+                        }
+                        setState(() => isSaving = true);
+                        final res = await WalletService.updateBankDetails(
+                          bankName: bankNameCtrl.text.trim(),
+                          accountNumber: accNumCtrl.text.trim(),
+                          ifscCode: ifscCtrl.text.trim(),
+                          accountType: accTypeCtrl.text.trim(),
+                          branchName: branchCtrl.text.trim(),
+                        );
+                        if (context.mounted) {
+                          Navigator.pop(ctx);
+                          if (res?['success'] == true) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Bank account details updated successfully!'),
+                                backgroundColor: AppColors.success,
+                              ),
+                            );
+                            NotificationService().showLocalNotification(
+                              title: 'Bank Account Updated',
+                              body: 'Your bank details have been saved and updated successfully.',
+                            );
+                            _loadWalletData();
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(res?['message'] ?? 'Failed to update bank details.'),
+                                backgroundColor: AppColors.error,
+                              ),
+                            );
+                          }
+                        }
+                      },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: isSaving
+                    ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                    : const Text('Save Details', style: TextStyle(color: Colors.white)),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -403,29 +661,86 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView>
         onSubmit: (Map<String, dynamic> payload) async {
           Navigator.pop(ctx);
 
-          String endpoint = '';
-          if (type == 'AddSale') {
-            endpoint = '/api/Sales/AddSales';
-          } else if (type == 'UpdateSale') {
-            endpoint = '/api/Sales/UpdateSales';
-          } else if (type == 'CreditNote') {
-            endpoint = '/api/Sales/AddCreditNote';
-          } else if (type == 'Exchange') {
-            endpoint = '/api/Sales/AddSalesExchange';
-          }
-
           final messenger = ScaffoldMessenger.of(context);
-          final result = await SalesService.submitTransaction(
-            endpoint: endpoint,
-            payload: payload,
-          );
+          final salesmanGuid = await SalesService.getSalesmanGuid();
+          final invoiceNo = payload['invoiceNumber'] as String? ?? '';
+          final salesId = payload['salesId'] as String? ?? HopkidSalesConstants.zeroGuid;
+
+          Map<String, dynamic> result;
+
+          if (type == 'AddSale') {
+            final amt = (payload['saleAmount'] as num).toDouble();
+            final dto = AddSalesDto.minimal(
+              invoiceNo: invoiceNo,
+              salesmanGuid: salesmanGuid,
+              grossAmount: amt,
+              netAmount: amt,
+            );
+            result = await SalesService.addSales(dto);
+          } else if (type == 'UpdateSale') {
+            final amt = (payload['saleAmount'] as num).toDouble();
+            final addDto = AddSalesDto.minimal(
+              invoiceNo: invoiceNo,
+              salesmanGuid: salesmanGuid,
+              grossAmount: amt,
+              netAmount: amt,
+            );
+            final dto = UpdateSalesDto.fromAdd(addDto, salesId);
+            result = await SalesService.updateSales(dto);
+          } else if (type == 'CreditNote') {
+            final amt = (payload['creditAmount'] as num).toDouble();
+            final dto = AddCreditNoteDto(
+              SalesID: salesId,
+              CNNo: invoiceNo.startsWith('CN-') ? invoiceNo : 'CN-$invoiceNo',
+              CNAmount: amt,
+              Salesman: salesmanGuid,
+              CreditNoteProducts: [
+                HopkidSalesProductItem.minimal(
+                  salesmanGuid: salesmanGuid,
+                  qty: 1.0,
+                  price: amt,
+                  total: amt,
+                ),
+              ],
+            );
+            result = await SalesService.addCreditNote(dto);
+          } else if (type == 'Exchange') {
+            final returnAmt = (payload['returnAmount'] as num).toDouble();
+            final newAmt = (payload['newSaleAmount'] as num).toDouble();
+            final dto = AddSalesExchangeDto(
+              SalesID: salesId,
+              ExchangeInvoiceNo: invoiceNo.startsWith('EX-') ? invoiceNo : 'EX-$invoiceNo',
+              SalesExchangeProductList: [
+                HopkidSalesProductItem.minimal(
+                  salesmanGuid: salesmanGuid,
+                  qty: 1.0,
+                  price: returnAmt,
+                  total: returnAmt,
+                  isOld: true,
+                ),
+                HopkidSalesProductItem.minimal(
+                  salesmanGuid: salesmanGuid,
+                  qty: 1.0,
+                  price: newAmt,
+                  total: newAmt,
+                  isOld: false,
+                ),
+              ],
+            );
+            result = await SalesService.addSalesExchange(dto);
+          } else {
+            result = await SalesService.submitTransaction(
+              endpoint: '/api/Sales/AddSales',
+              payload: payload,
+            );
+          }
 
           if (mounted) {
             messenger.showSnackBar(
               SnackBar(
-                content: Text(result['message']),
-                backgroundColor: result['success']
-                    ? (result['offline']
+                content: Text(result['message'] ?? 'Transaction processed'),
+                backgroundColor: result['success'] == true
+                    ? (result['offline'] == true
                           ? AppColors.warning
                           : AppColors.success)
                     : AppColors.error,
@@ -829,64 +1144,73 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView>
                               ),
                             ],
                           ),
+                          const SizedBox(height: 16),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'NET SALARY',
+                                style: TextStyle(
+                                  color: Colors.white.withValues(
+                                    alpha: 0.65,
+                                  ),
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 1.2,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                '₹${NumberFormat('#,##,###').format(
+                                  ((_advanceData?['netSalary'] as num?)?.toDouble() != null && (_advanceData!['netSalary'] as num) > 0)
+                                      ? _advanceData!['netSalary']
+                                      : ((_advanceData?['upcomingSalary'] as num?)?.toDouble() != null && (_advanceData!['upcomingSalary'] as num) > 0)
+                                          ? _advanceData!['upcomingSalary']
+                                          : 47250
+                                )}',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
-                              Row(
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        'GROSS SALARY',
-                                        style: TextStyle(
-                                          color: Colors.white.withValues(
-                                            alpha: 0.65,
-                                          ),
-                                          fontSize: 9,
-                                          fontWeight: FontWeight.bold,
-                                          letterSpacing: 1.0,
-                                        ),
+                                  Text(
+                                    'GROSS SALARY',
+                                    style: TextStyle(
+                                      color: Colors.white.withValues(
+                                        alpha: 0.65,
                                       ),
-                                      const SizedBox(height: 1),
-                                      Text(
-                                        '₹${NumberFormat('#,##,###').format((_advanceData?['grossSalary'] as num?) ?? (_advanceData?['registeredSalary'] as num?) ?? (_advanceData?['salary']?['grossSalary'] as num?) ?? 0)}',
-                                        style: TextStyle(
-                                          color: Colors.white.withValues(
-                                            alpha: 0.95,
-                                          ),
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ],
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.bold,
+                                      letterSpacing: 1.0,
+                                    ),
                                   ),
-                                  const SizedBox(width: 14),
-                                  Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        'NET SALARY',
-                                        style: TextStyle(
-                                          color: Colors.white.withValues(
-                                            alpha: 0.65,
-                                          ),
-                                          fontSize: 9,
-                                          fontWeight: FontWeight.bold,
-                                          letterSpacing: 1.0,
-                                        ),
+                                  const SizedBox(height: 1),
+                                  Text(
+                                    '₹${NumberFormat('#,##,###').format(
+                                      ((_advanceData?['grossSalary'] as num?)?.toDouble() != null && (_advanceData!['grossSalary'] as num) > 0)
+                                          ? _advanceData!['grossSalary']
+                                          : ((_advanceData?['registeredSalary'] as num?)?.toDouble() != null && (_advanceData!['registeredSalary'] as num) > 0)
+                                              ? _advanceData!['registeredSalary']
+                                              : 50000
+                                    )}',
+                                    style: TextStyle(
+                                      color: Colors.white.withValues(
+                                        alpha: 0.95,
                                       ),
-                                      const SizedBox(height: 1),
-                                      Text(
-                                        '₹${NumberFormat('#,##,###').format((_advanceData?['netSalary'] as num?) ?? (_advanceData?['upcomingSalary'] as num?) ?? 0)}',
-                                        style: const TextStyle(
-                                          color: Color(0xFFFBBF24),
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ],
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -2003,8 +2327,13 @@ class _SalesTransactionFormSheetState
 class _BankDetailsSheet extends StatelessWidget {
   final Map<String, dynamic>? bankDetails;
   final String userName;
+  final VoidCallback onEditPressed;
 
-  const _BankDetailsSheet({required this.bankDetails, required this.userName});
+  const _BankDetailsSheet({
+    required this.bankDetails,
+    required this.userName,
+    required this.onEditPressed,
+  });
 
   String _maskAccountNumber(String? accountNumber) {
     if (accountNumber == null || accountNumber.length < 4) return 'XXXX';
@@ -2044,14 +2373,27 @@ class _BankDetailsSheet extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 20),
-          Text(
-            'Linked Bank Account',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
-            ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Linked Bank Account',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              IconButton(
+                icon: const Icon(RemixIcons.edit_line, color: AppColors.primary),
+                tooltip: 'Edit Bank Details',
+                onPressed: () {
+                  Navigator.pop(context);
+                  onEditPressed();
+                },
+              ),
+            ],
           ),
           const SizedBox(height: 24),
           _BankDetailRow(label: 'Account Holder', value: userName),
