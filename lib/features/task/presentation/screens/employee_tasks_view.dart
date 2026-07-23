@@ -670,6 +670,55 @@ class _TaskDetailSheet extends StatelessWidget {
               icon: RemixIcons.time_line,
               label: 'Created',
               value: DateFormat('dd MMM yyyy').format(task.createdAt)),
+          if (task.allPhotos.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Text(
+              'Photo Proofs (${task.allPhotos.length}):',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              height: 100,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: task.allPhotos.length,
+                separatorBuilder: (context, index) => const SizedBox(width: 8),
+                itemBuilder: (context, idx) {
+                  final photo = task.allPhotos[idx];
+                  Widget imgWidget;
+                  if (photo.startsWith('data:image')) {
+                    imgWidget = Image.memory(
+                      base64Decode(photo.split(',').last),
+                      height: 100,
+                      width: 100,
+                      fit: BoxFit.cover,
+                    );
+                  } else {
+                    imgWidget = Image.network(
+                      photo,
+                      height: 100,
+                      width: 100,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => Container(
+                        height: 100,
+                        width: 100,
+                        color: Colors.grey.shade300,
+                        child: const Icon(Icons.broken_image, size: 24),
+                      ),
+                    );
+                  }
+                  return ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: imgWidget,
+                  );
+                },
+              ),
+            ),
+          ],
           const SizedBox(height: 16),
           if (task.status != TaskStatus.completed)
             SizedBox(
@@ -734,7 +783,7 @@ Future<void> _showStatusRemarkDialog(
     BuildContext context, WidgetRef ref, TaskModel task, TaskStatus status,
     {VoidCallback? onSuccess}) async {
   final noteCtrl = TextEditingController();
-  String? photoBase64;
+  final List<String> photoBase64List = [];
   bool isPicking = false;
 
   String actionLabel = 'Update Task';
@@ -754,18 +803,34 @@ Future<void> _showStatusRemarkDialog(
           try {
             setDialogState(() => isPicking = true);
             final picker = ImagePicker();
-            final image = await picker.pickImage(
-              source: source,
-              maxWidth: 1024,
-              maxHeight: 1024,
-              imageQuality: 75,
-            );
-            if (image != null) {
-              final bytes = await image.readAsBytes();
-              final base64Str = 'data:image/jpeg;base64,${base64Encode(bytes)}';
-              setDialogState(() {
-                photoBase64 = base64Str;
-              });
+            if (source == ImageSource.gallery) {
+              final images = await picker.pickMultiImage(
+                maxWidth: 1024,
+                maxHeight: 1024,
+                imageQuality: 75,
+              );
+              if (images.isNotEmpty) {
+                for (final img in images) {
+                  final bytes = await img.readAsBytes();
+                  final base64Str = 'data:image/jpeg;base64,${base64Encode(bytes)}';
+                  photoBase64List.add(base64Str);
+                }
+                setDialogState(() {});
+              }
+            } else {
+              final image = await picker.pickImage(
+                source: source,
+                maxWidth: 1024,
+                maxHeight: 1024,
+                imageQuality: 75,
+              );
+              if (image != null) {
+                final bytes = await image.readAsBytes();
+                final base64Str = 'data:image/jpeg;base64,${base64Encode(bytes)}';
+                setDialogState(() {
+                  photoBase64List.add(base64Str);
+                });
+              }
             }
           } catch (e) {
             if (context.mounted) {
@@ -856,68 +921,79 @@ Future<void> _showStatusRemarkDialog(
                 if (status == TaskStatus.completed || task.requiresPhoto) ...[
                   const SizedBox(height: 16),
                   Text(
-                    'Photo Proof:',
+                    'Photo Proofs (${photoBase64List.length}):',
                     style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
                   ),
                   const SizedBox(height: 8),
-                  if (photoBase64 != null) ...[
-                    Stack(
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
-                          child: Image.memory(
-                            base64Decode(photoBase64!.split(',').last),
-                            height: 140,
-                            width: double.infinity,
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                        Positioned(
-                          top: 8,
-                          right: 8,
-                          child: InkWell(
-                            onTap: () => setDialogState(() => photoBase64 = null),
-                            child: Container(
-                              padding: const EdgeInsets.all(4),
-                              decoration: const BoxDecoration(
-                                color: Colors.black54,
-                                shape: BoxShape.circle,
+                  if (photoBase64List.isNotEmpty) ...[
+                    SizedBox(
+                      height: 100,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: photoBase64List.length,
+                        separatorBuilder: (context, index) => const SizedBox(width: 8),
+                        itemBuilder: (context, index) {
+                          final photo = photoBase64List[index];
+                          return Stack(
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(10),
+                                child: Image.memory(
+                                  base64Decode(photo.split(',').last),
+                                  height: 100,
+                                  width: 100,
+                                  fit: BoxFit.cover,
+                                ),
                               ),
-                              child: const Icon(RemixIcons.close_line, color: Colors.white, size: 16),
-                            ),
-                          ),
-                        ),
-                      ],
+                              Positioned(
+                                top: 4,
+                                right: 4,
+                                child: InkWell(
+                                  onTap: () => setDialogState(() => photoBase64List.removeAt(index)),
+                                  child: Container(
+                                    padding: const EdgeInsets.all(3),
+                                    decoration: const BoxDecoration(
+                                      color: Colors.black54,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(RemixIcons.close_line, color: Colors.white, size: 14),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                      ),
                     ),
-                  ] else ...[
-                    Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: isPicking ? null : () => pickPhoto(ImageSource.camera),
-                            icon: const Icon(RemixIcons.camera_line, size: 16),
-                            label: const Text('Camera', style: TextStyle(fontSize: 12)),
-                            style: OutlinedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 10),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: isPicking ? null : () => pickPhoto(ImageSource.gallery),
-                            icon: const Icon(RemixIcons.image_line, size: 16),
-                            label: const Text('Gallery', style: TextStyle(fontSize: 12)),
-                            style: OutlinedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 10),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+                    const SizedBox(height: 10),
                   ],
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: isPicking ? null : () => pickPhoto(ImageSource.camera),
+                          icon: const Icon(RemixIcons.camera_line, size: 16),
+                          label: Text(photoBase64List.isEmpty ? 'Camera' : '+ Camera', style: const TextStyle(fontSize: 12)),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: isPicking ? null : () => pickPhoto(ImageSource.gallery),
+                          icon: const Icon(RemixIcons.image_line, size: 16),
+                          label: Text(photoBase64List.isEmpty ? 'Gallery' : '+ Gallery', style: const TextStyle(fontSize: 12)),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
               ],
             ),
@@ -928,14 +1004,14 @@ Future<void> _showStatusRemarkDialog(
               child: Text('Cancel', style: TextStyle(color: AppColors.textSecondary)),
             ),
             ElevatedButton(
-              onPressed: (photoRequired && photoBase64 == null)
+              onPressed: (photoRequired && photoBase64List.isEmpty)
                   ? null
                   : () {
                       ref.read(taskViewModelProvider.notifier).updateStatus(
                             task.id,
                             status,
                             comment: noteCtrl.text.trim(),
-                            photoUrl: photoBase64,
+                            photoUrls: photoBase64List,
                           );
                       Navigator.pop(ctx);
                       if (onSuccess != null) onSuccess();
