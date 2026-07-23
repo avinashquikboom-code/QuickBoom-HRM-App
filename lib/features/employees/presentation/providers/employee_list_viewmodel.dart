@@ -37,7 +37,7 @@ class EmployeeListState {
     });
 
     return list.map((emp) => UserModel(
-      id: emp.employeeID,
+      id: emp.employeeID.isNotEmpty ? emp.employeeID : emp.employeeCode,
       employeeId: emp.employeeCode,
       name: emp.employeeName,
       email: emp.email ?? '',
