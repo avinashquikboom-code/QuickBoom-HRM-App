@@ -81,6 +81,23 @@ class TaskViewModel extends StateNotifier<TaskState> {
         priority = TaskPriority.medium;
     }
 
+    List<String> parsedPhotoUrls = [];
+    if (t['photoUrls'] is List) {
+      parsedPhotoUrls = (t['photoUrls'] as List).map((x) => x.toString()).toList();
+    } else if (t['photoUrl'] != null) {
+      final str = t['photoUrl'].toString();
+      try {
+        final decoded = jsonDecode(str);
+        if (decoded is List) {
+          parsedPhotoUrls = decoded.map((x) => x.toString()).toList();
+        } else if (str.isNotEmpty) {
+          parsedPhotoUrls = [str];
+        }
+      } catch (_) {
+        if (str.isNotEmpty) parsedPhotoUrls = [str];
+      }
+    }
+
     return TaskModel(
       id: t['id']?.toString() ?? '',
       title: t['title']?.toString() ?? '',
@@ -95,7 +112,8 @@ class TaskViewModel extends StateNotifier<TaskState> {
       status: status,
       priority: priority,
       requiresPhoto: t['requiresPhoto'] == true,
-      photoUrl: t['photoUrl']?.toString(),
+      photoUrl: parsedPhotoUrls.isNotEmpty ? parsedPhotoUrls.first : t['photoUrl']?.toString(),
+      photoUrls: parsedPhotoUrls,
     );
   }
 
@@ -120,6 +138,7 @@ class TaskViewModel extends StateNotifier<TaskState> {
     TaskStatus newStatus, {
     String? comment,
     String? photoUrl,
+    List<String>? photoUrls,
   }) async {
     state = state.copyWith(isUpdating: true);
     try {
@@ -136,7 +155,10 @@ class TaskViewModel extends StateNotifier<TaskState> {
       if (comment != null && comment.trim().isNotEmpty) {
         body['comment'] = comment.trim();
       }
-      if (photoUrl != null && photoUrl.isNotEmpty) {
+      if (photoUrls != null && photoUrls.isNotEmpty) {
+        body['photoUrls'] = photoUrls;
+        body['photoUrl'] = photoUrls.first;
+      } else if (photoUrl != null && photoUrl.isNotEmpty) {
         body['photoUrl'] = photoUrl;
       }
 
@@ -144,9 +166,11 @@ class TaskViewModel extends StateNotifier<TaskState> {
 
       final updated = state.myTasks.map((t) {
         if (t.id == taskId) {
+          final newPhotos = photoUrls ?? (photoUrl != null ? [photoUrl] : t.photoUrls);
           return t.copyWith(
             status: newStatus,
-            photoUrl: photoUrl ?? t.photoUrl,
+            photoUrl: newPhotos.isNotEmpty ? newPhotos.first : t.photoUrl,
+            photoUrls: newPhotos,
           );
         }
         return t;

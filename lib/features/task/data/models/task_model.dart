@@ -17,6 +17,7 @@ class TaskModel {
   final TaskPriority priority;
   final bool requiresPhoto;
   final String? photoUrl;
+  final List<String> photoUrls;
 
   const TaskModel({
     required this.id,
@@ -33,7 +34,14 @@ class TaskModel {
     required this.priority,
     this.requiresPhoto = false,
     this.photoUrl,
+    this.photoUrls = const [],
   });
+
+  List<String> get allPhotos {
+    if (photoUrls.isNotEmpty) return photoUrls;
+    if (photoUrl != null && photoUrl!.isNotEmpty) return [photoUrl!];
+    return const [];
+  }
 
   bool get isOverdue =>
       dueDate.isBefore(DateTime.now()) && status != TaskStatus.completed;
@@ -69,7 +77,7 @@ class TaskModel {
     }
   }
 
-  TaskModel copyWith({TaskStatus? status, String? photoUrl}) {
+  TaskModel copyWith({TaskStatus? status, String? photoUrl, List<String>? photoUrls}) {
     return TaskModel(
       id: id,
       title: title,
@@ -85,6 +93,7 @@ class TaskModel {
       priority: priority,
       requiresPhoto: requiresPhoto,
       photoUrl: photoUrl ?? this.photoUrl,
+      photoUrls: photoUrls ?? this.photoUrls,
     );
   }
 }
