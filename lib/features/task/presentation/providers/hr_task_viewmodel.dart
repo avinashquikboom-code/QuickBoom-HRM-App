@@ -79,6 +79,7 @@ class HrTaskViewModel extends StateNotifier<HrTaskState> {
     required TaskPriority priority,
     required String creatorName,
     required String creatorId,
+    bool requiresPhoto = false,
   }) async {
     state = state.copyWith(isCreating: true, clearMessage: true);
     try {
@@ -99,6 +100,7 @@ class HrTaskViewModel extends StateNotifier<HrTaskState> {
         'projectName': projectName,
         'dueDate': dueDate.toIso8601String(),
         'priority': priorityStr,
+        'requiresPhoto': requiresPhoto,
       });
 
       await fetchTasks();
@@ -163,6 +165,8 @@ class HrTaskViewModel extends StateNotifier<HrTaskState> {
       createdAt: t['createdAt'] != null ? DateTime.parse(t['createdAt']) : DateTime.now(),
       status: status,
       priority: priority,
+      requiresPhoto: t['requiresPhoto'] == true,
+      photoUrl: t['photoUrl']?.toString(),
     );
   }
 }

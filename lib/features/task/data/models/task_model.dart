@@ -15,6 +15,8 @@ class TaskModel {
   final DateTime createdAt;
   final TaskStatus status;
   final TaskPriority priority;
+  final bool requiresPhoto;
+  final String? photoUrl;
 
   const TaskModel({
     required this.id,
@@ -29,6 +31,8 @@ class TaskModel {
     required this.createdAt,
     required this.status,
     required this.priority,
+    this.requiresPhoto = false,
+    this.photoUrl,
   });
 
   bool get isOverdue =>
@@ -65,7 +69,7 @@ class TaskModel {
     }
   }
 
-  TaskModel copyWith({TaskStatus? status}) {
+  TaskModel copyWith({TaskStatus? status, String? photoUrl}) {
     return TaskModel(
       id: id,
       title: title,
@@ -79,6 +83,8 @@ class TaskModel {
       createdAt: createdAt,
       status: status ?? this.status,
       priority: priority,
+      requiresPhoto: requiresPhoto,
+      photoUrl: photoUrl ?? this.photoUrl,
     );
   }
 }

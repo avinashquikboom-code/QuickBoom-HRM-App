@@ -1,6 +1,8 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:remixicon/remixicon.dart';
 import 'package:intl/intl.dart';
 import 'package:quickboom_hrm/core/constants/app_colors.dart';
@@ -309,6 +311,30 @@ class _TaskCard extends ConsumerWidget {
                             ),
                           ),
                           const SizedBox(width: 12),
+                          if (task.requiresPhoto)
+                            Container(
+                              margin: const EdgeInsets.only(right: 6),
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: AppColors.primary.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(RemixIcons.camera_line, size: 11, color: AppColors.primary),
+                                  const SizedBox(width: 3),
+                                  Text(
+                                    'Photo',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppColors.primary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                           _PriorityBadge(priority: task.priority),
                         ],
                       ),
@@ -425,7 +451,7 @@ class _TaskCard extends ConsumerWidget {
                                 icon: RemixIcons.play_line,
                                 color: AppColors.primary,
                                 onTap: () => _showStatusRemarkDialog(
-                                    context, ref, task.id, TaskStatus.inProgress),
+                                    context, ref, task, TaskStatus.inProgress),
                               ),
                             if (task.status == TaskStatus.inProgress) ...[
                               _QuickAction(
@@ -433,7 +459,7 @@ class _TaskCard extends ConsumerWidget {
                                 icon: RemixIcons.checkbox_circle_line,
                                 color: AppColors.success,
                                 onTap: () => _showStatusRemarkDialog(
-                                    context, ref, task.id, TaskStatus.completed),
+                                    context, ref, task, TaskStatus.completed),
                               ),
                               const SizedBox(width: 10),
                               _QuickAction(
@@ -441,7 +467,7 @@ class _TaskCard extends ConsumerWidget {
                                 icon: RemixIcons.pause_line,
                                 color: AppColors.warning,
                                 onTap: () => _showStatusRemarkDialog(
-                                    context, ref, task.id, TaskStatus.todo),
+                                    context, ref, task, TaskStatus.todo),
                               ),
                             ],
                           ],
@@ -656,7 +682,7 @@ class _TaskDetailSheet extends StatelessWidget {
                     backgroundColor: AppColors.success),
                 onPressed: () {
                   Navigator.pop(context);
-                  _showStatusRemarkDialog(context, ref, task.id, TaskStatus.completed);
+                  _showStatusRemarkDialog(context, ref, task, TaskStatus.completed);
                 },
               ),
             ),
@@ -705,9 +731,11 @@ class _DetailRow extends StatelessWidget {
 }
 
 Future<void> _showStatusRemarkDialog(
-    BuildContext context, WidgetRef ref, String taskId, TaskStatus status,
+    BuildContext context, WidgetRef ref, TaskModel task, TaskStatus status,
     {VoidCallback? onSuccess}) async {
   final noteCtrl = TextEditingController();
+  String? photoBase64;
+  bool isPicking = false;
 
   String actionLabel = 'Update Task';
   if (status == TaskStatus.inProgress) {
@@ -720,80 +748,207 @@ Future<void> _showStatusRemarkDialog(
 
   await showDialog(
     context: context,
-    builder: (ctx) => AlertDialog(
-      backgroundColor: AppColors.background,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      title: Row(
-        children: [
-          Icon(
-            status == TaskStatus.completed
-                ? RemixIcons.checkbox_circle_line
-                : RemixIcons.chat_4_line,
-            color: status == TaskStatus.completed ? AppColors.success : AppColors.primary,
-            size: 20,
+    builder: (ctx) => StatefulBuilder(
+      builder: (context, setDialogState) {
+        Future<void> pickPhoto(ImageSource source) async {
+          try {
+            setDialogState(() => isPicking = true);
+            final picker = ImagePicker();
+            final image = await picker.pickImage(
+              source: source,
+              maxWidth: 1024,
+              maxHeight: 1024,
+              imageQuality: 75,
+            );
+            if (image != null) {
+              final bytes = await image.readAsBytes();
+              final base64Str = 'data:image/jpeg;base64,${base64Encode(bytes)}';
+              setDialogState(() {
+                photoBase64 = base64Str;
+              });
+            }
+          } catch (e) {
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Failed to pick photo: $e')),
+              );
+            }
+          } finally {
+            setDialogState(() => isPicking = false);
+          }
+        }
+
+        final photoRequired = status == TaskStatus.completed && task.requiresPhoto;
+
+        return AlertDialog(
+          backgroundColor: AppColors.background,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Row(
+            children: [
+              Icon(
+                status == TaskStatus.completed
+                    ? RemixIcons.checkbox_circle_line
+                    : RemixIcons.chat_4_line,
+                color: status == TaskStatus.completed ? AppColors.success : AppColors.primary,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                actionLabel,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: 8),
-          Text(
-            actionLabel,
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (photoRequired)
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(RemixIcons.camera_lens_line, color: AppColors.primary, size: 18),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Photo proof is required to complete this task.',
+                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primary),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                Text(
+                  'Add a remark or comment (optional):',
+                  style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: noteCtrl,
+                  maxLines: 3,
+                  decoration: InputDecoration(
+                    hintText: 'e.g. Completed tasks, store audit done...',
+                    hintStyle: TextStyle(fontSize: 12, color: AppColors.textHint),
+                    contentPadding: const EdgeInsets.all(12),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(color: AppColors.cardBorder),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(color: AppColors.primary),
+                    ),
+                  ),
+                  style: TextStyle(fontSize: 13, color: AppColors.textPrimary),
+                ),
+                if (status == TaskStatus.completed || task.requiresPhoto) ...[
+                  const SizedBox(height: 16),
+                  Text(
+                    'Photo Proof:',
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                  ),
+                  const SizedBox(height: 8),
+                  if (photoBase64 != null) ...[
+                    Stack(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.memory(
+                            base64Decode(photoBase64!.split(',').last),
+                            height: 140,
+                            width: double.infinity,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                        Positioned(
+                          top: 8,
+                          right: 8,
+                          child: InkWell(
+                            onTap: () => setDialogState(() => photoBase64 = null),
+                            child: Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: const BoxDecoration(
+                                color: Colors.black54,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(RemixIcons.close_line, color: Colors.white, size: 16),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ] else ...[
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: isPicking ? null : () => pickPhoto(ImageSource.camera),
+                            icon: const Icon(RemixIcons.camera_line, size: 16),
+                            label: const Text('Camera', style: TextStyle(fontSize: 12)),
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: isPicking ? null : () => pickPhoto(ImageSource.gallery),
+                            icon: const Icon(RemixIcons.image_line, size: 16),
+                            label: const Text('Gallery', style: TextStyle(fontSize: 12)),
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ],
+              ],
             ),
           ),
-        ],
-      ),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Add a remark or comment (optional):',
-            style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: noteCtrl,
-            maxLines: 3,
-            decoration: InputDecoration(
-              hintText: 'e.g. Started working on this, completed tasks...',
-              hintStyle: TextStyle(fontSize: 12, color: AppColors.textHint),
-              contentPadding: const EdgeInsets.all(12),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: AppColors.cardBorder),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: AppColors.primary),
-              ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text('Cancel', style: TextStyle(color: AppColors.textSecondary)),
             ),
-            style: TextStyle(fontSize: 13, color: AppColors.textPrimary),
-          ),
-        ],
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(ctx),
-          child: Text('Cancel', style: TextStyle(color: AppColors.textSecondary)),
-        ),
-        ElevatedButton(
-          onPressed: () {
-            ref.read(taskViewModelProvider.notifier).updateStatus(
-                  taskId,
-                  status,
-                  comment: noteCtrl.text.trim(),
-                );
-            Navigator.pop(ctx);
-            if (onSuccess != null) onSuccess();
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: status == TaskStatus.completed ? AppColors.success : AppColors.primary,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          ),
-          child: const Text('Confirm', style: TextStyle(color: Colors.white)),
-        ),
-      ],
+            ElevatedButton(
+              onPressed: (photoRequired && photoBase64 == null)
+                  ? null
+                  : () {
+                      ref.read(taskViewModelProvider.notifier).updateStatus(
+                            task.id,
+                            status,
+                            comment: noteCtrl.text.trim(),
+                            photoUrl: photoBase64,
+                          );
+                      Navigator.pop(ctx);
+                      if (onSuccess != null) onSuccess();
+                    },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: status == TaskStatus.completed ? AppColors.success : AppColors.primary,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              child: const Text('Confirm', style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        );
+      },
     ),
   );
 }

@@ -242,6 +242,34 @@ class _AssignTaskSheetState extends ConsumerState<_AssignTaskSheet> {
   TaskPriority _priority = TaskPriority.medium;
   DateTime _dueDate = DateTime.now().add(const Duration(days: 1));
   String _employeeSearchQuery = '';
+  bool _requiresPhoto = false;
+
+  final List<Map<String, dynamic>> _fixedTemplates = [
+    {
+      'title': 'Daily Store Opening & Sanitization',
+      'desc': 'Verify store cleanliness, turn on lights, inspect counter setup, and upload photo proof.',
+      'priority': TaskPriority.high,
+      'requiresPhoto': true,
+    },
+    {
+      'title': 'Store Closing Cash & Security Lockup',
+      'desc': 'Count cash register, balance ledger slip, capture photo of cash drawer, and lock entrance.',
+      'priority': TaskPriority.high,
+      'requiresPhoto': true,
+    },
+    {
+      'title': 'Inventory & Display Stock Audit',
+      'desc': 'Inspect shelf stock, arrange front store display, and upload photo proof.',
+      'priority': TaskPriority.medium,
+      'requiresPhoto': true,
+    },
+    {
+      'title': 'Staff Uniform & Hygiene Check',
+      'desc': 'Inspect staff uniform compliance, clean counter area, and verify customer feedback log.',
+      'priority': TaskPriority.medium,
+      'requiresPhoto': false,
+    },
+  ];
 
   @override
   void initState() {
@@ -300,7 +328,46 @@ class _AssignTaskSheetState extends ConsumerState<_AssignTaskSheet> {
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
+
+              // Fixed Task Preset Chips
+              Text(
+                '⚡ Quick Fixed Task Presets:',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primary),
+              ),
+              const SizedBox(height: 6),
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: _fixedTemplates.map((tmpl) {
+                    return Container(
+                      margin: const EdgeInsets.only(right: 8),
+                      child: ActionChip(
+                        avatar: Icon(
+                          tmpl['requiresPhoto'] == true ? RemixIcons.camera_line : RemixIcons.flashlight_line,
+                          size: 13,
+                          color: AppColors.primary,
+                        ),
+                        label: Text(
+                          tmpl['title'].toString(),
+                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+                        ),
+                        backgroundColor: AppColors.primary.withValues(alpha: 0.08),
+                        side: BorderSide(color: AppColors.primary.withValues(alpha: 0.2)),
+                        onPressed: () {
+                          setState(() {
+                            _titleController.text = tmpl['title'].toString();
+                            _descController.text = tmpl['desc'].toString();
+                            _priority = tmpl['priority'] as TaskPriority;
+                            _requiresPhoto = tmpl['requiresPhoto'] == true;
+                          });
+                        },
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+              const SizedBox(height: 14),
 
               // Title
               TextFormField(
@@ -522,6 +589,41 @@ class _AssignTaskSheetState extends ConsumerState<_AssignTaskSheet> {
                   ),
                 ],
               ),
+              // Requires Photo Switch
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: AppColors.primarySurface,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.cardBorder),
+                ),
+                child: Row(
+                  children: [
+                    Icon(RemixIcons.camera_lens_line, color: AppColors.primary, size: 20),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Requires Photo Proof',
+                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                          ),
+                          Text(
+                            'Employee must click & upload photo to complete',
+                            style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Switch(
+                      value: _requiresPhoto,
+                      activeColor: AppColors.primary,
+                      onChanged: (val) => setState(() => _requiresPhoto = val),
+                    ),
+                  ],
+                ),
+              ),
               const SizedBox(height: 24),
 
               // Submit Button
@@ -553,6 +655,7 @@ class _AssignTaskSheetState extends ConsumerState<_AssignTaskSheet> {
                                 priority: _priority,
                                 creatorId: creatorId,
                                 creatorName: creatorName,
+                                requiresPhoto: _requiresPhoto,
                               );
 
                           final updatedState = ref.read(hrTaskViewModelProvider);

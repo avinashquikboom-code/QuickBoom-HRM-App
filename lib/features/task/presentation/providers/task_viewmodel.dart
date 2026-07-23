@@ -94,6 +94,8 @@ class TaskViewModel extends StateNotifier<TaskState> {
       createdAt: t['createdAt'] != null ? DateTime.parse(t['createdAt']) : DateTime.now(),
       status: status,
       priority: priority,
+      requiresPhoto: t['requiresPhoto'] == true,
+      photoUrl: t['photoUrl']?.toString(),
     );
   }
 
@@ -113,7 +115,12 @@ class TaskViewModel extends StateNotifier<TaskState> {
     }
   }
 
-  Future<void> updateStatus(String taskId, TaskStatus newStatus, {String? comment}) async {
+  Future<void> updateStatus(
+    String taskId,
+    TaskStatus newStatus, {
+    String? comment,
+    String? photoUrl,
+  }) async {
     state = state.copyWith(isUpdating: true);
     try {
       String statusStr = 'todo';
@@ -129,11 +136,19 @@ class TaskViewModel extends StateNotifier<TaskState> {
       if (comment != null && comment.trim().isNotEmpty) {
         body['comment'] = comment.trim();
       }
+      if (photoUrl != null && photoUrl.isNotEmpty) {
+        body['photoUrl'] = photoUrl;
+      }
 
       await ApiService.put(AppUrl.employeeTaskById(taskId), body);
 
       final updated = state.myTasks.map((t) {
-        if (t.id == taskId) return t.copyWith(status: newStatus);
+        if (t.id == taskId) {
+          return t.copyWith(
+            status: newStatus,
+            photoUrl: photoUrl ?? t.photoUrl,
+          );
+        }
         return t;
       }).toList();
       state = state.copyWith(myTasks: updated, isUpdating: false);
