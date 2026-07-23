@@ -60,8 +60,10 @@ class HrExpenseViewModel extends StateNotifier<HrExpenseState> {
       final List rawExpenses = data['expenses'] ?? [];
       final expenses = rawExpenses.map((e) => _parseExpense(e)).toList();
 
+      if (!mounted) return;
       state = state.copyWith(allExpenses: expenses);
     } catch (_) {
+      if (!mounted) return;
       state = state.copyWith(allExpenses: []);
     }
   }
@@ -75,11 +77,13 @@ class HrExpenseViewModel extends StateNotifier<HrExpenseState> {
       });
 
       await fetchExpenses();
+      if (!mounted) return;
       state = state.copyWith(
         isProcessing: false,
         successMessage: 'Expense approved successfully.',
       );
     } catch (error) {
+      if (!mounted) return;
       state = state.copyWith(
         isProcessing: false,
         successMessage: error.toString().replaceAll('Exception: ', ''),

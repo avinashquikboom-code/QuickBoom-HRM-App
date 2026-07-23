@@ -116,15 +116,26 @@ class HrAttendanceViewModel extends StateNotifier<HrAttendanceState> {
       final res = await ApiService.get(url);
       final data = jsonDecode(res.body);
 
+      if (res.statusCode == 403 || data['success'] == false) {
+        if (!mounted) return;
+        state = state.copyWith(
+          isLoading: false,
+          errorMessage: data['message'] ?? 'Access denied',
+        );
+        return;
+      }
+
       // Handle both response structures
       final List rawRecords = data['records'] ?? data['attendances'] ?? [];
       final records = rawRecords.map((r) => HrAttendanceRecord.fromJson(r)).toList();
       final joined = await _joinWithHopKidEmployees(records);
 
+      if (!mounted) return;
       state = state.copyWith(records: joined, isLoading: false);
       debugPrint('✅ HR attendance logs fetched: ${records.length} records.');
     } catch (e) {
       debugPrint('❌ Error fetching HR attendance logs: $e');
+      if (!mounted) return;
       state = state.copyWith(
         isLoading: false,
         errorMessage: e.toString().replaceAll('Exception: ', ''),
@@ -169,10 +180,12 @@ class HrAttendanceViewModel extends StateNotifier<HrAttendanceState> {
       final records = rawRecords.map((r) => HrAttendanceRecord.fromJson(r)).toList();
       final joined = await _joinWithHopKidEmployees(records);
 
+      if (!mounted) return;
       state = state.copyWith(records: joined, isLoading: false);
       debugPrint('✅ HR attendance history fetched: ${records.length} records.');
     } catch (e) {
       debugPrint('❌ Error fetching HR attendance history: $e');
+      if (!mounted) return;
       state = state.copyWith(
         isLoading: false,
         errorMessage: e.toString().replaceAll('Exception: ', ''),
@@ -216,7 +229,9 @@ class HrAttendanceViewModel extends StateNotifier<HrAttendanceState> {
       }
       rethrow;
     } finally {
-      state = state.copyWith(isLoading: false);
+      if (mounted) {
+        state = state.copyWith(isLoading: false);
+      }
     }
   }
 
@@ -257,10 +272,12 @@ class HrAttendanceViewModel extends StateNotifier<HrAttendanceState> {
       final records = rawRecords.map((r) => HrAttendanceRecord.fromJson(r)).toList();
       final joined = await _joinWithHopKidEmployees(records);
 
+      if (!mounted) return;
       state = state.copyWith(records: joined, isLoading: false);
       debugPrint('✅ All employees attendance fetched: ${records.length} records.');
     } catch (e) {
       debugPrint('❌ Error fetching all employees attendance: $e');
+      if (!mounted) return;
       state = state.copyWith(
         isLoading: false,
         errorMessage: e.toString().replaceAll('Exception: ', ''),

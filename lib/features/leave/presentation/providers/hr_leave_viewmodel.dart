@@ -56,8 +56,10 @@ class HrLeaveViewModel extends StateNotifier<HrLeaveState> {
       final List rawLeaves = data['data']?['leaveRequests'] ?? data['leaves'] ?? [];
       final leaves = rawLeaves.map((l) => _parseLeave(l)).toList();
 
+      if (!mounted) return;
       state = state.copyWith(allLeaves: leaves);
     } catch (_) {
+      if (!mounted) return;
       state = state.copyWith(allLeaves: []);
     }
   }
@@ -71,11 +73,13 @@ class HrLeaveViewModel extends StateNotifier<HrLeaveState> {
       });
 
       await fetchLeaves();
+      if (!mounted) return;
       state = state.copyWith(
         isProcessing: false,
         successMessage: 'Leave approved successfully.',
       );
     } catch (error) {
+      if (!mounted) return;
       state = state.copyWith(
         isProcessing: false,
         successMessage: error.toString().replaceAll('Exception: ', ''),

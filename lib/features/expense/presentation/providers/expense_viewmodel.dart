@@ -121,11 +121,13 @@ class ExpenseViewModel extends StateNotifier<ExpenseState> {
       final List rawExpenses = data['expenses'] ?? [];
       final expenses = rawExpenses.map((e) => _parseExpense(e)).toList();
 
+      if (!mounted) return;
       state = state.copyWith(
         myExpenses: expenses,
         isLoading: false,
       );
     } catch (_) {
+      if (!mounted) return;
       state = state.copyWith(isLoading: false);
     }
   }

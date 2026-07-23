@@ -164,17 +164,20 @@ class ShiftViewModel extends StateNotifier<ShiftState> {
               : DateTime.now(),
         );
 
+        if (!mounted) return;
         state = state.copyWith(
           assignments: [assignment],
           isLoading: false,
         );
       } else {
+        if (!mounted) return;
         state = state.copyWith(
           assignments: [],
           isLoading: false,
         );
       }
     } catch (_) {
+      if (!mounted) return;
       state = state.copyWith(isLoading: false);
     }
   }

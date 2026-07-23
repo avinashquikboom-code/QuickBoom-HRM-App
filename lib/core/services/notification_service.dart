@@ -138,7 +138,7 @@ class NotificationService {
         'task_notifications',
         'Task Notifications',
         description: 'Notifications for task assignments and updates',
-        importance: Importance.low,
+        importance: Importance.high,
       ),
       AndroidNotificationChannel(
         'general_notifications',
@@ -328,7 +328,6 @@ class NotificationService {
     String channelId = 'general',
   }) async {
     try {
-      final payloadData = data ?? {};
       final channelName = _getChannelName(channelId);
       final channelDescription = _getChannelDescription(channelId);
 

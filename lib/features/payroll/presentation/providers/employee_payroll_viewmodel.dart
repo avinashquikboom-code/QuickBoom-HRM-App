@@ -114,12 +114,14 @@ class EmployeePayrollViewModel extends StateNotifier<EmployeePayrollState> {
           .map((json) => PayslipModel.fromJson(json as Map<String, dynamic>))
           .toList();
 
+      if (!mounted) return;
       state = EmployeePayrollState(
         payslips: payslips,
         isLoading: false,
       );
     } catch (e) {
       debugPrint('Error fetching payslips: $e');
+      if (!mounted) return;
       state = EmployeePayrollState(
         payslips: [],
         isLoading: false,
@@ -149,6 +151,7 @@ class EmployeePayrollViewModel extends StateNotifier<EmployeePayrollState> {
       }
     } catch (e) {
       debugPrint('❌ Download error: $e');
+      if (!mounted) return false;
       state = state.copyWith(errorMessage: e.toString().replaceAll('Exception: ', ''));
       return false;
     }
