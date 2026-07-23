@@ -51,15 +51,20 @@ class TaskViewModel extends StateNotifier<TaskState> {
     TaskStatus status;
     switch (t['status']?.toString().toLowerCase()) {
       case 'todo':
+      case 'pending':
         status = TaskStatus.todo;
         break;
       case 'inprogress':
+      case 'in_progress':
+      case 'in progress':
         status = TaskStatus.inProgress;
         break;
       case 'completed':
+      case 'done':
         status = TaskStatus.completed;
         break;
       case 'overdue':
+      case 'cancelled':
         status = TaskStatus.overdue;
         break;
       default:
