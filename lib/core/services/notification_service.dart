@@ -315,9 +315,10 @@ class NotificationService {
   }
 
   /// Handle background messages (static method required by Firebase)
+  @pragma('vm:entry-point')
   static Future<void> _handleBackgroundMessage(RemoteMessage message) async {
+    WidgetsFlutterBinding.ensureInitialized();
     debugPrint('📱 Background message received: ${message.messageId}');
-    // Handle background message logic here if needed
   }
 
   /// Show local notification
