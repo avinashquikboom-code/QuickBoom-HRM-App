@@ -369,6 +369,35 @@ class _TaskCard extends ConsumerWidget {
                           ),
                         ],
                       ),
+                      if (task.hrRemark != null && task.hrRemark!.trim().isNotEmpty) ...[
+                        const SizedBox(height: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.amber.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(RemixIcons.message_2_line, size: 12, color: Colors.amber.shade900),
+                              const SizedBox(width: 5),
+                              Expanded(
+                                child: Text(
+                                  'HR Remark: ${task.hrRemark!}',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.amber.shade900,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 14),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -651,6 +680,49 @@ class _TaskDetailSheet extends StatelessWidget {
             style: TextStyle(
                 fontSize: 13, color: AppColors.textSecondary, height: 1.5),
           ),
+          if (task.hrRemark != null && task.hrRemark!.trim().isNotEmpty) ...[
+            const SizedBox(height: 14),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.35)),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(RemixIcons.feedback_line, size: 20, color: Colors.amber.shade900),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'HR Remark / Revision Feedback',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.amber.shade900,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          task.hrRemark!,
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: AppColors.textPrimary,
+                            height: 1.4,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
           const SizedBox(height: 16),
           const Divider(),
           const SizedBox(height: 12),

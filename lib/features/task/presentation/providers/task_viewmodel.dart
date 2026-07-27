@@ -119,6 +119,7 @@ class TaskViewModel extends StateNotifier<TaskState> {
       requiresPhoto: t['requiresPhoto'] == true,
       photoUrl: parsedPhotoUrls.isNotEmpty ? parsedPhotoUrls.first : t['photoUrl']?.toString(),
       photoUrls: parsedPhotoUrls,
+      hrRemark: t['hrRemark']?.toString() ?? t['lastComment']?.toString(),
     );
   }
 

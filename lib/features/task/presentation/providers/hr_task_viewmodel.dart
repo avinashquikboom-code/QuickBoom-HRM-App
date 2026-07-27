@@ -172,6 +172,7 @@ class HrTaskViewModel extends StateNotifier<HrTaskState> {
       priority: priority,
       requiresPhoto: t['requiresPhoto'] == true,
       photoUrl: t['photoUrl']?.toString(),
+      hrRemark: t['hrRemark']?.toString() ?? t['lastComment']?.toString(),
     );
   }
 }

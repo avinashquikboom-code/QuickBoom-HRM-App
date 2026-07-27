@@ -18,6 +18,7 @@ class TaskModel {
   final bool requiresPhoto;
   final String? photoUrl;
   final List<String> photoUrls;
+  final String? hrRemark;
 
   const TaskModel({
     required this.id,
@@ -35,6 +36,7 @@ class TaskModel {
     this.requiresPhoto = false,
     this.photoUrl,
     this.photoUrls = const [],
+    this.hrRemark,
   });
 
   List<String> get allPhotos {
@@ -77,7 +79,7 @@ class TaskModel {
     }
   }
 
-  TaskModel copyWith({TaskStatus? status, String? photoUrl, List<String>? photoUrls}) {
+  TaskModel copyWith({TaskStatus? status, String? photoUrl, List<String>? photoUrls, String? hrRemark}) {
     return TaskModel(
       id: id,
       title: title,
@@ -94,6 +96,7 @@ class TaskModel {
       requiresPhoto: requiresPhoto,
       photoUrl: photoUrl ?? this.photoUrl,
       photoUrls: photoUrls ?? this.photoUrls,
+      hrRemark: hrRemark ?? this.hrRemark,
     );
   }
 }
