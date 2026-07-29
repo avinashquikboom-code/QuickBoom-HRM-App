@@ -10,6 +10,7 @@ import 'package:quickboom_hrm/features/auth/presentation/providers/auth_viewmode
 import 'package:quickboom_hrm/features/dashboard/presentation/screens/employee_shell.dart';
 import 'package:quickboom_hrm/features/dashboard/presentation/screens/hr_shell.dart';
 import 'package:quickboom_hrm/core/widgets/premium_animated_background.dart';
+import 'package:quickboom_hrm/features/auth/presentation/screens/register_view.dart';
 import 'package:quickboom_hrm/features/auth/presentation/screens/forgot_password_view.dart';
 
 class LoginView extends ConsumerStatefulWidget {
@@ -383,6 +384,39 @@ class _LoginViewState extends ConsumerState<LoginView> with SingleTickerProvider
                       ],
                     ),
                   ).animate().fadeIn(delay: 800.ms),
+
+                  SizedBox(height: r.h(20)),
+
+                  // ─── Register Link ─────────────────────────────────────────
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        "Don't have an account? ",
+                        style: TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: r.sp(13),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () {
+                          ref.read(authViewModelProvider.notifier).clearError();
+                          Navigator.of(context).push(
+                            MaterialPageRoute(builder: (_) => const RegisterView()),
+                          );
+                        },
+                        child: Text(
+                          'Register Now',
+                          style: TextStyle(
+                            color: AppColors.primary,
+                            fontSize: r.sp(13),
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ).animate().fadeIn(delay: 900.ms),
                 ],
               ),
             ),

@@ -10,10 +10,10 @@ class AppUrl {
   //  Base
   // ─────────────────────────────────────────────
   static String get baseUrl {
-    // Local Development
-    // return 'http://192.168.1.104:5004';
+    // Local Development (IP Address: 192.168.1.18)
+    return 'http://192.168.1.18:5004';
     // Production
-    return 'https://api.voxiqai.com';
+    // return 'https://api.voxiqai.com';
   }
 
   // ─────────────────────────────────────────────────────────────────────
@@ -32,6 +32,7 @@ class AppUrl {
   //  Auth
   // ─────────────────────────────────────────────
   static const String login = '/api/mobile/auth/login';
+  static const String register = '/api/mobile/auth/register';
   static const String hrLogin = '/api/auth/hr/login';
   static const String logout = '/api/mobile/auth/logout';
   static const String refreshToken = '/api/mobile/auth/refresh';

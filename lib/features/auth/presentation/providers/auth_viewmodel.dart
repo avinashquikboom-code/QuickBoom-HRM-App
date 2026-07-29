@@ -301,6 +301,72 @@ class AuthViewModel extends StateNotifier<AuthState> {
   Future<bool> login(String employeeId, String password) =>
       _performLogin(employeeId, password, forceHrRole: false);
 
+  Future<bool> register({
+    required String mobileNo,
+    required String employeeCode,
+    required String password,
+  }) async {
+    state = state.copyWith(isLoading: true, clearError: true);
+
+    try {
+      final res = await ApiService.post(
+        AppUrl.register,
+        {
+          'mobileNo': mobileNo.trim(),
+          'employeeCode': employeeCode.trim(),
+          'password': password,
+        },
+        timeout: ApiService.loginTimeout,
+      );
+
+      final data = jsonDecode(res.body);
+      if (data is! Map<String, dynamic> || data['success'] != true) {
+        final msg = (data is Map ? data['message'] : null) ?? 'Registration failed. Please try again.';
+        state = state.copyWith(
+          isLoading: false,
+          errorMessage: msg,
+        );
+        return false;
+      }
+
+      final token = data['token'] as String?;
+      if (token != null && token.isNotEmpty && data['user'] is Map<String, dynamic>) {
+        final refreshToken = data['refreshToken'] as String? ?? '';
+        final userRole = data['user']['role'].toString().toUpperCase();
+        final storageRole = (userRole == 'HR' || userRole == 'ADMIN' || userRole == 'SUPER_ADMIN' || userRole == 'PLATFORM_ADMIN')
+            ? 'HR'
+            : userRole;
+
+        await ApiService.saveTokens(token, refreshToken, storageRole);
+        await StorageService.saveUserRole(storageRole);
+
+        final parsedUser = _parseUserFromLoginResponse(
+          data,
+          data['user']['email'] as String? ?? '',
+          forceHrRole: false,
+        );
+
+        state = AuthState(currentUser: parsedUser);
+        _syncFcmTokenInBackground();
+      } else {
+        state = state.copyWith(isLoading: false);
+      }
+
+      return true;
+    } catch (e) {
+      debugPrint('❌ [AUTH] Registration error: $e');
+      final raw = e.toString().replaceFirst('Exception: ', '');
+      final presentable = raw.length <= 200 &&
+          !raw.contains('\n') &&
+          !RegExp(r"type '|subtype|Null|Instance of", caseSensitive: false).hasMatch(raw);
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: presentable ? raw : 'Registration failed. Please try again.',
+      );
+      return false;
+    }
+  }
+
   Future<bool> hrLogin(String email, String password) {
     debugPrint('🔐 [AUTH] HR Login called for email: $email');
     return _performLogin(email, password, forceHrRole: true);
