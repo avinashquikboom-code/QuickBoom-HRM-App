@@ -78,11 +78,8 @@ class WalletService {
         dev.log('Salary Advance Response: ${response.body}', name: 'WalletService');
       }
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        if (data['success'] == true) {
-          return data;
-        }
+      if (response.body.isNotEmpty) {
+        return jsonDecode(response.body);
       }
       return null;
     } catch (e) {

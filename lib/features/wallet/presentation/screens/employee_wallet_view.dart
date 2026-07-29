@@ -401,9 +401,17 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
             months: months,
             reason: reason,
           );
-          if (result != null && mounted) {
+          if (result != null && result['success'] == true && mounted) {
             _showSuccessDialog(amount);
             _loadWalletData();
+          } else if (mounted) {
+            final msg = result?['message'] ?? 'Failed to submit advance request.';
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(msg),
+                backgroundColor: AppColors.error,
+              ),
+            );
           }
         },
       ),
@@ -1982,6 +1990,9 @@ class _RequestAdvanceSheetState extends State<_RequestAdvanceSheet> {
     final divisions = maxVal > 1000 ? (maxVal / 1000).floor() : 1;
 
     return Container(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.85,
+      ),
       padding: EdgeInsets.fromLTRB(
         24,
         12,
@@ -1992,10 +2003,12 @@ class _RequestAdvanceSheetState extends State<_RequestAdvanceSheet> {
         color: Color(0xFFF8FAFC),
         borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+      child: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
           // Drag handle
           Center(
             child: Container(
@@ -2332,8 +2345,9 @@ class _RequestAdvanceSheetState extends State<_RequestAdvanceSheet> {
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 }
 
 class _SalesTransactionFormSheet extends StatefulWidget {
