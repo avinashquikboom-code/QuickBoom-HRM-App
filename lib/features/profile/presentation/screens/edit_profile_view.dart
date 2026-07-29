@@ -245,24 +245,70 @@ class _EditProfileViewState extends ConsumerState<EditProfileView> {
               const SizedBox(height: 16),
 
               // ─── Phone ─────────────────────────────────────────────────
-              _buildField(
-                context: context,
-                controller: _phoneCtrl,
-                label: 'Phone Number',
-                hint: 'Enter your phone number',
-                icon: RemixIcons.phone_line,
-                isDark: isDark,
-                keyboardType: TextInputType.phone,
-                validator: (v) {
-                  if (v == null || v.trim().isEmpty) {
-                    return 'Phone number is required';
-                  }
-                  if (v.trim().length < 10) {
-                    return 'Enter a valid phone number';
-                  }
-                  return null;
-                },
-              ),
+              Builder(builder: (context) {
+                final isHopkid = state.user?.hopkidEmployeeId != null &&
+                    (state.user!.hopkidEmployeeId!.isNotEmpty);
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildField(
+                      context: context,
+                      controller: _phoneCtrl,
+                      label: 'Phone Number',
+                      hint: 'Enter your phone number',
+                      icon: isHopkid
+                          ? RemixIcons.lock_line
+                          : RemixIcons.phone_line,
+                      isDark: isDark,
+                      keyboardType: TextInputType.phone,
+                      readOnly: isHopkid,
+                      validator: isHopkid
+                          ? null
+                          : (v) {
+                              if (v == null || v.trim().isEmpty) {
+                                return 'Phone number is required';
+                              }
+                              if (v.trim().length < 10) {
+                                return 'Enter a valid phone number';
+                              }
+                              return null;
+                            },
+                    ),
+                    if (isHopkid) ...
+                      [
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: AppColors.warning.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                                color:
+                                    AppColors.warning.withValues(alpha: 0.4)),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(RemixIcons.information_line,
+                                  size: 14, color: AppColors.warning),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'Mobile number is managed by HopKid and cannot be changed here.',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: AppColors.warning,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                  ],
+                );
+              }),
 
               const SizedBox(height: 24),
 
@@ -436,6 +482,7 @@ class _EditProfileViewState extends ConsumerState<EditProfileView> {
     required bool isDark,
     TextInputType keyboardType = TextInputType.text,
     int maxLines = 1,
+    bool readOnly = false,
     String? Function(String?)? validator,
   }) {
     final cs = Theme.of(context).colorScheme;
@@ -445,8 +492,11 @@ class _EditProfileViewState extends ConsumerState<EditProfileView> {
       keyboardType: keyboardType,
       maxLines: maxLines,
       validator: validator,
+      readOnly: readOnly,
       style: TextStyle(
-        color: cs.onSurface,
+        color: readOnly
+            ? cs.onSurface.withValues(alpha: 0.45)
+            : cs.onSurface,
         fontWeight: FontWeight.w600,
         fontSize: 14,
       ),
@@ -465,7 +515,11 @@ class _EditProfileViewState extends ConsumerState<EditProfileView> {
         prefixIcon: Icon(icon,
             size: 18, color: cs.onSurface.withValues(alpha: 0.45)),
         filled: true,
-        fillColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+        fillColor: readOnly
+            ? (isDark
+                ? const Color(0xFF0F172A)
+                : const Color(0xFFF1F5F9))
+            : (isDark ? const Color(0xFF1E293B) : Colors.white),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
           borderSide: BorderSide(
