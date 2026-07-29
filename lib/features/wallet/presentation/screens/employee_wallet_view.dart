@@ -25,17 +25,8 @@ class EmployeeWalletView extends ConsumerStatefulWidget {
   ConsumerState<EmployeeWalletView> createState() => _EmployeeWalletViewState();
 }
 
-class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView>
-    with SingleTickerProviderStateMixin {
-  TabController? _tabController;
-  List<dynamic> _commissionData = [];
-  bool _isLoadingComm = false;
-  String _groupBy = 'day';
-  DateTime _fromDate = DateTime.now().subtract(const Duration(days: 30));
-  DateTime _toDate = DateTime.now();
-
+class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
   Map<String, dynamic>? _advanceData;
-  List<dynamic> _stores = [];
 
   List<dynamic> _payslips = [];
   bool _isLoadingPayslips = false;
@@ -43,59 +34,25 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView>
 
   Map<String, dynamic>? _bankDetails;
 
+  // Stores list for transaction form
+  List<dynamic> _stores = [];
+
+  // Commission report state
+  DateTime _fromDate = DateTime.now().subtract(const Duration(days: 30));
+  DateTime _toDate = DateTime.now();
+  bool _isLoadingComm = false;
+  List<dynamic> _commissionData = [];
+  String _groupBy = 'day';
+
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-    _tabController!.addListener(() {
-      if (mounted) setState(() {});
-    });
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final user = ref.read(authViewModelProvider).currentUser;
-      if (user != null) {
-        final isSalesman = PermissionService.canViewCommissionWidget(user);
-        if (isSalesman) {
-          _fetchCommissionReport();
-          _loadStores();
-          SalesService.syncOfflineQueue().then((synced) {
-            if (synced > 0 && mounted) {
-              _fetchCommissionReport();
-            }
-          });
-        } else {
-          _fetchPayslips();
-        }
-      }
+      _fetchPayslips();
     });
 
     _loadWalletData();
-
-    // Automatically trigger sync of offline queue on load
-    SalesService.syncOfflineQueue().then((synced) {
-      if (synced > 0 && mounted) {
-        _fetchCommissionReport();
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _tabController?.dispose();
-    super.dispose();
-  }
-
-  Future<void> _loadStores() async {
-    try {
-      final res = await MobileStoreService.getAllStores();
-      if (res != null && res['success'] == true) {
-        setState(() {
-          _stores = res['data'] ?? [];
-        });
-      }
-    } catch (e) {
-      debugPrint('Error loading stores: $e');
-    }
   }
 
   Future<void> _loadWalletData() async {
@@ -216,14 +173,20 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView>
 
   Widget _buildActiveAdvanceCard(Map<String, dynamic> advance) {
     final double amount = (advance['amount'] as num?)?.toDouble() ?? 0.0;
-    final double monthlyEmi = (advance['monthlyEmi'] as num?)?.toDouble() ?? 0.0;
-    final double remaining = (advance['remainingAmount'] as num?)?.toDouble() ?? amount;
-    final double paidAmount = (advance['paidAmount'] as num?)?.toDouble() ?? 0.0;
+    final double monthlyEmi =
+        (advance['monthlyEmi'] as num?)?.toDouble() ?? 0.0;
+    final double remaining =
+        (advance['remainingAmount'] as num?)?.toDouble() ?? amount;
+    final double paidAmount =
+        (advance['paidAmount'] as num?)?.toDouble() ?? 0.0;
     final int paidEmis = (advance['paidEmis'] as num?)?.toInt() ?? 0;
     final int totalEmis = (advance['months'] as num?)?.toInt() ?? 1;
-    final int pendingEmis = (advance['pendingEmis'] as num?)?.toInt() ?? totalEmis;
+    final int pendingEmis =
+        (advance['pendingEmis'] as num?)?.toInt() ?? totalEmis;
     final String status = (advance['status'] as String?) ?? 'PENDING';
-    final double progress = totalEmis > 0 ? (paidEmis / totalEmis).clamp(0.0, 1.0) : 0.0;
+    final double progress = totalEmis > 0
+        ? (paidEmis / totalEmis).clamp(0.0, 1.0)
+        : 0.0;
 
     final isApproved = status == 'APPROVED';
 
@@ -233,7 +196,7 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView>
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: isApproved 
+          colors: isApproved
               ? [const Color(0xFF0F172A), const Color(0xFF1E293B)]
               : [const Color(0xFF451A03), const Color(0xFF78350F)],
           begin: Alignment.topLeft,
@@ -242,7 +205,9 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView>
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: (isApproved ? Colors.black : Colors.amber).withValues(alpha: 0.1),
+            color: (isApproved ? Colors.black : Colors.amber).withValues(
+              alpha: 0.1,
+            ),
             blurRadius: 16,
             offset: const Offset(0, 8),
           ),
@@ -262,12 +227,20 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView>
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: (isApproved ? const Color(0xFF10B981) : AppColors.warning).withValues(alpha: 0.2),
+                      color:
+                          (isApproved
+                                  ? const Color(0xFF10B981)
+                                  : AppColors.warning)
+                              .withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Icon(
-                      isApproved ? RemixIcons.check_double_line : RemixIcons.time_line,
-                      color: isApproved ? const Color(0xFF10B981) : AppColors.warning,
+                      isApproved
+                          ? RemixIcons.check_double_line
+                          : RemixIcons.time_line,
+                      color: isApproved
+                          ? const Color(0xFF10B981)
+                          : AppColors.warning,
                       size: 20,
                     ),
                   ),
@@ -284,9 +257,13 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView>
                         ),
                       ),
                       Text(
-                        isApproved ? 'Active • Automatic Monthly Deduction' : 'Pending HR Approval',
+                        isApproved
+                            ? 'Active • Automatic Monthly Deduction'
+                            : 'Pending HR Approval',
                         style: TextStyle(
-                          color: isApproved ? const Color(0xFF94A3B8) : const Color(0xFFFDE68A),
+                          color: isApproved
+                              ? const Color(0xFF94A3B8)
+                              : const Color(0xFFFDE68A),
                           fontSize: 11,
                           fontWeight: FontWeight.w500,
                         ),
@@ -296,18 +273,27 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView>
                 ],
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
-                  color: isApproved ? const Color(0xFF059669).withValues(alpha: 0.2) : const Color(0xFFD97706).withValues(alpha: 0.2),
+                  color: isApproved
+                      ? const Color(0xFF059669).withValues(alpha: 0.2)
+                      : const Color(0xFFD97706).withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: isApproved ? const Color(0xFF059669) : const Color(0xFFD97706),
+                    color: isApproved
+                        ? const Color(0xFF059669)
+                        : const Color(0xFFD97706),
                   ),
                 ),
                 child: Text(
                   status,
                   style: TextStyle(
-                    color: isApproved ? const Color(0xFF34D399) : const Color(0xFFFBBF24),
+                    color: isApproved
+                        ? const Color(0xFF34D399)
+                        : const Color(0xFFFBBF24),
                     fontSize: 10,
                     fontWeight: FontWeight.bold,
                     letterSpacing: 0.5,
@@ -366,7 +352,9 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView>
                 value: progress,
                 minHeight: 8,
                 backgroundColor: const Color(0xFF334155),
-                valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF10B981)),
+                valueColor: const AlwaysStoppedAnimation<Color>(
+                  Color(0xFF10B981),
+                ),
               ),
             ),
             const SizedBox(height: 10),
@@ -375,11 +363,19 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView>
               children: [
                 Text(
                   'Repaid: ₹${NumberFormat('#,##,###').format(paidAmount.round())} ($paidEmis of $totalEmis EMIs)',
-                  style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11, fontWeight: FontWeight.w500),
+                  style: const TextStyle(
+                    color: Color(0xFF94A3B8),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
                 Text(
                   '$pendingEmis Pending EMIs',
-                  style: const TextStyle(color: Color(0xFFF59E0B), fontSize: 11, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    color: Color(0xFFF59E0B),
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ],
             ),
@@ -505,12 +501,17 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView>
       showDialog(
         context: context,
         builder: (ctx) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
           title: const Row(
             children: [
               Icon(RemixIcons.time_line, color: Color(0xFFF59E0B)),
               SizedBox(width: 8),
-              Text('Edit Request Pending', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              Text(
+                'Edit Request Pending',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
             ],
           ),
           content: const Text(
@@ -522,7 +523,9 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView>
               onPressed: () => Navigator.pop(ctx),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
               child: const Text('OK', style: TextStyle(color: Colors.white)),
             ),
@@ -548,15 +551,23 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView>
       builder: (ctx) => StatefulBuilder(
         builder: (context, setState) {
           return AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            title: const Text('Request Edit Permission', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            title: const Text(
+              'Request Edit Permission',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   'Updating bank account details requires HR approval. Submit a request to HR to unlock editing.',
-                  style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: AppColors.textSecondary,
+                  ),
                 ),
                 const SizedBox(height: 14),
                 TextField(
@@ -564,7 +575,9 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView>
                   decoration: InputDecoration(
                     labelText: 'Reason for Edit (Optional)',
                     hintText: 'e.g., Changing salary bank account',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                 ),
               ],
@@ -587,19 +600,25 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView>
                           if (res?['success'] == true) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
-                                content: Text('Bank edit request sent to HR successfully.'),
+                                content: Text(
+                                  'Bank edit request sent to HR successfully.',
+                                ),
                                 backgroundColor: AppColors.success,
                               ),
                             );
                             NotificationService().showLocalNotification(
                               title: 'Bank Edit Request Sent',
-                              body: 'Your request to edit bank details has been submitted to HR.',
+                              body:
+                                  'Your request to edit bank details has been submitted to HR.',
                             );
                             _loadWalletData();
                           } else {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text(res?['message'] ?? 'Failed to submit request.'),
+                                content: Text(
+                                  res?['message'] ??
+                                      'Failed to submit request.',
+                                ),
                                 backgroundColor: AppColors.error,
                               ),
                             );
@@ -608,11 +627,23 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView>
                       },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
                 child: isSubmitting
-                    ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                    : const Text('Send to HR', style: TextStyle(color: Colors.white)),
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : const Text(
+                        'Send to HR',
+                        style: TextStyle(color: Colors.white),
+                      ),
               ),
             ],
           );
@@ -621,12 +652,25 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView>
     );
   }
 
-  void _showUpdateBankDetailsDialog(BuildContext context, Map<String, dynamic>? currentDetails) {
-    final bankNameCtrl = TextEditingController(text: currentDetails?['bankName'] ?? '');
-    final accNumCtrl = TextEditingController(text: currentDetails?['accountNumber'] ?? '');
-    final ifscCtrl = TextEditingController(text: currentDetails?['ifscCode'] ?? '');
-    final accTypeCtrl = TextEditingController(text: currentDetails?['accountType'] ?? 'Savings');
-    final branchCtrl = TextEditingController(text: currentDetails?['branchName'] ?? '');
+  void _showUpdateBankDetailsDialog(
+    BuildContext context,
+    Map<String, dynamic>? currentDetails,
+  ) {
+    final bankNameCtrl = TextEditingController(
+      text: currentDetails?['bankName'] ?? '',
+    );
+    final accNumCtrl = TextEditingController(
+      text: currentDetails?['accountNumber'] ?? '',
+    );
+    final ifscCtrl = TextEditingController(
+      text: currentDetails?['ifscCode'] ?? '',
+    );
+    final accTypeCtrl = TextEditingController(
+      text: currentDetails?['accountType'] ?? 'Savings',
+    );
+    final branchCtrl = TextEditingController(
+      text: currentDetails?['branchName'] ?? '',
+    );
     bool isSaving = false;
 
     showDialog(
@@ -634,8 +678,13 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView>
       builder: (ctx) => StatefulBuilder(
         builder: (context, setState) {
           return AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            title: const Text('Edit Bank Account Details', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            title: const Text(
+              'Edit Bank Account Details',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
             content: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -644,7 +693,9 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView>
                     controller: bankNameCtrl,
                     decoration: InputDecoration(
                       labelText: 'Bank Name',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -653,7 +704,9 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView>
                     keyboardType: TextInputType.number,
                     decoration: InputDecoration(
                       labelText: 'Account Number',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -662,7 +715,9 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView>
                     textCapitalization: TextCapitalization.characters,
                     decoration: InputDecoration(
                       labelText: 'IFSC Code',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -670,7 +725,9 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView>
                     controller: accTypeCtrl,
                     decoration: InputDecoration(
                       labelText: 'Account Type (Savings / Current)',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -678,7 +735,9 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView>
                     controller: branchCtrl,
                     decoration: InputDecoration(
                       labelText: 'Branch Name',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                   ),
                 ],
@@ -693,9 +752,15 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView>
                 onPressed: isSaving
                     ? null
                     : () async {
-                        if (bankNameCtrl.text.trim().isEmpty || accNumCtrl.text.trim().isEmpty || ifscCtrl.text.trim().isEmpty) {
+                        if (bankNameCtrl.text.trim().isEmpty ||
+                            accNumCtrl.text.trim().isEmpty ||
+                            ifscCtrl.text.trim().isEmpty) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Please fill all required bank fields.')),
+                            const SnackBar(
+                              content: Text(
+                                'Please fill all required bank fields.',
+                              ),
+                            ),
                           );
                           return;
                         }
@@ -712,19 +777,25 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView>
                           if (res?['success'] == true) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
-                                content: Text('Bank account details updated successfully!'),
+                                content: Text(
+                                  'Bank account details updated successfully!',
+                                ),
                                 backgroundColor: AppColors.success,
                               ),
                             );
                             NotificationService().showLocalNotification(
                               title: 'Bank Account Updated',
-                              body: 'Your bank details have been saved and updated successfully.',
+                              body:
+                                  'Your bank details have been saved and updated successfully.',
                             );
                             _loadWalletData();
                           } else {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text(res?['message'] ?? 'Failed to update bank details.'),
+                                content: Text(
+                                  res?['message'] ??
+                                      'Failed to update bank details.',
+                                ),
                                 backgroundColor: AppColors.error,
                               ),
                             );
@@ -733,11 +804,23 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView>
                       },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
                 child: isSaving
-                    ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                    : const Text('Save Details', style: TextStyle(color: Colors.white)),
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : const Text(
+                        'Save Details',
+                        style: TextStyle(color: Colors.white),
+                      ),
               ),
             ],
           );
@@ -839,7 +922,8 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView>
           final messenger = ScaffoldMessenger.of(context);
           final salesmanGuid = await SalesService.getSalesmanGuid();
           final invoiceNo = payload['invoiceNumber'] as String? ?? '';
-          final salesId = payload['salesId'] as String? ?? HopkidSalesConstants.zeroGuid;
+          final salesId =
+              payload['salesId'] as String? ?? HopkidSalesConstants.zeroGuid;
 
           Map<String, dynamic> result;
 
@@ -884,7 +968,9 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView>
             final newAmt = (payload['newSaleAmount'] as num).toDouble();
             final dto = AddSalesExchangeDto(
               SalesID: salesId,
-              ExchangeInvoiceNo: invoiceNo.startsWith('EX-') ? invoiceNo : 'EX-$invoiceNo',
+              ExchangeInvoiceNo: invoiceNo.startsWith('EX-')
+                  ? invoiceNo
+                  : 'EX-$invoiceNo',
               SalesExchangeProductList: [
                 HopkidSalesProductItem.minimal(
                   salesmanGuid: salesmanGuid,
@@ -933,8 +1019,6 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView>
     final user = ref.watch(authViewModelProvider).currentUser;
     if (user == null) return const Scaffold();
 
-    final isSalesman = PermissionService.canViewCommissionWidget(user);
-
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -950,39 +1034,9 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView>
             fontWeight: FontWeight.w800,
           ),
         ),
-        bottom: isSalesman
-            ? TabBar(
-                controller: _tabController,
-                labelColor: AppColors.primary,
-                unselectedLabelColor: AppColors.textSecondary,
-                indicatorColor: AppColors.primary,
-                tabs: const [
-                  Tab(text: 'Commission'),
-                  Tab(text: 'Salary'),
-                ],
-              )
-            : null,
       ),
-      body: isSalesman
-          ? TabBarView(
-              controller: _tabController,
-              children: [_buildCommissionTab(), _buildSalaryTab(user)],
-            )
-          : _buildSalaryTab(user),
-      floatingActionButton: isSalesman && _tabController?.index == 0
-          ? FloatingActionButton.extended(
-              onPressed: () => _showSalesActionSheet(context),
-              backgroundColor: AppColors.primary,
-              icon: const Icon(RemixIcons.add_line, color: Colors.white),
-              label: const Text(
-                'Add Transaction',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            )
-          : null,
+      body: _buildSalaryTab(user),
+      floatingActionButton: null,
     );
   }
 
@@ -1326,9 +1380,7 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView>
                               Text(
                                 'NET SALARY',
                                 style: TextStyle(
-                                  color: Colors.white.withValues(
-                                    alpha: 0.65,
-                                  ),
+                                  color: Colors.white.withValues(alpha: 0.65),
                                   fontSize: 10,
                                   fontWeight: FontWeight.bold,
                                   letterSpacing: 1.2,
@@ -1336,13 +1388,11 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView>
                               ),
                               const SizedBox(height: 2),
                               Text(
-                                '₹${NumberFormat('#,##,###').format(
-                                  ((_advanceData?['netSalary'] as num?)?.toDouble() != null && (_advanceData!['netSalary'] as num) > 0)
-                                      ? _advanceData!['netSalary']
-                                      : ((_advanceData?['upcomingSalary'] as num?)?.toDouble() != null && (_advanceData!['upcomingSalary'] as num) > 0)
-                                          ? _advanceData!['upcomingSalary']
-                                          : 47250
-                                )}',
+                                '₹${NumberFormat('#,##,###').format(((_advanceData?['netSalary'] as num?)?.toDouble() != null && (_advanceData!['netSalary'] as num) > 0)
+                                    ? _advanceData!['netSalary']
+                                    : ((_advanceData?['upcomingSalary'] as num?)?.toDouble() != null && (_advanceData!['upcomingSalary'] as num) > 0)
+                                    ? _advanceData!['upcomingSalary']
+                                    : 47250)}',
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 24,
@@ -1372,13 +1422,11 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView>
                                   ),
                                   const SizedBox(height: 1),
                                   Text(
-                                    '₹${NumberFormat('#,##,###').format(
-                                      ((_advanceData?['grossSalary'] as num?)?.toDouble() != null && (_advanceData!['grossSalary'] as num) > 0)
-                                          ? _advanceData!['grossSalary']
-                                          : ((_advanceData?['registeredSalary'] as num?)?.toDouble() != null && (_advanceData!['registeredSalary'] as num) > 0)
-                                              ? _advanceData!['registeredSalary']
-                                              : 50000
-                                    )}',
+                                    '₹${NumberFormat('#,##,###').format(((_advanceData?['grossSalary'] as num?)?.toDouble() != null && (_advanceData!['grossSalary'] as num) > 0)
+                                        ? _advanceData!['grossSalary']
+                                        : ((_advanceData?['registeredSalary'] as num?)?.toDouble() != null && (_advanceData!['registeredSalary'] as num) > 0)
+                                        ? _advanceData!['registeredSalary']
+                                        : 50000)}',
                                     style: TextStyle(
                                       color: Colors.white.withValues(
                                         alpha: 0.95,
@@ -1499,7 +1547,9 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView>
             const SizedBox(height: 24),
 
             if (_advanceData?['activeAdvance'] != null)
-              _buildActiveAdvanceCard(_advanceData!['activeAdvance'] as Map<String, dynamic>),
+              _buildActiveAdvanceCard(
+                _advanceData!['activeAdvance'] as Map<String, dynamic>,
+              ),
 
             // Quick Actions
             Text(
@@ -1512,51 +1562,64 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView>
               ),
             ),
             const SizedBox(height: 12),
-            GridView.count(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              crossAxisCount: 2,
-              mainAxisSpacing: 12,
-              crossAxisSpacing: 12,
-              childAspectRatio: 2.0,
+            Row(
               children: [
-                _QuickActionButton(
-                  icon: RemixIcons.hand_coin_line,
-                  label: 'Request\nAdvance',
-                  color: const Color(0xFF8B5CF6),
-                  onTap: () => _showRequestAdvanceSheet(context),
+                Expanded(
+                  child: _QuickActionButton(
+                    icon: RemixIcons.hand_coin_line,
+                    label: 'Request\nAdvance',
+                    color: const Color(0xFF8B5CF6),
+                    onTap: () => _showRequestAdvanceSheet(context),
+                  ),
                 ),
-                _QuickActionButton(
-                  icon: RemixIcons.coupon_line,
-                  label: 'Claim\nExpense',
-                  color: const Color(0xFFF59E0B),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const EmployeeExpensesView()),
-                    );
-                  },
-                ),
-                _QuickActionButton(
-                  icon: RemixIcons.file_text_line,
-                  label: 'Payslips &\nPayroll',
-                  color: const Color(0xFF10B981),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const EmployeePayrollView()),
-                    );
-                  },
-                ),
-                _QuickActionButton(
-                  icon: RemixIcons.bank_line,
-                  label: 'Bank\nDetails',
-                  color: const Color(0xFF3B82F6),
-                  onTap: () => _showBankDetailsSheet(context),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _QuickActionButton(
+                    icon: RemixIcons.coupon_line,
+                    label: 'Claim\nExpense',
+                    color: const Color(0xFFF59E0B),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const EmployeeExpensesView(),
+                        ),
+                      );
+                    },
+                  ),
                 ),
               ],
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: _QuickActionButton(
+                    icon: RemixIcons.file_text_line,
+                    label: 'Payslips &\nPayroll',
+                    color: const Color(0xFF10B981),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const EmployeePayrollView(),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _QuickActionButton(
+                    icon: RemixIcons.bank_line,
+                    label: 'Bank\nDetails',
+                    color: const Color(0xFF3B82F6),
+                    onTap: () => _showBankDetailsSheet(context),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
 
             // Recent Transactions
             Text(
@@ -1762,8 +1825,6 @@ class _SalesActionTile extends StatelessWidget {
   }
 }
 
-
-
 class _QuickActionButton extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -1782,7 +1843,7 @@ class _QuickActionButton extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
           color: AppColors.surface,
           borderRadius: BorderRadius.circular(20),
@@ -1849,7 +1910,9 @@ class _RequestAdvanceSheetState extends State<_RequestAdvanceSheet> {
     final defaultAmt = widget.maxLimit >= 10000.0 ? 10000.0 : widget.maxLimit;
     _amount = (defaultAmt / 1000).round() * 1000.0;
     if (_amount < 0.0) _amount = 0.0;
-    _amountCtrl.text = _amount == 0.0 ? '' : NumberFormat('#,##,###').format(_amount);
+    _amountCtrl.text = _amount == 0.0
+        ? ''
+        : NumberFormat('#,##,###').format(_amount);
   }
 
   @override
@@ -1862,15 +1925,17 @@ class _RequestAdvanceSheetState extends State<_RequestAdvanceSheet> {
   void _onAmountChanged(String valStr) {
     final cleanStr = valStr.replaceAll(RegExp(r'[^\d]'), '');
     final val = double.tryParse(cleanStr) ?? 0.0;
-    
+
     setState(() {
       if (val > widget.maxLimit) {
         _amount = widget.maxLimit;
       } else {
         _amount = val;
       }
-      
-      final formatted = _amount == 0 ? '' : NumberFormat('#,##,###').format(_amount);
+
+      final formatted = _amount == 0
+          ? ''
+          : NumberFormat('#,##,###').format(_amount);
       if (_amountCtrl.text != formatted) {
         _amountCtrl.text = formatted;
         _amountCtrl.selection = TextSelection.fromPosition(
@@ -1883,7 +1948,9 @@ class _RequestAdvanceSheetState extends State<_RequestAdvanceSheet> {
   void _onSliderChanged(double val) {
     setState(() {
       _amount = val;
-      final formatted = _amount == 0 ? '' : NumberFormat('#,##,###').format(_amount);
+      final formatted = _amount == 0
+          ? ''
+          : NumberFormat('#,##,###').format(_amount);
       _amountCtrl.text = formatted;
     });
   }
@@ -1941,7 +2008,7 @@ class _RequestAdvanceSheetState extends State<_RequestAdvanceSheet> {
             ),
           ),
           const SizedBox(height: 24),
-          
+
           // Header
           Row(
             children: [
@@ -2047,7 +2114,10 @@ class _RequestAdvanceSheetState extends State<_RequestAdvanceSheet> {
                     ),
                   ),
                 ),
-                prefixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
+                prefixIconConstraints: const BoxConstraints(
+                  minWidth: 0,
+                  minHeight: 0,
+                ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
                   borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
@@ -2058,9 +2128,15 @@ class _RequestAdvanceSheetState extends State<_RequestAdvanceSheet> {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
-                  borderSide: const BorderSide(color: Color(0xFF9333EA), width: 1.5),
+                  borderSide: const BorderSide(
+                    color: Color(0xFF9333EA),
+                    width: 1.5,
+                  ),
                 ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 16,
+                ),
               ),
             ),
           ),
@@ -2070,7 +2146,9 @@ class _RequestAdvanceSheetState extends State<_RequestAdvanceSheet> {
           SliderTheme(
             data: SliderTheme.of(context).copyWith(
               activeTrackColor: const Color(0xFF9333EA),
-              inactiveTrackColor: const Color(0xFF9333EA).withValues(alpha: 0.15),
+              inactiveTrackColor: const Color(
+                0xFF9333EA,
+              ).withValues(alpha: 0.15),
               thumbColor: const Color(0xFF9333EA),
               overlayColor: const Color(0xFF9333EA).withValues(alpha: 0.2),
               trackHeight: 5,
@@ -2100,7 +2178,7 @@ class _RequestAdvanceSheetState extends State<_RequestAdvanceSheet> {
             ),
           ),
           const SizedBox(height: 12),
-          
+
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [1, 2, 3].map((m) {
@@ -2117,7 +2195,9 @@ class _RequestAdvanceSheetState extends State<_RequestAdvanceSheet> {
                           : Colors.white,
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: isSel ? const Color(0xFF9333EA) : const Color(0xFFE2E8F0),
+                        color: isSel
+                            ? const Color(0xFF9333EA)
+                            : const Color(0xFFE2E8F0),
                         width: isSel ? 1.5 : 1.0,
                       ),
                     ),
@@ -2127,7 +2207,9 @@ class _RequestAdvanceSheetState extends State<_RequestAdvanceSheet> {
                         Text(
                           '$m ${m == 1 ? 'Month' : 'Months'}',
                           style: TextStyle(
-                            color: isSel ? const Color(0xFF9333EA) : const Color(0xFF1E293B),
+                            color: isSel
+                                ? const Color(0xFF9333EA)
+                                : const Color(0xFF1E293B),
                             fontWeight: FontWeight.bold,
                             fontSize: 14,
                           ),
@@ -2180,7 +2262,10 @@ class _RequestAdvanceSheetState extends State<_RequestAdvanceSheet> {
               style: const TextStyle(color: Color(0xFF1E293B), fontSize: 14),
               decoration: InputDecoration(
                 hintText: 'Enter reason (e.g. medical emergency)...',
-                hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 14),
+                hintStyle: const TextStyle(
+                  color: Color(0xFF94A3B8),
+                  fontSize: 14,
+                ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
                   borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
@@ -2191,7 +2276,10 @@ class _RequestAdvanceSheetState extends State<_RequestAdvanceSheet> {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
-                  borderSide: const BorderSide(color: Color(0xFF9333EA), width: 1.5),
+                  borderSide: const BorderSide(
+                    color: Color(0xFF9333EA),
+                    width: 1.5,
+                  ),
                 ),
                 contentPadding: const EdgeInsets.all(16),
               ),
@@ -2236,10 +2324,7 @@ class _RequestAdvanceSheetState extends State<_RequestAdvanceSheet> {
                   ),
                   child: const Text(
                     'Submit Request',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                 ),
               ),
@@ -2432,7 +2517,10 @@ class _SalesTransactionFormSheetState
           const SizedBox(height: 16),
           if (widget.type == 'AddSale' || widget.type == 'UpdateSale') ...[
             DropdownButtonFormField<String>(
-              value: widget.stores.any((s) => s['id'].toString() == _selectedStoreId)
+              value:
+                  widget.stores.any(
+                    (s) => s['id'].toString() == _selectedStoreId,
+                  )
                   ? _selectedStoreId
                   : null,
               hint: const Text('Select Store'),
@@ -2564,7 +2652,10 @@ class _BankDetailsSheet extends StatelessWidget {
                 ),
               ),
               IconButton(
-                icon: const Icon(RemixIcons.edit_line, color: AppColors.primary),
+                icon: const Icon(
+                  RemixIcons.edit_line,
+                  color: AppColors.primary,
+                ),
                 tooltip: 'Edit Bank Details',
                 onPressed: () {
                   Navigator.pop(context);

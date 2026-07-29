@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import 'package:remixicon/remixicon.dart';
 import 'package:quickboom_hrm/core/constants/app_colors.dart';
 import 'package:quickboom_hrm/features/dashboard/presentation/screens/employee_dashboard_view.dart';
@@ -7,19 +7,18 @@ import 'package:quickboom_hrm/features/attendance/presentation/screens/employee_
 import 'package:quickboom_hrm/features/leave/presentation/screens/employee_leave_view.dart';
 import 'package:quickboom_hrm/features/profile/presentation/screens/employee_profile_view.dart';
 import 'package:quickboom_hrm/features/wallet/presentation/screens/employee_wallet_view.dart';
-import 'package:quickboom_hrm/features/auth/presentation/providers/auth_viewmodel.dart';
-import 'package:quickboom_hrm/core/services/permission_service.dart';
+
 import 'package:quickboom_hrm/core/services/notification_service.dart';
 import 'package:quickboom_hrm/core/services/location_tracking_service.dart';
 
-class EmployeeShell extends ConsumerStatefulWidget {
+class EmployeeShell extends StatefulWidget {
   const EmployeeShell({super.key});
 
   @override
-  ConsumerState<EmployeeShell> createState() => _EmployeeShellState();
+  State<EmployeeShell> createState() => _EmployeeShellState();
 }
 
-class _EmployeeShellState extends ConsumerState<EmployeeShell> {
+class _EmployeeShellState extends State<EmployeeShell> {
   int _currentIndex = 0;
 
   @override
@@ -48,8 +47,6 @@ class _EmployeeShellState extends ConsumerState<EmployeeShell> {
         return const EmployeeLeaveView();
       case 4:
         return const EmployeeProfileView();
-      case 5:
-        return const EmployeeWalletView();
       default:
         return const EmployeeDashboardView();
     }
@@ -171,11 +168,7 @@ class _EmployeeShellState extends ConsumerState<EmployeeShell> {
             _buildNavItem(0, RemixIcons.home_3_line, RemixIcons.home_3_fill, 'Home', cs),
             _buildNavItem(1, RemixIcons.time_line, RemixIcons.time_fill, 'Attend', cs),
             const SizedBox(width: 44), // Central notch spacing
-            if (ref.watch(authViewModelProvider).currentUser != null &&
-                PermissionService.canViewCommissionWidget(ref.watch(authViewModelProvider).currentUser))
-              _buildNavItem(5, RemixIcons.money_dollar_circle_line, RemixIcons.money_dollar_circle_fill, 'Commission', cs)
-            else
-              _buildNavItem(3, RemixIcons.calendar_todo_line, RemixIcons.calendar_todo_fill, 'Leave', cs),
+            _buildNavItem(3, RemixIcons.calendar_todo_line, RemixIcons.calendar_todo_fill, 'Leave', cs),
             _buildNavItem(4, RemixIcons.user_3_line, RemixIcons.user_3_fill, 'Profile', cs),
           ],
         ),
