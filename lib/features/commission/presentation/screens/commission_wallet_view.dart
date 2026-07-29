@@ -166,10 +166,10 @@ class _CommissionWalletViewState extends ConsumerState<CommissionWalletView> {
                     ),
                     GestureDetector(
                       onTap: () {
-                        // Navigator.push(
-                        //   context,
-                        //   MaterialPageRoute(builder: (_) => const CommissionHistoryView()),
-                        // );
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const CommissionHistoryView()),
+                        );
                       },
                       child: Text(
                         'View All',
@@ -191,17 +191,51 @@ class _CommissionWalletViewState extends ConsumerState<CommissionWalletView> {
           // ─── Recent Transactions List ───
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 110),
-            sliver: SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  final tx = _walletData!.recentTransactions[index];
-                  return _CommissionTransactionCard(
-                    transaction: tx,
-                  ).animate(delay: (250 + index * 50).ms).fadeIn(duration: 400.ms).slideY(begin: 0.05, end: 0);
-                },
-                childCount: _walletData!.recentTransactions.length,
-              ),
-            ),
+            sliver: _walletData!.recentTransactions.isEmpty
+                ? SliverToBoxAdapter(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 32),
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: AppColors.cardBorder, width: 1),
+                      ),
+                      child: Column(
+                        children: [
+                          Icon(RemixIcons.receipt_line, color: AppColors.textSecondary, size: 40),
+                          const SizedBox(height: 12),
+                          Text(
+                            'No sales recorded yet',
+                            style: TextStyle(
+                              color: AppColors.textPrimary,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Submit sales to start tracking commission',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                : SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        final tx = _walletData!.recentTransactions[index];
+                        return _CommissionTransactionCard(
+                          transaction: tx,
+                        ).animate(delay: (250 + index * 50).ms).fadeIn(duration: 400.ms).slideY(begin: 0.05, end: 0);
+                      },
+                      childCount: _walletData!.recentTransactions.length,
+                    ),
+                  ),
           ),
         ],
       ),
