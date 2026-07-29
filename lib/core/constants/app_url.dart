@@ -32,6 +32,7 @@ class AppUrl {
   //  Auth
   // ─────────────────────────────────────────────
   static const String login = '/api/mobile/auth/login';
+  static const String verifyMobile = '/api/mobile/auth/verify-mobile';
   static const String register = '/api/mobile/auth/register';
   static const String hrLogin = '/api/auth/hr/login';
   static const String logout = '/api/mobile/auth/logout';

@@ -301,6 +301,41 @@ class AuthViewModel extends StateNotifier<AuthState> {
   Future<bool> login(String employeeId, String password) =>
       _performLogin(employeeId, password, forceHrRole: false);
 
+  Future<Map<String, dynamic>> verifyMobile(String mobileNo) async {
+    state = state.copyWith(isLoading: true, clearError: true);
+
+    try {
+      final res = await ApiService.post(
+        AppUrl.verifyMobile,
+        {'mobileNo': mobileNo.trim()},
+        timeout: ApiService.loginTimeout,
+      );
+
+      final data = jsonDecode(res.body);
+      state = state.copyWith(isLoading: false);
+
+      if (data is Map<String, dynamic> && data['success'] == true) {
+        return {
+          'success': true,
+          'employeeName': data['employeeName'] as String? ?? '',
+          'employeeCode': data['employeeCode'] as String? ?? '',
+        };
+      } else {
+        final msg = (data is Map ? data['message'] : null) ?? 'Mobile verification failed.';
+        state = state.copyWith(errorMessage: msg);
+        return {'success': false, 'message': msg};
+      }
+    } catch (e) {
+      debugPrint('❌ [AUTH] Verify mobile error: $e');
+      final raw = e.toString().replaceFirst('Exception: ', '');
+      final msg = raw.length <= 200 && !raw.contains('\n')
+          ? raw
+          : 'Failed to verify mobile number.';
+      state = state.copyWith(isLoading: false, errorMessage: msg);
+      return {'success': false, 'message': msg};
+    }
+  }
+
   Future<bool> register({
     required String mobileNo,
     required String employeeCode,
