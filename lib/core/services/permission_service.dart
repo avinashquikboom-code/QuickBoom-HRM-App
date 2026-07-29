@@ -35,10 +35,10 @@ class PermissionService {
         };
       case UserRole.storeManager:
         return {
-          canViewCommission: false,
+          canViewCommission: true,
           canViewWallet: true,
-          canViewCommissionHistory: false,
-          canViewCommissionDetails: false,
+          canViewCommissionHistory: true,
+          canViewCommissionDetails: true,
           canApproveLeave: true,
           canApproveExpense: true,
           canManageEmployees: true,
@@ -50,10 +50,10 @@ class PermissionService {
         };
       case UserRole.helper:
         return {
-          canViewCommission: false,
+          canViewCommission: true,
           canViewWallet: true,
-          canViewCommissionHistory: false,
-          canViewCommissionDetails: false,
+          canViewCommissionHistory: true,
+          canViewCommissionDetails: true,
           canApproveLeave: false,
           canApproveExpense: false,
           canManageEmployees: false,
@@ -65,10 +65,10 @@ class PermissionService {
         };
       case UserRole.hrManager:
         return {
-          canViewCommission: false, // Only Salesman can view commission
+          canViewCommission: true,
           canViewWallet: true,
-          canViewCommissionHistory: false,
-          canViewCommissionDetails: false,
+          canViewCommissionHistory: true,
+          canViewCommissionDetails: true,
           canApproveLeave: true,
           canApproveExpense: true,
           canManageEmployees: true,
@@ -80,10 +80,10 @@ class PermissionService {
         };
       case UserRole.employee:
         return {
-          canViewCommission: false,
+          canViewCommission: true,
           canViewWallet: true,
-          canViewCommissionHistory: false,
-          canViewCommissionDetails: false,
+          canViewCommissionHistory: true,
+          canViewCommissionDetails: true,
           canApproveLeave: false,
           canApproveExpense: false,
           canManageEmployees: false,
