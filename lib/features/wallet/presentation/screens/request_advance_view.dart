@@ -929,40 +929,49 @@ class _AdvanceHistoryCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF9333EA).withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
+              Expanded(
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF9333EA).withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(RemixIcons.bank_card_line, color: Color(0xFF9333EA), size: 20),
                     ),
-                    child: const Icon(RemixIcons.bank_card_line, color: Color(0xFF9333EA), size: 20),
-                  ),
-                  const SizedBox(width: 12),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '₹${NumberFormat('#,##,###').format(amount.round())}',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w900,
-                          color: AppColors.textPrimary,
-                        ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '₹${NumberFormat('#,##,###').format(amount.round())}',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w900,
+                              color: AppColors.textPrimary,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          Text(
+                            '$months Month Tenure • ₹${NumberFormat('#,##,###').format(monthlyEmi.round())}/mo',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textSecondary,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
                       ),
-                      Text(
-                        '$months Month Tenure • ₹${NumberFormat('#,##,###').format(monthlyEmi.round())}/mo',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+                    ),
+                  ],
+                ),
               ),
+              const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                 decoration: BoxDecoration(
@@ -1043,19 +1052,24 @@ class _AdvanceHistoryCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Icon(RemixIcons.time_line, size: 13, color: AppColors.textSecondary),
-                  const SizedBox(width: 4),
-                  Text(
-                    'Requested: ',
-                    style: TextStyle(fontSize: 11, color: AppColors.textSecondary, fontWeight: FontWeight.w500),
-                  ),
-                  Text(
-                    _formatTimestamp(requestedOn),
-                    style: TextStyle(fontSize: 11, color: AppColors.textPrimary, fontWeight: FontWeight.bold),
-                  ),
-                ],
+              Expanded(
+                child: Row(
+                  children: [
+                    Icon(RemixIcons.time_line, size: 13, color: AppColors.textSecondary),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Requested: ',
+                      style: TextStyle(fontSize: 11, color: AppColors.textSecondary, fontWeight: FontWeight.w500),
+                    ),
+                    Flexible(
+                      child: Text(
+                        _formatTimestamp(requestedOn),
+                        style: TextStyle(fontSize: 11, color: AppColors.textPrimary, fontWeight: FontWeight.bold),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
