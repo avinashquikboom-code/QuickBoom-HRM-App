@@ -8,6 +8,8 @@ class StoreDashboardState {
   final StoreDashboard? dashboard;
   final StoreEmployeeList? employees;
   final List<StorePerformance>? storePerformance;
+  final List<Map<String, dynamic>> storesList;
+  final int? selectedStoreId;
   final bool isLoadingDashboard;
   final bool isLoadingEmployees;
   final bool isLoadingPerformance;
@@ -17,6 +19,8 @@ class StoreDashboardState {
     this.dashboard,
     this.employees,
     this.storePerformance,
+    this.storesList = const [],
+    this.selectedStoreId,
     this.isLoadingDashboard = false,
     this.isLoadingEmployees = false,
     this.isLoadingPerformance = false,
@@ -27,6 +31,8 @@ class StoreDashboardState {
     StoreDashboard? dashboard,
     StoreEmployeeList? employees,
     List<StorePerformance>? storePerformance,
+    List<Map<String, dynamic>>? storesList,
+    int? selectedStoreId,
     bool? isLoadingDashboard,
     bool? isLoadingEmployees,
     bool? isLoadingPerformance,
@@ -36,6 +42,8 @@ class StoreDashboardState {
       dashboard: dashboard ?? this.dashboard,
       employees: employees ?? this.employees,
       storePerformance: storePerformance ?? this.storePerformance,
+      storesList: storesList ?? this.storesList,
+      selectedStoreId: selectedStoreId ?? this.selectedStoreId,
       isLoadingDashboard: isLoadingDashboard ?? this.isLoadingDashboard,
       isLoadingEmployees: isLoadingEmployees ?? this.isLoadingEmployees,
       isLoadingPerformance: isLoadingPerformance ?? this.isLoadingPerformance,
@@ -47,18 +55,29 @@ class StoreDashboardState {
 class StoreDashboardViewModel extends StateNotifier<StoreDashboardState> {
   StoreDashboardViewModel() : super(const StoreDashboardState());
 
-  // Fetch Store Dashboard
-  Future<void> fetchDashboard() async {
+  // Fetch all active stores for store switcher dropdown
+  Future<void> fetchStores() async {
+    try {
+      final stores = await StoreService.fetchAllStores();
+      state = state.copyWith(storesList: stores);
+    } catch (e) {
+      debugPrint('Error loading stores list: $e');
+    }
+  }
+
+  // Fetch Store Dashboard for a specific store or default assigned store
+  Future<void> fetchDashboard({int? storeId}) async {
+    final targetStoreId = storeId ?? state.selectedStoreId;
     state = state.copyWith(isLoadingDashboard: true, errorMessage: null);
     try {
-      debugPrint('🔄 Fetching store dashboard...');
-      final dashboard = await StoreService.fetchStoreDashboard();
+      debugPrint('🔄 Fetching store dashboard for storeId=$targetStoreId...');
+      final dashboard = await StoreService.fetchStoreDashboard(storeId: targetStoreId);
       state = state.copyWith(
         dashboard: dashboard,
         isLoadingDashboard: false,
         errorMessage: dashboard == null ? 'Failed to load store dashboard' : null,
       );
-      debugPrint('✅ Store dashboard loaded');
+      debugPrint('✅ Store dashboard loaded for ${dashboard?.storeName}');
     } catch (e) {
       debugPrint('❌ Error fetching store dashboard: $e');
       state = state.copyWith(
@@ -66,6 +85,12 @@ class StoreDashboardViewModel extends StateNotifier<StoreDashboardState> {
         errorMessage: 'Failed to load store dashboard',
       );
     }
+  }
+
+  // Switch active store
+  Future<void> selectStore(int storeId) async {
+    state = state.copyWith(selectedStoreId: storeId);
+    await fetchDashboard(storeId: storeId);
   }
 
   // Fetch Store Employees

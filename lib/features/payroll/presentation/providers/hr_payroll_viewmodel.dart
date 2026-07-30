@@ -87,39 +87,62 @@ class HRPayrollViewModel extends StateNotifier<HRPayrollState> {
         fetchPayrollRuns(),
       ]);
     } catch (error) {
-      state = state.copyWith(
-        isLoading: false,
-        errorMessage: error.toString().replaceAll('Exception: ', ''),
-      );
+      if (mounted) {
+        state = state.copyWith(
+          isLoading: false,
+          errorMessage: error.toString().replaceAll('Exception: ', ''),
+        );
+      }
     }
   }
 
   Future<void> fetchPayrollStats() async {
     try {
       final res = await ApiService.get(AppUrl.hrPayrollStats);
+      if (res.statusCode == 403 || res.statusCode == 401) {
+        if (mounted) {
+          state = state.copyWith(isLoading: false);
+        }
+        return;
+      }
+
       final data = jsonDecode(res.body);
-
       final statsData = data['data'];
-      final stats = HRPayrollStats(
-        totalEmployees: statsData['totalEmployees'] as int? ?? 0,
-        activeEmployees: statsData['activeEmployees'] as int? ?? 0,
-        totalMonthlyPayroll: (statsData['totalMonthlyPayroll'] as num?)?.toDouble() ?? 0.0,
-        averageSalary: (statsData['averageSalary'] as num?)?.toDouble() ?? 0.0,
-        currency: statsData['currency']?.toString() ?? 'INR',
-      );
+      if (statsData != null) {
+        final stats = HRPayrollStats(
+          totalEmployees: statsData['totalEmployees'] as int? ?? 0,
+          activeEmployees: statsData['activeEmployees'] as int? ?? 0,
+          totalMonthlyPayroll: (statsData['totalMonthlyPayroll'] as num?)?.toDouble() ?? 0.0,
+          averageSalary: (statsData['averageSalary'] as num?)?.toDouble() ?? 0.0,
+          currency: statsData['currency']?.toString() ?? 'INR',
+        );
 
-      state = state.copyWith(stats: stats, isLoading: false);
+        if (mounted) {
+          state = state.copyWith(stats: stats, isLoading: false);
+        }
+      } else if (mounted) {
+        state = state.copyWith(isLoading: false);
+      }
     } catch (error) {
-      state = state.copyWith(
-        isLoading: false,
-        errorMessage: error.toString().replaceAll('Exception: ', ''),
-      );
+      if (mounted) {
+        state = state.copyWith(
+          isLoading: false,
+          errorMessage: error.toString().replaceAll('Exception: ', ''),
+        );
+      }
     }
   }
 
   Future<void> fetchPayrollRuns() async {
     try {
       final res = await ApiService.get(AppUrl.hrPayrollRuns);
+      if (res.statusCode == 403 || res.statusCode == 401) {
+        if (mounted) {
+          state = state.copyWith(isLoading: false);
+        }
+        return;
+      }
+
       final data = jsonDecode(res.body);
 
       final runs = (data['payrollRuns'] as List?)
@@ -134,12 +157,16 @@ class HRPayrollViewModel extends StateNotifier<HRPayrollState> {
               .toList() ??
           [];
 
-      state = state.copyWith(payrollRuns: runs, isLoading: false);
+      if (mounted) {
+        state = state.copyWith(payrollRuns: runs, isLoading: false);
+      }
     } catch (error) {
-      state = state.copyWith(
-        isLoading: false,
-        errorMessage: error.toString().replaceAll('Exception: ', ''),
-      );
+      if (mounted) {
+        state = state.copyWith(
+          isLoading: false,
+          errorMessage: error.toString().replaceAll('Exception: ', ''),
+        );
+      }
     }
   }
 }

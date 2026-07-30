@@ -572,31 +572,34 @@ class _AssignTaskSheetState extends ConsumerState<_AssignTaskSheet> {
                               separatorBuilder: (_, index) => Divider(height: 1, color: AppColors.cardBorder),
                               itemBuilder: (context, index) {
                                 final emp = filteredEmployees[index];
-                                return ListTile(
-                                  dense: true,
-                                  leading: CircleAvatar(
-                                    radius: 14,
-                                    backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-                                    child: Text(
-                                      emp.name.isNotEmpty ? emp.name.substring(0, 1).toUpperCase() : 'E',
-                                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primary),
+                                return Material(
+                                  color: Colors.transparent,
+                                  child: ListTile(
+                                    dense: true,
+                                    leading: CircleAvatar(
+                                      radius: 14,
+                                      backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                                      child: Text(
+                                        emp.name.isNotEmpty ? emp.name.substring(0, 1).toUpperCase() : 'E',
+                                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primary),
+                                      ),
                                     ),
+                                    title: Text(
+                                      emp.name,
+                                      style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.textPrimary, fontSize: 13),
+                                    ),
+                                    subtitle: Text(
+                                      'Code: ${emp.employeeId}',
+                                      style: TextStyle(color: AppColors.textHint, fontSize: 11),
+                                    ),
+                                    onTap: () {
+                                      setState(() {
+                                        _selectedEmployee = emp;
+                                        _employeeSearchQuery = '';
+                                        _searchController.clear();
+                                      });
+                                    },
                                   ),
-                                  title: Text(
-                                    emp.name,
-                                    style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.textPrimary, fontSize: 13),
-                                  ),
-                                  subtitle: Text(
-                                    'Code: ${emp.employeeId}',
-                                    style: TextStyle(color: AppColors.textHint, fontSize: 11),
-                                  ),
-                                  onTap: () {
-                                    setState(() {
-                                      _selectedEmployee = emp;
-                                      _employeeSearchQuery = '';
-                                      _searchController.clear();
-                                    });
-                                  },
                                 );
                               },
                             ),

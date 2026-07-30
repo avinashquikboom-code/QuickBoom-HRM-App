@@ -493,33 +493,42 @@ class _HrProfileViewState extends ConsumerState<HrProfileView> {
                 ),
               ),
               const SizedBox(height: 16),
-              ListTile(
-                leading: const Icon(RemixIcons.image_line, color: AppColors.primary),
-                title: const Text('Choose from Gallery', style: TextStyle(fontWeight: FontWeight.w600)),
-                onTap: () async {
-                  Navigator.pop(context);
-                  await _pickAndUploadImage(ImageSource.gallery);
-                },
-              ),
-              ListTile(
-                leading: const Icon(RemixIcons.camera_line, color: AppColors.primary),
-                title: const Text('Take a Photo', style: TextStyle(fontWeight: FontWeight.w600)),
-                onTap: () async {
-                  Navigator.pop(context);
-                  await _pickAndUploadImage(ImageSource.camera);
-                },
-              ),
-              if (hasAvatar)
-                ListTile(
-                  leading: Icon(RemixIcons.delete_bin_line, color: AppColors.error),
-                  title: Text(
-                    'Remove Photo',
-                    style: TextStyle(color: AppColors.error, fontWeight: FontWeight.w600),
-                  ),
+              Material(
+                color: Colors.transparent,
+                child: ListTile(
+                  leading: const Icon(RemixIcons.image_line, color: AppColors.primary),
+                  title: const Text('Choose from Gallery', style: TextStyle(fontWeight: FontWeight.w600)),
                   onTap: () async {
                     Navigator.pop(context);
-                    await ref.read(profileViewModelProvider.notifier).removeAvatar();
+                    await _pickAndUploadImage(ImageSource.gallery);
                   },
+                ),
+              ),
+              Material(
+                color: Colors.transparent,
+                child: ListTile(
+                  leading: const Icon(RemixIcons.camera_line, color: AppColors.primary),
+                  title: const Text('Take a Photo', style: TextStyle(fontWeight: FontWeight.w600)),
+                  onTap: () async {
+                    Navigator.pop(context);
+                    await _pickAndUploadImage(ImageSource.camera);
+                  },
+                ),
+              ),
+              if (hasAvatar)
+                Material(
+                  color: Colors.transparent,
+                  child: ListTile(
+                    leading: Icon(RemixIcons.delete_bin_line, color: AppColors.error),
+                    title: Text(
+                      'Remove Photo',
+                      style: TextStyle(color: AppColors.error, fontWeight: FontWeight.w600),
+                    ),
+                    onTap: () async {
+                      Navigator.pop(context);
+                      await ref.read(profileViewModelProvider.notifier).removeAvatar();
+                    },
+                  ),
                 ),
               const SizedBox(height: 16),
             ],

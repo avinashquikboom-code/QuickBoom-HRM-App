@@ -1620,27 +1620,32 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(10),
+              Expanded(
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(RemixIcons.file_text_line,
+                          color: AppColors.primary, size: 20),
                     ),
-                    child: Icon(RemixIcons.file_text_line,
-                        color: AppColors.primary, size: 20),
-                  ),
-                  const SizedBox(width: 10),
-                  const Text(
-                    'SALARY SLIP BREAKDOWN',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13,
-                      letterSpacing: 0.5,
+                    const SizedBox(width: 10),
+                    const Flexible(
+                      child: Text(
+                        'SALARY SLIP BREAKDOWN',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                          letterSpacing: 0.5,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
               Container(
                 padding:
@@ -1769,24 +1774,30 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Row(
-            children: [
-              if (icon != null) ...[
-                Icon(icon, size: 16, color: AppColors.textSecondary),
-                const SizedBox(width: 8),
-              ],
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: isBold ? FontWeight.bold : FontWeight.w500,
-                  color: isBold
-                      ? AppColors.textPrimary
-                      : AppColors.textSecondary,
+          Expanded(
+            child: Row(
+              children: [
+                if (icon != null) ...[
+                  Icon(icon, size: 16, color: AppColors.textSecondary),
+                  const SizedBox(width: 8),
+                ],
+                Flexible(
+                  child: Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: isBold ? FontWeight.bold : FontWeight.w500,
+                      color: isBold
+                          ? AppColors.textPrimary
+                          : AppColors.textSecondary,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
+          const SizedBox(width: 8),
           Text(
             value,
             style: TextStyle(
@@ -1818,33 +1829,36 @@ class _SalesActionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      leading: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(10),
+    return Material(
+      color: Colors.transparent,
+      child: ListTile(
+        leading: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(icon, color: color, size: 20),
         ),
-        child: Icon(icon, color: color, size: 20),
-      ),
-      title: Text(
-        title,
-        style: TextStyle(
-          fontWeight: FontWeight.bold,
-          color: AppColors.textPrimary,
-          fontSize: 14,
+        title: Text(
+          title,
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: AppColors.textPrimary,
+            fontSize: 14,
+          ),
         ),
+        subtitle: Text(
+          subtitle,
+          style: TextStyle(color: AppColors.textSecondary, fontSize: 11),
+        ),
+        trailing: Icon(
+          RemixIcons.arrow_right_s_line,
+          color: AppColors.textHint,
+          size: 18,
+        ),
+        onTap: onTap,
       ),
-      subtitle: Text(
-        subtitle,
-        style: TextStyle(color: AppColors.textSecondary, fontSize: 11),
-      ),
-      trailing: Icon(
-        RemixIcons.arrow_right_s_line,
-        color: AppColors.textHint,
-        size: 18,
-      ),
-      onTap: onTap,
     );
   }
 }

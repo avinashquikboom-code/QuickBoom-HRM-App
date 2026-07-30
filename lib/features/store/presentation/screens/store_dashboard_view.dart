@@ -26,11 +26,141 @@ class _StoreDashboardViewState extends ConsumerState<StoreDashboardView> {
   }
 
   Future<void> _loadDashboard() async {
-    await ref.read(storeDashboardViewModelProvider.notifier).fetchDashboard();
+    final notifier = ref.read(storeDashboardViewModelProvider.notifier);
+    await notifier.fetchStores();
+    await notifier.fetchDashboard();
   }
 
   Future<void> _onRefresh() async {
     await _loadDashboard();
+  }
+
+  void _showStoreSelectorSheet(BuildContext context, StoreDashboardState state) {
+    final stores = state.storesList;
+    if (stores.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No additional stores available')),
+      );
+      return;
+    }
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.textHint.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                const Icon(RemixIcons.store_2_fill, color: AppColors.primary, size: 22),
+                const SizedBox(width: 10),
+                Text(
+                  'Select Store',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Flexible(
+              child: ListView.separated(
+                shrinkWrap: true,
+                itemCount: stores.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 8),
+                itemBuilder: (ctx, idx) {
+                  final s = stores[idx];
+                  final sId = s['id'] as int? ?? 0;
+                  final sName = s['name']?.toString() ?? 'Store';
+                  final sCode = s['code']?.toString() ?? '';
+                  final isSelected = sName == state.dashboard?.storeName || sId == state.selectedStoreId;
+
+                  return InkWell(
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      ref.read(storeDashboardViewModelProvider.notifier).selectStore(sId);
+                    },
+                    borderRadius: BorderRadius.circular(14),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? AppColors.primary.withValues(alpha: 0.08)
+                            : AppColors.background,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: isSelected ? AppColors.primary : AppColors.cardBorder,
+                          width: isSelected ? 1.5 : 1.0,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            RemixIcons.store_line,
+                            color: isSelected ? AppColors.primary : AppColors.textSecondary,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  sName,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                                    color: isSelected ? AppColors.primary : AppColors.textPrimary,
+                                  ),
+                                ),
+                                if (sCode.isNotEmpty)
+                                  Text(
+                                    'Code: $sCode',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: AppColors.textSecondary,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                          if (isSelected)
+                            const Icon(
+                              RemixIcons.checkbox_circle_fill,
+                              color: AppColors.primary,
+                              size: 20,
+                            ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -53,6 +183,12 @@ class _StoreDashboardViewState extends ConsumerState<StoreDashboardView> {
           ),
         ),
         actions: [
+          if (state.storesList.isNotEmpty)
+            IconButton(
+              icon: Icon(RemixIcons.store_2_line, color: AppColors.primary),
+              tooltip: 'Switch Store',
+              onPressed: () => _showStoreSelectorSheet(context, state),
+            ),
           IconButton(
             icon: Icon(RemixIcons.refresh_line, color: AppColors.textSecondary),
             onPressed: _onRefresh,
@@ -81,10 +217,11 @@ class _StoreDashboardViewState extends ConsumerState<StoreDashboardView> {
       return _buildEmptyState();
     }
 
-    return _buildDashboard(state.dashboard!);
+    return _buildDashboard(context, state);
   }
 
-  Widget _buildDashboard(StoreDashboard dashboard) {
+  Widget _buildDashboard(BuildContext context, StoreDashboardState state) {
+    final dashboard = state.dashboard!;
     return SingleChildScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -96,6 +233,9 @@ class _StoreDashboardViewState extends ConsumerState<StoreDashboardView> {
             storeName: dashboard.storeName,
             performance: dashboard.storePerformance,
             totalEmployees: dashboard.totalEmployees,
+            onSwitchStore: state.storesList.isNotEmpty
+                ? () => _showStoreSelectorSheet(context, state)
+                : null,
           ).animate().fadeIn().slideY(begin: 0.08, end: 0),
 
           const SizedBox(height: 24),
@@ -359,11 +499,13 @@ class _StoreHeroCard extends StatelessWidget {
   final String storeName;
   final double performance;
   final int totalEmployees;
+  final VoidCallback? onSwitchStore;
 
   const _StoreHeroCard({
     required this.storeName,
     required this.performance,
     required this.totalEmployees,
+    this.onSwitchStore,
   });
 
   @override
@@ -426,22 +568,49 @@ class _StoreHeroCard extends StatelessWidget {
                   ],
                 ),
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.15),
+              if (onSwitchStore != null)
+                InkWell(
+                  onTap: onSwitchStore,
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(RemixIcons.store_line, color: Colors.white, size: 12),
+                        SizedBox(width: 4),
+                        Text(
+                          'Switch',
+                          style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w800),
+                        ),
+                        SizedBox(width: 2),
+                        Icon(RemixIcons.arrow_down_s_line, color: Colors.white, size: 14),
+                      ],
+                    ),
+                  ),
+                )
+              else
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(RemixIcons.checkbox_circle_fill, color: Colors.white, size: 11),
+                      SizedBox(width: 4),
+                      Text('Active', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w800)),
+                    ],
+                  ),
                 ),
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(RemixIcons.checkbox_circle_fill, color: Colors.white, size: 11),
-                    SizedBox(width: 4),
-                    Text('Active', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w800)),
-                  ],
-                ),
-              ),
             ],
           ),
           const SizedBox(height: 20),

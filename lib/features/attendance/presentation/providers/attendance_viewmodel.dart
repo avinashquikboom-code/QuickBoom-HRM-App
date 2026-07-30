@@ -85,6 +85,7 @@ class AttendanceViewModel extends StateNotifier<AttendanceState> {
       final List rawHistory = historyData['data']?['attendances'] ?? [];
       final history = rawHistory.map((h) => _parseRecord(h)).toList();
 
+      if (!mounted) return;
       state = AttendanceState(
         todayRecord: todayRecord,
         isCheckedIn: todayRecord != null && todayRecord.checkIn != null && todayRecord.checkOut == null,
@@ -95,7 +96,9 @@ class AttendanceViewModel extends StateNotifier<AttendanceState> {
       debugPrint('✅ Attendance data updated successfully');
     } catch (e) {
       debugPrint('❌ Error fetching attendance data: $e');
-      state = state.copyWith(isLoading: false);
+      if (mounted) {
+        state = state.copyWith(isLoading: false);
+      }
     }
   }
 

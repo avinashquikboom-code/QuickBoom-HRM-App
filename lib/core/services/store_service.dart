@@ -20,8 +20,8 @@ class StoreService {
     };
   }
 
-  // Fetch Store Dashboard for Store Manager
-  static Future<StoreDashboard?> fetchStoreDashboard() async {
+  // Fetch Store Dashboard for Store Manager / HR / Admin
+  static Future<StoreDashboard?> fetchStoreDashboard({int? storeId}) async {
     try {
       final token = await _getToken();
       if (token == null) {
@@ -29,9 +29,10 @@ class StoreService {
         return null;
       }
 
+      final queryParams = storeId != null ? '?storeId=$storeId' : '';
       final response = await http
           .get(
-            Uri.parse('${AppUrl.baseUrl}/api/mobile/store/dashboard'),
+            Uri.parse('${AppUrl.baseUrl}/api/mobile/store/dashboard$queryParams'),
             headers: _getHeaders(token),
           )
           .timeout(_timeout);
@@ -50,6 +51,32 @@ class StoreService {
     } catch (e) {
       dev.log('Error fetching store dashboard: $e', name: 'StoreService');
       return null;
+    }
+  }
+
+  // Fetch All Active Stores for dropdown
+  static Future<List<Map<String, dynamic>>> fetchAllStores() async {
+    try {
+      final token = await _getToken();
+      if (token == null) return [];
+
+      final response = await http
+          .get(
+            Uri.parse('${AppUrl.baseUrl}${AppUrl.mobileStoreAll}'),
+            headers: _getHeaders(token),
+          )
+          .timeout(_timeout);
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success'] == true && data['data'] != null) {
+          return List<Map<String, dynamic>>.from(data['data']);
+        }
+      }
+      return [];
+    } catch (e) {
+      dev.log('Error fetching all stores: $e', name: 'StoreService');
+      return [];
     }
   }
 
