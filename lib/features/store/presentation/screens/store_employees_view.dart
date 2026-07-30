@@ -22,7 +22,7 @@ class _StoreEmployeesViewState extends ConsumerState<StoreEmployeesView> {
   String _searchQuery = '';
 
   // Filter chips for quick filtering
-  static const _statusFilters = [
+  static const _statusFilters = <Map<String, String?>>[
     {'label': 'All', 'value': null},
     {'label': 'Present', 'value': 'present'},
     {'label': 'Absent', 'value': 'absent'},

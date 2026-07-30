@@ -4,7 +4,6 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:remixicon/remixicon.dart';
 import 'package:quickboom_hrm/core/constants/app_colors.dart';
 import 'package:quickboom_hrm/core/widgets/shimmer_loading.dart';
-import 'package:quickboom_hrm/features/store/data/store_models.dart';
 import 'package:quickboom_hrm/features/store/presentation/providers/store_dashboard_viewmodel.dart';
 
 class StoreDashboardView extends ConsumerStatefulWidget {

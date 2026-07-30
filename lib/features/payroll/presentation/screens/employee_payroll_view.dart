@@ -437,16 +437,12 @@ class _SalaryComponent extends StatelessWidget {
   final String label;
   final String value;
   final bool isCommission;
-  final bool isPending;
-  final bool isPaid;
   final bool isDeduction;
 
   const _SalaryComponent({
     required this.label,
     required this.value,
     this.isCommission = false,
-    this.isPending = false,
-    this.isPaid = false,
     this.isDeduction = false,
   });
 
@@ -457,10 +453,6 @@ class _SalaryComponent extends StatelessWidget {
 
     if (isCommission) {
       valueColor = AppColors.primary;
-    } else if (isPending) {
-      valueColor = AppColors.warning;
-    } else if (isPaid) {
-      valueColor = AppColors.success;
     } else if (isDeduction) {
       valueColor = AppColors.error;
     }

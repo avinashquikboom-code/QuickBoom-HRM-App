@@ -825,15 +825,7 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
             _buildCommissionTab(),
           ],
         ),
-        floatingActionButton: FloatingActionButton.extended(
-          onPressed: () => _showSalesActionSheet(context),
-          icon: const Icon(RemixIcons.add_line, color: Colors.white),
-          label: const Text(
-            'Add Sale',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-          ),
-          backgroundColor: AppColors.primary,
-        ),
+
       ),
     );
   }
@@ -855,42 +847,74 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
       },
       child: Column(
         children: [
-          // Filter bar
+          // Filter bar + Add Sale button
           Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+            child: Column(
               children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: _selectDateRange,
-                    icon: const Icon(RemixIcons.calendar_2_line, size: 16),
-                    label: Text(
-                      '${DateFormat('dd MMM').format(_fromDate)} - ${DateFormat('dd MMM').format(_toDate)}',
-                      style: const TextStyle(fontSize: 12),
+                // Add Sale prominent button
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () => _showSalesActionSheet(context),
+                    icon: const Icon(RemixIcons.add_circle_fill, color: Colors.white, size: 18),
+                    label: const Text(
+                      'Add Sale',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                        letterSpacing: 0.3,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      elevation: 3,
+                      shadowColor: AppColors.primary.withValues(alpha: 0.35),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 13),
                     ),
                   ),
                 ),
-                const SizedBox(width: 10),
-                DropdownButton<String>(
-                  value: _groupBy,
-                  onChanged: (val) {
-                    if (val != null) {
-                      setState(() => _groupBy = val);
-                      _fetchCommissionReport();
-                    }
-                  },
-                  items: const [
-                    DropdownMenuItem(
-                      value: 'day',
-                      child: Text('Daily', style: TextStyle(fontSize: 13)),
+                const SizedBox(height: 10),
+                // Date range + group-by row
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: _selectDateRange,
+                        icon: const Icon(RemixIcons.calendar_2_line, size: 16),
+                        label: Text(
+                          '${DateFormat('dd MMM').format(_fromDate)} - ${DateFormat('dd MMM').format(_toDate)}',
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                      ),
                     ),
-                    DropdownMenuItem(
-                      value: 'week',
-                      child: Text('Weekly', style: TextStyle(fontSize: 13)),
-                    ),
-                    DropdownMenuItem(
-                      value: 'month',
-                      child: Text('Monthly', style: TextStyle(fontSize: 13)),
+                    const SizedBox(width: 10),
+                    DropdownButton<String>(
+                      value: _groupBy,
+                      onChanged: (val) {
+                        if (val != null) {
+                          setState(() => _groupBy = val);
+                          _fetchCommissionReport();
+                        }
+                      },
+                      items: const [
+                        DropdownMenuItem(
+                          value: 'day',
+                          child: Text('Daily', style: TextStyle(fontSize: 13)),
+                        ),
+                        DropdownMenuItem(
+                          value: 'week',
+                          child: Text('Weekly', style: TextStyle(fontSize: 13)),
+                        ),
+                        DropdownMenuItem(
+                          value: 'month',
+                          child: Text('Monthly', style: TextStyle(fontSize: 13)),
+                        ),
+                      ],
                     ),
                   ],
                 ),
