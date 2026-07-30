@@ -39,6 +39,8 @@ class AppUrl {
   static const String refreshToken = '/api/mobile/auth/refresh';
   static const String changePassword = '/api/mobile/auth/change-password';
   static const String forgotPassword = '/api/mobile/auth/forgot-password';
+  static const String verifyIdentifier = '/api/mobile/auth/verify-identifier';
+  static const String resetPassword = '/api/mobile/auth/reset-password';
   static const String commissionReport = '/api/commission/report';
 
   // ─────────────────────────────────────────────

@@ -53,7 +53,7 @@ class _ForgotPasswordViewState extends ConsumerState<ForgotPasswordView> {
 
     try {
       final response = await ApiService.post(
-        '${AppUrl.baseUrl}/mobile/auth/verify-identifier',
+        AppUrl.verifyIdentifier,
         {'identifier': input},
       );
 
