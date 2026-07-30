@@ -131,6 +131,7 @@ class ProfileViewModel extends StateNotifier<ProfileState> {
   Future<void> updateProfile({
     required String fullName,
     required String phone,
+    String? email,
     String? bio,
     String? departmentId,
     String? shiftType,
@@ -143,6 +144,7 @@ class ProfileViewModel extends StateNotifier<ProfileState> {
         'phone': phone.trim(),
         'bio': bio?.trim() ?? '',
       };
+      if (email != null && email.trim().isNotEmpty) payload['email'] = email.trim();
       if (departmentId != null) payload['departmentId'] = departmentId;
       if (shiftType != null) payload['shiftTypeId'] = shiftType;
       if (workMode != null) payload['workModeId'] = workMode;

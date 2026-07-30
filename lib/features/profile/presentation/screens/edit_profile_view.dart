@@ -17,6 +17,7 @@ class _EditProfileViewState extends ConsumerState<EditProfileView> {
   final _formKey = GlobalKey<FormState>();
   final _nameCtrl = TextEditingController();
   final _phoneCtrl = TextEditingController();
+  final _emailCtrl = TextEditingController();
   final _bioCtrl = TextEditingController();
   bool _initialized = false;
 
@@ -36,6 +37,7 @@ class _EditProfileViewState extends ConsumerState<EditProfileView> {
   void dispose() {
     _nameCtrl.dispose();
     _phoneCtrl.dispose();
+    _emailCtrl.dispose();
     _bioCtrl.dispose();
     super.dispose();
   }
@@ -44,6 +46,7 @@ class _EditProfileViewState extends ConsumerState<EditProfileView> {
     if (!_initialized && state.user != null) {
       _nameCtrl.text = state.user!.name;
       _phoneCtrl.text = state.user!.phone;
+      _emailCtrl.text = state.user!.email;
       _bioCtrl.text = ''; // bio is not stored in UserModel; leave empty for now
       _selectedShiftType = state.user!.shiftType ?? 'MORNING';
       _selectedWorkMode = state.user!.workMode ?? 'OFFICE';
@@ -64,6 +67,7 @@ class _EditProfileViewState extends ConsumerState<EditProfileView> {
     await ref.read(profileViewModelProvider.notifier).updateProfile(
           fullName: _nameCtrl.text.trim(),
           phone: _phoneCtrl.text.trim(),
+          email: _emailCtrl.text.trim(),
           bio: _bioCtrl.text.trim(),
           departmentId: _selectedDepartmentId,
           shiftType: _selectedShiftType,
@@ -309,6 +313,27 @@ class _EditProfileViewState extends ConsumerState<EditProfileView> {
                   ],
                 );
               }),
+
+              const SizedBox(height: 16),
+
+              // ─── Email ─────────────────────────────────────────────────
+              _buildField(
+                context: context,
+                controller: _emailCtrl,
+                label: 'Email Address',
+                hint: 'Enter your email address',
+                icon: RemixIcons.mail_line,
+                isDark: isDark,
+                keyboardType: TextInputType.emailAddress,
+                validator: (v) {
+                  if (v == null || v.trim().isEmpty) return null; // optional
+                  final emailRegex = RegExp(r'^[\w.+\-]+@[a-zA-Z\d\-]+\.[a-zA-Z\d\-.]+$');
+                  if (!emailRegex.hasMatch(v.trim())) {
+                    return 'Enter a valid email address';
+                  }
+                  return null;
+                },
+              ),
 
               const SizedBox(height: 24),
 
