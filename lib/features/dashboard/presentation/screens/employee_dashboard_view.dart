@@ -25,6 +25,7 @@ import 'package:quickboom_hrm/features/commission/presentation/providers/commiss
 import 'package:quickboom_hrm/features/commission/presentation/screens/commission_wallet_view.dart';
 import 'package:quickboom_hrm/core/services/permission_service.dart';
 import 'package:quickboom_hrm/features/task/presentation/screens/employee_tasks_view.dart';
+import 'package:quickboom_hrm/features/wallet/presentation/screens/request_advance_view.dart';
 
 
 final geofenceProvider = FutureProvider<bool>((ref) async {
@@ -245,6 +246,20 @@ class EmployeeDashboardView extends ConsumerWidget {
                   physics: const BouncingScrollPhysics(),
                   child: Row(
                     children: [
+                      _QuickActionBubble(
+                        label: 'Salary Advance',
+                        icon: RemixIcons.hand_coin_line,
+                        color: const Color(0xFF9333EA),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const RequestAdvanceView(maxLimit: 25000),
+                            ),
+                          );
+                        },
+                      ),
+                      const SizedBox(width: 14),
                       _QuickActionBubble(
                         label: 'Expense Claim',
                         icon: RemixIcons.money_dollar_box_line,

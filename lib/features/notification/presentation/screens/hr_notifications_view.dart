@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quickboom_hrm/core/constants/app_colors.dart';
 import 'package:remixicon/remixicon.dart';
+import 'package:quickboom_hrm/core/services/notification_service.dart';
 import 'package:quickboom_hrm/features/notification/data/models/notification_model.dart';
 import 'package:quickboom_hrm/features/notification/presentation/providers/notification_viewmodel.dart';
 
@@ -92,11 +93,11 @@ class _NotificationTile extends ConsumerWidget {
           ref.read(notificationViewModelProvider.notifier).markAsRead(notification.id);
         }
         
-        if (notification.actionType != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Opening ${notification.actionType}...')),
-          );
-        }
+        NotificationService().navigateToData({
+          'type': notification.actionType,
+          'category': notification.category,
+          'actionId': notification.actionId,
+        });
       },
       child: Container(
         color: notification.isRead ? Colors.transparent : AppColors.primary.withValues(alpha: 0.05),

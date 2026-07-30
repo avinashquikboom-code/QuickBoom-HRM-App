@@ -8,6 +8,7 @@ import 'package:quickboom_hrm/core/constants/app_url.dart';
 import 'package:quickboom_hrm/core/services/api_service.dart';
 import 'package:quickboom_hrm/features/auth/data/models/user_model.dart';
 import 'package:quickboom_hrm/features/employees/presentation/providers/employee_list_viewmodel.dart';
+import 'package:quickboom_hrm/features/wallet/presentation/screens/hr_salary_advances_view.dart';
 
 class HrWalletView extends ConsumerStatefulWidget {
   const HrWalletView({super.key});
@@ -55,6 +56,21 @@ class _HrWalletViewState extends ConsumerState<HrWalletView> {
             fontWeight: FontWeight.w800,
           ),
         ),
+        actions: [
+          IconButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const HrSalaryAdvancesView(),
+                ),
+              );
+            },
+            icon: const Icon(RemixIcons.hand_coin_line, color: AppColors.primary),
+            tooltip: 'Salary Advance Requests',
+          ),
+          const SizedBox(width: 8),
+        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(60),
           child: Padding(

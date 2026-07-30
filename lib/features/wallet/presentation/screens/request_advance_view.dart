@@ -8,11 +8,13 @@ import 'package:quickboom_hrm/core/services/notification_service.dart';
 class RequestAdvanceView extends StatefulWidget {
   final double maxLimit;
   final Map<String, dynamic>? activeAdvance;
+  final List<Map<String, dynamic>>? allAdvances;
 
   const RequestAdvanceView({
     super.key,
     required this.maxLimit,
     this.activeAdvance,
+    this.allAdvances,
   });
 
   @override
@@ -26,16 +28,52 @@ class _RequestAdvanceViewState extends State<RequestAdvanceView> {
   final _scrollController = ScrollController();
   int _repaymentMonths = 1;
   bool _isSubmitting = false;
+  bool _isLoadingData = false;
   String? _error;
+
+  late double _maxLimit;
+  Map<String, dynamic>? _activeAdvance;
+  List<Map<String, dynamic>> _allAdvances = [];
 
   @override
   void initState() {
     super.initState();
+    _maxLimit = widget.maxLimit;
+    _activeAdvance = widget.activeAdvance;
+    if (widget.allAdvances != null) {
+      _allAdvances = List<Map<String, dynamic>>.from(widget.allAdvances!);
+    }
+
     _repaymentMonths = 1;
-    final defaultAmt = widget.maxLimit >= 10000.0 ? 10000.0 : widget.maxLimit;
+    final defaultAmt = _maxLimit >= 10000.0 ? 10000.0 : _maxLimit;
     _amount = (defaultAmt / 1000).round() * 1000.0;
     if (_amount < 0.0) _amount = 0.0;
     _amountCtrl.text = _amount == 0.0 ? '' : NumberFormat('#,##,###').format(_amount);
+
+    _fetchWalletData();
+  }
+
+  Future<void> _fetchWalletData() async {
+    if (_allAdvances.isEmpty) {
+      setState(() => _isLoadingData = true);
+    }
+    final wallet = await WalletService.fetchEmployeeWallet();
+    if (!mounted) return;
+
+    if (wallet != null) {
+      setState(() {
+        _maxLimit = (wallet['advanceLimit'] as num?)?.toDouble() ?? _maxLimit;
+        _activeAdvance = wallet['activeAdvance'] as Map<String, dynamic>?;
+        if (wallet['advances'] != null) {
+          _allAdvances = (wallet['advances'] as List<dynamic>)
+              .map((e) => Map<String, dynamic>.from(e as Map))
+              .toList();
+        }
+        _isLoadingData = false;
+      });
+    } else {
+      setState(() => _isLoadingData = false);
+    }
   }
 
   @override
@@ -51,8 +89,8 @@ class _RequestAdvanceViewState extends State<RequestAdvanceView> {
     final val = double.tryParse(cleanStr) ?? 0.0;
 
     setState(() {
-      if (val > widget.maxLimit) {
-        _amount = widget.maxLimit;
+      if (val > _maxLimit) {
+        _amount = _maxLimit;
       } else {
         _amount = val;
       }
@@ -82,9 +120,9 @@ class _RequestAdvanceViewState extends State<RequestAdvanceView> {
       setState(() => _error = 'Please select a valid amount');
       return;
     }
-    if (amt > widget.maxLimit) {
+    if (amt > _maxLimit) {
       setState(
-        () => _error = 'Amount exceeds your limit of ₹${NumberFormat('#,##,###').format(widget.maxLimit)}',
+        () => _error = 'Amount exceeds your limit of ₹${NumberFormat('#,##,###').format(_maxLimit)}',
       );
       return;
     }
@@ -109,6 +147,9 @@ class _RequestAdvanceViewState extends State<RequestAdvanceView> {
           title: 'Advance Request Submitted',
           body: 'Your salary advance request of ₹${NumberFormat('#,##,###').format(amt)} was submitted to HR.',
         );
+
+        _reasonCtrl.clear();
+        await _fetchWalletData();
 
         _showSuccessDialog(amt);
       } else {
@@ -182,7 +223,7 @@ class _RequestAdvanceViewState extends State<RequestAdvanceView> {
                   Navigator.pop(context, true); // Return true to refresh wallet
                 },
                 child: const Text(
-                  'Back to Wallet',
+                  'Done',
                   style: TextStyle(fontWeight: FontWeight.w800),
                 ),
               ),
@@ -195,7 +236,7 @@ class _RequestAdvanceViewState extends State<RequestAdvanceView> {
 
   @override
   Widget build(BuildContext context) {
-    final maxVal = widget.maxLimit <= 0 ? 1000.0 : widget.maxLimit;
+    final maxVal = _maxLimit <= 0 ? 1000.0 : _maxLimit;
     final divisions = maxVal > 1000 ? (maxVal / 1000).floor() : 1;
     final monthlyEmiPreview = _repaymentMonths > 0 ? (_amount / _repaymentMonths) : _amount;
 
@@ -226,8 +267,8 @@ class _RequestAdvanceViewState extends State<RequestAdvanceView> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Active Advance EMI Plan Card
-            if (widget.activeAdvance != null) ...[
-              _ActiveAdvanceCard(advance: widget.activeAdvance!),
+            if (_activeAdvance != null) ...[
+              _ActiveAdvanceCard(advance: _activeAdvance!),
               const SizedBox(height: 20),
             ],
 
@@ -287,7 +328,7 @@ class _RequestAdvanceViewState extends State<RequestAdvanceView> {
                         ),
                       ),
                       Text(
-                        'Max: ₹${NumberFormat('#,##,###').format(widget.maxLimit)}',
+                        'Max: ₹${NumberFormat('#,##,###').format(_maxLimit)}',
                         style: const TextStyle(
                           color: Color(0xFF9333EA),
                           fontSize: 12,
@@ -359,7 +400,7 @@ class _RequestAdvanceViewState extends State<RequestAdvanceView> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text('₹0', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11, fontWeight: FontWeight.bold)),
-                      Text('₹${NumberFormat('#,##,###').format(widget.maxLimit)}', style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11, fontWeight: FontWeight.bold)),
+                      Text('₹${NumberFormat('#,##,###').format(_maxLimit)}', style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11, fontWeight: FontWeight.bold)),
                     ],
                   ),
                 ],
@@ -541,24 +582,81 @@ class _RequestAdvanceViewState extends State<RequestAdvanceView> {
                       ),
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 32),
+
+            // ─── All Salary Advance Requests Section (History with Timestamps) ───
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'All Advance Requests',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF9333EA).withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    '${_allAdvances.length} Requests',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF9333EA),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+
+            if (_isLoadingData)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(24.0),
+                  child: CircularProgressIndicator(color: Color(0xFF9333EA)),
+                ),
+              )
+            else if (_allAdvances.isEmpty)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(28),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: AppColors.cardBorder),
+                ),
+                child: Column(
+                  children: [
+                    Icon(RemixIcons.history_line, size: 40, color: AppColors.textSecondary.withValues(alpha: 0.4)),
+                    const SizedBox(height: 10),
+                    Text(
+                      'No advance requests submitted yet',
+                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
+                    ),
+                  ],
+                ),
+              )
+            else
+              ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: _allAdvances.length,
+                separatorBuilder: (context, index) => const SizedBox(height: 14),
+                itemBuilder: (context, index) {
+                  final adv = _allAdvances[index];
+                  return _AdvanceHistoryCard(advance: adv);
+                },
+              ),
+
+            const SizedBox(height: 32),
           ],
         ),
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          _scrollController.animateTo(
-            _scrollController.position.maxScrollExtent,
-            duration: const Duration(milliseconds: 500),
-            curve: Curves.easeInOut,
-          );
-        },
-        icon: const Icon(RemixIcons.file_add_line, color: Colors.white),
-        label: const Text(
-          'Request Form',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
-        backgroundColor: const Color(0xFF9333EA),
       ),
     );
   }
@@ -749,6 +847,218 @@ class _ActiveAdvanceCard extends StatelessWidget {
               ],
             ),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+class _AdvanceHistoryCard extends StatelessWidget {
+  final Map<String, dynamic> advance;
+
+  const _AdvanceHistoryCard({required this.advance});
+
+  String _formatTimestamp(String? isoStr) {
+    if (isoStr == null || isoStr.isEmpty) return 'N/A';
+    try {
+      final dt = DateTime.parse(isoStr).toLocal();
+      return DateFormat('dd MMM yyyy • hh:mm a').format(dt);
+    } catch (_) {
+      return isoStr;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final double amount = (advance['amount'] as num?)?.toDouble() ?? 0.0;
+    final int months = (advance['months'] as num?)?.toInt() ?? 1;
+    final double monthlyEmi = (advance['monthlyEmi'] as num?)?.toDouble() ?? (months > 0 ? amount / months : amount);
+    final String status = (advance['status'] as String?)?.toUpperCase() ?? 'PENDING';
+    final String reason = (advance['reason'] as String?) ?? 'No reason provided';
+    final String? requestedOn = advance['requestedOn'] as String?;
+    final String? reviewNote = advance['reviewNote'] as String?;
+
+    Color statusColor;
+    Color statusBg;
+    IconData statusIcon;
+
+    switch (status) {
+      case 'APPROVED':
+        statusColor = const Color(0xFF10B981);
+        statusBg = const Color(0xFF10B981).withValues(alpha: 0.12);
+        statusIcon = RemixIcons.checkbox_circle_fill;
+        break;
+      case 'REJECTED':
+        statusColor = AppColors.error;
+        statusBg = AppColors.error.withValues(alpha: 0.12);
+        statusIcon = RemixIcons.close_circle_fill;
+        break;
+      case 'COMPLETED':
+      case 'PAID_OFF':
+        statusColor = const Color(0xFF3B82F6);
+        statusBg = const Color(0xFF3B82F6).withValues(alpha: 0.12);
+        statusIcon = RemixIcons.shield_check_fill;
+        break;
+      case 'PENDING':
+      default:
+        statusColor = AppColors.warning;
+        statusBg = AppColors.warning.withValues(alpha: 0.12);
+        statusIcon = RemixIcons.time_fill;
+        break;
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.cardBorder),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header: Amount & Status Badge
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF9333EA).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(RemixIcons.bank_card_line, color: Color(0xFF9333EA), size: 20),
+                  ),
+                  const SizedBox(width: 12),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '₹${NumberFormat('#,##,###').format(amount.round())}',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w900,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      Text(
+                        '$months Month Tenure • ₹${NumberFormat('#,##,###').format(monthlyEmi.round())}/mo',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: statusBg,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: statusColor.withValues(alpha: 0.3)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(statusIcon, color: statusColor, size: 13),
+                    const SizedBox(width: 4),
+                    Text(
+                      status,
+                      style: TextStyle(
+                        color: statusColor,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          const Divider(height: 1, thickness: 1, color: Color(0xFFF1F5F9)),
+          const SizedBox(height: 12),
+
+          // Reason
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(RemixIcons.chat_quote_line, size: 14, color: AppColors.textSecondary),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  reason,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.w500,
+                    height: 1.3,
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          if (reviewNote != null && reviewNote.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: AppColors.background,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: AppColors.cardBorder),
+              ),
+              child: Row(
+                children: [
+                  Icon(RemixIcons.information_line, size: 14, color: statusColor),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      'HR Note: $reviewNote',
+                      style: TextStyle(fontSize: 11, color: AppColors.textSecondary, fontWeight: FontWeight.w500),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+
+          const SizedBox(height: 12),
+
+          // Timestamp Row
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Icon(RemixIcons.time_line, size: 13, color: AppColors.textSecondary),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Requested: ',
+                    style: TextStyle(fontSize: 11, color: AppColors.textSecondary, fontWeight: FontWeight.w500),
+                  ),
+                  Text(
+                    _formatTimestamp(requestedOn),
+                    style: TextStyle(fontSize: 11, color: AppColors.textPrimary, fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ],
       ),
     );

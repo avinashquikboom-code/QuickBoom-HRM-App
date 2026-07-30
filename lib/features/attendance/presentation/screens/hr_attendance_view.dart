@@ -135,26 +135,32 @@ class _HrAttendanceViewState extends ConsumerState<HrAttendanceView> {
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                           child: Row(
                             children: [
-                              _HeaderStatPill(
-                    label: 'Present',
-                    value: '${state.presentCount}',
-                    color: AppColors.success,
-                  ),
-                  const SizedBox(width: 8),
-                  _HeaderStatPill(
-                    label: 'On Break',
-                    value: '${state.activeOnBreakCount}',
-                    color: AppColors.warning,
-                  ),
-                  const SizedBox(width: 8),
-                  _HeaderStatPill(
-                    label: 'Total Today',
-                    value: '${state.records.length}',
-                    color: AppColors.primary,
-                  ),
-                ],
-              ),
-            ),
+                              Expanded(
+                                child: _HeaderStatPill(
+                                  label: 'Present',
+                                  value: '${state.presentCount}',
+                                  color: AppColors.success,
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: _HeaderStatPill(
+                                  label: 'On Break',
+                                  value: '${state.activeOnBreakCount}',
+                                  color: AppColors.warning,
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: _HeaderStatPill(
+                                  label: 'Total Today',
+                                  value: '${state.records.length}',
+                                  color: AppColors.primary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
 
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -293,7 +299,7 @@ class _HeaderStatPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
@@ -303,7 +309,7 @@ class _HeaderStatPill extends StatelessWidget {
         ),
       ),
       child: Row(
-        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
             width: 6,
@@ -313,21 +319,31 @@ class _HeaderStatPill extends StatelessWidget {
               shape: BoxShape.circle,
             ),
           ),
-          const SizedBox(width: 6),
-          Text(
-            '$label: ',
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
-              color: AppColors.textSecondary,
-            ),
-          ),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w800,
-              color: color,
+          const SizedBox(width: 4),
+          Flexible(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    '$label: ',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  Text(
+                    value,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      color: color,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ],

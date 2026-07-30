@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:quickboom_hrm/core/constants/app_colors.dart';
+import 'package:remixicon/remixicon.dart';
 import 'package:quickboom_hrm/features/auth/data/models/user_model.dart';
 import 'package:quickboom_hrm/features/employees/presentation/providers/employee_list_viewmodel.dart';
 import 'package:quickboom_hrm/features/payroll/presentation/providers/hr_payroll_viewmodel.dart';
+import 'package:quickboom_hrm/features/wallet/presentation/screens/hr_salary_advances_view.dart';
 
 class HrPayrollView extends ConsumerWidget {
   const HrPayrollView({super.key});
@@ -21,7 +23,25 @@ class HrPayrollView extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(title: const Text('Payroll'), centerTitle: false),
+      appBar: AppBar(
+        title: const Text('Payroll'),
+        centerTitle: false,
+        actions: [
+          IconButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const HrSalaryAdvancesView(),
+                ),
+              );
+            },
+            icon: const Icon(RemixIcons.hand_coin_line, color: AppColors.primary),
+            tooltip: 'Salary Advance Requests',
+          ),
+          const SizedBox(width: 8),
+        ],
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 110),
         child: Column(
@@ -69,6 +89,83 @@ class HrPayrollView extends ConsumerWidget {
                     ],
                   ),
                 ],
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            // Salary Advance Requests Quick Card
+            InkWell(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const HrSalaryAdvancesView(),
+                  ),
+                );
+              },
+              borderRadius: BorderRadius.circular(16),
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: AppColors.primary.withValues(alpha: 0.3),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primary.withValues(alpha: 0.08),
+                      blurRadius: 10,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: AppColors.primarySurface,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        RemixIcons.hand_coin_line,
+                        color: AppColors.primary,
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Salary Advance Requests',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Review and approve employee advance requests',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Icon(
+                      RemixIcons.arrow_right_s_line,
+                      color: AppColors.primary,
+                      size: 20,
+                    ),
+                  ],
+                ),
               ),
             ),
 

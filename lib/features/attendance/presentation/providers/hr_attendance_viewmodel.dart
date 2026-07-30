@@ -2,7 +2,11 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
+import 'package:printing/printing.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:quickboom_hrm/core/services/api_service.dart';
+import 'package:quickboom_hrm/core/services/storage_service.dart';
 import 'package:quickboom_hrm/core/constants/app_url.dart';
 import 'package:quickboom_hrm/features/attendance/data/models/hr_attendance_record_model.dart';
 import 'package:quickboom_hrm/features/employees/presentation/providers/employee_repository_provider.dart';
@@ -198,30 +202,47 @@ class HrAttendanceViewModel extends StateNotifier<HrAttendanceState> {
     try {
       state = state.copyWith(isLoading: true);
 
+      final token = await StorageService.getToken();
+      if (token == null) {
+        throw Exception('User authentication token not found.');
+      }
+
       // Build URL with query parameters
-      String url = AppUrl.attendanceReportDownload;
+      String path = AppUrl.attendanceReportDownload;
       List<String> queryParams = [];
 
-      if (month != null) {
+      if (month != null && month.isNotEmpty) {
         queryParams.add('month=$month');
       }
       if (employeeId != null) {
         queryParams.add('employeeId=$employeeId');
       }
 
-      if (queryParams.isNotEmpty) {
-        url += '?${queryParams.join('&')}';
-      }
+      final url = queryParams.isNotEmpty
+          ? '$path?${queryParams.join('&')}'
+          : path;
 
-      final response = await ApiService.get(url);
+      final response = await ApiService.getBytes(url);
 
-      if (response.statusCode == 200) {
-        // File downloaded successfully
-        if (kDebugMode) {
-          print('HR attendance report downloaded successfully');
-        }
+      if (response.statusCode == 200 && response.bodyBytes.isNotEmpty) {
+        // Open PDF viewer / share / save dialog
+        await Printing.sharePdf(
+          bytes: response.bodyBytes,
+          filename:
+              'hr_attendance_report_${month ?? DateFormat('yyyy_MM').format(DateTime.now())}.pdf',
+        );
       } else {
-        throw Exception('Failed to download attendance report');
+        // Fallback: Try opening direct download URL in external browser
+        final downloadUri = Uri.parse(
+          '${AppUrl.baseUrl}$url${url.contains('?') ? '&' : '?'}token=$token',
+        );
+        if (await canLaunchUrl(downloadUri)) {
+          await launchUrl(downloadUri, mode: LaunchMode.externalApplication);
+        } else {
+          throw Exception(
+            'Failed to download attendance report (Status ${response.statusCode})',
+          );
+        }
       }
     } catch (e) {
       if (kDebugMode) {

@@ -37,6 +37,7 @@ class EmployeeShiftView extends ConsumerWidget {
     });
 
     final myAssignment = state.assignments.where((a) => (a.employeeId == user?.employeeId || a.employeeId == user?.id) && a.isActive).firstOrNull ?? state.assignments.firstOrNull;
+    final hasPendingRequest = state.myRequests.any((r) => r.status.toUpperCase() == 'PENDING');
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -317,11 +318,12 @@ class EmployeeShiftView extends ConsumerWidget {
               height: 50,
               child: ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
+                  backgroundColor: hasPendingRequest ? AppColors.warning.withValues(alpha: 0.12) : AppColors.primary,
+                  foregroundColor: hasPendingRequest ? AppColors.warning : Colors.white,
                   elevation: 0,
                   shadowColor: Colors.transparent,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  side: hasPendingRequest ? const BorderSide(color: AppColors.warning) : BorderSide.none,
                 ),
                 onPressed: () {
                   showModalBottomSheet(
@@ -330,11 +332,15 @@ class EmployeeShiftView extends ConsumerWidget {
                     backgroundColor: Colors.transparent,
                     builder: (_) => _RequestShiftChangeSheet(
                       currentShiftName: myAssignment?.shift.name ?? 'None',
+                      hasPendingRequest: hasPendingRequest,
                     ),
                   );
                 },
-                icon: const Icon(RemixIcons.refresh_line, size: 18),
-                label: const Text('Request Shift Change', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+                icon: Icon(hasPendingRequest ? RemixIcons.time_line : RemixIcons.refresh_line, size: 18),
+                label: Text(
+                  hasPendingRequest ? 'Shift Request Pending HR Approval' : 'Request Shift Change',
+                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                ),
               ),
             ),
             if (state.myRequests.isNotEmpty) ...[
@@ -510,7 +516,11 @@ class _GuidelineRow extends StatelessWidget {
 
 class _RequestShiftChangeSheet extends ConsumerStatefulWidget {
   final String currentShiftName;
-  const _RequestShiftChangeSheet({required this.currentShiftName});
+  final bool hasPendingRequest;
+  const _RequestShiftChangeSheet({
+    required this.currentShiftName,
+    this.hasPendingRequest = false,
+  });
 
   @override
   ConsumerState<_RequestShiftChangeSheet> createState() => _RequestShiftChangeSheetState();
@@ -528,6 +538,7 @@ class _RequestShiftChangeSheetState extends ConsumerState<_RequestShiftChangeShe
   }
 
   void _submit() async {
+    if (widget.hasPendingRequest) return;
     if (!(_formKey.currentState?.validate() ?? false)) return;
     if (_selectedShiftName == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -587,14 +598,37 @@ class _RequestShiftChangeSheetState extends ConsumerState<_RequestShiftChangeShe
                 color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
+            if (widget.hasPendingRequest) ...[
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.warning.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(RemixIcons.time_line, color: AppColors.warning, size: 20),
+                    SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        'You already have a pending shift change request awaiting HR approval. You cannot submit another request right now.',
+                        style: TextStyle(fontSize: 12, color: AppColors.warning, fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
             Text(
               'Current Shift: ${widget.currentShiftName}',
               style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
-              value: _selectedShiftName,
+              initialValue: _selectedShiftName,
               decoration: const InputDecoration(
                 labelText: 'Select Requested Shift',
                 border: OutlineInputBorder(),
@@ -605,13 +639,14 @@ class _RequestShiftChangeSheetState extends ConsumerState<_RequestShiftChangeShe
                   child: Text('${s.name} (${s.timingLabel})'),
                 );
               }).toList(),
-              onChanged: (val) => setState(() => _selectedShiftName = val),
+              onChanged: widget.hasPendingRequest ? null : (val) => setState(() => _selectedShiftName = val),
               validator: (val) => val == null ? 'Please select a shift' : null,
             ),
             const SizedBox(height: 16),
             TextFormField(
               controller: _reasonCtrl,
               maxLines: 3,
+              enabled: !widget.hasPendingRequest,
               decoration: const InputDecoration(
                 labelText: 'Reason for request',
                 hintText: 'Describe why you need this shift change...',
@@ -627,17 +662,17 @@ class _RequestShiftChangeSheetState extends ConsumerState<_RequestShiftChangeShe
               height: 48,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
+                  backgroundColor: widget.hasPendingRequest ? Colors.grey : AppColors.primary,
                   foregroundColor: Colors.white,
                 ),
-                onPressed: shiftState.isSubmitting ? null : _submit,
+                onPressed: (shiftState.isSubmitting || widget.hasPendingRequest) ? null : _submit,
                 child: shiftState.isSubmitting
                     ? const SizedBox(
                         height: 20,
                         width: 20,
                         child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                       )
-                    : const Text('Submit Request'),
+                    : Text(widget.hasPendingRequest ? 'Pending Request Active' : 'Submit Request'),
               ),
             ),
           ],

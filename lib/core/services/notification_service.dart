@@ -17,6 +17,11 @@ import 'package:quickboom_hrm/features/profile/presentation/screens/hr_profile_v
 import 'package:quickboom_hrm/features/commission/presentation/screens/commission_wallet_view.dart';
 import 'package:quickboom_hrm/features/task/presentation/screens/employee_tasks_view.dart';
 import 'package:quickboom_hrm/features/task/presentation/screens/hr_tasks_view.dart';
+import 'package:quickboom_hrm/features/wallet/presentation/screens/request_advance_view.dart';
+import 'package:quickboom_hrm/features/wallet/presentation/screens/employee_wallet_view.dart';
+import 'package:quickboom_hrm/features/shift/presentation/screens/employee_shift_view.dart';
+import 'package:quickboom_hrm/features/expense/presentation/screens/employee_expenses_view.dart';
+import 'package:quickboom_hrm/features/profile/presentation/screens/hr_bank_edit_requests_view.dart';
 
 /// Global notification service for handling push notifications
 class NotificationService {
@@ -422,9 +427,14 @@ class NotificationService {
   }
 
   /// Navigate to appropriate screen based on notification data
+  /// Public helper to handle notification click navigation
+  Future<void> navigateToData(Map<String, dynamic> data) async {
+    await _navigateToNotificationScreen(data);
+  }
+
   Future<void> _navigateToNotificationScreen(Map<String, dynamic> data) async {
-    final screen = data['screen']?.toString().toLowerCase() ?? data['type']?.toString().toLowerCase();
-    final id = data['id']?.toString();
+    final screen = (data['screen'] ?? data['type'] ?? data['category'])?.toString().toLowerCase();
+    final id = data['id']?.toString() ?? data['actionId']?.toString();
 
     debugPrint('🔗 Navigating to screen: $screen, id: $id');
     Widget? targetView;
@@ -433,6 +443,7 @@ class NotificationService {
     switch (screen) {
       case 'leave_requests':
       case 'leave_request':
+      case 'leave_application':
         if (role == 'HR' || role == 'SUPER_ADMIN' || role == 'ADMIN' || role == 'PLATFORM_ADMIN') {
           targetView = const HrLeaveApprovalView();
         } else {
@@ -440,7 +451,54 @@ class NotificationService {
         }
         break;
       case 'leave':
+      case 'leave_approved':
+      case 'leave_rejected':
         targetView = const EmployeeLeaveView();
+        break;
+      case 'salary_advance':
+      case 'salary_advance_request':
+      case 'salary_advance_approved':
+      case 'salary_advance_rejected':
+      case 'advance':
+        targetView = const RequestAdvanceView(maxLimit: 25000);
+        break;
+      case 'task':
+      case 'tasks':
+      case 'task_assigned':
+      case 'task_updated':
+      case 'task_completed':
+        if (role == 'HR' || role == 'SUPER_ADMIN' || role == 'ADMIN' || role == 'PLATFORM_ADMIN') {
+          targetView = const HrTasksView();
+        } else {
+          targetView = const EmployeeTasksView();
+        }
+        break;
+      case 'shift':
+      case 'shifts':
+      case 'shift_schedule':
+      case 'shift_assigned':
+      case 'shift_updated':
+        targetView = const EmployeeShiftView();
+        break;
+      case 'salary_slip':
+      case 'salary':
+      case 'payslip':
+      case 'payroll':
+      case 'wallet':
+        targetView = const EmployeeWalletView();
+        break;
+      case 'bank_details':
+      case 'bank_edit_request':
+        if (role == 'HR' || role == 'SUPER_ADMIN' || role == 'ADMIN' || role == 'PLATFORM_ADMIN') {
+          targetView = const HRBankEditRequestsView();
+        } else {
+          targetView = const EmployeeProfileView();
+        }
+        break;
+      case 'expense':
+      case 'expenses':
+      case 'claim':
+        targetView = const EmployeeExpensesView();
         break;
       case 'profile':
         if (role == 'HR' || role == 'SUPER_ADMIN' || role == 'ADMIN' || role == 'PLATFORM_ADMIN') {
@@ -453,16 +511,7 @@ class NotificationService {
       case 'sales':
         targetView = const CommissionWalletView();
         break;
-      case 'task':
-      case 'tasks':
-        if (role == 'HR' || role == 'SUPER_ADMIN' || role == 'ADMIN' || role == 'PLATFORM_ADMIN') {
-          targetView = const HrTasksView();
-        } else {
-          targetView = const EmployeeTasksView();
-        }
-        break;
       default:
-        // No specific screen or general notifications fallback
         break;
     }
 

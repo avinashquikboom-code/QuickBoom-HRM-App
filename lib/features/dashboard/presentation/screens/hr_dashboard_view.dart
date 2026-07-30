@@ -13,6 +13,7 @@ import 'package:quickboom_hrm/core/widgets/shimmer_loading.dart';
 import 'package:quickboom_hrm/features/auth/presentation/screens/login_view.dart';
 import 'package:quickboom_hrm/features/reports/presentation/screens/hr_reports_view.dart';
 import 'package:quickboom_hrm/features/wallet/presentation/screens/hr_wallet_view.dart';
+import 'package:quickboom_hrm/features/wallet/presentation/screens/hr_salary_advances_view.dart';
 import 'package:quickboom_hrm/features/expense/presentation/screens/hr_expenses_view.dart';
 import 'package:quickboom_hrm/features/shift/presentation/screens/hr_shifts_view.dart';
 import 'package:quickboom_hrm/features/attendance/presentation/screens/hr_attendance_view.dart';
@@ -340,6 +341,19 @@ class HrDashboardView extends ConsumerWidget {
                           context,
                           MaterialPageRoute(
                             builder: (_) => const HrWalletView(),
+                          ),
+                        );
+                      },
+                    ),
+                    _QuickActionBtn(
+                      label: 'Salary Advances',
+                      icon: RemixIcons.hand_coin_line,
+                      color: const Color(0xFF8B5CF6),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const HrSalaryAdvancesView(),
                           ),
                         );
                       },

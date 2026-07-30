@@ -34,6 +34,12 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
 
   Map<String, dynamic>? _bankDetails;
 
+  // Salary slip state
+  Map<String, dynamic>? _salarySlipData;
+  bool _isLoadingSalarySlip = false;
+  int _salarySlipMonth = DateTime.now().month;
+  int _salarySlipYear = DateTime.now().year;
+
   // Stores list for transaction form
   List<dynamic> _stores = [];
 
@@ -50,9 +56,31 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _fetchPayslips();
+      _fetchSalarySlip();
     });
 
     _loadWalletData();
+  }
+
+  Future<void> _fetchSalarySlip() async {
+    setState(() => _isLoadingSalarySlip = true);
+    try {
+      final res = await WalletService.fetchSalarySlip(
+        month: _salarySlipMonth,
+        year: _salarySlipYear,
+      );
+      if (mounted) {
+        setState(() {
+          _salarySlipData = res;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error fetching salary slip: $e');
+    } finally {
+      if (mounted) {
+        setState(() => _isLoadingSalarySlip = false);
+      }
+    }
   }
 
   Future<void> _loadWalletData() async {
@@ -66,6 +94,7 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
         _bankDetails = results[1];
       });
     }
+    _fetchSalarySlip();
   }
 
   Future<void> _fetchCommissionReport() async {
@@ -1157,11 +1186,7 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
                               ),
                               const SizedBox(height: 2),
                               Text(
-                                '₹${NumberFormat('#,##,###').format(((_advanceData?['netSalary'] as num?)?.toDouble() != null && (_advanceData!['netSalary'] as num) > 0)
-                                    ? _advanceData!['netSalary']
-                                    : ((_advanceData?['upcomingSalary'] as num?)?.toDouble() != null && (_advanceData!['upcomingSalary'] as num) > 0)
-                                    ? _advanceData!['upcomingSalary']
-                                    : 47250)}',
+                                '₹${NumberFormat('#,##,###').format((_salarySlipData?['net'] as num?)?.toDouble() ?? (((_advanceData?['netSalary'] as num?)?.toDouble() != null && (_advanceData!['netSalary'] as num) > 0) ? _advanceData!['netSalary'] : (((_advanceData?['upcomingSalary'] as num?)?.toDouble() != null && (_advanceData!['upcomingSalary'] as num) > 0) ? _advanceData!['upcomingSalary'] : 47250)))}',
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 24,
@@ -1191,11 +1216,7 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
                                   ),
                                   const SizedBox(height: 1),
                                   Text(
-                                    '₹${NumberFormat('#,##,###').format(((_advanceData?['grossSalary'] as num?)?.toDouble() != null && (_advanceData!['grossSalary'] as num) > 0)
-                                        ? _advanceData!['grossSalary']
-                                        : ((_advanceData?['registeredSalary'] as num?)?.toDouble() != null && (_advanceData!['registeredSalary'] as num) > 0)
-                                        ? _advanceData!['registeredSalary']
-                                        : 50000)}',
+                                    '₹${NumberFormat('#,##,###').format((_salarySlipData?['gross'] as num?)?.toDouble() ?? (((_advanceData?['grossSalary'] as num?)?.toDouble() != null && (_advanceData!['grossSalary'] as num) > 0) ? _advanceData!['grossSalary'] : (((_advanceData?['registeredSalary'] as num?)?.toDouble() != null && (_advanceData!['registeredSalary'] as num) > 0) ? _advanceData!['registeredSalary'] : 50000)))}',
                                     style: TextStyle(
                                       color: Colors.white.withValues(
                                         alpha: 0.95,
@@ -1388,7 +1409,11 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
                 ),
               ],
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
+
+            // Salary Slip Breakdown Card
+            _buildSalarySlipBreakdownCard(),
+            const SizedBox(height: 24),
 
             // Recent Transactions
             Text(
@@ -1541,6 +1566,236 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
             ],
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildSalarySlipBreakdownCard() {
+    final netSalary = (_salarySlipData?['net'] as num?)?.toDouble() ?? 0.0;
+    final grossSalary = (_salarySlipData?['gross'] as num?)?.toDouble() ?? 0.0;
+    final baseSalary =
+        (_salarySlipData?['base_salary'] as num?)?.toDouble() ?? 10000.0;
+    final presentDays =
+        (_salarySlipData?['present_days'] as num?)?.toInt() ?? 0;
+    final halfDays = (_salarySlipData?['half_days'] as num?)?.toInt() ?? 0;
+    final leaveDays = (_salarySlipData?['leave_days'] as num?)?.toInt() ?? 0;
+    final commissionAmount =
+        (_salarySlipData?['commission_amount'] as num?)?.toDouble() ?? 0.0;
+    final deductions =
+        (_salarySlipData?['deductions'] as num?)?.toDouble() ?? 0.0;
+
+    final monthNames = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
+    ];
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.cardBorder),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 15,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(RemixIcons.file_text_line,
+                        color: AppColors.primary, size: 20),
+                  ),
+                  const SizedBox(width: 10),
+                  const Text(
+                    'SALARY SLIP BREAKDOWN',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ],
+              ),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.background,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppColors.cardBorder),
+                ),
+                child: DropdownButton<int>(
+                  value: _salarySlipMonth,
+                  isDense: true,
+                  underline: const SizedBox(),
+                  icon: Icon(RemixIcons.arrow_down_s_line,
+                      size: 16, color: AppColors.textSecondary),
+                  items: List.generate(12, (index) {
+                    final m = index + 1;
+                    return DropdownMenuItem<int>(
+                      value: m,
+                      child: Text(
+                        '${monthNames[index]} $_salarySlipYear',
+                        style: const TextStyle(
+                            fontSize: 12, fontWeight: FontWeight.bold),
+                      ),
+                    );
+                  }),
+                  onChanged: (newMonth) {
+                    if (newMonth != null) {
+                      setState(() {
+                        _salarySlipMonth = newMonth;
+                      });
+                      _fetchSalarySlip();
+                    }
+                  },
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          const Divider(height: 1),
+          const SizedBox(height: 16),
+          if (_isLoadingSalarySlip)
+            const Center(
+                child: Padding(
+                    padding: EdgeInsets.all(20),
+                    child: CircularProgressIndicator()))
+          else ...[
+            _buildSalaryDetailRow(
+                'Base Salary (HopKid)',
+                '₹${NumberFormat('#,##,###').format(baseSalary)}',
+                icon: RemixIcons.money_dollar_circle_line),
+            _buildSalaryDetailRow(
+                'Present Days (This Month)', '$presentDays Days',
+                icon: RemixIcons.calendar_check_line,
+                valueColor: AppColors.success),
+            _buildSalaryDetailRow('Half-Days', '$halfDays Day(s)',
+                icon: RemixIcons.time_line,
+                valueColor: halfDays > 0 ? AppColors.warning : null),
+            _buildSalaryDetailRow(
+                'Unplanned Leave Days', '$leaveDays Day(s)',
+                icon: RemixIcons.close_circle_line,
+                valueColor: leaveDays > 0 ? AppColors.error : null),
+            _buildSalaryDetailRow('Commission (This Month)',
+                '₹${NumberFormat('#,##,###').format(commissionAmount)}',
+                icon: RemixIcons.percent_line, valueColor: AppColors.primary),
+            const SizedBox(height: 12),
+            const Divider(height: 1),
+            const SizedBox(height: 12),
+            _buildSalaryDetailRow(
+                'Gross Salary',
+                '₹${NumberFormat('#,##,###').format(grossSalary)}',
+                isBold: true),
+            _buildSalaryDetailRow(
+                'Total Deductions',
+                '- ₹${NumberFormat('#,##,###').format(deductions)}',
+                valueColor: AppColors.error,
+                isBold: true),
+            const SizedBox(height: 8),
+            Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(12),
+                border:
+                    Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'NET SALARY',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                      color: AppColors.primary,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  Text(
+                    '₹${NumberFormat('#,##,###').format(netSalary)}',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 18,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSalaryDetailRow(
+    String label,
+    String value, {
+    IconData? icon,
+    Color? valueColor,
+    bool isBold = false,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 5),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            children: [
+              if (icon != null) ...[
+                Icon(icon, size: 16, color: AppColors.textSecondary),
+                const SizedBox(width: 8),
+              ],
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: isBold ? FontWeight.bold : FontWeight.w500,
+                  color: isBold
+                      ? AppColors.textPrimary
+                      : AppColors.textSecondary,
+                ),
+              ),
+            ],
+          ),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: isBold ? 13 : 12,
+              fontWeight: isBold ? FontWeight.bold : FontWeight.w600,
+              color: valueColor ?? AppColors.textPrimary,
+            ),
+          ),
+        ],
       ),
     );
   }

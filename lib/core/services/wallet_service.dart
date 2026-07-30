@@ -196,4 +196,102 @@ class WalletService {
       return null;
     }
   }
+
+  static Future<List<dynamic>?> fetchAdminSalaryAdvances({
+    String status = 'ALL',
+  }) async {
+    try {
+      final token = await _getToken();
+      if (token == null) return null;
+
+      final url = status == 'ALL'
+          ? '${AppUrl.baseUrl}/api/payroll/admin/advances'
+          : '${AppUrl.baseUrl}/api/payroll/admin/advances?status=$status';
+
+      final response = await http
+          .get(
+            Uri.parse(url),
+            headers: _getHeaders(token),
+          )
+          .timeout(_timeout);
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success'] == true) {
+          return data['advances'] as List<dynamic>?;
+        }
+      }
+      return null;
+    } catch (e) {
+      dev.log('Error fetching admin salary advances: $e', name: 'WalletService');
+      return null;
+    }
+  }
+
+  static Future<Map<String, dynamic>?> reviewSalaryAdvance({
+    required int advanceId,
+    required String action,
+    int? months,
+    String? reviewNote,
+  }) async {
+    try {
+      final token = await _getToken();
+      if (token == null) return null;
+
+      final response = await http
+          .put(
+            Uri.parse('${AppUrl.baseUrl}/api/payroll/admin/advances/$advanceId/review'),
+            headers: _getHeaders(token),
+            body: json.encode({
+              'action': action,
+              if (months != null) 'months': months,
+              if (reviewNote != null) 'reviewNote': reviewNote,
+            }),
+          )
+          .timeout(_timeout);
+
+      if (response.body.isNotEmpty) {
+        return jsonDecode(response.body);
+      }
+      return null;
+    } catch (e) {
+      debugPrint('Review salary advance error: $e');
+      return null;
+    }
+  }
+
+  static Future<Map<String, dynamic>?> fetchSalarySlip({
+    int? employeeId,
+    int? month,
+    int? year,
+  }) async {
+    try {
+      final token = await _getToken();
+      if (token == null) return null;
+
+      final queryParams = <String>[];
+      if (employeeId != null) queryParams.add('employeeId=$employeeId');
+      if (month != null) queryParams.add('month=$month');
+      if (year != null) queryParams.add('year=$year');
+
+      final queryStr = queryParams.isNotEmpty ? '?${queryParams.join('&')}' : '';
+      final response = await http
+          .get(
+            Uri.parse('${AppUrl.baseUrl}/api/salary/slip$queryStr'),
+            headers: _getHeaders(token),
+          )
+          .timeout(_timeout);
+
+      if (response.statusCode == 200 && response.body.isNotEmpty) {
+        final data = jsonDecode(response.body);
+        if (data['success'] == true) {
+          return data['data'] as Map<String, dynamic>;
+        }
+      }
+      return null;
+    } catch (e) {
+      debugPrint('Error fetching salary slip: $e');
+      return null;
+    }
+  }
 }

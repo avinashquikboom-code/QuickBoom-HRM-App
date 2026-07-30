@@ -151,6 +151,18 @@ class ApiService {
     return headers;
   }
 
+  static Future<http.Response> getBytes(String path, {Duration? timeout}) async {
+    final url = Uri.parse('$_baseUrl$path');
+    final token = await getToken();
+    final headers = <String, String>{
+      if (token != null) 'Authorization': 'Bearer $token',
+    };
+    final requestTimeout = timeout ?? defaultTimeout;
+
+    ApiLogger.logRequest('GET (binary)', path);
+    return await _client.get(url, headers: headers).timeout(requestTimeout);
+  }
+
   static Future<http.Response> get(String path, {Duration? timeout}) async {
     final url = Uri.parse('$_baseUrl$path');
     final headers = await _headers();
