@@ -9,7 +9,6 @@ import 'package:quickboom_hrm/core/services/api_service.dart';
 import 'package:quickboom_hrm/core/services/wallet_service.dart';
 import 'package:quickboom_hrm/core/services/sales_service.dart';
 import 'package:quickboom_hrm/core/services/hopkid_sales_dto.dart';
-import 'package:quickboom_hrm/core/services/mobile_store_service.dart';
 import 'package:quickboom_hrm/core/services/permission_service.dart';
 import 'package:quickboom_hrm/core/services/notification_service.dart';
 import 'package:quickboom_hrm/features/auth/presentation/providers/auth_viewmodel.dart';
@@ -17,6 +16,7 @@ import 'package:quickboom_hrm/features/auth/data/models/user_model.dart';
 import 'package:quickboom_hrm/features/payroll/presentation/providers/employee_payroll_viewmodel.dart';
 import 'package:quickboom_hrm/features/expense/presentation/screens/employee_expenses_view.dart';
 import 'package:quickboom_hrm/features/payroll/presentation/screens/employee_payroll_view.dart';
+import 'package:quickboom_hrm/features/wallet/presentation/screens/request_advance_view.dart';
 
 class EmployeeWalletView extends ConsumerStatefulWidget {
   const EmployeeWalletView({super.key});
@@ -171,314 +171,25 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
     }
   }
 
-  Widget _buildActiveAdvanceCard(Map<String, dynamic> advance) {
-    final double amount = (advance['amount'] as num?)?.toDouble() ?? 0.0;
-    final double monthlyEmi =
-        (advance['monthlyEmi'] as num?)?.toDouble() ?? 0.0;
-    final double remaining =
-        (advance['remainingAmount'] as num?)?.toDouble() ?? amount;
-    final double paidAmount =
-        (advance['paidAmount'] as num?)?.toDouble() ?? 0.0;
-    final int paidEmis = (advance['paidEmis'] as num?)?.toInt() ?? 0;
-    final int totalEmis = (advance['months'] as num?)?.toInt() ?? 1;
-    final int pendingEmis =
-        (advance['pendingEmis'] as num?)?.toInt() ?? totalEmis;
-    final String status = (advance['status'] as String?) ?? 'PENDING';
-    final double progress = totalEmis > 0
-        ? (paidEmis / totalEmis).clamp(0.0, 1.0)
-        : 0.0;
-
-    final isApproved = status == 'APPROVED';
-
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.only(bottom: 24),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: isApproved
-              ? [const Color(0xFF0F172A), const Color(0xFF1E293B)]
-              : [const Color(0xFF451A03), const Color(0xFF78350F)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: (isApproved ? Colors.black : Colors.amber).withValues(
-              alpha: 0.1,
-            ),
-            blurRadius: 16,
-            offset: const Offset(0, 8),
-          ),
-        ],
-        border: Border.all(
-          color: isApproved ? const Color(0xFF334155) : const Color(0xFFB45309),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color:
-                          (isApproved
-                                  ? const Color(0xFF10B981)
-                                  : AppColors.warning)
-                              .withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(
-                      isApproved
-                          ? RemixIcons.check_double_line
-                          : RemixIcons.time_line,
-                      color: isApproved
-                          ? const Color(0xFF10B981)
-                          : AppColors.warning,
-                      size: 20,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Salary Advance EMI Plan',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        isApproved
-                            ? 'Active • Automatic Monthly Deduction'
-                            : 'Pending HR Approval',
-                        style: TextStyle(
-                          color: isApproved
-                              ? const Color(0xFF94A3B8)
-                              : const Color(0xFFFDE68A),
-                          fontSize: 11,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: isApproved
-                      ? const Color(0xFF059669).withValues(alpha: 0.2)
-                      : const Color(0xFFD97706).withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: isApproved
-                        ? const Color(0xFF059669)
-                        : const Color(0xFFD97706),
-                  ),
-                ),
-                child: Text(
-                  status,
-                  style: TextStyle(
-                    color: isApproved
-                        ? const Color(0xFF34D399)
-                        : const Color(0xFFFBBF24),
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Remaining Advance',
-                    style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '₹${NumberFormat('#,##,###').format(remaining.round())}',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  const Text(
-                    'Monthly EMI',
-                    style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '₹${NumberFormat('#,##,###').format(monthlyEmi.round())} / mo',
-                    style: const TextStyle(
-                      color: Color(0xFF38BDF8),
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          if (isApproved) ...[
-            const SizedBox(height: 16),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(6),
-              child: LinearProgressIndicator(
-                value: progress,
-                minHeight: 8,
-                backgroundColor: const Color(0xFF334155),
-                valueColor: const AlwaysStoppedAnimation<Color>(
-                  Color(0xFF10B981),
-                ),
-              ),
-            ),
-            const SizedBox(height: 10),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Repaid: ₹${NumberFormat('#,##,###').format(paidAmount.round())} ($paidEmis of $totalEmis EMIs)',
-                  style: const TextStyle(
-                    color: Color(0xFF94A3B8),
-                    fontSize: 11,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                Text(
-                  '$pendingEmis Pending EMIs',
-                  style: const TextStyle(
-                    color: Color(0xFFF59E0B),
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  void _showRequestAdvanceSheet(BuildContext context) {
+  void _showRequestAdvanceSheet(BuildContext context) async {
     final advanceLimit =
         (_advanceData?['advanceLimit'] as num?)?.toDouble() ?? 25000.0;
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => _RequestAdvanceSheet(
-        maxLimit: advanceLimit,
-        onSubmit: (double amount, int months, String reason) async {
-          Navigator.pop(ctx);
-          final result = await WalletService.requestSalaryAdvance(
-            amount: amount,
-            months: months,
-            reason: reason,
-          );
-          if (result != null && result['success'] == true && mounted) {
-            _showSuccessDialog(amount);
-            _loadWalletData();
-          } else if (mounted) {
-            final msg = result?['message'] ?? 'Failed to submit advance request.';
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(msg),
-                backgroundColor: AppColors.error,
-              ),
-            );
-          }
-        },
-      ),
-    );
-  }
+    final activeAdvance =
+        _advanceData?['activeAdvance'] as Map<String, dynamic>?;
 
-  void _showSuccessDialog(double amount) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppColors.success.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                RemixIcons.checkbox_circle_fill,
-                color: AppColors.success,
-                size: 48,
-              ),
-            ),
-            const SizedBox(height: 24),
-            const Text(
-              'Request Submitted',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Your salary advance request of ₹${NumberFormat('#,##,###').format(amount)} has been sent to HR for approval.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: 13,
-                height: 1.4,
-              ),
-            ),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  elevation: 0,
-                ),
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text(
-                  'Back to Wallet',
-                  style: TextStyle(fontWeight: FontWeight.w800),
-                ),
-              ),
-            ),
-          ],
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => RequestAdvanceView(
+          maxLimit: advanceLimit,
+          activeAdvance: activeAdvance,
         ),
       ),
     );
+
+    if (result == true && mounted) {
+      _loadWalletData();
+    }
   }
 
   void _showBankDetailsSheet(BuildContext context) {
@@ -1027,24 +738,74 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
     final user = ref.watch(authViewModelProvider).currentUser;
     if (user == null) return const Scaffold();
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
+    final isSalesman = PermissionService.canViewCommissionWidget(user);
+
+    if (!isSalesman) {
+      return Scaffold(
         backgroundColor: AppColors.background,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        centerTitle: false,
-        title: Text(
-          'My Wallet',
-          style: TextStyle(
-            color: AppColors.textPrimary,
-            fontSize: 18,
-            fontWeight: FontWeight.w800,
+        appBar: AppBar(
+          backgroundColor: AppColors.background,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+          centerTitle: false,
+          title: Text(
+            'My Wallet',
+            style: TextStyle(
+              color: AppColors.textPrimary,
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+            ),
           ),
         ),
+        body: _buildSalaryTab(user),
+      );
+    }
+
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        backgroundColor: AppColors.background,
+        appBar: AppBar(
+          backgroundColor: AppColors.background,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+          centerTitle: false,
+          title: Text(
+            'My Wallet',
+            style: TextStyle(
+              color: AppColors.textPrimary,
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          bottom: TabBar(
+            labelColor: AppColors.primary,
+            unselectedLabelColor: AppColors.textSecondary,
+            indicatorColor: AppColors.primary,
+            indicatorWeight: 3,
+            labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+            tabs: const [
+              Tab(text: 'Salary & Advance'),
+              Tab(text: 'Commission & Sales'),
+            ],
+          ),
+        ),
+        body: TabBarView(
+          children: [
+            _buildSalaryTab(user),
+            _buildCommissionTab(),
+          ],
+        ),
+        floatingActionButton: FloatingActionButton.extended(
+          onPressed: () => _showSalesActionSheet(context),
+          icon: const Icon(RemixIcons.add_line, color: Colors.white),
+          label: const Text(
+            'Add Sale',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          ),
+          backgroundColor: AppColors.primary,
+        ),
       ),
-      body: _buildSalaryTab(user),
-      floatingActionButton: null,
     );
   }
 
@@ -1555,8 +1316,8 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
             const SizedBox(height: 24),
 
             if (_advanceData?['activeAdvance'] != null)
-              _buildActiveAdvanceCard(
-                _advanceData!['activeAdvance'] as Map<String, dynamic>,
+              _ActiveAdvanceCard(
+                advance: _advanceData!['activeAdvance'] as Map<String, dynamic>,
               ),
 
             // Quick Actions
@@ -1896,9 +1657,14 @@ class _QuickActionButton extends StatelessWidget {
 // ─── Salary Advance Form Sheet (Kept from original code) ───────────────────
 class _RequestAdvanceSheet extends StatefulWidget {
   final double maxLimit;
+  final Map<String, dynamic>? activeAdvance;
   final Function(double amount, int months, String reason) onSubmit;
 
-  const _RequestAdvanceSheet({required this.maxLimit, required this.onSubmit});
+  const _RequestAdvanceSheet({
+    required this.maxLimit,
+    this.activeAdvance,
+    required this.onSubmit,
+  });
 
   @override
   State<_RequestAdvanceSheet> createState() => _RequestAdvanceSheetState();
@@ -2049,6 +1815,11 @@ class _RequestAdvanceSheetState extends State<_RequestAdvanceSheet> {
             ],
           ),
           const SizedBox(height: 20),
+
+          if (widget.activeAdvance != null) ...[
+            _ActiveAdvanceCard(advance: widget.activeAdvance!),
+            const SizedBox(height: 12),
+          ],
 
           if (_error != null) ...[
             Container(
@@ -2756,6 +2527,227 @@ class _BankDetailRow extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _ActiveAdvanceCard extends StatelessWidget {
+  final Map<String, dynamic> advance;
+
+  const _ActiveAdvanceCard({required this.advance});
+
+  @override
+  Widget build(BuildContext context) {
+    final double amount = (advance['amount'] as num?)?.toDouble() ?? 0.0;
+    final double monthlyEmi =
+        (advance['monthlyEmi'] as num?)?.toDouble() ?? 0.0;
+    final double remaining =
+        (advance['remainingAmount'] as num?)?.toDouble() ?? amount;
+    final double paidAmount =
+        (advance['paidAmount'] as num?)?.toDouble() ?? 0.0;
+    final int paidEmis = (advance['paidEmis'] as num?)?.toInt() ?? 0;
+    final int totalEmis = (advance['months'] as num?)?.toInt() ?? 1;
+    final int pendingEmis =
+        (advance['pendingEmis'] as num?)?.toInt() ?? totalEmis;
+    final String status = (advance['status'] as String?) ?? 'PENDING';
+    final double progress = totalEmis > 0
+        ? (paidEmis / totalEmis).clamp(0.0, 1.0)
+        : 0.0;
+
+    final isApproved = status == 'APPROVED';
+
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: isApproved
+              ? [const Color(0xFF0F172A), const Color(0xFF1E293B)]
+              : [const Color(0xFF451A03), const Color(0xFF78350F)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: (isApproved ? Colors.black : Colors.amber).withValues(
+              alpha: 0.1,
+            ),
+            blurRadius: 16,
+            offset: const Offset(0, 8),
+          ),
+        ],
+        border: Border.all(
+          color: isApproved ? const Color(0xFF334155) : const Color(0xFFB45309),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color:
+                          (isApproved
+                                  ? const Color(0xFF10B981)
+                                  : AppColors.warning)
+                              .withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      isApproved
+                          ? RemixIcons.check_double_line
+                          : RemixIcons.time_line,
+                      color: isApproved
+                          ? const Color(0xFF10B981)
+                          : AppColors.warning,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Salary Advance EMI Plan',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        isApproved
+                            ? 'Active • Automatic Monthly Deduction'
+                            : 'Pending HR Approval',
+                        style: TextStyle(
+                          color: isApproved
+                              ? const Color(0xFF94A3B8)
+                              : const Color(0xFFFDE68A),
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: isApproved
+                      ? const Color(0xFF059669).withValues(alpha: 0.2)
+                      : const Color(0xFFD97706).withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: isApproved
+                        ? const Color(0xFF059669)
+                        : const Color(0xFFD97706),
+                  ),
+                ),
+                child: Text(
+                  status,
+                  style: TextStyle(
+                    color: isApproved
+                        ? const Color(0xFF34D399)
+                        : const Color(0xFFFBBF24),
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Remaining Advance',
+                    style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '₹${NumberFormat('#,##,###').format(remaining.round())}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  const Text(
+                    'Monthly EMI',
+                    style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '₹${NumberFormat('#,##,###').format(monthlyEmi.round())} / mo',
+                    style: const TextStyle(
+                      color: Color(0xFF38BDF8),
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          if (isApproved) ...[
+            const SizedBox(height: 16),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(6),
+              child: LinearProgressIndicator(
+                value: progress,
+                minHeight: 8,
+                backgroundColor: const Color(0xFF334155),
+                valueColor: const AlwaysStoppedAnimation<Color>(
+                  Color(0xFF10B981),
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Repaid: ₹${NumberFormat('#,##,###').format(paidAmount.round())} ($paidEmis of $totalEmis EMIs)',
+                  style: const TextStyle(
+                    color: Color(0xFF94A3B8),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                Text(
+                  '$pendingEmis Pending EMIs',
+                  style: const TextStyle(
+                    color: Color(0xFFF59E0B),
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
     );
   }
 }
