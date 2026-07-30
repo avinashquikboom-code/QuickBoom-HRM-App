@@ -175,9 +175,9 @@ class _StoreEmployeesViewState extends ConsumerState<StoreEmployeesView> {
               itemBuilder: (context, index) {
                 final filter = _statusFilters[index];
                 final isSelected = _selectedStatus == filter['value'];
-                final color = _filterColor(filter['value'] as String?);
+                final color = _filterColor(filter['value']);
                 return GestureDetector(
-                  onTap: () => _selectStatus(filter['value'] as String?),
+                  onTap: () => _selectStatus(filter['value']),
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),

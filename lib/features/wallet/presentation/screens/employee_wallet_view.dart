@@ -657,6 +657,7 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
   }
 
   void _showTransactionFormSheet(BuildContext context, String type) {
+    final user = ref.read(authViewModelProvider).currentUser;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -664,6 +665,8 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
       builder: (ctx) => _SalesTransactionFormSheet(
         type: type,
         stores: _stores,
+        preselectedStoreId: user?.storeId,
+        preselectedStoreName: user?.storeName,
         onSubmit: (Map<String, dynamic> payload) async {
           Navigator.pop(ctx);
 
@@ -1950,12 +1953,10 @@ class _QuickActionButton extends StatelessWidget {
 // ─── Salary Advance Form Sheet (Kept from original code) ───────────────────
 class _RequestAdvanceSheet extends StatefulWidget {
   final double maxLimit;
-  final Map<String, dynamic>? activeAdvance;
   final Function(double amount, int months, String reason) onSubmit;
 
   const _RequestAdvanceSheet({
     required this.maxLimit,
-    this.activeAdvance,
     required this.onSubmit,
   });
 
@@ -2109,10 +2110,6 @@ class _RequestAdvanceSheetState extends State<_RequestAdvanceSheet> {
           ),
           const SizedBox(height: 20),
 
-          if (widget.activeAdvance != null) ...[
-            _ActiveAdvanceCard(advance: widget.activeAdvance!),
-            const SizedBox(height: 12),
-          ],
 
           if (_error != null) ...[
             Container(
@@ -2417,11 +2414,15 @@ class _RequestAdvanceSheetState extends State<_RequestAdvanceSheet> {
 class _SalesTransactionFormSheet extends StatefulWidget {
   final String type;
   final List<dynamic> stores;
+  final String? preselectedStoreId;
+  final String? preselectedStoreName;
   final Function(Map<String, dynamic> payload) onSubmit;
 
   const _SalesTransactionFormSheet({
     required this.type,
     required this.stores,
+    this.preselectedStoreId,
+    this.preselectedStoreName,
     required this.onSubmit,
   });
 
@@ -2438,6 +2439,15 @@ class _SalesTransactionFormSheetState
   final _notesCtrl = TextEditingController();
   String? _selectedStoreId;
   String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    // Pre-select the employee's allotted store
+    if (widget.preselectedStoreId != null) {
+      _selectedStoreId = widget.preselectedStoreId;
+    }
+  }
 
   @override
   void dispose() {
@@ -2480,20 +2490,21 @@ class _SalesTransactionFormSheetState
 
     if (widget.type == 'AddSale' || widget.type == 'UpdateSale') {
       if (_selectedStoreId == null) {
-        setState(() => _error = 'Please select a store');
+        setState(() => _error = 'No store assigned. Contact HR.');
         return;
       }
     }
 
     final Map<String, dynamic> payload = {
       'invoiceNumber': invoice,
-      'billId': invoice, // pass both to satisfy backend controller checks
+      'billId': invoice,
       'notes': _notesCtrl.text.trim(),
+      // Always include storeId if available (all 4 transaction types)
+      if (_selectedStoreId != null) 'storeId': _selectedStoreId,
     };
 
     if (widget.type == 'AddSale' || widget.type == 'UpdateSale') {
       payload['saleAmount'] = amt;
-      payload['storeId'] = _selectedStoreId;
     } else if (widget.type == 'CreditNote') {
       payload['creditAmount'] = amt;
     } else if (widget.type == 'Exchange') {
@@ -2524,6 +2535,9 @@ class _SalesTransactionFormSheetState
       amountLabel = 'New Purchase Amount';
     }
 
+    final hasPreselectedStore = widget.preselectedStoreId != null &&
+        widget.preselectedStoreName != null;
+
     return Container(
       padding: EdgeInsets.fromLTRB(
         20,
@@ -2550,13 +2564,52 @@ class _SalesTransactionFormSheetState
             ),
           ),
           const SizedBox(height: 20),
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
-            ),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ),
+              // Store badge — always visible in header
+              if (hasPreselectedStore)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: AppColors.primary.withValues(alpha: 0.25),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        RemixIcons.store_2_line,
+                        size: 13,
+                        color: AppColors.primary,
+                      ),
+                      const SizedBox(width: 5),
+                      Text(
+                        widget.preselectedStoreName!,
+                        style: TextStyle(
+                          color: AppColors.primary,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+            ],
           ),
           const SizedBox(height: 16),
           if (_error != null) ...[
@@ -2593,29 +2646,91 @@ class _SalesTransactionFormSheetState
             decoration: const InputDecoration(labelText: 'Invoice / Bill ID'),
           ),
           const SizedBox(height: 16),
+          // Store selector — shown for AddSale & UpdateSale only
+          // If employee has a pre-assigned store: show locked info tile
+          // If no store assigned: show full dropdown for manual selection
           if (widget.type == 'AddSale' || widget.type == 'UpdateSale') ...[
-            DropdownButtonFormField<String>(
-              value:
-                  widget.stores.any(
-                    (s) => s['id'].toString() == _selectedStoreId,
-                  )
-                  ? _selectedStoreId
-                  : null,
-              hint: const Text('Select Store'),
-              decoration: const InputDecoration(
-                contentPadding: EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
+            if (hasPreselectedStore) ...[
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.cardBorder),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(7),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        RemixIcons.store_2_fill,
+                        size: 16,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Assigned Store',
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: AppColors.textSecondary,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            widget.preselectedStoreName!,
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: AppColors.textPrimary,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Icon(
+                      RemixIcons.lock_2_line,
+                      size: 16,
+                      color: AppColors.textHint,
+                    ),
+                  ],
                 ),
               ),
-              items: widget.stores.map((s) {
-                return DropdownMenuItem<String>(
-                  value: s['id'].toString(),
-                  child: Text(s['name'] ?? 'Store'),
-                );
-              }).toList(),
-              onChanged: (val) => setState(() => _selectedStoreId = val),
-            ),
+            ] else ...[
+              DropdownButtonFormField<String>(
+                value:
+                    widget.stores.any(
+                      (s) => s['id'].toString() == _selectedStoreId,
+                    )
+                    ? _selectedStoreId
+                    : null,
+                hint: const Text('Select Store'),
+                decoration: const InputDecoration(
+                  labelText: 'Store',
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                ),
+                items: widget.stores.map((s) {
+                  return DropdownMenuItem<String>(
+                    value: s['id'].toString(),
+                    child: Text(s['name'] ?? 'Store'),
+                  );
+                }).toList(),
+                onChanged: (val) => setState(() => _selectedStoreId = val),
+              ),
+            ],
             const SizedBox(height: 16),
           ],
           if (widget.type == 'Exchange') ...[
