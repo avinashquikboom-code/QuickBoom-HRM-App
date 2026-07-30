@@ -322,7 +322,7 @@ class _EmployeePayrollViewState extends ConsumerState<EmployeePayrollView> {
                                             ),
                                           ],
                                         ),
-                                        if (slip.commissionEarned != null && slip.commissionEarned! > 0) ...[
+                                        if (slip.commissionEarned != null) ...[
                                           const SizedBox(height: 8),
                                           Divider(
                                             height: 1,
@@ -333,21 +333,39 @@ class _EmployeePayrollViewState extends ConsumerState<EmployeePayrollView> {
                                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                             children: [
                                               _SalaryComponent(
-                                                label: 'Commission',
-                                                value: '₹${NumberFormat('#,##,###').format(slip.commissionEarned)}',
+                                                label: 'Commission Earned',
+                                                value: '₹${slip.commissionEarned!.toStringAsFixed(2)}',
                                                 isCommission: true,
                                               ),
-                                              if (slip.pendingCommission != null && slip.pendingCommission! > 0)
+                                              if (slip.presentDays != null)
                                                 _SalaryComponent(
-                                                  label: 'Pending',
-                                                  value: '₹${NumberFormat('#,##,###').format(slip.pendingCommission)}',
-                                                  isPending: true,
+                                                  label: 'Present Days',
+                                                  value: '${slip.presentDays} Days',
                                                 ),
-                                              if (slip.paidCommission != null && slip.paidCommission! > 0)
+                                            ],
+                                          ),
+                                        ],
+                                        if ((slip.halfDays != null && slip.halfDays! > 0) || (slip.leaveDays != null && slip.leaveDays! > 0)) ...[
+                                          const SizedBox(height: 8),
+                                          Divider(
+                                            height: 1,
+                                            color: isDark ? const Color(0xFF334155) : AppColors.cardBorder,
+                                          ),
+                                          const SizedBox(height: 8),
+                                          Row(
+                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              if (slip.halfDays != null && slip.halfDays! > 0)
                                                 _SalaryComponent(
-                                                  label: 'Paid',
-                                                  value: '₹${NumberFormat('#,##,###').format(slip.paidCommission)}',
-                                                  isPaid: true,
+                                                  label: 'Half-days (${slip.halfDays})',
+                                                  value: '-₹${(slip.halfDayDeduction ?? 0.0).toStringAsFixed(2)}',
+                                                  isDeduction: true,
+                                                ),
+                                              if (slip.leaveDays != null && slip.leaveDays! > 0)
+                                                _SalaryComponent(
+                                                  label: 'Unplanned Leave (${slip.leaveDays})',
+                                                  value: '-₹${(slip.leaveDeduction ?? 0.0).toStringAsFixed(2)}',
+                                                  isDeduction: true,
                                                 ),
                                             ],
                                           ),
@@ -421,6 +439,7 @@ class _SalaryComponent extends StatelessWidget {
   final bool isCommission;
   final bool isPending;
   final bool isPaid;
+  final bool isDeduction;
 
   const _SalaryComponent({
     required this.label,
@@ -428,6 +447,7 @@ class _SalaryComponent extends StatelessWidget {
     this.isCommission = false,
     this.isPending = false,
     this.isPaid = false,
+    this.isDeduction = false,
   });
 
   @override
@@ -441,6 +461,8 @@ class _SalaryComponent extends StatelessWidget {
       valueColor = AppColors.warning;
     } else if (isPaid) {
       valueColor = AppColors.success;
+    } else if (isDeduction) {
+      valueColor = AppColors.error;
     }
 
     return Column(

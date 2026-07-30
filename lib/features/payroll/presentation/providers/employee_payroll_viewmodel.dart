@@ -25,6 +25,11 @@ class PayslipModel {
   final double? commissionEarned;
   final double? pendingCommission;
   final double? paidCommission;
+  final int? presentDays;
+  final int? halfDays;
+  final double? halfDayDeduction;
+  final int? leaveDays;
+  final double? leaveDeduction;
 
   PayslipModel({
     required this.id,
@@ -46,6 +51,11 @@ class PayslipModel {
     this.commissionEarned,
     this.pendingCommission,
     this.paidCommission,
+    this.presentDays,
+    this.halfDays,
+    this.halfDayDeduction,
+    this.leaveDays,
+    this.leaveDeduction,
   });
 
   factory PayslipModel.fromJson(Map<String, dynamic> json) {
@@ -69,6 +79,11 @@ class PayslipModel {
       commissionEarned: (json['commissionEarned'] as num?)?.toDouble(),
       pendingCommission: (json['pendingCommission'] as num?)?.toDouble(),
       paidCommission: (json['paidCommission'] as num?)?.toDouble(),
+      presentDays: (json['presentDays'] as num?)?.toInt(),
+      halfDays: (json['halfDays'] as num?)?.toInt(),
+      halfDayDeduction: (json['halfDayDeduction'] as num?)?.toDouble(),
+      leaveDays: (json['leaveDays'] as num?)?.toInt(),
+      leaveDeduction: (json['leaveDeduction'] as num?)?.toDouble(),
     );
   }
 }

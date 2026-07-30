@@ -323,7 +323,10 @@ class NotificationService {
   @pragma('vm:entry-point')
   static Future<void> _handleBackgroundMessage(RemoteMessage message) async {
     WidgetsFlutterBinding.ensureInitialized();
-    debugPrint('📱 Background message received: ${message.messageId}');
+    debugPrint('📱 Background message received: ${message.messageId}, data: ${message.data}');
+    if (message.data.isNotEmpty) {
+      pendingNotification = message.data;
+    }
   }
 
   /// Show local notification
@@ -433,7 +436,10 @@ class NotificationService {
   }
 
   Future<void> _navigateToNotificationScreen(Map<String, dynamic> data) async {
-    final screen = (data['screen'] ?? data['type'] ?? data['category'])?.toString().toLowerCase();
+    String screen = (data['screen'] ?? data['type'] ?? data['category'])?.toString().toLowerCase() ?? '';
+    if (screen.startsWith('/')) {
+      screen = screen.substring(1);
+    }
     final id = data['id']?.toString() ?? data['actionId']?.toString();
 
     debugPrint('🔗 Navigating to screen: $screen, id: $id');
