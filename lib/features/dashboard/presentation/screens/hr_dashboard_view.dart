@@ -17,6 +17,8 @@ import 'package:quickboom_hrm/features/wallet/presentation/screens/hr_salary_adv
 import 'package:quickboom_hrm/features/expense/presentation/screens/hr_expenses_view.dart';
 import 'package:quickboom_hrm/features/shift/presentation/screens/hr_shifts_view.dart';
 import 'package:quickboom_hrm/features/attendance/presentation/screens/hr_attendance_view.dart';
+import 'package:quickboom_hrm/core/widgets/animated_notification_bell.dart';
+import 'package:quickboom_hrm/features/notification/presentation/providers/notification_viewmodel.dart';
 import 'package:quickboom_hrm/features/notification/presentation/screens/hr_notifications_view.dart';
 import 'package:quickboom_hrm/features/store/presentation/screens/store_dashboard_view.dart';
 import 'package:quickboom_hrm/features/store/presentation/screens/store_employees_view.dart';
@@ -63,18 +65,19 @@ class HrDashboardView extends ConsumerWidget {
             scrolledUnderElevation: 0,
             automaticallyImplyLeading: false,
             actions: [
-              IconButton(
-                icon: Icon(
-                  RemixIcons.notification_3_line,
-                  color: AppColors.textPrimary,
-                  size: 20,
-                ),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const HrNotificationsView(),
-                    ),
+              Consumer(
+                builder: (context, ref, child) {
+                  final notifState = ref.watch(notificationViewModelProvider);
+                  return AnimatedNotificationBell(
+                    unreadCount: notifState.unreadCount,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const HrNotificationsView(),
+                        ),
+                      );
+                    },
                   );
                 },
               ),

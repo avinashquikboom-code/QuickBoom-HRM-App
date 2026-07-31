@@ -147,6 +147,10 @@ class AuthViewModel extends StateNotifier<AuthState> {
           DateTime.now(),
       salary: 0.0,
       avatar: avatarVal,
+      storeId: empMap['storeId']?.toString() ??
+          (empMap['store'] is Map ? empMap['store']['id']?.toString() : empMap['store']?.toString()),
+      storeName: empMap['storeName']?.toString() ??
+          (empMap['store'] is Map ? empMap['store']['name']?.toString() : empMap['store']?.toString()),
       bankName: empMap['bankName']?.toString(),
       accountNumber: empMap['accountNumber']?.toString(),
       ifscCode: empMap['ifscCode']?.toString(),
@@ -478,6 +482,10 @@ class AuthViewModel extends StateNotifier<AuthState> {
           salary:      (prof['salary'] as num?)?.toDouble() ??
               (emp['salary'] as num?)?.toDouble() ?? 0.0,
           avatar:      prof['avatar']?.toString(),
+          storeId:     emp['storeId']?.toString() ??
+              (emp['store'] is Map ? emp['store']['id']?.toString() : emp['store']?.toString()),
+          storeName:   emp['storeName']?.toString() ??
+              (emp['store'] is Map ? emp['store']['name']?.toString() : emp['store']?.toString()),
           bankName:    emp['bankName']?.toString(),
           accountNumber: emp['accountNumber']?.toString(),
           ifscCode:    emp['ifscCode']?.toString(),

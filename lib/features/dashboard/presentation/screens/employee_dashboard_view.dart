@@ -15,9 +15,9 @@ import 'package:quickboom_hrm/features/leave/presentation/providers/leave_viewmo
 import 'package:quickboom_hrm/features/notification/presentation/providers/notification_viewmodel.dart';
 import 'package:quickboom_hrm/features/dashboard/presentation/providers/employee_dashboard_viewmodel.dart';
 import 'package:quickboom_hrm/features/holiday/presentation/providers/holiday_viewmodel.dart';
+import 'package:quickboom_hrm/core/widgets/animated_notification_bell.dart';
 import 'package:quickboom_hrm/core/widgets/shimmer_loading.dart';
 import 'package:quickboom_hrm/features/notification/presentation/screens/notifications_view.dart';
-import 'package:quickboom_hrm/features/expense/presentation/screens/employee_expenses_view.dart';
 import 'package:quickboom_hrm/features/shift/presentation/screens/employee_shift_view.dart';
 import 'package:remixicon/remixicon.dart';
 import 'package:quickboom_hrm/features/attendance/presentation/providers/geofence_viewmodel.dart';
@@ -25,7 +25,6 @@ import 'package:quickboom_hrm/features/commission/presentation/providers/commiss
 import 'package:quickboom_hrm/features/commission/presentation/screens/commission_wallet_view.dart';
 import 'package:quickboom_hrm/core/services/permission_service.dart';
 import 'package:quickboom_hrm/features/task/presentation/screens/employee_tasks_view.dart';
-import 'package:quickboom_hrm/features/wallet/presentation/screens/request_advance_view.dart';
 
 
 final geofenceProvider = FutureProvider<bool>((ref) async {
@@ -175,47 +174,16 @@ class EmployeeDashboardView extends ConsumerWidget {
               ],
             ),
             actions: [
-              Container(
-                margin: const EdgeInsets.only(right: 16, top: 14, bottom: 14),
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.cardBorder, width: 1),
-                ),
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    IconButton(
-                      icon: Icon(RemixIcons.notification_3_line, color: AppColors.textPrimary, size: 20),
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => const NotificationsView()),
-                        );
-                      },
+              AnimatedNotificationBell(
+                unreadCount: notifState.unreadCount,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const NotificationsView(),
                     ),
-                    if (notifState.unreadCount > 0)
-                      Positioned(
-                        right: 8,
-                        top: 8,
-                        child: Container(
-                          padding: const EdgeInsets.all(4),
-                          decoration: const BoxDecoration(
-                            color: AppColors.error,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Text(
-                            '${notifState.unreadCount}',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 8,
-                              fontWeight: FontWeight.w900,
-                            ),
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
+                  );
+                },
               ),
             ],
           ),
@@ -241,50 +209,10 @@ class EmployeeDashboardView extends ConsumerWidget {
                 // ─── Premium Quick Action scrolling dock ───────────────────
                 _SectionTitle(title: 'Quick Actions'),
                 const SizedBox(height: 12),
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  physics: const BouncingScrollPhysics(),
-                  child: Row(
-                    children: [
-                      _QuickActionBubble(
-                        label: 'Salary Advance',
-                        icon: RemixIcons.hand_coin_line,
-                        color: const Color(0xFF9333EA),
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const RequestAdvanceView(maxLimit: 25000),
-                            ),
-                          );
-                        },
-                      ),
-                      const SizedBox(width: 14),
-                      _QuickActionBubble(
-                        label: 'Expense Claim',
-                        icon: RemixIcons.money_dollar_box_line,
-                        color: AppColors.warning,
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (_) => const EmployeeExpensesView()),
-                          );
-                        },
-                      ),
-                      const SizedBox(width: 14),
-                      _QuickActionBubble(
-                        label: 'Shift Schedule',
-                        icon: RemixIcons.calendar_todo_line,
-                        color: AppColors.primary,
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (_) => const EmployeeShiftView()),
-                          );
-                        },
-                      ),
-                      const SizedBox(width: 14),
-                      _QuickActionBubble(
+                Row(
+                  children: [
+                    Expanded(
+                      child: _QuickActionBubble(
                         label: 'My Tasks',
                         icon: RemixIcons.checkbox_line,
                         color: AppColors.success,
@@ -295,8 +223,22 @@ class EmployeeDashboardView extends ConsumerWidget {
                           );
                         },
                       ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: _QuickActionBubble(
+                        label: 'Shift Schedule',
+                        icon: RemixIcons.calendar_todo_line,
+                        color: AppColors.primary,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const EmployeeShiftView()),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
                 ).animate().fadeIn(delay: 50.ms),
 
                 const SizedBox(height: 24),
@@ -887,7 +829,7 @@ class _QuickActionBubble extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 100,
+        width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 10),
         decoration: BoxDecoration(
           color: AppColors.surface,

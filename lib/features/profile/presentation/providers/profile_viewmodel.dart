@@ -110,6 +110,10 @@ class ProfileViewModel extends StateNotifier<ProfileState> {
               ''
             ) ?? 50000.0,
         avatar: prof['avatarUrl']?.toString() ?? prof['avatar']?.toString(),
+        storeId: emp['storeId']?.toString() ??
+            (emp['store'] is Map ? emp['store']['id']?.toString() : emp['store']?.toString()),
+        storeName: emp['storeName']?.toString() ??
+            (emp['store'] is Map ? emp['store']['name']?.toString() : emp['store']?.toString()),
         bankName: emp['bankName']?.toString(),
         accountNumber: emp['accountNumber']?.toString(),
         ifscCode: emp['ifscCode']?.toString(),

@@ -15,10 +15,9 @@ import 'package:quickboom_hrm/features/auth/presentation/providers/auth_viewmode
 import 'package:quickboom_hrm/features/auth/data/models/user_model.dart';
 import 'package:quickboom_hrm/features/payroll/presentation/providers/employee_payroll_viewmodel.dart';
 import 'package:quickboom_hrm/features/expense/presentation/screens/employee_expenses_view.dart';
+import 'package:quickboom_hrm/features/expense/presentation/providers/expense_viewmodel.dart';
 import 'package:quickboom_hrm/features/payroll/presentation/screens/employee_payroll_view.dart';
 import 'package:quickboom_hrm/features/wallet/presentation/screens/request_advance_view.dart';
-import 'package:quickboom_hrm/features/wallet/presentation/widgets/active_advance_card.dart';
-
 
 class EmployeeWalletView extends ConsumerStatefulWidget {
   const EmployeeWalletView({super.key});
@@ -817,7 +816,10 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
             unselectedLabelColor: AppColors.textSecondary,
             indicatorColor: AppColors.primary,
             indicatorWeight: 3,
-            labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+            labelStyle: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 13,
+            ),
             tabs: const [
               Tab(text: 'Salary & Advance'),
               Tab(text: 'Commission & Sales'),
@@ -825,12 +827,8 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
           ),
         ),
         body: TabBarView(
-          children: [
-            _buildSalaryTab(user),
-            _buildCommissionTab(),
-          ],
+          children: [_buildSalaryTab(user), _buildCommissionTab()],
         ),
-
       ),
     );
   }
@@ -862,7 +860,11 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
                   width: double.infinity,
                   child: ElevatedButton.icon(
                     onPressed: () => _showSalesActionSheet(context),
-                    icon: const Icon(RemixIcons.add_circle_fill, color: Colors.white, size: 18),
+                    icon: const Icon(
+                      RemixIcons.add_circle_fill,
+                      color: Colors.white,
+                      size: 18,
+                    ),
                     label: const Text(
                       'Add Sale',
                       style: TextStyle(
@@ -917,7 +919,10 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
                         ),
                         DropdownMenuItem(
                           value: 'month',
-                          child: Text('Monthly', style: TextStyle(fontSize: 13)),
+                          child: Text(
+                            'Monthly',
+                            style: TextStyle(fontSize: 13),
+                          ),
                         ),
                       ],
                     ),
@@ -1106,8 +1111,12 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
 
   Widget _buildSalaryTab(UserModel user) {
     final isSalesman = PermissionService.canViewCommissionWidget(user);
-    final pendingClaims =
+    final expenseState = ref.watch(expenseViewModelProvider);
+    final walletPending =
         (_advanceData?['pendingClaims'] as num?)?.toDouble() ?? 0.0;
+    final pendingClaims = walletPending > 0
+        ? walletPending
+        : expenseState.totalPending;
     final phoneStr = user.phone.toString();
     final phoneLast4 = phoneStr.length >= 4
         ? phoneStr.substring(phoneStr.length - 4)
@@ -1116,13 +1125,19 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
     return RefreshIndicator(
       onRefresh: () async {
         await _loadWalletData();
+        await ref.read(expenseViewModelProvider.notifier).fetchExpenses();
         if (!isSalesman) {
           await _fetchPayslips();
         }
       },
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.fromLTRB(
+          16,
+          16,
+          16,
+          MediaQuery.of(context).padding.bottom + 110,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -1337,27 +1352,38 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
                   ),
                   Container(width: 1, height: 40, color: AppColors.divider),
                   Expanded(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          'Pending Claims',
-                          style: TextStyle(
-                            color: AppColors.textSecondary,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
+                    child: InkWell(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const EmployeeExpensesView(),
                           ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          '₹${NumberFormat('#,##,###').format(pendingClaims)}',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 20,
-                            color: Color(0xFFF59E0B), // Orange color
+                        );
+                      },
+                      borderRadius: BorderRadius.circular(16),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            'Pending Claims',
+                            style: TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
-                        ),
-                      ],
+                          const SizedBox(height: 6),
+                          Text(
+                            '₹${NumberFormat('#,##,###').format(pendingClaims)}',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 20,
+                              color: Color(0xFFF59E0B), // Orange color
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ],
@@ -1435,25 +1461,9 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
             ),
             const SizedBox(height: 24),
 
-            ActiveAdvanceCard(
-              advance: _advanceData?['activeAdvance'] as Map<String, dynamic>? ??
-                  const {
-                    'amount': 10000.0,
-                    'monthlyEmi': 10000.0,
-                    'remainingAmount': 10000.0,
-                    'paidAmount': 0.0,
-                    'paidEmis': 0,
-                    'months': 1,
-                    'pendingEmis': 1,
-                    'status': 'APPROVED',
-                  },
-            ),
-
-
             // Salary Slip Breakdown Card
             _buildSalarySlipBreakdownCard(),
             const SizedBox(height: 24),
-
 
             // Payslips Section for non-salesman
             if (!isSalesman) ...[
@@ -1569,198 +1579,6 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
     );
   }
 
-  Widget _buildSalarySlipBreakdownCard() {
-    final netSalary = (_salarySlipData?['net'] as num?)?.toDouble() ?? 0.0;
-    final grossSalary = (_salarySlipData?['gross'] as num?)?.toDouble() ?? 0.0;
-    final baseSalary =
-        (_salarySlipData?['base_salary'] as num?)?.toDouble() ?? 10000.0;
-    final presentDays =
-        (_salarySlipData?['present_days'] as num?)?.toInt() ?? 0;
-    final halfDays = (_salarySlipData?['half_days'] as num?)?.toInt() ?? 0;
-    final leaveDays = (_salarySlipData?['leave_days'] as num?)?.toInt() ?? 0;
-    final commissionAmount =
-        (_salarySlipData?['commission_amount'] as num?)?.toDouble() ?? 0.0;
-    final deductions =
-        (_salarySlipData?['deductions'] as num?)?.toDouble() ?? 0.0;
-
-    final monthNames = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec'
-    ];
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.cardBorder),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 15,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Icon(RemixIcons.file_text_line,
-                          color: AppColors.primary, size: 20),
-                    ),
-                    const SizedBox(width: 10),
-                    const Flexible(
-                      child: Text(
-                        'SALARY SLIP BREAKDOWN',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 13,
-                          letterSpacing: 0.5,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppColors.background,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: AppColors.cardBorder),
-                ),
-                child: DropdownButton<int>(
-                  value: _salarySlipMonth,
-                  isDense: true,
-                  underline: const SizedBox(),
-                  icon: Icon(RemixIcons.arrow_down_s_line,
-                      size: 16, color: AppColors.textSecondary),
-                  items: List.generate(12, (index) {
-                    final m = index + 1;
-                    return DropdownMenuItem<int>(
-                      value: m,
-                      child: Text(
-                        '${monthNames[index]} $_salarySlipYear',
-                        style: const TextStyle(
-                            fontSize: 12, fontWeight: FontWeight.bold),
-                      ),
-                    );
-                  }),
-                  onChanged: (newMonth) {
-                    if (newMonth != null) {
-                      setState(() {
-                        _salarySlipMonth = newMonth;
-                      });
-                      _fetchSalarySlip();
-                    }
-                  },
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          const Divider(height: 1),
-          const SizedBox(height: 16),
-          if (_isLoadingSalarySlip)
-            const Center(
-                child: Padding(
-                    padding: EdgeInsets.all(20),
-                    child: CircularProgressIndicator()))
-          else ...[
-            _buildSalaryDetailRow(
-                'Base Salary (HopKid)',
-                '₹${NumberFormat('#,##,###').format(baseSalary)}',
-                icon: RemixIcons.money_dollar_circle_line),
-            _buildSalaryDetailRow(
-                'Present Days (This Month)', '$presentDays Days',
-                icon: RemixIcons.calendar_check_line,
-                valueColor: AppColors.success),
-            _buildSalaryDetailRow('Half-Days', '$halfDays Day(s)',
-                icon: RemixIcons.time_line,
-                valueColor: halfDays > 0 ? AppColors.warning : null),
-            _buildSalaryDetailRow(
-                'Unplanned Leave Days', '$leaveDays Day(s)',
-                icon: RemixIcons.close_circle_line,
-                valueColor: leaveDays > 0 ? AppColors.error : null),
-            _buildSalaryDetailRow('Commission (This Month)',
-                '₹${NumberFormat('#,##,###').format(commissionAmount)}',
-                icon: RemixIcons.percent_line, valueColor: AppColors.primary),
-            const SizedBox(height: 12),
-            const Divider(height: 1),
-            const SizedBox(height: 12),
-            _buildSalaryDetailRow(
-                'Gross Salary',
-                '₹${NumberFormat('#,##,###').format(grossSalary)}',
-                isBold: true),
-            _buildSalaryDetailRow(
-                'Total Deductions',
-                '- ₹${NumberFormat('#,##,###').format(deductions)}',
-                valueColor: AppColors.error,
-                isBold: true),
-            const SizedBox(height: 8),
-            Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(12),
-                border:
-                    Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'NET SALARY',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13,
-                      color: AppColors.primary,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                  Text(
-                    '₹${NumberFormat('#,##,###').format(netSalary)}',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w800,
-                      fontSize: 18,
-                      color: AppColors.primary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
   Widget _buildSalaryDetailRow(
     String label,
     String value, {
@@ -1805,6 +1623,223 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
               color: valueColor ?? AppColors.textPrimary,
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSalarySlipBreakdownCard() {
+    final netSalary = (_salarySlipData?['net'] as num?)?.toDouble() ?? 0.0;
+    final grossSalary = (_salarySlipData?['gross'] as num?)?.toDouble() ?? 0.0;
+    final baseSalary =
+        (_salarySlipData?['base_salary'] as num?)?.toDouble() ?? 10000.0;
+    final presentDays =
+        (_salarySlipData?['present_days'] as num?)?.toInt() ?? 0;
+    final halfDays = (_salarySlipData?['half_days'] as num?)?.toInt() ?? 0;
+    final leaveDays = (_salarySlipData?['leave_days'] as num?)?.toInt() ?? 0;
+    final commissionAmount =
+        (_salarySlipData?['commission_amount'] as num?)?.toDouble() ?? 0.0;
+    final deductions =
+        (_salarySlipData?['deductions'] as num?)?.toDouble() ?? 0.0;
+
+    final monthNames = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.cardBorder),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 15,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(
+                        RemixIcons.file_text_line,
+                        color: AppColors.primary,
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    const Flexible(
+                      child: Text(
+                        'SALARY SLIP BREAKDOWN',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                          letterSpacing: 0.5,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.background,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppColors.cardBorder),
+                ),
+                child: DropdownButton<int>(
+                  value: _salarySlipMonth,
+                  isDense: true,
+                  underline: const SizedBox(),
+                  icon: Icon(
+                    RemixIcons.arrow_down_s_line,
+                    size: 16,
+                    color: AppColors.textSecondary,
+                  ),
+                  items: List.generate(12, (index) {
+                    final m = index + 1;
+                    return DropdownMenuItem<int>(
+                      value: m,
+                      child: Text(
+                        '${monthNames[index]} $_salarySlipYear',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    );
+                  }),
+                  onChanged: (newMonth) {
+                    if (newMonth != null) {
+                      setState(() {
+                        _salarySlipMonth = newMonth;
+                      });
+                      _fetchSalarySlip();
+                    }
+                  },
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          const Divider(height: 1),
+          const SizedBox(height: 16),
+          if (_isLoadingSalarySlip)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.all(20),
+                child: CircularProgressIndicator(),
+              ),
+            )
+          else ...[
+            _buildSalaryDetailRow(
+              'Base Salary',
+              '₹${NumberFormat('#,##,###').format(baseSalary)}',
+              icon: RemixIcons.money_dollar_circle_line,
+            ),
+            _buildSalaryDetailRow(
+              'Present Days (This Month)',
+              '$presentDays Days',
+              icon: RemixIcons.calendar_check_line,
+              valueColor: AppColors.success,
+            ),
+            _buildSalaryDetailRow(
+              'Half-Days',
+              '$halfDays Day(s)',
+              icon: RemixIcons.time_line,
+              valueColor: halfDays > 0 ? AppColors.warning : null,
+            ),
+            _buildSalaryDetailRow(
+              'Unplanned Leave Days',
+              '$leaveDays Day(s)',
+              icon: RemixIcons.close_circle_line,
+              valueColor: leaveDays > 0 ? AppColors.error : null,
+            ),
+            _buildSalaryDetailRow(
+              'Commission (This Month)',
+              '₹${NumberFormat('#,##,###').format(commissionAmount)}',
+              icon: RemixIcons.percent_line,
+              valueColor: AppColors.primary,
+            ),
+            const SizedBox(height: 12),
+            const Divider(height: 1),
+            const SizedBox(height: 12),
+            _buildSalaryDetailRow(
+              'Gross Salary',
+              '₹${NumberFormat('#,##,###').format(grossSalary)}',
+              isBold: true,
+            ),
+            _buildSalaryDetailRow(
+              'Total Deductions',
+              '- ₹${NumberFormat('#,##,###').format(deductions)}',
+              valueColor: AppColors.error,
+              isBold: true,
+            ),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: AppColors.primary.withValues(alpha: 0.2),
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'NET SALARY',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                      color: AppColors.primary,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  Text(
+                    '₹${NumberFormat('#,##,###').format(netSalary)}',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 18,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -1927,10 +1962,7 @@ class _RequestAdvanceSheet extends StatefulWidget {
   final double maxLimit;
   final Function(double amount, int months, String reason) onSubmit;
 
-  const _RequestAdvanceSheet({
-    required this.maxLimit,
-    required this.onSubmit,
-  });
+  const _RequestAdvanceSheet({required this.maxLimit, required this.onSubmit});
 
   @override
   State<_RequestAdvanceSheet> createState() => _RequestAdvanceSheetState();
@@ -2041,346 +2073,353 @@ class _RequestAdvanceSheetState extends State<_RequestAdvanceSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-          // Drag handle
-          Center(
-            child: Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: const Color(0xFFE2E8F0),
-                borderRadius: BorderRadius.circular(2),
+            // Drag handle
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE2E8F0),
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 24),
+            const SizedBox(height: 24),
 
-          // Header
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF9333EA).withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  RemixIcons.hand_coin_line,
-                  color: Color(0xFF9333EA),
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 12),
-              const Text(
-                'Salary Advance Request',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF1E293B),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-
-
-          if (_error != null) ...[
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              decoration: BoxDecoration(
-                color: AppColors.error.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                children: [
-                  const Icon(
-                    RemixIcons.error_warning_line,
-                    color: AppColors.error,
-                    size: 16,
+            // Header
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF9333EA).withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
                   ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      _error!,
-                      style: const TextStyle(
-                        color: AppColors.error,
-                        fontSize: 12,
+                  child: const Icon(
+                    RemixIcons.hand_coin_line,
+                    color: Color(0xFF9333EA),
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Text(
+                  'Salary Advance Request',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1E293B),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+
+            if (_error != null) ...[
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.error.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      RemixIcons.error_warning_line,
+                      color: AppColors.error,
+                      size: 16,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        _error!,
+                        style: const TextStyle(
+                          color: AppColors.error,
+                          fontSize: 12,
+                        ),
                       ),
                     ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
+
+            // Amount Input Header
+            Text(
+              'AMOUNT (MAX ₹${NumberFormat('#,##,###').format(widget.maxLimit)})',
+              style: const TextStyle(
+                color: Color(0xFF64748B),
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 0.8,
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // Custom White Rounded Amount TextField
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.03),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
                   ),
                 ],
               ),
-            ),
-            const SizedBox(height: 16),
-          ],
-
-          // Amount Input Header
-          Text(
-            'AMOUNT (MAX ₹${NumberFormat('#,##,###').format(widget.maxLimit)})',
-            style: const TextStyle(
-              color: Color(0xFF64748B),
-              fontSize: 11,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 0.8,
-            ),
-          ),
-          const SizedBox(height: 12),
-
-          // Custom White Rounded Amount TextField
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.03),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
+              child: TextField(
+                controller: _amountCtrl,
+                textAlign: TextAlign.end,
+                keyboardType: TextInputType.number,
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1E293B),
                 ),
-              ],
-            ),
-            child: TextField(
-              controller: _amountCtrl,
-              textAlign: TextAlign.end,
-              keyboardType: TextInputType.number,
-              style: const TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF1E293B),
-              ),
-              onChanged: _onAmountChanged,
-              decoration: InputDecoration(
-                prefixIcon: const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                  child: Text(
-                    '₹',
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF9333EA),
-                    ),
-                  ),
-                ),
-                prefixIconConstraints: const BoxConstraints(
-                  minWidth: 0,
-                  minHeight: 0,
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: const BorderSide(
-                    color: Color(0xFF9333EA),
-                    width: 1.5,
-                  ),
-                ),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 16,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Custom Slider with Dotted Snapping Tick Marks
-          SliderTheme(
-            data: SliderTheme.of(context).copyWith(
-              activeTrackColor: const Color(0xFF9333EA),
-              inactiveTrackColor: const Color(
-                0xFF9333EA,
-              ).withValues(alpha: 0.15),
-              thumbColor: const Color(0xFF9333EA),
-              overlayColor: const Color(0xFF9333EA).withValues(alpha: 0.2),
-              trackHeight: 5,
-              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 10),
-              overlayShape: const RoundSliderOverlayShape(overlayRadius: 20),
-              activeTickMarkColor: const Color(0xFF9333EA),
-              inactiveTickMarkColor: const Color(0xFF9333EA),
-            ),
-            child: Slider(
-              value: _amount,
-              min: 0,
-              max: maxVal,
-              divisions: divisions,
-              onChanged: widget.maxLimit <= 0 ? null : _onSliderChanged,
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Payback Duration Section
-          const Text(
-            'PAYBACK DURATION',
-            style: TextStyle(
-              color: Color(0xFF64748B),
-              fontSize: 11,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 0.8,
-            ),
-          ),
-          const SizedBox(height: 12),
-
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [1, 2, 3].map((m) {
-              final isSel = _repaymentMonths == m;
-              return Expanded(
-                child: GestureDetector(
-                  onTap: () => setState(() => _repaymentMonths = m),
-                  child: Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 4),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    decoration: BoxDecoration(
-                      color: isSel
-                          ? const Color(0xFF9333EA).withValues(alpha: 0.08)
-                          : Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: isSel
-                            ? const Color(0xFF9333EA)
-                            : const Color(0xFFE2E8F0),
-                        width: isSel ? 1.5 : 1.0,
+                onChanged: _onAmountChanged,
+                decoration: InputDecoration(
+                  prefixIcon: const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    child: Text(
+                      '₹',
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF9333EA),
                       ),
                     ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          '$m ${m == 1 ? 'Month' : 'Months'}',
-                          style: TextStyle(
-                            color: isSel
-                                ? const Color(0xFF9333EA)
-                                : const Color(0xFF1E293B),
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                          ),
+                  ),
+                  prefixIconConstraints: const BoxConstraints(
+                    minWidth: 0,
+                    minHeight: 0,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: const BorderSide(
+                      color: Color(0xFF9333EA),
+                      width: 1.5,
+                    ),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 16,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Custom Slider with Dotted Snapping Tick Marks
+            SliderTheme(
+              data: SliderTheme.of(context).copyWith(
+                activeTrackColor: const Color(0xFF9333EA),
+                inactiveTrackColor: const Color(
+                  0xFF9333EA,
+                ).withValues(alpha: 0.15),
+                thumbColor: const Color(0xFF9333EA),
+                overlayColor: const Color(0xFF9333EA).withValues(alpha: 0.2),
+                trackHeight: 5,
+                thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 10),
+                overlayShape: const RoundSliderOverlayShape(overlayRadius: 20),
+                activeTickMarkColor: const Color(0xFF9333EA),
+                inactiveTickMarkColor: const Color(0xFF9333EA),
+              ),
+              child: Slider(
+                value: _amount,
+                min: 0,
+                max: maxVal,
+                divisions: divisions,
+                onChanged: widget.maxLimit <= 0 ? null : _onSliderChanged,
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Payback Duration Section
+            const Text(
+              'PAYBACK DURATION',
+              style: TextStyle(
+                color: Color(0xFF64748B),
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 0.8,
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [1, 2, 3].map((m) {
+                final isSel = _repaymentMonths == m;
+                return Expanded(
+                  child: GestureDetector(
+                    onTap: () => setState(() => _repaymentMonths = m),
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 4),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      decoration: BoxDecoration(
+                        color: isSel
+                            ? const Color(0xFF9333EA).withValues(alpha: 0.08)
+                            : Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: isSel
+                              ? const Color(0xFF9333EA)
+                              : const Color(0xFFE2E8F0),
+                          width: isSel ? 1.5 : 1.0,
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'EMI Payback',
-                          style: TextStyle(
-                            color: isSel
-                                ? const Color(0xFF9333EA).withValues(alpha: 0.7)
-                                : const Color(0xFF64748B),
-                            fontSize: 10,
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            '$m ${m == 1 ? 'Month' : 'Months'}',
+                            style: TextStyle(
+                              color: isSel
+                                  ? const Color(0xFF9333EA)
+                                  : const Color(0xFF1E293B),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
                           ),
-                        ),
-                      ],
+                          const SizedBox(height: 4),
+                          Text(
+                            'EMI Payback',
+                            style: TextStyle(
+                              color: isSel
+                                  ? const Color(
+                                      0xFF9333EA,
+                                    ).withValues(alpha: 0.7)
+                                  : const Color(0xFF64748B),
+                              fontSize: 10,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 20),
+
+            // Reason for Advance Section
+            const Text(
+              'REASON FOR ADVANCE',
+              style: TextStyle(
+                color: Color(0xFF64748B),
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 0.8,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.02),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: TextField(
+                controller: _reasonCtrl,
+                maxLines: 3,
+                style: const TextStyle(color: Color(0xFF1E293B), fontSize: 14),
+                decoration: InputDecoration(
+                  hintText: 'Enter reason (e.g. medical emergency)...',
+                  hintStyle: const TextStyle(
+                    color: Color(0xFF94A3B8),
+                    fontSize: 14,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: const BorderSide(
+                      color: Color(0xFF9333EA),
+                      width: 1.5,
+                    ),
+                  ),
+                  contentPadding: const EdgeInsets.all(16),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // Action Buttons
+            Row(
+              children: [
+                Expanded(
+                  child: TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    child: const Text(
+                      'Cancel',
+                      style: TextStyle(
+                        color: Color(0xFF1E293B),
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ),
-              );
-            }).toList(),
-          ),
-          const SizedBox(height: 20),
-
-          // Reason for Advance Section
-          const Text(
-            'REASON FOR ADVANCE',
-            style: TextStyle(
-              color: Color(0xFF64748B),
-              fontSize: 11,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 0.8,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.02),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: _submit,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF9333EA),
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    child: const Text(
+                      'Submit Request',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
                 ),
               ],
             ),
-            child: TextField(
-              controller: _reasonCtrl,
-              maxLines: 3,
-              style: const TextStyle(color: Color(0xFF1E293B), fontSize: 14),
-              decoration: InputDecoration(
-                hintText: 'Enter reason (e.g. medical emergency)...',
-                hintStyle: const TextStyle(
-                  color: Color(0xFF94A3B8),
-                  fontSize: 14,
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: const BorderSide(
-                    color: Color(0xFF9333EA),
-                    width: 1.5,
-                  ),
-                ),
-                contentPadding: const EdgeInsets.all(16),
-              ),
-            ),
-          ),
-          const SizedBox(height: 24),
-
-          // Action Buttons
-          Row(
-            children: [
-              Expanded(
-                child: TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  style: TextButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                  child: const Text(
-                    'Cancel',
-                    style: TextStyle(
-                      color: Color(0xFF1E293B),
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: _submit,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF9333EA),
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                  child: const Text(
-                    'Submit Request',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
+          ],
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 }
 
 class _SalesTransactionFormSheet extends StatefulWidget {
@@ -2460,19 +2499,17 @@ class _SalesTransactionFormSheetState
       }
     }
 
-    if (widget.type == 'AddSale' || widget.type == 'UpdateSale') {
-      if (_selectedStoreId == null) {
-        setState(() => _error = 'No store assigned. Contact HR.');
-        return;
-      }
+    final effectiveStoreId = _selectedStoreId ?? widget.preselectedStoreId;
+    if (effectiveStoreId == null) {
+      setState(() => _error = 'Please select a store or contact HR.');
+      return;
     }
 
     final Map<String, dynamic> payload = {
       'invoiceNumber': invoice,
       'billId': invoice,
       'notes': _notesCtrl.text.trim(),
-      // Always include storeId if available (all 4 transaction types)
-      if (_selectedStoreId != null) 'storeId': _selectedStoreId,
+      'storeId': effectiveStoreId,
     };
 
     if (widget.type == 'AddSale' || widget.type == 'UpdateSale') {
@@ -2507,7 +2544,8 @@ class _SalesTransactionFormSheetState
       amountLabel = 'New Purchase Amount';
     }
 
-    final hasPreselectedStore = widget.preselectedStoreId != null &&
+    final hasPreselectedStore =
+        widget.preselectedStoreId != null &&
         widget.preselectedStoreName != null;
 
     return Container(
@@ -2526,162 +2564,109 @@ class _SalesTransactionFormSheetState
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-          Center(
-            child: Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppColors.divider,
-                borderRadius: BorderRadius.circular(2),
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.divider,
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 20),
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-              ),
-              // Store badge — always visible in header
-              if (hasPreselectedStore)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: AppColors.primary.withValues(alpha: 0.25),
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
                     ),
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        RemixIcons.store_2_line,
-                        size: 13,
-                        color: AppColors.primary,
+                ),
+                // Store badge — always visible in header
+                if (hasPreselectedStore)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 5,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: AppColors.primary.withValues(alpha: 0.25),
                       ),
-                      const SizedBox(width: 5),
-                      Text(
-                        widget.preselectedStoreName!,
-                        style: TextStyle(
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          RemixIcons.store_2_line,
+                          size: 13,
                           color: AppColors.primary,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          if (_error != null) ...[
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              decoration: BoxDecoration(
-                color: AppColors.error.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                children: [
-                  const Icon(
-                    RemixIcons.error_warning_line,
-                    color: AppColors.error,
-                    size: 16,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      _error!,
-                      style: const TextStyle(
-                        color: AppColors.error,
-                        fontSize: 12,
-                      ),
+                        const SizedBox(width: 5),
+                        Text(
+                          widget.preselectedStoreName!,
+                          style: TextStyle(
+                            color: AppColors.primary,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
                     ),
                   ),
-                ],
-              ),
+              ],
             ),
             const SizedBox(height: 16),
-          ],
-          TextField(
-            controller: _invoiceCtrl,
-            decoration: const InputDecoration(labelText: 'Invoice / Bill ID'),
-          ),
-          const SizedBox(height: 16),
-          // Store selector — shown for AddSale & UpdateSale only
-          // If employee has a pre-assigned store: show locked info tile
-          // If no store assigned: show full dropdown for manual selection
-          if (widget.type == 'AddSale' || widget.type == 'UpdateSale') ...[
-            if (hasPreselectedStore) ...[
+            if (_error != null) ...[
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
                 decoration: BoxDecoration(
-                  color: AppColors.surface,
+                  color: AppColors.error.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.cardBorder),
                 ),
                 child: Row(
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(7),
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Icon(
-                        RemixIcons.store_2_fill,
-                        size: 16,
-                        color: AppColors.primary,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Assigned Store',
-                            style: TextStyle(
-                              fontSize: 10,
-                              color: AppColors.textSecondary,
-                              fontWeight: FontWeight.w600,
-                              letterSpacing: 0.5,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            widget.preselectedStoreName!,
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: AppColors.textPrimary,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Icon(
-                      RemixIcons.lock_2_line,
+                    const Icon(
+                      RemixIcons.error_warning_line,
+                      color: AppColors.error,
                       size: 16,
-                      color: AppColors.textHint,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        _error!,
+                        style: const TextStyle(
+                          color: AppColors.error,
+                          fontSize: 12,
+                        ),
+                      ),
                     ),
                   ],
                 ),
               ),
-            ] else ...[
+              const SizedBox(height: 16),
+            ],
+            TextField(
+              controller: _invoiceCtrl,
+              decoration: const InputDecoration(labelText: 'Invoice / Bill ID'),
+            ),
+            const SizedBox(height: 16),
+            // Store dropdown — shown only if employee has NO pre-assigned store
+            if (!hasPreselectedStore) ...[
               DropdownButtonFormField<String>(
-                value:
+                initialValue:
                     widget.stores.any(
                       (s) => s['id'].toString() == _selectedStoreId,
                     )
@@ -2703,54 +2688,53 @@ class _SalesTransactionFormSheetState
                 }).toList(),
                 onChanged: (val) => setState(() => _selectedStoreId = val),
               ),
+              const SizedBox(height: 16),
             ],
-            const SizedBox(height: 16),
-          ],
-          if (widget.type == 'Exchange') ...[
+            if (widget.type == 'Exchange') ...[
+              TextField(
+                controller: _returnAmountCtrl,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Return Amount',
+                  prefixText: '₹ ',
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
             TextField(
-              controller: _returnAmountCtrl,
+              controller: _amountCtrl,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Return Amount',
+              decoration: InputDecoration(
+                labelText: amountLabel,
                 prefixText: '₹ ',
               ),
             ),
             const SizedBox(height: 16),
-          ],
-          TextField(
-            controller: _amountCtrl,
-            keyboardType: TextInputType.number,
-            decoration: InputDecoration(
-              labelText: amountLabel,
-              prefixText: '₹ ',
+            TextField(
+              controller: _notesCtrl,
+              maxLines: 2,
+              decoration: const InputDecoration(labelText: 'Notes'),
             ),
-          ),
-          const SizedBox(height: 16),
-          TextField(
-            controller: _notesCtrl,
-            maxLines: 2,
-            decoration: const InputDecoration(labelText: 'Notes'),
-          ),
-          const SizedBox(height: 24),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+                onPressed: _submit,
+                child: const Text(
+                  'Submit',
+                  style: TextStyle(fontWeight: FontWeight.bold),
                 ),
               ),
-              onPressed: _submit,
-              child: const Text(
-                'Submit',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
             ),
-          ),
-        ],
+          ],
         ),
       ),
     );
