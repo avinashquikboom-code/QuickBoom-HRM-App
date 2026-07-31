@@ -4,6 +4,8 @@ import 'package:remixicon/remixicon.dart';
 import 'package:quickboom_hrm/core/constants/app_colors.dart';
 import 'package:quickboom_hrm/core/services/wallet_service.dart';
 import 'package:quickboom_hrm/core/services/notification_service.dart';
+import 'package:quickboom_hrm/features/wallet/presentation/widgets/active_advance_card.dart';
+
 
 class RequestAdvanceView extends StatefulWidget {
   final double maxLimit;
@@ -268,7 +270,7 @@ class _RequestAdvanceViewState extends State<RequestAdvanceView> {
           children: [
             // Active Advance EMI Plan Card
             if (_activeAdvance != null) ...[
-              _ActiveAdvanceCard(advance: _activeAdvance!),
+              ActiveAdvanceCard(advance: _activeAdvance!),
               const SizedBox(height: 20),
             ],
 
@@ -650,7 +652,10 @@ class _RequestAdvanceViewState extends State<RequestAdvanceView> {
                 separatorBuilder: (context, index) => const SizedBox(height: 14),
                 itemBuilder: (context, index) {
                   final adv = _allAdvances[index];
-                  return _AdvanceHistoryCard(advance: adv);
+                  return GestureDetector(
+                    onTap: () => _showAdvanceDetailsSheet(context, adv),
+                    child: _AdvanceHistoryCard(advance: adv),
+                  );
                 },
               ),
 
@@ -660,194 +665,208 @@ class _RequestAdvanceViewState extends State<RequestAdvanceView> {
       ),
     );
   }
-}
 
-class _ActiveAdvanceCard extends StatelessWidget {
-  final Map<String, dynamic> advance;
-
-  const _ActiveAdvanceCard({required this.advance});
-
-  @override
-  Widget build(BuildContext context) {
+  void _showAdvanceDetailsSheet(BuildContext context, Map<String, dynamic> advance) {
     final double amount = (advance['amount'] as num?)?.toDouble() ?? 0.0;
-    final double monthlyEmi = (advance['monthlyEmi'] as num?)?.toDouble() ?? 0.0;
+    final int months = (advance['months'] as num?)?.toInt() ?? 1;
+    final double monthlyEmi = (advance['monthlyEmi'] as num?)?.toDouble() ?? (months > 0 ? amount / months : amount);
+    final String status = (advance['status'] as String?)?.toUpperCase() ?? 'PENDING';
+    final String reason = (advance['reason'] as String?) ?? 'No reason provided';
+    final String? requestedOn = advance['requestedOn'] as String?;
+    final String? reviewNote = advance['reviewNote'] as String?;
     final double remaining = (advance['remainingAmount'] as num?)?.toDouble() ?? amount;
-    final double paidAmount = (advance['paidAmount'] as num?)?.toDouble() ?? 0.0;
-    final int paidEmis = (advance['paidEmis'] as num?)?.toInt() ?? 0;
-    final int totalEmis = (advance['months'] as num?)?.toInt() ?? 1;
-    final int pendingEmis = (advance['pendingEmis'] as num?)?.toInt() ?? totalEmis;
-    final String status = (advance['status'] as String?) ?? 'PENDING';
-    final double progress = totalEmis > 0 ? (paidEmis / totalEmis).clamp(0.0, 1.0) : 0.0;
+    
+    Color statusColor;
+    Color statusBg;
+    IconData statusIcon;
 
-    final isApproved = status == 'APPROVED';
+    switch (status) {
+      case 'APPROVED':
+        statusColor = const Color(0xFF10B981);
+        statusBg = const Color(0xFF10B981).withValues(alpha: 0.12);
+        statusIcon = RemixIcons.checkbox_circle_fill;
+        break;
+      case 'REJECTED':
+        statusColor = AppColors.error;
+        statusBg = AppColors.error.withValues(alpha: 0.12);
+        statusIcon = RemixIcons.close_circle_fill;
+        break;
+      case 'COMPLETED':
+      case 'PAID_OFF':
+        statusColor = const Color(0xFF3B82F6);
+        statusBg = const Color(0xFF3B82F6).withValues(alpha: 0.12);
+        statusIcon = RemixIcons.shield_check_fill;
+        break;
+      case 'PENDING':
+      default:
+        statusColor = AppColors.warning;
+        statusBg = AppColors.warning.withValues(alpha: 0.12);
+        statusIcon = RemixIcons.time_fill;
+        break;
+    }
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: isApproved
-              ? [const Color(0xFF0F172A), const Color(0xFF1E293B)]
-              : [const Color(0xFF451A03), const Color(0xFF78350F)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+    String formatTimestamp(String? isoStr) {
+      if (isoStr == null || isoStr.isEmpty) return 'N/A';
+      try {
+        final dt = DateTime.parse(isoStr).toLocal();
+        return DateFormat('dd MMM yyyy • hh:mm a').format(dt);
+      } catch (_) {
+        return isoStr;
+      }
+    }
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) => Container(
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         ),
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: (isApproved ? Colors.black : Colors.amber).withValues(alpha: 0.1),
-            blurRadius: 16,
-            offset: const Offset(0, 8),
-          ),
-        ],
-        border: Border.all(
-          color: isApproved ? const Color(0xFF334155) : const Color(0xFFB45309),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: (isApproved ? const Color(0xFF10B981) : AppColors.warning).withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(
-                      isApproved ? RemixIcons.check_double_line : RemixIcons.time_line,
-                      color: isApproved ? const Color(0xFF10B981) : AppColors.warning,
-                      size: 20,
-                    ),
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.cardBorder,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Advance Request Details',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: statusBg,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: statusColor.withValues(alpha: 0.3)),
                   ),
-                  const SizedBox(width: 12),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Text(
-                        'Salary Advance EMI Plan',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                      Icon(statusIcon, color: statusColor, size: 13),
+                      const SizedBox(width: 4),
                       Text(
-                        isApproved ? 'Active • Automatic Monthly Deduction' : 'Pending HR Approval',
+                        status,
                         style: TextStyle(
-                          color: isApproved ? const Color(0xFF94A3B8) : const Color(0xFFFDE68A),
-                          fontSize: 11,
-                          fontWeight: FontWeight.w500,
+                          color: statusColor,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.5,
                         ),
                       ),
                     ],
                   ),
-                ],
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: isApproved ? const Color(0xFF059669).withValues(alpha: 0.2) : const Color(0xFFD97706).withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: isApproved ? const Color(0xFF059669) : const Color(0xFFD97706),
-                  ),
-                ),
-                child: Text(
-                  status,
-                  style: TextStyle(
-                    color: isApproved ? const Color(0xFF34D399) : const Color(0xFFFBBF24),
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Remaining Advance',
-                    style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '₹${NumberFormat('#,##,###').format(remaining.round())}',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  const Text(
-                    'Monthly EMI',
-                    style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '₹${NumberFormat('#,##,###').format(monthlyEmi.round())} / mo',
-                    style: const TextStyle(
-                      color: Color(0xFF38BDF8),
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          if (isApproved) ...[
-            const SizedBox(height: 16),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(6),
-              child: LinearProgressIndicator(
-                value: progress,
-                minHeight: 8,
-                backgroundColor: const Color(0xFF334155),
-                valueColor: const AlwaysStoppedAnimation<Color>(
-                  Color(0xFF10B981),
-                ),
-              ),
-            ),
-            const SizedBox(height: 10),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Repaid: ₹${NumberFormat('#,##,###').format(paidAmount.round())} ($paidEmis of $totalEmis EMIs)',
-                  style: const TextStyle(
-                    color: Color(0xFF94A3B8),
-                    fontSize: 11,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                Text(
-                  '$pendingEmis Pending EMIs',
-                  style: const TextStyle(
-                    color: Color(0xFFF59E0B),
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                  ),
                 ),
               ],
             ),
+            const SizedBox(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Amount Requested', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                    const SizedBox(height: 4),
+                    Text(
+                      '₹${NumberFormat('#,##,###').format(amount.round())}',
+                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: AppColors.textPrimary),
+                    ),
+                  ],
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text('Monthly EMI', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                    const SizedBox(height: 4),
+                    Text(
+                      '₹${NumberFormat('#,##,###').format(monthlyEmi.round())}',
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF9333EA)),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            Divider(color: AppColors.cardBorder),
+            const SizedBox(height: 16),
+            Text('Reason', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+            const SizedBox(height: 6),
+            Text(reason, style: TextStyle(fontSize: 14, color: AppColors.textPrimary)),
+            if (reviewNote != null && reviewNote.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              Text('HR Note', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+              const SizedBox(height: 6),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: statusBg,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(RemixIcons.information_fill, color: statusColor, size: 18),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        reviewNote,
+                        style: TextStyle(color: statusColor, fontSize: 13, fontWeight: FontWeight.w500),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+            const SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Date Requested', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                Text(formatTimestamp(requestedOn), style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+              ],
+            ),
+            if (status == 'APPROVED') ...[
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Remaining Advance', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                  Text('₹${NumberFormat('#,##,###').format(remaining.round())}', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                ],
+              ),
+            ],
+            const SizedBox(height: 32),
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton(
+                onPressed: () => Navigator.pop(ctx),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.background,
+                  foregroundColor: AppColors.textPrimary,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                ),
+                child: const Text('Close', style: TextStyle(fontWeight: FontWeight.w700)),
+              ),
+            ),
           ],
-        ],
+        ),
       ),
     );
   }

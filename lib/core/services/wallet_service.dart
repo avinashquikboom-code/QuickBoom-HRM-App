@@ -88,6 +88,43 @@ class WalletService {
     }
   }
 
+  static Future<Map<String, dynamic>?> repaySalaryAdvance({
+    required int advanceId,
+    required double amount,
+    String paymentMethod = 'UPI',
+  }) async {
+    try {
+      final token = await _getToken();
+      if (token == null) {
+        dev.log('No token found for salary advance repayment', name: 'WalletService');
+        return null;
+      }
+
+      final response = await http
+          .post(
+            Uri.parse('${AppUrl.baseUrl}/api/employee/wallet/advance/$advanceId/repay'),
+            headers: _getHeaders(token),
+            body: json.encode({
+              'amount': amount,
+              'paymentMethod': paymentMethod,
+            }),
+          )
+          .timeout(_timeout);
+
+      if (kDebugMode) {
+        dev.log('Salary Advance Repayment Response: ${response.body}', name: 'WalletService');
+      }
+
+      if (response.body.isNotEmpty) {
+        return jsonDecode(response.body);
+      }
+      return null;
+    } catch (e) {
+      dev.log('Error repaying salary advance: $e', name: 'WalletService');
+      return null;
+    }
+  }
+
   static Future<Map<String, dynamic>?> fetchBankDetails() async {
     try {
       final token = await _getToken();
