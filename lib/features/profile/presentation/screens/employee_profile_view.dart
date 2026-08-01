@@ -15,6 +15,8 @@ import 'package:quickboom_hrm/features/shift/presentation/screens/employee_shift
 import 'package:quickboom_hrm/features/profile/presentation/screens/change_password_view.dart';
 import 'package:quickboom_hrm/features/profile/presentation/screens/theme_settings_view.dart';
 import 'package:quickboom_hrm/features/payroll/presentation/screens/employee_payroll_view.dart';
+import 'package:quickboom_hrm/core/services/api_service.dart';
+import 'package:quickboom_hrm/core/constants/app_url.dart';
 
 class EmployeeProfileView extends ConsumerStatefulWidget {
   const EmployeeProfileView({super.key});

@@ -47,6 +47,7 @@ class AppUrl {
   //  Employee – Profile
   // ─────────────────────────────────────────────
   static const String employeeProfile = '/api/mobile/auth/profile';
+  static const String resetMyData = '/api/mobile/reset/my-data';
   static const String employeeDepartments = '/api/mobile/auth/departments';
   static const String employeeAvatar = '/api/employee/avatar';
   static const String employeeAvatarUpload = '/api/mobile/auth/profile/avatar';
