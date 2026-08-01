@@ -89,10 +89,19 @@ class SalesService {
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
         final resBody = jsonDecode(response.body);
+        if (resBody is Map && resBody['success'] == false) {
+          return {
+            'success': false,
+            'message': resBody['message'] ?? resBody['Message'] ?? 'Failed to submit transaction',
+            'statusCode': response.statusCode,
+            'offline': false,
+          };
+        }
         // Sync with local backend asynchronously so commission transactions are recorded in DB
         _syncToBackend(path, body);
         return {
           'success': true,
+          'message': 'Transaction submitted successfully',
           'data': resBody,
           'offline': false,
         };
@@ -340,7 +349,7 @@ class SalesService {
               'transactions': [
                 {
                   'endpoint': endpoint,
-                  'payload': payload,
+                  'payload': _mapLegacyPayload(endpoint, payload),
                 }
               ]
             }),

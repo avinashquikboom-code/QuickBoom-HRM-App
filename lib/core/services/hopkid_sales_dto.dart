@@ -103,9 +103,9 @@ class HopkidSalesProductItem {
     required this.Price,
     required this.Taxable,
     required this.Total,
-    this.BarcodeNo = '',
-    this.BatchNo = '',
-    this.Remark = '',
+    this.BarcodeNo = 'POS',
+    this.BatchNo = 'DEFAULT',
+    this.Remark = 'POS Sale',
     this.VasyRowID = 0,
     this.ProductCode,
     this.ProductName,
@@ -158,11 +158,15 @@ class HopkidSalesProductItem {
       EmployeeID: salesmanGuid,
       Qty: qty,
       Price: price,
-      Taxable: total, // no tax split until product master is available
+      Taxable: total,
       Total: total,
+      BarcodeNo: 'POS',
+      BatchNo: 'DEFAULT',
+      Remark: 'POS Sale',
       Discount: 0.0,
       TaxPercent: 0.0,
       TaxAmount: 0.0,
+      IsOld: isOld,
     );
   }
 }
