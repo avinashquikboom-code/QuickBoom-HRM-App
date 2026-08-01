@@ -98,6 +98,48 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
     _fetchSalarySlip();
   }
 
+  double _getCardNetSalary() {
+    // 1. Prioritize wallet response net (upcomingSalary + commission from backend)
+    final netAdv = (_advanceData?['netSalary'] as num?)?.toDouble() ??
+                   (_advanceData?['upcomingSalary'] as num?)?.toDouble() ??
+                   (_advanceData?['net'] as num?)?.toDouble();
+    if (netAdv != null && netAdv > 0) return netAdv;
+
+    // 2. Fallback to salary slip net (net includes commission)
+    final netSlip = (_salarySlipData?['net'] as num?)?.toDouble() ??
+                    (_salarySlipData?['netSalary'] as num?)?.toDouble();
+    if (netSlip != null && netSlip > 0) return netSlip;
+
+    final base = (_salarySlipData?['base_salary'] as num?)?.toDouble();
+    final deductions = (_salarySlipData?['deductions'] as num?)?.toDouble() ?? 0.0;
+    final comm = (_salarySlipData?['commission_amount'] as num?)?.toDouble() ?? 0.0;
+    if (base != null && base > 0) {
+      final estNet = (base - deductions) + comm;
+      if (estNet > 0) return estNet;
+    }
+
+    return 47250.0;
+  }
+
+  double _getCardGrossSalary() {
+    // 1. Check HR registered gross salary from wallet response (_advanceData)
+    final registeredGross = (_advanceData?['grossSalary'] as num?)?.toDouble() ??
+                            (_advanceData?['registeredSalary'] as num?)?.toDouble();
+    if (registeredGross != null && registeredGross > 0) return registeredGross;
+
+    // 2. Check base_salary / registeredSalary from salary slip API
+    final base = (_salarySlipData?['registeredSalary'] as num?)?.toDouble() ??
+                 (_salarySlipData?['base_salary'] as num?)?.toDouble();
+    if (base != null && base > 0) return base;
+
+    // 3. Fallback to monthly gross slip amount if present
+    final grossSlip = (_salarySlipData?['gross'] as num?)?.toDouble() ??
+                      (_salarySlipData?['grossSalary'] as num?)?.toDouble();
+    if (grossSlip != null && grossSlip > 0) return grossSlip;
+
+    return 50000.0;
+  }
+
   Future<void> _fetchCommissionReport() async {
     setState(() => _isLoadingComm = true);
     try {
@@ -114,9 +156,11 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
         });
       }
     } catch (e) {
-      debugPrint('Error fetching employee report: $e');
+      debugPrint('Error fetching commission report: $e');
     } finally {
-      setState(() => _isLoadingComm = false);
+      if (mounted) {
+        setState(() => _isLoadingComm = false);
+      }
     }
   }
 
@@ -1230,7 +1274,7 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
                               ),
                               const SizedBox(height: 2),
                               Text(
-                                '₹${NumberFormat('#,##,###').format((_salarySlipData?['net'] as num?)?.toDouble() ?? (((_advanceData?['netSalary'] as num?)?.toDouble() != null && (_advanceData!['netSalary'] as num) > 0) ? _advanceData!['netSalary'] : (((_advanceData?['upcomingSalary'] as num?)?.toDouble() != null && (_advanceData!['upcomingSalary'] as num) > 0) ? _advanceData!['upcomingSalary'] : 47250)))}',
+                                '₹${NumberFormat('#,##,###').format(_getCardNetSalary())}',
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 24,
@@ -1260,7 +1304,7 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
                                   ),
                                   const SizedBox(height: 1),
                                   Text(
-                                    '₹${NumberFormat('#,##,###').format((_salarySlipData?['gross'] as num?)?.toDouble() ?? (((_advanceData?['grossSalary'] as num?)?.toDouble() != null && (_advanceData!['grossSalary'] as num) > 0) ? _advanceData!['grossSalary'] : (((_advanceData?['registeredSalary'] as num?)?.toDouble() != null && (_advanceData!['registeredSalary'] as num) > 0) ? _advanceData!['registeredSalary'] : 50000)))}',
+                                    '₹${NumberFormat('#,##,###').format(_getCardGrossSalary())}',
                                     style: TextStyle(
                                       color: Colors.white.withValues(
                                         alpha: 0.95,
@@ -1629,8 +1673,12 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
   }
 
   Widget _buildSalarySlipBreakdownCard() {
-    final netSalary = (_salarySlipData?['net'] as num?)?.toDouble() ?? 0.0;
-    final grossSalary = (_salarySlipData?['gross'] as num?)?.toDouble() ?? 0.0;
+    final netSalary = (_salarySlipData?['net'] as num?)?.toDouble() ??
+                      (_salarySlipData?['netSalary'] as num?)?.toDouble() ??
+                      _getCardNetSalary();
+    final grossSalary = (_salarySlipData?['gross'] as num?)?.toDouble() ??
+                        (_salarySlipData?['grossSalary'] as num?)?.toDouble() ??
+                        _getCardGrossSalary();
     final baseSalary =
         (_salarySlipData?['base_salary'] as num?)?.toDouble() ?? 10000.0;
     final presentDays =
