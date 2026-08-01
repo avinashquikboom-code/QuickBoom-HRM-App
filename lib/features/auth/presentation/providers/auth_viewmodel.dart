@@ -117,6 +117,18 @@ class AuthViewModel extends StateNotifier<AuthState> {
             ? nameFromEmployee
             : (isHrRole ? 'HR Manager' : 'Employee');
 
+    final officeMap = empMap['office'] as Map<String, dynamic>? ?? {};
+    final resolvedOfficeName = officeMap['name']?.toString() ??
+        empMap['officeName']?.toString() ??
+        empMap['branchName']?.toString();
+    final resolvedStoreId = empMap['storeId']?.toString() ??
+        (empMap['store'] is Map ? empMap['store']['id']?.toString() : empMap['store']?.toString()) ??
+        empMap['officeId']?.toString() ??
+        officeMap['id']?.toString();
+    final resolvedStoreName = empMap['storeName']?.toString() ??
+        (empMap['store'] is Map ? empMap['store']['name']?.toString() : empMap['store']?.toString()) ??
+        resolvedOfficeName;
+
     return UserModel(
       id: userMap['id'].toString(),
       employeeId: empMap['employeeCode']?.toString() ?? userMap['id'].toString(),
@@ -147,15 +159,15 @@ class AuthViewModel extends StateNotifier<AuthState> {
           DateTime.now(),
       salary: 0.0,
       avatar: avatarVal,
-      storeId: empMap['storeId']?.toString() ??
-          (empMap['store'] is Map ? empMap['store']['id']?.toString() : empMap['store']?.toString()),
-      storeName: empMap['storeName']?.toString() ??
-          (empMap['store'] is Map ? empMap['store']['name']?.toString() : empMap['store']?.toString()),
+      storeId: resolvedStoreId,
+      storeName: resolvedStoreName,
+      officeId: empMap['officeId']?.toString() ?? officeMap['id']?.toString(),
+      officeName: resolvedOfficeName,
       bankName: empMap['bankName']?.toString(),
       accountNumber: empMap['accountNumber']?.toString(),
       ifscCode: empMap['ifscCode']?.toString(),
       accountType: empMap['accountType']?.toString(),
-      branchName: empMap['branchName']?.toString(),
+      branchName: empMap['branchName']?.toString() ?? resolvedOfficeName,
     );
   }
 

@@ -666,8 +666,8 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
       builder: (ctx) => _SalesTransactionFormSheet(
         type: type,
         stores: _stores,
-        preselectedStoreId: user?.storeId,
-        preselectedStoreName: user?.storeName,
+        preselectedStoreId: user?.storeId ?? user?.branchName ?? user?.officeName,
+        preselectedStoreName: user?.storeName ?? user?.branchName ?? user?.officeName,
         onSubmit: (Map<String, dynamic> payload) async {
           Navigator.pop(ctx);
 
@@ -2499,8 +2499,8 @@ class _SalesTransactionFormSheetState
       }
     }
 
-    final effectiveStoreId = _selectedStoreId ?? widget.preselectedStoreId;
-    if (effectiveStoreId == null) {
+    final effectiveStoreId = _selectedStoreId ?? widget.preselectedStoreId ?? widget.preselectedStoreName;
+    if (effectiveStoreId == null || effectiveStoreId.isEmpty) {
       setState(() => _error = 'Please select a store or contact HR.');
       return;
     }
