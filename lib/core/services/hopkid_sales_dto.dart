@@ -47,6 +47,12 @@ class HopkidSalesConstants {
   static const String defaultAccountLedger = 'Cash';
 }
 
+String _validGuidOrZero(String? val) {
+  if (val == null || val.isEmpty) return HopkidSalesConstants.zeroGuid;
+  final guidRegex = RegExp(r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$');
+  return guidRegex.hasMatch(val) ? val : HopkidSalesConstants.zeroGuid;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 //  Product Line Item
 // ─────────────────────────────────────────────────────────────────────────────
@@ -118,11 +124,11 @@ class HopkidSalesProductItem {
 
   Map<String, dynamic> toJson() {
     final m = <String, dynamic>{
-      'ProductID': ProductID,
-      'VariantID': VariantID,
-      'BrandID': BrandID,
-      'CategoryID': CategoryID,
-      'EmployeeID': EmployeeID,
+      'ProductID': _validGuidOrZero(ProductID),
+      'VariantID': _validGuidOrZero(VariantID),
+      'BrandID': _validGuidOrZero(BrandID),
+      'CategoryID': _validGuidOrZero(CategoryID),
+      'EmployeeID': _validGuidOrZero(EmployeeID),
       'Qty': Qty,
       'Price': Price,
       'Taxable': Taxable,
@@ -280,17 +286,17 @@ class AddSalesDto {
   });
 
   Map<String, dynamic> toJson() => {
-        'SalesID': null,
+        'SalesID': HopkidSalesConstants.zeroGuid,
         'SalesType': SalesType,
-        'CustomerID': CustomerID,
+        'CustomerID': _validGuidOrZero(CustomerID),
         'AccountLedger': AccountLedger,
         'Invoicedate': Invoicedate,
         'Duedate': Duedate,
         'InvoiceNo': InvoiceNo,
-        'SalesMan': SalesMan,
-        'CreatedBy': CreatedBy,
-        'BranchID': BranchID,
-        'CompanyID': CompanyID,
+        'SalesMan': _validGuidOrZero(SalesMan),
+        'CreatedBy': _validGuidOrZero(CreatedBy),
+        'BranchID': _validGuidOrZero(BranchID),
+        'CompanyID': _validGuidOrZero(CompanyID),
         'GrossAmount': GrossAmount,
         'TaxableAmount': TaxableAmount,
         'TaxAmount': TaxAmount,
@@ -493,14 +499,14 @@ class AddCreditNoteDto {
   });
 
   Map<String, dynamic> toJson() => {
-        'CNID': null,
-        'SalesID': SalesID,
+        'CNID': HopkidSalesConstants.zeroGuid,
+        'SalesID': _validGuidOrZero(SalesID),
         'CNNo': CNNo,
         'CNAmount': CNAmount,
-        'Salesman': Salesman,
-        'BranchID': BranchID,
-        'CompanyID': CompanyID,
-        'CounterID': CounterID,
+        'Salesman': _validGuidOrZero(Salesman),
+        'BranchID': _validGuidOrZero(BranchID),
+        'CompanyID': _validGuidOrZero(CompanyID),
+        'CounterID': _validGuidOrZero(CounterID),
         'CreditNoteProducts': CreditNoteProducts.map((p) => p.toJson()).toList(),
       };
 }
@@ -511,7 +517,7 @@ class AddCreditNoteDto {
 
 /// Request body for POST /api/Sales/AddSalesExchange
 class AddSalesExchangeDto {
-  /// Always null for new records — SP generates the SalesExchangeID.
+  /// Always zero-GUID for new records — SP generates the SalesExchangeID.
   final String? SalesExchangeID = null;
 
   /// The SalesID of the original sale being exchanged.
@@ -539,11 +545,11 @@ class AddSalesExchangeDto {
   });
 
   Map<String, dynamic> toJson() => {
-        'SalesExchangeID': null,
-        'SalesID': SalesID,
+        'SalesExchangeID': HopkidSalesConstants.zeroGuid,
+        'SalesID': _validGuidOrZero(SalesID),
         'ExchangeInvoiceNo': ExchangeInvoiceNo,
-        'BranchID': BranchID,
-        'CompanyID': CompanyID,
+        'BranchID': _validGuidOrZero(BranchID),
+        'CompanyID': _validGuidOrZero(CompanyID),
         'SalesExchangeProductList':
             SalesExchangeProductList.map((p) => p.toJson()).toList(),
       };

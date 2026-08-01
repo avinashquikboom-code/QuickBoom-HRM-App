@@ -37,11 +37,20 @@ class SalesService {
   //  Salesman GUID helper
   // ──────────────────────────────────────────────────────────────────────────
 
+  static bool isValidGuid(String? str) {
+    if (str == null || str.isEmpty) return false;
+    final guidRegex = RegExp(r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$');
+    return guidRegex.hasMatch(str);
+  }
+
   /// Returns the salesman's HopKid employee GUID from persistent storage.
   /// Falls back to zero-GUID when not yet matched (pre-login or no master entry).
   static Future<String> getSalesmanGuid() async {
     final stored = await StorageService.getHopkidEmployeeId();
-    return stored ?? HopkidSalesConstants.zeroGuid;
+    if (stored != null && isValidGuid(stored)) {
+      return stored;
+    }
+    return HopkidSalesConstants.zeroGuid;
   }
 
   // ──────────────────────────────────────────────────────────────────────────
