@@ -76,12 +76,15 @@ class SalesService {
     String path,
     Map<String, dynamic> body,
   ) async {
+    print('🚀 [SalesService] POST $path');
+    print('📤 Body: ${jsonEncode(body)}');
     dev.log('🚀 [SalesService] POST $path', name: 'SalesService');
     dev.log('📤 Body: ${jsonEncode(body)}', name: 'SalesService');
 
     try {
       final response = await HopkidClient.post(path, body);
 
+      print('📥 [SalesService] ${response.statusCode}: ${response.body}');
       dev.log(
         '📥 [SalesService] ${response.statusCode}: ${response.body}',
         name: 'SalesService',
@@ -131,6 +134,7 @@ class SalesService {
         'offline': true,
       };
     } catch (e) {
+      print('💥 [SalesService] Error submitting to HopKid: $e');
       dev.log('💥 [SalesService] Error submitting to HopKid: $e', name: 'SalesService');
       await queueOffline(path, body);
       return {
@@ -341,6 +345,7 @@ class SalesService {
       final token = await _getToken();
       final headers = _getHeaders(token);
       final url = Uri.parse('${AppUrl.baseUrl}${AppUrl.syncSales}');
+      print('🔄 [SalesService] Local backend sync -> POST $url');
       final response = await http
           .post(
             url,
@@ -355,11 +360,13 @@ class SalesService {
             }),
           )
           .timeout(const Duration(seconds: 10));
+      print('🔄 [SalesService] Local backend sync status: ${response.statusCode}');
       dev.log(
         '🔄 [SalesService] Local backend sync response: ${response.statusCode}',
         name: 'SalesService',
       );
     } catch (e) {
+      print('⚠️ [SalesService] Local backend sync failed, queuing offline: $e');
       dev.log('⚠️ [SalesService] Local backend sync failed, queuing offline: $e', name: 'SalesService');
       await queueOffline(endpoint, payload);
     }
