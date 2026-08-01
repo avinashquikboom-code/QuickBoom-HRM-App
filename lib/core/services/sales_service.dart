@@ -386,6 +386,10 @@ class SalesService {
         // Include new-DTO amounts if present, so backend can extract them.
         'NetAmount': payload['NetAmount'] ?? payload['saleAmount'] ?? 0,
         'FinalAmount': payload['FinalAmount'] ?? payload['saleAmount'] ?? 0,
+        if (payload.containsKey('SalesMan')) 'SalesMan': payload['SalesMan'],
+        if (payload.containsKey('employeeId')) 'employeeId': payload['employeeId'],
+        if (payload.containsKey('employeeID')) 'employeeID': payload['employeeID'],
+        if (payload.containsKey('employeeCode')) 'employeeCode': payload['employeeCode'],
         // Pass through product and payment lists if they exist in the payload.
         if (payload.containsKey('SalesProductList'))
           'SalesProductList': payload['SalesProductList'],
