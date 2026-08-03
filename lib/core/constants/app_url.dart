@@ -113,6 +113,7 @@ class AppUrl {
   //  Employee – Shifts
   // ─────────────────────────────────────────────
   static const String employeeShifts = '/api/employee/shifts';
+  static const String mobileShiftRules = '/api/mobile/shift-rules';
 
   // ─────────────────────────────────────────────
   //  Employee – Holidays

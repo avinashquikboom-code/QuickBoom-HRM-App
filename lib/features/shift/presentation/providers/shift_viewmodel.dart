@@ -262,15 +262,20 @@ class ShiftViewModel extends StateNotifier<ShiftState> {
 
   Future<void> fetchShiftRules() async {
     try {
-      final res = await ApiService.get('/api/mobile/shift-rules');
+      debugPrint('📋 [ShiftViewModel] Fetching shift rules from ${AppUrl.mobileShiftRules}');
+      final res = await ApiService.get(AppUrl.mobileShiftRules);
+      debugPrint('📋 [ShiftViewModel] Shift rules response: ${res.statusCode} ${res.body}');
       final data = jsonDecode(res.body);
       if (data['success'] == true && data['data'] is List) {
         final List rawRules = data['data'];
         final rulesList = rawRules.map((r) => ShiftRuleItem.fromJson(r)).toList();
+        debugPrint('📋 [ShiftViewModel] Loaded ${rulesList.length} shift rule(s).');
         state = state.copyWith(rules: rulesList);
+      } else {
+        debugPrint('⚠️ [ShiftViewModel] Shift rules response not success or data not a list: ${res.body}');
       }
     } catch (e) {
-      debugPrint('⚠️ [ShiftViewModel] Error fetching shift rules: $e');
+      debugPrint('❌ [ShiftViewModel] Error fetching shift rules: $e');
     }
   }
 
