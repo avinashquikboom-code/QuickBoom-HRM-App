@@ -20,6 +20,7 @@ import 'package:quickboom_hrm/core/widgets/shimmer_loading.dart';
 import 'package:quickboom_hrm/features/notification/presentation/screens/notifications_view.dart';
 import 'package:quickboom_hrm/features/shift/presentation/screens/employee_shift_view.dart';
 import 'package:remixicon/remixicon.dart';
+import 'package:quickboom_hrm/core/services/api_service.dart';
 import 'package:quickboom_hrm/features/attendance/presentation/providers/geofence_viewmodel.dart';
 import 'package:quickboom_hrm/features/commission/presentation/providers/commission_viewmodel.dart';
 import 'package:quickboom_hrm/features/commission/presentation/screens/commission_wallet_view.dart';
@@ -224,7 +225,23 @@ class EmployeeDashboardView extends ConsumerWidget {
                         },
                       ),
                     ),
-                    const SizedBox(width: 14),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: _QuickActionBubble(
+                        label: 'Apply Remote',
+                        icon: RemixIcons.global_line,
+                        color: AppColors.info,
+                        onTap: () {
+                          showModalBottomSheet(
+                            context: context,
+                            isScrollControlled: true,
+                            backgroundColor: Colors.transparent,
+                            builder: (_) => const _ApplyRemoteWorkBottomSheet(),
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 10),
                     Expanded(
                       child: _QuickActionBubble(
                         label: 'Shift Schedule',
@@ -3369,6 +3386,297 @@ class _HalfSelectionCard extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _ApplyRemoteWorkBottomSheet extends StatefulWidget {
+  const _ApplyRemoteWorkBottomSheet();
+
+  @override
+  State<_ApplyRemoteWorkBottomSheet> createState() => _ApplyRemoteWorkBottomSheetState();
+}
+
+class _ApplyRemoteWorkBottomSheetState extends State<_ApplyRemoteWorkBottomSheet> {
+  DateTime _fromDate = DateTime.now();
+  DateTime _toDate = DateTime.now();
+  final TextEditingController _reasonController = TextEditingController(text: 'Working remotely / Work from home');
+  bool _isSubmitting = false;
+
+  @override
+  void dispose() {
+    _reasonController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _selectDate(BuildContext context, bool isFrom) async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: isFrom ? _fromDate : _toDate,
+      firstDate: DateTime.now().subtract(const Duration(days: 7)),
+      lastDate: DateTime.now().add(const Duration(days: 90)),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.dark(
+              primary: AppColors.primary,
+              onPrimary: Colors.white,
+              surface: AppColors.surface,
+              onSurface: AppColors.textPrimary,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null) {
+      setState(() {
+        if (isFrom) {
+          _fromDate = picked;
+          if (_toDate.isBefore(_fromDate)) _toDate = _fromDate;
+        } else {
+          _toDate = picked;
+        }
+      });
+    }
+  }
+
+  Future<void> _submitRemoteWork() async {
+    if (_reasonController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter a reason for remote work'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isSubmitting = true);
+
+    try {
+      await ApiService.post(
+        '/api/mobile/remote-work/apply',
+        {
+          'fromDate': DateFormat('yyyy-MM-dd').format(_fromDate),
+          'toDate': DateFormat('yyyy-MM-dd').format(_toDate),
+          'reason': _reasonController.text.trim(),
+        },
+      );
+
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Row(
+              children: [
+                Icon(RemixIcons.checkbox_circle_fill, color: Colors.white),
+                SizedBox(width: 10),
+                Expanded(child: Text('Remote work request submitted for HR approval!')),
+              ],
+            ),
+            backgroundColor: AppColors.success,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed: ${e.toString().replaceAll("ApiException: ", "")}'),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+        top: 24,
+        left: 20,
+        right: 20,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        border: Border.all(color: AppColors.cardBorder),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(
+            child: Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.divider,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.info.withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(RemixIcons.global_line, color: AppColors.info, size: 24),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Apply Remote Work',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    Text(
+                      'Request geofence bypass for approved dates',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          Row(
+            children: [
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => _selectDate(context, true),
+                  child: Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: AppColors.background,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: AppColors.cardBorder),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('From Date', style: TextStyle(fontSize: 11, color: AppColors.textHint, fontWeight: FontWeight.w700)),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            const Icon(RemixIcons.calendar_line, size: 16, color: AppColors.info),
+                            const SizedBox(width: 6),
+                            Text(
+                              DateFormat('dd MMM yyyy').format(_fromDate),
+                              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => _selectDate(context, false),
+                  child: Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: AppColors.background,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: AppColors.cardBorder),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('To Date', style: TextStyle(fontSize: 11, color: AppColors.textHint, fontWeight: FontWeight.w700)),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            const Icon(RemixIcons.calendar_event_line, size: 16, color: AppColors.info),
+                            const SizedBox(width: 6),
+                            Text(
+                              DateFormat('dd MMM yyyy').format(_toDate),
+                              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _reasonController,
+            maxLines: 2,
+            style: TextStyle(color: AppColors.textPrimary, fontSize: 13.5),
+            decoration: InputDecoration(
+              labelText: 'Reason for Remote Work',
+              labelStyle: TextStyle(color: AppColors.textHint, fontSize: 12),
+              hintText: 'Enter reason (e.g. Field visit, Client meeting)',
+              hintStyle: TextStyle(color: AppColors.textHint, fontSize: 12),
+              filled: true,
+              fillColor: AppColors.background,
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: AppColors.cardBorder)),
+              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: AppColors.cardBorder)),
+              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: AppColors.info, width: 1.5)),
+            ),
+          ),
+          const SizedBox(height: 24),
+          SizedBox(
+            width: double.infinity,
+            height: 52,
+            child: ElevatedButton(
+              onPressed: _isSubmitting ? null : _submitRemoteWork,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.info,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                elevation: 0,
+              ),
+              child: _isSubmitting
+                  ? const SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
+                    )
+                  : const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(RemixIcons.send_plane_fill, size: 18, color: Colors.white),
+                        SizedBox(width: 8),
+                        Text(
+                          'Submit Remote Request',
+                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Colors.white),
+                        ),
+                      ],
+                    ),
+            ),
+          ),
+        ],
       ),
     );
   }

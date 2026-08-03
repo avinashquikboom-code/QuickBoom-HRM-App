@@ -302,14 +302,25 @@ class EmployeeShiftView extends ConsumerWidget {
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: AppColors.primary.withValues(alpha: 0.12)),
               ),
-              child: const Column(
-                children: [
-                  _GuidelineRow(text: 'Punch in must be done within the grace period to avoid late marks.'),
-                  SizedBox(height: 10),
-                  _GuidelineRow(text: 'Break time should be strictly adhered to as per the shift policy.'),
-                  SizedBox(height: 10),
-                  _GuidelineRow(text: 'For shift change requests, contact your reporting manager 7 days prior.'),
-                ],
+              child: Column(
+                children: state.rules.isNotEmpty
+                    ? state.rules.map((rule) {
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: _GuidelineRow(
+                            title: rule.title,
+                            text: rule.content,
+                            isNew: rule.isNew,
+                          ),
+                        );
+                      }).toList()
+                    : const [
+                        _GuidelineRow(text: 'Punch in must be done within the grace period to avoid late marks.'),
+                        SizedBox(height: 10),
+                        _GuidelineRow(text: 'Break time should be strictly adhered to as per the shift policy.'),
+                        SizedBox(height: 10),
+                        _GuidelineRow(text: 'For shift change requests, contact your reporting manager 7 days prior.'),
+                      ],
               ),
             ),
             const SizedBox(height: 24),
@@ -487,7 +498,14 @@ class _ShiftDetailInfo extends StatelessWidget {
 
 class _GuidelineRow extends StatelessWidget {
   final String text;
-  const _GuidelineRow({required this.text});
+  final String? title;
+  final bool isNew;
+
+  const _GuidelineRow({
+    required this.text,
+    this.title,
+    this.isNew = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -499,14 +517,48 @@ class _GuidelineRow extends StatelessWidget {
           child: Icon(RemixIcons.checkbox_circle_line, size: 16, color: AppColors.primary),
         ),
         Expanded(
-          child: Text(
-            text,
-            style: TextStyle(
-              fontSize: 13,
-              color: AppColors.textSecondary,
-              height: 1.4,
-              fontWeight: FontWeight.w500,
-            ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (title != null && title!.isNotEmpty) ...[
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        title!,
+                        style: TextStyle(
+                          fontSize: 13.5,
+                          color: AppColors.textPrimary,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                    if (isNew)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: AppColors.error,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: const Text(
+                          'NEW',
+                          style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w800),
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 2),
+              ],
+              Text(
+                text,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: AppColors.textSecondary,
+                  height: 1.4,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
           ),
         ),
       ],

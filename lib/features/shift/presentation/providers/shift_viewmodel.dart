@@ -9,12 +9,44 @@ import 'package:quickboom_hrm/features/shift/data/models/shift_request_model.dar
 import 'package:quickboom_hrm/features/auth/data/models/user_model.dart';
 import 'package:quickboom_hrm/features/auth/presentation/providers/auth_viewmodel.dart';
 
+// ─── Shift Rule Model ─────────────────────────────────────────────────────────
+
+class ShiftRuleItem {
+  final String id;
+  final String title;
+  final String content;
+  final String? shiftType;
+  final int priority;
+  final bool isNew;
+
+  const ShiftRuleItem({
+    required this.id,
+    required this.title,
+    required this.content,
+    this.shiftType,
+    this.priority = 0,
+    this.isNew = false,
+  });
+
+  factory ShiftRuleItem.fromJson(Map<String, dynamic> json) {
+    return ShiftRuleItem(
+      id: json['id']?.toString() ?? '',
+      title: json['title']?.toString() ?? '',
+      content: json['content']?.toString() ?? '',
+      shiftType: json['shiftType']?.toString(),
+      priority: json['priority'] as int? ?? 0,
+      isNew: json['isNew'] as bool? ?? false,
+    );
+  }
+}
+
 // ─── Shift State ───────────────────────────────────────────────────────────────
 
 class ShiftState {
   final List<ShiftModel> shifts; // all available shifts
   final List<EmployeeShiftAssignment> assignments; // current assigned shift
   final List<ShiftRequestModel> myRequests; // shift requests list
+  final List<ShiftRuleItem> rules; // dynamic shift rules / guidelines
   final bool isLoading;
   final bool isSubmitting;
   final String? errorMessage;
@@ -24,6 +56,7 @@ class ShiftState {
     this.shifts = const [],
     this.assignments = const [],
     this.myRequests = const [],
+    this.rules = const [],
     this.isLoading = false,
     this.isSubmitting = false,
     this.errorMessage,
@@ -34,6 +67,7 @@ class ShiftState {
     List<ShiftModel>? shifts,
     List<EmployeeShiftAssignment>? assignments,
     List<ShiftRequestModel>? myRequests,
+    List<ShiftRuleItem>? rules,
     bool? isLoading,
     bool? isSubmitting,
     String? errorMessage,
@@ -44,6 +78,7 @@ class ShiftState {
       shifts: shifts ?? this.shifts,
       assignments: assignments ?? this.assignments,
       myRequests: myRequests ?? this.myRequests,
+      rules: rules ?? this.rules,
       isLoading: isLoading ?? this.isLoading,
       isSubmitting: isSubmitting ?? this.isSubmitting,
       errorMessage: clearMessages ? null : (errorMessage ?? this.errorMessage),
@@ -61,6 +96,7 @@ class ShiftViewModel extends StateNotifier<ShiftState> {
     fetchShiftAssignment();
     fetchShifts();
     fetchMyRequests();
+    fetchShiftRules();
   }
 
   Future<void> fetchShiftAssignment() async {
@@ -222,6 +258,20 @@ class ShiftViewModel extends StateNotifier<ShiftState> {
         state = state.copyWith(myRequests: requests);
       }
     } catch (_) {}
+  }
+
+  Future<void> fetchShiftRules() async {
+    try {
+      final res = await ApiService.get('/api/mobile/shift-rules');
+      final data = jsonDecode(res.body);
+      if (data['success'] == true && data['data'] is List) {
+        final List rawRules = data['data'];
+        final rulesList = rawRules.map((r) => ShiftRuleItem.fromJson(r)).toList();
+        state = state.copyWith(rules: rulesList);
+      }
+    } catch (e) {
+      debugPrint('⚠️ [ShiftViewModel] Error fetching shift rules: $e');
+    }
   }
 
   Future<bool> submitShiftRequest(String requestedShift, String reason) async {

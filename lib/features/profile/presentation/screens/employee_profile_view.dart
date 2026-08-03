@@ -14,9 +14,8 @@ import 'package:quickboom_hrm/features/expense/presentation/screens/employee_exp
 import 'package:quickboom_hrm/features/shift/presentation/screens/employee_shift_view.dart';
 import 'package:quickboom_hrm/features/profile/presentation/screens/change_password_view.dart';
 import 'package:quickboom_hrm/features/profile/presentation/screens/theme_settings_view.dart';
+import 'package:quickboom_hrm/features/profile/presentation/screens/remote_work_history_view.dart';
 import 'package:quickboom_hrm/features/payroll/presentation/screens/employee_payroll_view.dart';
-import 'package:quickboom_hrm/core/services/api_service.dart';
-import 'package:quickboom_hrm/core/constants/app_url.dart';
 
 class EmployeeProfileView extends ConsumerStatefulWidget {
   const EmployeeProfileView({super.key});
@@ -374,6 +373,18 @@ class _EmployeeProfileViewState extends ConsumerState<EmployeeProfileView> {
                           context,
                           MaterialPageRoute(
                             builder: (_) => const EmployeeShiftView(),
+                          ),
+                        );
+                      },
+                    ),
+                    _ActionRow(
+                      label: 'Remote Work History',
+                      icon: RemixIcons.global_line,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const RemoteWorkHistoryView(),
                           ),
                         );
                       },
