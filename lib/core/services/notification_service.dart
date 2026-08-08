@@ -22,6 +22,8 @@ import 'package:quickboom_hrm/features/wallet/presentation/screens/employee_wall
 import 'package:quickboom_hrm/features/shift/presentation/screens/employee_shift_view.dart';
 import 'package:quickboom_hrm/features/expense/presentation/screens/employee_expenses_view.dart';
 import 'package:quickboom_hrm/features/profile/presentation/screens/hr_bank_edit_requests_view.dart';
+import 'package:quickboom_hrm/features/attendance/presentation/screens/attendance_correction_view.dart';
+import 'package:quickboom_hrm/features/attendance/presentation/screens/hr_attendance_corrections_view.dart';
 
 /// Global notification service for handling push notifications
 class NotificationService {
@@ -485,6 +487,18 @@ class NotificationService {
       case 'shift_assigned':
       case 'shift_updated':
         targetView = const EmployeeShiftView();
+        break;
+      case 'attendance/corrections':
+      case 'attendance_corrections':
+      case 'attendance_correction':
+      case 'attendance_correction_approved':
+      case 'attendance_correction_rejected':
+      case 'attendance_correction_request':
+        if (role == 'HR' || role == 'SUPER_ADMIN' || role == 'ADMIN' || role == 'PLATFORM_ADMIN') {
+          targetView = const HRAttendanceCorrectionsView();
+        } else {
+          targetView = const AttendanceCorrectionView();
+        }
         break;
       case 'salary_slip':
       case 'salary':
