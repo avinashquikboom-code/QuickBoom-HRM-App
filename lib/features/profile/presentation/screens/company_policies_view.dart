@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
+import 'package:url_launcher/url_launcher.dart';
 import 'dart:convert';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_url.dart';
@@ -109,92 +110,101 @@ class _CompanyPoliciesViewState extends State<CompanyPoliciesView> {
         title: const Text('Company Policies'),
         elevation: 0,
       ),
-      body: RefreshIndicator(
-        onRefresh: _fetchPolicies,
-        child: Column(
-          children: [
-            // Search Bar & Filter Section
-            Container(
-              padding: const EdgeInsets.all(16.0),
-              color: Theme.of(context).cardColor,
-              child: Column(
-                children: [
-                  // Search TextField
-                  TextField(
-                    controller: _searchController,
-                    onChanged: (val) {
-                      setState(() => _searchQuery = val);
-                      _fetchPolicies();
-                    },
-                    decoration: InputDecoration(
-                      hintText: 'Search policy title or keywords...',
-                      prefixIcon: const Icon(Icons.search),
-                      suffixIcon: _searchQuery.isNotEmpty
-                          ? IconButton(
-                              icon: const Icon(Icons.clear),
-                              onPressed: () {
-                                _searchController.clear();
-                                setState(() => _searchQuery = '');
-                                _fetchPolicies();
-                              },
-                            )
-                          : null,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: Colors.grey.shade300),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-
-                  // Category Chips Bar
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: _categories.map((cat) {
-                        final isSelected = _selectedCategory == cat['value'];
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 8.0),
-                          child: FilterChip(
-                            selected: isSelected,
-                            label: Text(cat['label']!),
-                            selectedColor: AppColors.primary.withValues(alpha: 0.2),
-                            checkmarkColor: AppColors.primary,
-                            labelStyle: TextStyle(
-                              color: isSelected ? AppColors.primary : Colors.grey.shade700,
-                              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                              fontSize: 12,
-                            ),
-                            onSelected: (selected) {
-                              setState(() {
-                                _selectedCategory = cat['value']!;
-                              });
+      body: Column(
+        children: [
+          // Search Bar & Filter Section
+          Container(
+            padding: const EdgeInsets.all(16.0),
+            color: Theme.of(context).cardColor,
+            child: Column(
+              children: [
+                // Search TextField
+                TextField(
+                  controller: _searchController,
+                  onChanged: (val) {
+                    setState(() => _searchQuery = val);
+                    _fetchPolicies();
+                  },
+                  decoration: InputDecoration(
+                    hintText: 'Search policy title or keywords...',
+                    prefixIcon: const Icon(Icons.search),
+                    suffixIcon: _searchQuery.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear),
+                            onPressed: () {
+                              _searchController.clear();
+                              setState(() => _searchQuery = '');
                               _fetchPolicies();
                             },
-                          ),
-                        );
-                      }).toList(),
+                          )
+                        : null,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: Colors.grey.shade300),
                     ),
                   ),
-                ],
-              ),
+                ),
+                const SizedBox(height: 12),
+
+                // Category Chips Bar
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: _categories.map((cat) {
+                      final isSelected = _selectedCategory == cat['value'];
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 8.0),
+                        child: FilterChip(
+                          selected: isSelected,
+                          label: Text(cat['label']!),
+                          selectedColor: AppColors.primary.withValues(alpha: 0.2),
+                          checkmarkColor: AppColors.primary,
+                          labelStyle: TextStyle(
+                            color: isSelected ? AppColors.primary : Colors.grey.shade700,
+                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                            fontSize: 12,
+                          ),
+                          onSelected: (selected) {
+                            setState(() {
+                              _selectedCategory = cat['value']!;
+                            });
+                            _fetchPolicies();
+                          },
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ],
             ),
+          ),
 
-            const Divider(height: 1),
+          const Divider(height: 1),
 
-            // Policy List Body
-            Expanded(
+          // Policy List Body with RefreshIndicator
+          Expanded(
+            child: RefreshIndicator(
+              onRefresh: _fetchPolicies,
               child: _isLoading
                   ? const Center(child: CircularProgressIndicator())
                   : _policies.isEmpty
-                      ? const Center(
-                          child: Text(
-                            'No policies found matching criteria.',
-                            style: TextStyle(color: Colors.grey),
+                      ? LayoutBuilder(
+                          builder: (context, constraints) => SingleChildScrollView(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            child: ConstrainedBox(
+                              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                              child: const Center(
+                                child: Text(
+                                  'No policies found matching criteria.',
+                                  style: TextStyle(color: Colors.grey),
+                                ),
+                              ),
+                            ),
                           ),
                         )
                       : ListView.builder(
+                          physics: const AlwaysScrollableScrollPhysics(),
                           padding: const EdgeInsets.all(16.0),
                           itemCount: _policies.length,
                           itemBuilder: (context, index) {
@@ -209,6 +219,8 @@ class _CompanyPoliciesViewState extends State<CompanyPoliciesView> {
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                               elevation: 2,
                               child: ExpansionTile(
+                                shape: const Border(),
+                                collapsedShape: const Border(),
                                 leading: CircleAvatar(
                                   backgroundColor: catColor.withValues(alpha: 0.15),
                                   child: Icon(
@@ -269,10 +281,18 @@ class _CompanyPoliciesViewState extends State<CompanyPoliciesView> {
                                         if (policy['documentUrl'] != null && policy['documentUrl'].toString().isNotEmpty) ...[
                                           const SizedBox(height: 14),
                                           ElevatedButton.icon(
-                                            onPressed: () {
-                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                SnackBar(content: Text('Opening document: ${policy['documentUrl']}')),
-                                              );
+                                            onPressed: () async {
+                                              final urlStr = policy['documentUrl'].toString();
+                                              final uri = Uri.parse(urlStr);
+                                              if (await canLaunchUrl(uri)) {
+                                                await launchUrl(uri, mode: LaunchMode.externalApplication);
+                                              } else {
+                                                if (context.mounted) {
+                                                  ScaffoldMessenger.of(context).showSnackBar(
+                                                    SnackBar(content: Text('Could not open document: $urlStr')),
+                                                  );
+                                                }
+                                              }
                                             },
                                             icon: const Icon(Icons.picture_as_pdf, size: 16),
                                             label: const Text('Download Official PDF Policy'),
@@ -291,9 +311,10 @@ class _CompanyPoliciesViewState extends State<CompanyPoliciesView> {
                           },
                         ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 }
+
