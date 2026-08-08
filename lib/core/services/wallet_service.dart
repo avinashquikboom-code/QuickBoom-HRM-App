@@ -324,7 +324,7 @@ class WalletService {
       if (response.statusCode == 200 && response.body.isNotEmpty) {
         final data = jsonDecode(response.body);
         if (data['success'] == true) {
-          return data['data'] as Map<String, dynamic>;
+          return (data['salarySlip'] ?? data['data'] ?? data) as Map<String, dynamic>;
         }
       }
       return null;
