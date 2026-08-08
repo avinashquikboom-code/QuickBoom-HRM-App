@@ -2,6 +2,7 @@ import 'package:quickboom_hrm/features/auth/data/models/user_model.dart';
 
 class PermissionService {
   // Permission keys
+  static const String canViewSalary = 'canViewSalary';
   static const String canViewCommission = 'canViewCommission';
   static const String canViewWallet = 'canViewWallet';
   static const String canApproveLeave = 'canApproveLeave';
@@ -118,6 +119,16 @@ class PermissionService {
   }
 
   // Visibility helpers for common UI elements
+  static bool canViewSalaryWidget(UserModel? user) {
+    if (user == null) return false;
+    // Check both canViewSalary and canViewPayroll (if either is false, returns false)
+    if (user.permissions != null) {
+      if (user.permissions!['canViewSalary'] == false) return false;
+      if (user.permissions!['canViewPayroll'] == false) return false;
+    }
+    return hasPermission(user, canViewSalary);
+  }
+
   static bool canViewCommissionWidget(UserModel? user) {
     return hasPermission(user, canViewCommission);
   }

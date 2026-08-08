@@ -1156,6 +1156,31 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
   }
 
   Widget _buildSalaryTab(UserModel user) {
+    if (!PermissionService.canViewSalaryWidget(user)) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.lock_outline, size: 64, color: AppColors.textSecondary),
+              const SizedBox(height: 16),
+              Text(
+                'Salary Access Restricted',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Salary slip and payroll details are restricted for your account by HR.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     final isSalesman = PermissionService.canViewCommissionWidget(user);
     final expenseState = ref.watch(expenseViewModelProvider);
     final walletPending =
@@ -1679,14 +1704,18 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
   bool _isAttendanceExpanded = true;
 
   Widget _buildSalarySlipBreakdownCard() {
+    final user = ref.watch(authViewModelProvider).currentUser;
     final earnings = (_salarySlipData?['earnings'] as Map<String, dynamic>?) ?? {};
     final deductions = (_salarySlipData?['deductions'] as Map<String, dynamic>?) ?? {};
     final details = (_salarySlipData?['details'] as Map<String, dynamic>?) ?? {};
 
+    final canShowComm = (earnings['canViewCommission'] as bool?) ?? PermissionService.canViewCommissionWidget(user);
+
     final baseSalary = (earnings['baseSalary'] as num?)?.toDouble() ??
                        (_salarySlipData?['base_salary'] as num?)?.toDouble() ?? 10000.0;
-    final commission = (earnings['commission'] as num?)?.toDouble() ??
-                       (_salarySlipData?['commission_amount'] as num?)?.toDouble() ?? 500.0;
+    final commission = canShowComm
+        ? ((earnings['commission'] as num?)?.toDouble() ?? (_salarySlipData?['commission_amount'] as num?)?.toDouble() ?? 0.0)
+        : 0.0;
     final hra = (earnings['hra'] as num?)?.toDouble() ?? 2000.0;
     final medical = (earnings['medical'] as num?)?.toDouble() ?? 500.0;
     final travel = (earnings['travel'] as num?)?.toDouble() ?? 1000.0;
@@ -1828,7 +1857,8 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
                 child: Column(
                   children: [
                     _buildSalaryDetailRow('Base Salary', '₹${NumberFormat('#,##,###').format(baseSalary)}'),
-                    _buildSalaryDetailRow('Commission', '₹${NumberFormat('#,##,###').format(commission)}', valueColor: Colors.green),
+                    if (canShowComm)
+                      _buildSalaryDetailRow('Commission', '₹${NumberFormat('#,##,###').format(commission)}', valueColor: Colors.green),
                     _buildSalaryDetailRow('Other Benefits', '₹${NumberFormat('#,##,###').format(otherBenefits)}'),
                     const Divider(height: 12),
                     _buildSalaryDetailRow('GROSS TOTAL', '₹${NumberFormat('#,##,###').format(grossSalary)}', isBold: true, valueColor: Colors.green),

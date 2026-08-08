@@ -129,6 +129,15 @@ class AuthViewModel extends StateNotifier<AuthState> {
         (empMap['store'] is Map ? empMap['store']['name']?.toString() : empMap['store']?.toString()) ??
         resolvedOfficeName;
 
+    Map<String, bool>? perms;
+    final rawPerms = loginData['permissions'] ?? userMap['permissions'];
+    if (rawPerms is Map) {
+      perms = {};
+      rawPerms.forEach((k, v) {
+        if (v is bool) perms![k.toString()] = v;
+      });
+    }
+
     return UserModel(
       id: userMap['id'].toString(),
       employeeId: empMap['employeeCode']?.toString() ?? userMap['id'].toString(),
@@ -168,6 +177,7 @@ class AuthViewModel extends StateNotifier<AuthState> {
       ifscCode: empMap['ifscCode']?.toString(),
       accountType: empMap['accountType']?.toString(),
       branchName: empMap['branchName']?.toString() ?? resolvedOfficeName,
+      permissions: perms,
     );
   }
 
