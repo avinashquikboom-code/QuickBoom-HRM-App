@@ -11,6 +11,7 @@ import 'package:quickboom_hrm/features/attendance/presentation/providers/attenda
 import 'package:quickboom_hrm/features/attendance/presentation/providers/break_viewmodel.dart';
 import 'package:quickboom_hrm/features/attendance/presentation/providers/geofence_viewmodel.dart';
 import 'package:quickboom_hrm/features/attendance/presentation/screens/monthly_work_schedule_view.dart';
+import 'package:quickboom_hrm/features/attendance/presentation/screens/attendance_correction_view.dart';
 import 'package:quickboom_hrm/core/widgets/shimmer_loading.dart';
 
 class EmployeeAttendanceView extends ConsumerWidget {
@@ -104,34 +105,79 @@ class EmployeeAttendanceView extends ConsumerWidget {
                               ),
                             ],
                           ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.08),
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: Colors.white.withValues(alpha: 0.12),
-                                width: 1,
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(
-                                  RemixIcons.award_line,
-                                  size: 14,
-                                  color: AppColors.primaryLight,
-                                ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  '$attendanceRate% Rating',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w800,
+                          Row(
+                            children: [
+                              InkWell(
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => const AttendanceCorrectionView(),
+                                    ),
+                                  );
+                                },
+                                borderRadius: BorderRadius.circular(16),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primaryLight.withValues(alpha: 0.2),
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border.all(
+                                      color: AppColors.primaryLight.withValues(alpha: 0.4),
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    children: const [
+                                      Icon(
+                                        RemixIcons.edit_line,
+                                        size: 13,
+                                        color: Colors.white,
+                                      ),
+                                      SizedBox(width: 4),
+                                      Text(
+                                        'Correction',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w800,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
-                              ],
-                            ),
+                              ),
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.08),
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(
+                                    color: Colors.white.withValues(alpha: 0.12),
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      RemixIcons.award_line,
+                                      size: 13,
+                                      color: AppColors.primaryLight,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      '$attendanceRate% Rating',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),

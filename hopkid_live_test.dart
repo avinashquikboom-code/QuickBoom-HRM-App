@@ -1,6 +1,8 @@
 #!/usr/bin/env dart
 // ignore_for_file: avoid_print
 
+library;
+
 /// HopKid Live API Test — TEST-DEL- prefixed invoices only.
 /// Hits hopkidapi.3dweb.in with ≤10 HTTP calls.
 /// Tests: AddSales → UpdateSales → AddCreditNote → AddSalesExchange

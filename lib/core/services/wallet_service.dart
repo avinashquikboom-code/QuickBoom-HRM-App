@@ -1,3 +1,5 @@
+// ignore_for_file: use_null_aware_elements, use_build_context_synchronously
+
 import 'dart:convert';
 import 'dart:developer' as dev;
 import 'package:flutter/foundation.dart';

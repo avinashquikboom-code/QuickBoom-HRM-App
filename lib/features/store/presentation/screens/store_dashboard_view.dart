@@ -86,7 +86,7 @@ class _StoreDashboardViewState extends ConsumerState<StoreDashboardView> {
               child: ListView.separated(
                 shrinkWrap: true,
                 itemCount: stores.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 8),
+                separatorBuilder: (_, _) => const SizedBox(height: 8),
                 itemBuilder: (ctx, idx) {
                   final s = stores[idx];
                   final sId = s['id'] as int? ?? 0;

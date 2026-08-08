@@ -731,7 +731,7 @@ class _ApplyLeaveSheetState extends ConsumerState<_ApplyLeaveSheet> {
                 child: const Row(
                   children: [
                     Icon(RemixIcons.error_warning_line, color: AppColors.error, size: 20),
-                    const SizedBox(width: 10),
+                    SizedBox(width: 10),
                     Expanded(
                       child: Text(
                         'Company rule: salary deduction may apply',

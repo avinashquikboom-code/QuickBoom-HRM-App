@@ -171,7 +171,7 @@ class _StoreEmployeesViewState extends ConsumerState<StoreEmployeesView> {
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
               itemCount: _statusFilters.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 8),
+              separatorBuilder: (_, _) => const SizedBox(width: 8),
               itemBuilder: (context, index) {
                 final filter = _statusFilters[index];
                 final isSelected = _selectedStatus == filter['value'];

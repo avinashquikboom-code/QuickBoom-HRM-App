@@ -605,7 +605,7 @@ class _EditProfileViewState extends ConsumerState<EditProfileView> {
 
     return DropdownButtonFormField<T>(
       key: ValueKey(validValue),
-      value: validValue,
+      initialValue: validValue,
       items: cleanItems,
       onChanged: onChanged,
       validator: validator,

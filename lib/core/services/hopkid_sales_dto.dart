@@ -1,5 +1,7 @@
 // ignore_for_file: non_constant_identifier_names
 
+library;
+
 /// DTOs for the HopKid upstream Sales API.
 ///
 /// SCHEMA RULES (from official HopKid doc):
