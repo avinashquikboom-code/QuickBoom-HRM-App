@@ -1,9 +1,57 @@
 import 'package:quickboom_hrm/features/auth/data/models/user_model.dart';
 
 class PermissionService {
-  // Permission keys
+  // 1. Home & Dashboard
+  static const String canViewGeofence = 'canViewGeofence';
+  static const String canPunchInOut = 'canPunchInOut';
+  static const String canPunchHalfDay = 'canPunchHalfDay';
+  static const String canTakeBreaks = 'canTakeBreaks';
+
+  // 2. Attendance & Logs
+  static const String canViewAttendance = 'canViewAttendance';
+  static const String canViewBreakHistory = 'canViewBreakHistory';
+  static const String canRequestAttendanceCorrection = 'canRequestAttendanceCorrection';
+
+  // 3. Wallet & Financials
   static const String canViewSalary = 'canViewSalary';
+  static const String canDownloadSalaryPDF = 'canDownloadSalaryPDF';
+  static const String canRequestSalaryAdvance = 'canRequestSalaryAdvance';
   static const String canViewCommission = 'canViewCommission';
+  static const String canLogSale = 'canLogSale';
+  static const String canViewExpenses = 'canViewExpenses';
+  static const String canSubmitExpenseClaim = 'canSubmitExpenseClaim';
+  static const String canCancelExpenseClaim = 'canCancelExpenseClaim';
+  static const String canRequestBankDetailsEdit = 'canRequestBankDetailsEdit';
+
+  // 4. Leave & Holidays
+  static const String canViewLeaveBalance = 'canViewLeaveBalance';
+  static const String canViewLeaveHistory = 'canViewLeaveHistory';
+  static const String canApplyLeave = 'canApplyLeave';
+  static const String canCancelLeave = 'canCancelLeave';
+  static const String canViewHolidays = 'canViewHolidays';
+
+  // 5. Tasks Management
+  static const String canViewTasks = 'canViewTasks';
+  static const String canCompleteTask = 'canCompleteTask';
+
+  // 6. Shift & Guidelines
+  static const String canViewShift = 'canViewShift';
+  static const String canRequestShiftChange = 'canRequestShiftChange';
+  static const String canCancelShiftRequest = 'canCancelShiftRequest';
+  static const String canViewShiftGuidelines = 'canViewShiftGuidelines';
+
+  // 7. Remote Work
+  static const String canViewRemoteWorkStatus = 'canViewRemoteWorkStatus';
+  static const String canApplyRemoteWork = 'canApplyRemoteWork';
+  static const String canCancelRemoteRequest = 'canCancelRemoteRequest';
+
+  // 8. Profile & System
+  static const String canViewProfile = 'canViewProfile';
+  static const String canEditAvatar = 'canEditAvatar';
+  static const String canChangePassword = 'canChangePassword';
+  static const String canViewNotifications = 'canViewNotifications';
+
+  // Legacy / Management Keys
   static const String canViewWallet = 'canViewWallet';
   static const String canApproveLeave = 'canApproveLeave';
   static const String canApproveExpense = 'canApproveExpense';
@@ -20,79 +68,92 @@ class PermissionService {
   static Map<String, bool> getDefaultPermissions(UserRole role) {
     switch (role) {
       case UserRole.salesman:
-        return {
-          canViewCommission: true,
-          canViewWallet: true,
-          canViewCommissionHistory: true,
-          canViewCommissionDetails: true,
-          canApproveLeave: false,
-          canApproveExpense: false,
-          canManageEmployees: false,
-          canManageStore: false,
-          canViewPayroll: true,
-          canViewReports: true,
-          canViewStoreReports: false,
-          canViewStoreDashboard: false,
-        };
-      case UserRole.storeManager:
-        return {
-          canViewCommission: true,
-          canViewWallet: true,
-          canViewCommissionHistory: true,
-          canViewCommissionDetails: true,
-          canApproveLeave: true,
-          canApproveExpense: true,
-          canManageEmployees: true,
-          canManageStore: true,
-          canViewPayroll: true,
-          canViewReports: true,
-          canViewStoreReports: true,
-          canViewStoreDashboard: true,
-        };
       case UserRole.helper:
-        return {
-          canViewCommission: true,
-          canViewWallet: true,
-          canViewCommissionHistory: true,
-          canViewCommissionDetails: true,
-          canApproveLeave: false,
-          canApproveExpense: false,
-          canManageEmployees: false,
-          canManageStore: false,
-          canViewPayroll: true,
-          canViewReports: false,
-          canViewStoreReports: false,
-          canViewStoreDashboard: false,
-        };
-      case UserRole.hrManager:
-        return {
-          canViewCommission: true,
-          canViewWallet: true,
-          canViewCommissionHistory: true,
-          canViewCommissionDetails: true,
-          canApproveLeave: true,
-          canApproveExpense: true,
-          canManageEmployees: true,
-          canManageStore: true,
-          canViewPayroll: true,
-          canViewReports: true,
-          canViewStoreReports: true,
-          canViewStoreDashboard: true,
-        };
       case UserRole.employee:
         return {
+          canViewGeofence: true,
+          canPunchInOut: true,
+          canPunchHalfDay: true,
+          canTakeBreaks: true,
+          canViewAttendance: true,
+          canViewBreakHistory: true,
+          canRequestAttendanceCorrection: true,
+          canViewSalary: true,
+          canDownloadSalaryPDF: true,
+          canRequestSalaryAdvance: true,
           canViewCommission: true,
+          canLogSale: true,
+          canViewExpenses: true,
+          canSubmitExpenseClaim: true,
+          canCancelExpenseClaim: true,
+          canRequestBankDetailsEdit: true,
+          canViewLeaveBalance: true,
+          canViewLeaveHistory: true,
+          canApplyLeave: true,
+          canCancelLeave: true,
+          canViewHolidays: true,
+          canViewTasks: true,
+          canCompleteTask: true,
+          canViewShift: true,
+          canRequestShiftChange: true,
+          canCancelShiftRequest: true,
+          canViewShiftGuidelines: true,
+          canViewRemoteWorkStatus: true,
+          canApplyRemoteWork: true,
+          canCancelRemoteRequest: true,
+          canViewProfile: true,
+          canEditAvatar: true,
+          canChangePassword: true,
+          canViewNotifications: true,
           canViewWallet: true,
-          canViewCommissionHistory: true,
-          canViewCommissionDetails: true,
-          canApproveLeave: false,
-          canApproveExpense: false,
-          canManageEmployees: false,
-          canManageStore: false,
+          canViewPayroll: true,
+        };
+      case UserRole.storeManager:
+      case UserRole.hrManager:
+        return {
+          canViewGeofence: true,
+          canPunchInOut: true,
+          canPunchHalfDay: true,
+          canTakeBreaks: true,
+          canViewAttendance: true,
+          canViewBreakHistory: true,
+          canRequestAttendanceCorrection: true,
+          canViewSalary: true,
+          canDownloadSalaryPDF: true,
+          canRequestSalaryAdvance: true,
+          canViewCommission: true,
+          canLogSale: true,
+          canViewExpenses: true,
+          canSubmitExpenseClaim: true,
+          canCancelExpenseClaim: true,
+          canRequestBankDetailsEdit: true,
+          canViewLeaveBalance: true,
+          canViewLeaveHistory: true,
+          canApplyLeave: true,
+          canCancelLeave: true,
+          canViewHolidays: true,
+          canViewTasks: true,
+          canCompleteTask: true,
+          canViewShift: true,
+          canRequestShiftChange: true,
+          canCancelShiftRequest: true,
+          canViewShiftGuidelines: true,
+          canViewRemoteWorkStatus: true,
+          canApplyRemoteWork: true,
+          canCancelRemoteRequest: true,
+          canViewProfile: true,
+          canEditAvatar: true,
+          canChangePassword: true,
+          canViewNotifications: true,
+          canViewWallet: true,
+          canApproveLeave: true,
+          canApproveExpense: true,
+          canManageEmployees: true,
+          canManageStore: true,
           canViewPayroll: true,
           canViewReports: true,
-          canViewStoreReports: false,
-          canViewStoreDashboard: false,
+          canViewStoreReports: true,
+          canViewStoreDashboard: true,
         };
     }
   }
@@ -101,31 +162,30 @@ class PermissionService {
   static bool hasPermission(UserModel? user, String permission) {
     if (user == null) return false;
     if (user.permissions != null && user.permissions!.containsKey(permission)) {
-      return user.permissions![permission] ?? false;
+      return user.permissions![permission] ?? true;
     }
-    return getDefaultPermissions(user.role)[permission] ?? false;
+    final defaultMap = getDefaultPermissions(user.role);
+    if (defaultMap.containsKey(permission)) {
+      return defaultMap[permission] ?? true;
+    }
+    return true;
   }
 
   // Check multiple permissions (all must be true)
   static bool hasAllPermissions(UserModel? user, List<String> permissions) {
     if (user == null) return false;
-    return permissions.every((permission) => user.hasPermission(permission));
+    return permissions.every((permission) => hasPermission(user, permission));
   }
 
   // Check multiple permissions (at least one must be true)
   static bool hasAnyPermission(UserModel? user, List<String> permissions) {
     if (user == null) return false;
-    return permissions.any((permission) => user.hasPermission(permission));
+    return permissions.any((permission) => hasPermission(user, permission));
   }
 
-  // Visibility helpers for common UI elements
+  // Specific UI helpers
   static bool canViewSalaryWidget(UserModel? user) {
     if (user == null) return false;
-    // Check both canViewSalary and canViewPayroll (if either is false, returns false)
-    if (user.permissions != null) {
-      if (user.permissions!['canViewSalary'] == false) return false;
-      if (user.permissions!['canViewPayroll'] == false) return false;
-    }
     return hasPermission(user, canViewSalary);
   }
 
