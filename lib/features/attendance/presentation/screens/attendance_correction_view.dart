@@ -80,7 +80,7 @@ class _AttendanceCorrectionViewState extends State<AttendanceCorrectionView> {
     } catch (e) {
       debugPrint('Error fetching my correction requests: $e');
     } finally {
-      if (mounted && showLoading) setState(() => _isLoadingRequests = false);
+      if (mounted) setState(() => _isLoadingRequests = false);
     }
   }
 
@@ -354,309 +354,337 @@ class _AttendanceCorrectionViewState extends State<AttendanceCorrectionView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Attendance Correction'),
+        backgroundColor: AppColors.background,
         elevation: 0,
+        scrolledUnderElevation: 0,
+        centerTitle: false,
+        iconTheme: IconThemeData(color: AppColors.textPrimary),
+        title: Text(
+          'Attendance Correction',
+          style: TextStyle(
+            color: AppColors.textPrimary,
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
         actions: [
           IconButton(
-            icon: const Icon(RemixIcons.refresh_line),
+            icon: Icon(RemixIcons.refresh_line, color: AppColors.textPrimary),
             tooltip: 'Refresh',
             onPressed: () => _fetchMyRequests(showLoading: true),
           ),
+          const SizedBox(width: 8),
         ],
       ),
-      body: RefreshIndicator(
-        onRefresh: () => _fetchMyRequests(showLoading: true),
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),
-              physics: const AlwaysScrollableScrollPhysics(),
-              child: ConstrainedBox(
-                constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // New Request Form Card
-                    Card(
-                      elevation: 2,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Icon(RemixIcons.edit_box_line, color: AppColors.primary),
-                                const SizedBox(width: 8),
-                                const Text(
-                                  'Request Correction',
-                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 14),
-
-                            // Screen 1: Date Picker Field
-                            InkWell(
-                              onTap: _pickDate,
-                              borderRadius: BorderRadius.circular(10),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                                decoration: BoxDecoration(
-                                  border: Border.all(color: Colors.grey.shade300),
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        const Text('Select Date (Past 30 Days Only):', style: TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.bold)),
-                                        const SizedBox(height: 2),
-                                        Text(
-                                          DateFormat('EEEE, dd MMM yyyy').format(_selectedDate),
-                                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-                                        ),
-                                      ],
-                                    ),
-                                    Icon(RemixIcons.calendar_event_line, color: AppColors.primary),
-                                  ],
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 14),
-
-                            // Screen 2: Current Status & What to Correct to
-                            Container(
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(10)),
-                              child: Row(
-                                children: [
-                                  const Text('Current Status: ', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-                                  Text(_currentStatus, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.red)),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 14),
-
-                            const Text('What do you want to correct it to?', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                            const SizedBox(height: 6),
-                            Wrap(
-                              spacing: 8,
-                              children: [
-                                ChoiceChip(
-                                  label: const Text('Present (Full Day)'),
-                                  selected: _requestedStatus == 'PRESENT',
-                                  selectedColor: Colors.green.shade100,
-                                  labelStyle: TextStyle(color: _requestedStatus == 'PRESENT' ? Colors.green.shade900 : Colors.black, fontWeight: FontWeight.bold, fontSize: 11),
-                                  onSelected: (val) {
-                                    if (val) setState(() => _requestedStatus = 'PRESENT');
-                                  },
-                                ),
-                                ChoiceChip(
-                                  label: const Text('Half Day'),
-                                  selected: _requestedStatus == 'HALF_DAY',
-                                  selectedColor: Colors.blue.shade100,
-                                  labelStyle: TextStyle(color: _requestedStatus == 'HALF_DAY' ? Colors.blue.shade900 : Colors.black, fontWeight: FontWeight.bold, fontSize: 11),
-                                  onSelected: (val) {
-                                    if (val) setState(() => _requestedStatus = 'HALF_DAY');
-                                  },
-                                ),
-                                ChoiceChip(
-                                  label: const Text('Late'),
-                                  selected: _requestedStatus == 'LATE',
-                                  selectedColor: Colors.orange.shade100,
-                                  labelStyle: TextStyle(color: _requestedStatus == 'LATE' ? Colors.orange.shade900 : Colors.black, fontWeight: FontWeight.bold, fontSize: 11),
-                                  onSelected: (val) {
-                                    if (val) setState(() => _requestedStatus = 'LATE');
-                                  },
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 14),
-
-                            // Reason Text Field (Mandatory)
-                            TextField(
-                              controller: _reasonController,
-                              maxLines: 3,
-                              decoration: InputDecoration(
-                                labelText: 'Reason (mandatory)',
-                                hintText: 'Was sick, attended from home. Doctor note attached.',
-                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                              ),
-                            ),
-                            const SizedBox(height: 14),
-
-                            // Upload Supporting Doc
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                const Text('Supporting Doc (optional):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                                OutlinedButton.icon(
-                                  onPressed: _pickDocument,
-                                  icon: const Icon(RemixIcons.attachment_line, size: 14),
-                                  label: Text(_pickedFile != null ? 'Change Doc' : '+ Add Photo / Doc', style: const TextStyle(fontSize: 12)),
-                                  style: OutlinedButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
-                                ),
-                              ],
-                            ),
-                            if (_pickedFile != null) ...[
-                              const SizedBox(height: 6),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                                decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(8)),
-                                child: Row(
-                                  children: [
-                                    Icon(RemixIcons.file_text_line, size: 16, color: AppColors.primary),
-                                    const SizedBox(width: 8),
-                                    Expanded(child: Text(_pickedFile!.name, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600), overflow: TextOverflow.ellipsis)),
-                                    IconButton(
-                                      icon: const Icon(RemixIcons.close_circle_line, size: 16, color: Colors.red),
-                                      onPressed: () => setState(() => _pickedFile = null),
-                                    ),
-                                  ],
+      body: SafeArea(
+        child: RefreshIndicator(
+          onRefresh: () => _fetchMyRequests(showLoading: true),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16.0),
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: SizedBox(
+              width: double.infinity,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // New Request Form Card
+                  Card(
+                    elevation: 2,
+                    color: AppColors.surface,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(RemixIcons.edit_box_line, color: AppColors.primary),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Request Correction',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                  color: AppColors.textPrimary,
                                 ),
                               ),
                             ],
+                          ),
+                          const SizedBox(height: 14),
 
-                            const SizedBox(height: 18),
+                          // Screen 1: Date Picker Field
+                          InkWell(
+                            onTap: _pickDate,
+                            borderRadius: BorderRadius.circular(10),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                              decoration: BoxDecoration(
+                                color: AppColors.surface,
+                                border: Border.all(color: AppColors.inputBorder),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Select Date (Past 30 Days Only):',
+                                        style: TextStyle(fontSize: 11, color: AppColors.textSecondary, fontWeight: FontWeight.bold),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        DateFormat('EEEE, dd MMM yyyy').format(_selectedDate),
+                                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                                      ),
+                                    ],
+                                  ),
+                                  Icon(RemixIcons.calendar_event_line, color: AppColors.primary),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 14),
 
-                            // Submit Button
-                            SizedBox(
-                              width: double.infinity,
-                              height: 48,
-                              child: ElevatedButton(
-                                onPressed: _isSubmitting ? null : _submitRequest,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.primary,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                ),
-                                child: _isSubmitting
-                                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                                    : const Text('Submit Request', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.white)),
+                          // Screen 2: Current Status & What to Correct to
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(10)),
+                            child: Row(
+                              children: [
+                                Text('Current Status: ', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+                                Text(_currentStatus, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.red)),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+
+                          Text(
+                            'What do you want to correct it to?',
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.textPrimary),
+                          ),
+                          const SizedBox(height: 6),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 6,
+                            children: [
+                              ChoiceChip(
+                                label: const Text('Present (Full Day)'),
+                                selected: _requestedStatus == 'PRESENT',
+                                selectedColor: Colors.green.shade100,
+                                labelStyle: TextStyle(color: _requestedStatus == 'PRESENT' ? Colors.green.shade900 : AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 11),
+                                onSelected: (val) {
+                                  if (val) setState(() => _requestedStatus = 'PRESENT');
+                                },
+                              ),
+                              ChoiceChip(
+                                label: const Text('Half Day'),
+                                selected: _requestedStatus == 'HALF_DAY',
+                                selectedColor: Colors.blue.shade100,
+                                labelStyle: TextStyle(color: _requestedStatus == 'HALF_DAY' ? Colors.blue.shade900 : AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 11),
+                                onSelected: (val) {
+                                  if (val) setState(() => _requestedStatus = 'HALF_DAY');
+                                },
+                              ),
+                              ChoiceChip(
+                                label: const Text('Late'),
+                                selected: _requestedStatus == 'LATE',
+                                selectedColor: Colors.orange.shade100,
+                                labelStyle: TextStyle(color: _requestedStatus == 'LATE' ? Colors.orange.shade900 : AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 11),
+                                onSelected: (val) {
+                                  if (val) setState(() => _requestedStatus = 'LATE');
+                                },
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 14),
+
+                          // Reason Text Field (Mandatory)
+                          TextField(
+                            controller: _reasonController,
+                            maxLines: 3,
+                            style: TextStyle(color: AppColors.textPrimary),
+                            decoration: InputDecoration(
+                              labelText: 'Reason (mandatory)',
+                              labelStyle: TextStyle(color: AppColors.textSecondary),
+                              hintText: 'Was sick, attended from home. Doctor note attached.',
+                              hintStyle: TextStyle(color: AppColors.textHint),
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+
+                          // Upload Supporting Doc
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text('Supporting Doc (optional):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.textPrimary)),
+                              OutlinedButton.icon(
+                                onPressed: _pickDocument,
+                                icon: const Icon(RemixIcons.attachment_line, size: 14),
+                                label: Text(_pickedFile != null ? 'Change Doc' : '+ Add Photo / Doc', style: const TextStyle(fontSize: 12)),
+                                style: OutlinedButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
+                              ),
+                            ],
+                          ),
+                          if (_pickedFile != null) ...[
+                            const SizedBox(height: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                              decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(8)),
+                              child: Row(
+                                children: [
+                                  Icon(RemixIcons.file_text_line, size: 16, color: AppColors.primary),
+                                  const SizedBox(width: 8),
+                                  Expanded(child: Text(_pickedFile!.name, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textPrimary), overflow: TextOverflow.ellipsis)),
+                                  IconButton(
+                                    icon: const Icon(RemixIcons.close_circle_line, size: 16, color: Colors.red),
+                                    onPressed: () => setState(() => _pickedFile = null),
+                                  ),
+                                ],
                               ),
                             ),
                           ],
-                        ),
+
+                          const SizedBox(height: 18),
+
+                          // Submit Button
+                          SizedBox(
+                            width: double.infinity,
+                            height: 48,
+                            child: ElevatedButton(
+                              onPressed: _isSubmitting ? null : _submitRequest,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primary,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              ),
+                              child: _isSubmitting
+                                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                                  : const Text('Submit Request', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.white)),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 24),
+                  ),
+                  const SizedBox(height: 24),
 
-                    // My Correction Requests List & Filters
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text('My Correction Requests', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                        Text('${_filteredMyRequests.length} Items', style: const TextStyle(color: Colors.grey, fontSize: 12)),
-                      ],
+                  // My Correction Requests List & Filters
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('My Correction Requests', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textPrimary)),
+                      Text('${_filteredMyRequests.length} Items', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+
+                  // Filter Chips
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: ['ALL', 'PENDING', 'APPROVED', 'REJECTED'].map((st) {
+                        final isSelected = _statusFilter == st;
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: ChoiceChip(
+                            label: Text(st, style: TextStyle(fontSize: 11, color: isSelected ? Colors.white : AppColors.textPrimary, fontWeight: FontWeight.bold)),
+                            selected: isSelected,
+                            selectedColor: AppColors.primary,
+                            onSelected: (val) {
+                              if (val) {
+                                setState(() => _statusFilter = st);
+                                _fetchMyRequests(showLoading: true);
+                              }
+                            },
+                          ),
+                        );
+                      }).toList(),
                     ),
-                    const SizedBox(height: 10),
+                  ),
+                  const SizedBox(height: 12),
 
-                    // Filter Chips
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: ['ALL', 'PENDING', 'APPROVED', 'REJECTED'].map((st) {
-                          final isSelected = _statusFilter == st;
-                          return Padding(
-                            padding: const EdgeInsets.only(right: 8),
-                            child: ChoiceChip(
-                              label: Text(st, style: TextStyle(fontSize: 11, color: isSelected ? Colors.white : AppColors.textPrimary, fontWeight: FontWeight.bold)),
-                              selected: isSelected,
-                              selectedColor: AppColors.primary,
-                              onSelected: (val) {
-                                if (val) {
-                                  setState(() => _statusFilter = st);
-                                  _fetchMyRequests(showLoading: true);
-                                }
+                  _isLoadingRequests
+                      ? const Center(child: Padding(padding: EdgeInsets.all(24.0), child: CircularProgressIndicator()))
+                      : _filteredMyRequests.isEmpty
+                          ? Card(
+                              color: AppColors.surface,
+                              child: Padding(
+                                padding: const EdgeInsets.all(24.0),
+                                child: Center(
+                                  child: Text('No correction requests found.', style: TextStyle(color: AppColors.textSecondary)),
+                                ),
+                              ),
+                            )
+                          : ListView.builder(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: _filteredMyRequests.length,
+                              itemBuilder: (context, index) {
+                                final req = _filteredMyRequests[index];
+                                final status = req['status'] ?? 'PENDING';
+                                final dateStr = req['attendanceDate'] != null
+                                    ? DateFormat('dd MMM yyyy').format(DateTime.parse(req['attendanceDate']))
+                                    : '';
+
+                                return Card(
+                                  margin: const EdgeInsets.only(bottom: 10),
+                                  color: AppColors.surface,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  child: ListTile(
+                                    onTap: () => _showDetailModal(req),
+                                    leading: CircleAvatar(
+                                      backgroundColor: _getStatusColor(status).withValues(alpha: 0.15),
+                                      child: Icon(
+                                        status == 'APPROVED' ? RemixIcons.checkbox_circle_line : status == 'REJECTED' ? RemixIcons.close_circle_line : RemixIcons.time_line,
+                                        color: _getStatusColor(status),
+                                      ),
+                                    ),
+                                    title: Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(dateStr, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textPrimary)),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: _getStatusColor(status).withValues(alpha: 0.1),
+                                            borderRadius: BorderRadius.circular(6),
+                                          ),
+                                          child: Text(
+                                            status,
+                                            style: TextStyle(
+                                              color: _getStatusColor(status),
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    subtitle: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          '${req['currentStatus']} → ${req['requestedStatus']}',
+                                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.blueAccent),
+                                        ),
+                                        if (req['reason'] != null) Text('Reason: ${req['reason']}', style: TextStyle(fontSize: 12, color: AppColors.textSecondary), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                      ],
+                                    ),
+                                    trailing: Icon(RemixIcons.arrow_right_s_line, size: 18, color: AppColors.textSecondary),
+                                  ),
+                                );
                               },
                             ),
-                          );
-                        }).toList(),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-
-                    _isLoadingRequests
-                        ? const Center(child: Padding(padding: EdgeInsets.all(24.0), child: CircularProgressIndicator()))
-                        : _filteredMyRequests.isEmpty
-                            ? const Card(
-                                child: Padding(
-                                  padding: EdgeInsets.all(24.0),
-                                  child: Center(
-                                    child: Text('No correction requests found.', style: TextStyle(color: Colors.grey)),
-                                  ),
-                                ),
-                              )
-                            : ListView.builder(
-                                shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
-                                itemCount: _filteredMyRequests.length,
-                                itemBuilder: (context, index) {
-                                  final req = _filteredMyRequests[index];
-                                  final status = req['status'] ?? 'PENDING';
-                                  final dateStr = req['attendanceDate'] != null
-                                      ? DateFormat('dd MMM yyyy').format(DateTime.parse(req['attendanceDate']))
-                                      : '';
-
-                                  return Card(
-                                    margin: const EdgeInsets.only(bottom: 10),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                    child: ListTile(
-                                      onTap: () => _showDetailModal(req),
-                                      leading: CircleAvatar(
-                                        backgroundColor: _getStatusColor(status).withValues(alpha: 0.15),
-                                        child: Icon(
-                                          status == 'APPROVED' ? RemixIcons.checkbox_circle_line : status == 'REJECTED' ? RemixIcons.close_circle_line : RemixIcons.time_line,
-                                          color: _getStatusColor(status),
-                                        ),
-                                      ),
-                                      title: Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Text(dateStr, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                            decoration: BoxDecoration(
-                                              color: _getStatusColor(status).withValues(alpha: 0.1),
-                                              borderRadius: BorderRadius.circular(6),
-                                            ),
-                                            child: Text(
-                                              status,
-                                              style: TextStyle(
-                                                color: _getStatusColor(status),
-                                                fontSize: 10,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      subtitle: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          const SizedBox(height: 4),
-                                          Text(
-                                            '${req['currentStatus']} → ${req['requestedStatus']}',
-                                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.blueAccent),
-                                          ),
-                                          if (req['reason'] != null) Text('Reason: ${req['reason']}', style: const TextStyle(fontSize: 12), maxLines: 1, overflow: TextOverflow.ellipsis),
-                                        ],
-                                      ),
-                                      trailing: const Icon(RemixIcons.arrow_right_s_line, size: 18),
-                                    ),
-                                  );
-                                },
-                              ),
-                  ],
-                ),
+                ],
               ),
-            );
-          },
+            ),
+          ),
         ),
       ),
     );

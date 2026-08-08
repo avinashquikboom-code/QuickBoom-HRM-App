@@ -235,7 +235,10 @@ class _CompanyPoliciesViewState extends State<CompanyPoliciesView> {
                                 ),
                                 subtitle: Padding(
                                   padding: const EdgeInsets.only(top: 4.0),
-                                  child: Row(
+                                  child: Wrap(
+                                    crossAxisAlignment: WrapCrossAlignment.center,
+                                    spacing: 8,
+                                    runSpacing: 4,
                                     children: [
                                       Container(
                                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -248,10 +251,10 @@ class _CompanyPoliciesViewState extends State<CompanyPoliciesView> {
                                           style: TextStyle(color: catColor, fontSize: 10, fontWeight: FontWeight.bold),
                                         ),
                                       ),
-                                      const SizedBox(width: 8),
                                       Text(
                                         'Effective: $effectiveStr',
                                         style: const TextStyle(fontSize: 11, color: Colors.grey),
+                                        overflow: TextOverflow.ellipsis,
                                       ),
                                     ],
                                   ),
