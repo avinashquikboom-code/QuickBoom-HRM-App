@@ -12,6 +12,7 @@ import 'package:quickboom_hrm/core/services/wallet_service.dart';
 import 'package:quickboom_hrm/core/services/sales_service.dart';
 import 'package:quickboom_hrm/core/services/hopkid_sales_dto.dart';
 import 'package:quickboom_hrm/core/services/permission_service.dart';
+import 'package:quickboom_hrm/core/widgets/permission_protected_widget.dart';
 import 'package:quickboom_hrm/core/services/notification_service.dart';
 import 'package:quickboom_hrm/features/auth/presentation/providers/auth_viewmodel.dart';
 import 'package:quickboom_hrm/features/auth/data/models/user_model.dart';
@@ -120,7 +121,7 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
       if (estNet > 0) return estNet;
     }
 
-    return 47250.0;
+    return 0.0;
   }
 
   double _getCardGrossSalary() {
@@ -139,7 +140,7 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
                       (_salarySlipData?['grossSalary'] as num?)?.toDouble();
     if (grossSlip != null && grossSlip > 0) return grossSlip;
 
-    return 50000.0;
+    return 0.0;
   }
 
   Future<void> _fetchCommissionReport() async {
@@ -1156,31 +1157,15 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
   }
 
   Widget _buildSalaryTab(UserModel user) {
-    if (!PermissionService.canViewSalaryWidget(user)) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.lock_outline, size: 64, color: AppColors.textSecondary),
-              const SizedBox(height: 16),
-              Text(
-                'Salary Access Restricted',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Salary slip and payroll details are restricted for your account by HR.',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
+    return PermissionProtectedWidget(
+      user: user,
+      permission: PermissionService.canViewSalary,
+      moduleName: 'Salary & Payroll Details',
+      child: _buildSalaryTabContent(user),
+    );
+  }
 
+  Widget _buildSalaryTabContent(UserModel user) {
     final isSalesman = PermissionService.canViewCommissionWidget(user);
     final expenseState = ref.watch(expenseViewModelProvider);
     final walletPending =
@@ -1783,13 +1768,18 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
                     _fetchSalarySlip();
                   },
                 ),
-                Text(
-                  '${currentMonthName.toUpperCase()} $_salarySlipYear SALARY',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 13,
-                    letterSpacing: 0.5,
-                    color: AppColors.primary,
+                Expanded(
+                  child: Text(
+                    '${currentMonthName.toUpperCase()} $_salarySlipYear SALARY',
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                      letterSpacing: 0.5,
+                      color: AppColors.primary,
+                    ),
                   ),
                 ),
                 IconButton(
@@ -2008,11 +1998,7 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
             SizedBox(
               width: double.infinity,
               child: OutlinedButton.icon(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Downloading Salary Slip PDF for $currentMonthName $_salarySlipYear...')),
-                  );
-                },
+                onPressed: _downloadCurrentSalarySlip,
                 icon: const Icon(Icons.picture_as_pdf, size: 16),
                 label: const Text('Download Official PDF Salary Slip'),
                 style: OutlinedButton.styleFrom(
@@ -2026,6 +2012,41 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
         ],
       ),
     );
+  }
+
+  Future<void> _downloadCurrentSalarySlip() async {
+    final monthNames = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    final currentMonthName = monthNames[(_salarySlipMonth - 1) % 12];
+    final messenger = ScaffoldMessenger.of(context);
+
+    messenger.showSnackBar(
+      SnackBar(content: Text('Downloading Salary Slip PDF for $currentMonthName $_salarySlipYear...')),
+    );
+
+    final matchingSlip = _payslips.firstWhere(
+      (s) => s['month'] == _salarySlipMonth && s['year'] == _salarySlipYear,
+      orElse: () => null,
+    );
+
+    if (matchingSlip != null && matchingSlip['id'] != null) {
+      await _downloadPayslip((matchingSlip['id'] as num).toInt());
+    } else {
+      final success = await ref
+          .read(employeePayrollViewModelProvider.notifier)
+          .downloadPayslipByMonthYear(_salarySlipMonth, _salarySlipYear);
+      if (!success && mounted) {
+        final errorMsg = ref.read(employeePayrollViewModelProvider).errorMessage;
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text(errorMsg ?? 'Failed to download payslip PDF.'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
   }
 }
 

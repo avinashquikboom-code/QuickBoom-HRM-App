@@ -1,9 +1,13 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
-import 'dart:convert';
-import '../../../../core/constants/app_url.dart';
-import '../../../../core/services/storage_service.dart';
+import 'package:remixicon/remixicon.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:quickboom_hrm/core/constants/app_colors.dart';
+import 'package:quickboom_hrm/core/constants/app_url.dart';
+import 'package:quickboom_hrm/core/services/storage_service.dart';
 
 class AttendanceCorrectionView extends StatefulWidget {
   const AttendanceCorrectionView({super.key});
@@ -14,12 +18,14 @@ class AttendanceCorrectionView extends StatefulWidget {
 
 class _AttendanceCorrectionViewState extends State<AttendanceCorrectionView> {
   DateTime _selectedDate = DateTime.now().subtract(const Duration(days: 1));
-  String _currentStatus = 'ABSENT';
+  final String _currentStatus = 'ABSENT';
   String _requestedStatus = 'PRESENT';
   final TextEditingController _reasonController = TextEditingController();
-  
+
+  XFile? _pickedFile;
   bool _isLoadingRequests = true;
   bool _isSubmitting = false;
+  String _statusFilter = 'ALL';
   List<dynamic> _myRequests = [];
 
   @override
@@ -38,8 +44,11 @@ class _AttendanceCorrectionViewState extends State<AttendanceCorrectionView> {
     setState(() => _isLoadingRequests = true);
     try {
       final token = await StorageService.getToken();
+      if (token == null) return;
+
+      final url = '${AppUrl.baseUrl}/api/mobile/attendance/my-corrections${_statusFilter != 'ALL' ? '?status=$_statusFilter' : ''}';
       final response = await http.get(
-        Uri.parse('${AppUrl.baseUrl}/api/mobile/attendance/correction-requests'),
+        Uri.parse(url),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -50,14 +59,28 @@ class _AttendanceCorrectionViewState extends State<AttendanceCorrectionView> {
         final data = json.decode(response.body);
         if (data['success'] == true) {
           setState(() {
-            _myRequests = data['requests'] ?? [];
+            _myRequests = data['requests'] ?? data['data'] ?? [];
           });
         }
       }
     } catch (e) {
-      debugPrint('Error fetching correction requests: $e');
+      debugPrint('Error fetching my correction requests: $e');
     } finally {
       if (mounted) setState(() => _isLoadingRequests = false);
+    }
+  }
+
+  Future<void> _pickDocument() async {
+    try {
+      final picker = ImagePicker();
+      final XFile? file = await picker.pickImage(source: ImageSource.gallery);
+      if (file != null) {
+        setState(() {
+          _pickedFile = file;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error picking image: $e');
     }
   }
 
@@ -66,7 +89,18 @@ class _AttendanceCorrectionViewState extends State<AttendanceCorrectionView> {
     if (reason.isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please enter a reason for correction')),
+          const SnackBar(content: Text('Please enter a mandatory reason for correction'), backgroundColor: AppColors.error),
+        );
+      }
+      return;
+    }
+
+    // Validate 30 days limit
+    final thirtyDaysAgo = DateTime.now().subtract(const Duration(days: 30));
+    if (_selectedDate.isBefore(DateTime(thirtyDaysAgo.year, thirtyDaysAgo.month, thirtyDaysAgo.day))) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Attendance corrections can only be requested for dates within the past 30 days.'), backgroundColor: AppColors.error),
         );
       }
       return;
@@ -75,6 +109,13 @@ class _AttendanceCorrectionViewState extends State<AttendanceCorrectionView> {
     setState(() => _isSubmitting = true);
     try {
       final token = await StorageService.getToken();
+
+      String? supportingDocUrl;
+      if (_pickedFile != null) {
+        final bytes = await _pickedFile!.readAsBytes();
+        supportingDocUrl = 'data:image/jpeg;base64,${base64Encode(bytes)}';
+      }
+
       final response = await http.post(
         Uri.parse('${AppUrl.baseUrl}/api/mobile/attendance/correction-request'),
         headers: {
@@ -82,33 +123,35 @@ class _AttendanceCorrectionViewState extends State<AttendanceCorrectionView> {
           'Content-Type': 'application/json',
         },
         body: json.encode({
-          'date': DateFormat('yyyy-MM-dd').format(_selectedDate),
+          'attendanceDate': DateFormat('yyyy-MM-dd').format(_selectedDate),
           'currentStatus': _currentStatus,
           'requestedStatus': _requestedStatus,
           'reason': reason,
+          'supportingDoc': supportingDocUrl,
         }),
       );
 
       final data = json.decode(response.body);
-      if (response.statusCode == 201 && data['success'] == true) {
+      if (response.statusCode == 200 && data['success'] == true) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Correction request submitted successfully!')),
+            const SnackBar(content: Text('Request submitted. HR will review within 24 hours.'), backgroundColor: AppColors.success),
           );
         }
         _reasonController.clear();
+        setState(() => _pickedFile = null);
         _fetchMyRequests();
       } else {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(data['message'] ?? 'Failed to submit request')),
+            SnackBar(content: Text(data['error'] ?? data['message'] ?? 'Failed to submit request'), backgroundColor: AppColors.error),
           );
         }
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
+          SnackBar(content: Text('Error submitting request: $e'), backgroundColor: AppColors.error),
         );
       }
     } finally {
@@ -117,10 +160,11 @@ class _AttendanceCorrectionViewState extends State<AttendanceCorrectionView> {
   }
 
   Future<void> _pickDate() async {
+    final DateTime thirtyDaysAgo = DateTime.now().subtract(const Duration(days: 30));
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: _selectedDate,
-      firstDate: DateTime.now().subtract(const Duration(days: 90)),
+      firstDate: thirtyDaysAgo,
       lastDate: DateTime.now(),
     );
     if (picked != null && picked != _selectedDate) {
@@ -128,6 +172,141 @@ class _AttendanceCorrectionViewState extends State<AttendanceCorrectionView> {
         _selectedDate = picked;
       });
     }
+  }
+
+  void _showDetailModal(dynamic req) {
+    final status = req['status'] ?? 'PENDING';
+    final dateStr = req['attendanceDate'] != null
+        ? DateFormat('EEEE, dd MMM yyyy').format(DateTime.parse(req['attendanceDate']))
+        : '';
+    final appliedDateStr = req['appliedOn'] != null
+        ? DateFormat('dd MMM yyyy, hh:mm a').format(DateTime.parse(req['appliedOn']))
+        : '';
+    final docUrl = req['supportingDoc'];
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        padding: EdgeInsets.fromLTRB(20, 20, 20, MediaQuery.of(ctx).viewInsets.bottom + 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Correction Detail', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                IconButton(icon: const Icon(RemixIcons.close_line), onPressed: () => Navigator.pop(ctx)),
+              ],
+            ),
+            const Divider(),
+
+            Text('Date: $dateStr', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                const Text('Current Record: ', style: TextStyle(color: Colors.grey, fontSize: 13)),
+                Text(req['currentStatus'] ?? 'ABSENT', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.red)),
+                const SizedBox(width: 12),
+                const Text('Requested: ', style: TextStyle(color: Colors.grey, fontSize: 13)),
+                Text(req['requestedStatus'] ?? 'PRESENT', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
+              ],
+            ),
+            const SizedBox(height: 14),
+
+            const Text('Reason:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+            const SizedBox(height: 4),
+            Text(req['reason'] ?? 'No reason provided', style: const TextStyle(fontSize: 13)),
+            const SizedBox(height: 14),
+
+            if (docUrl != null && docUrl.toString().isNotEmpty) ...[
+              const Text('Supporting Document:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+              const SizedBox(height: 6),
+              InkWell(
+                onTap: () async {
+                  final uri = Uri.parse(docUrl);
+                  if (await canLaunchUrl(uri)) {
+                    await launchUrl(uri, mode: LaunchMode.externalApplication);
+                  }
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(RemixIcons.file_text_line, color: AppColors.primary),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          docUrl.toString().split('/').last,
+                          style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600, fontSize: 12),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const Icon(RemixIcons.external_link_line, size: 16, color: AppColors.primary),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+            ],
+
+            Text('Status: $status', style: TextStyle(fontWeight: FontWeight.bold, color: _getStatusColor(status))),
+            const SizedBox(height: 2),
+            Text('Applied On: $appliedDateStr', style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
+
+            if (req['reviewNote'] != null && req['reviewNote'].toString().isNotEmpty) ...[
+              const SizedBox(height: 10),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(color: Colors.red.shade50, borderRadius: BorderRadius.circular(8)),
+                child: Text('HR Review Note: ${req['reviewNote']}', style: TextStyle(fontSize: 12, color: Colors.red.shade900)),
+              ),
+            ],
+
+            const SizedBox(height: 20),
+
+            if (status == 'REJECTED')
+              SizedBox(
+                width: double.infinity,
+                height: 44,
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                  icon: const Icon(RemixIcons.refresh_line, color: Colors.white, size: 16),
+                  label: const Text('Resubmit Request', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    setState(() {
+                      _selectedDate = DateTime.parse(req['attendanceDate']);
+                      _reasonController.text = req['reason'] ?? '';
+                    });
+                  },
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
   }
 
   Color _getStatusColor(String status) {
@@ -141,10 +320,13 @@ class _AttendanceCorrectionViewState extends State<AttendanceCorrectionView> {
     }
   }
 
+  List<dynamic> get _filteredMyRequests {
+    if (_statusFilter == 'ALL') return _myRequests;
+    return _myRequests.where((r) => r['status'] == _statusFilter).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Attendance Correction'),
@@ -161,7 +343,7 @@ class _AttendanceCorrectionViewState extends State<AttendanceCorrectionView> {
               // New Request Form Card
               Card(
                 elevation: 2,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
@@ -169,27 +351,25 @@ class _AttendanceCorrectionViewState extends State<AttendanceCorrectionView> {
                     children: [
                       Row(
                         children: [
-                          Icon(Icons.edit_calendar, color: theme.primaryColor),
+                          Icon(RemixIcons.edit_box_line, color: AppColors.primary),
                           const SizedBox(width: 8),
-                          Text(
+                          const Text(
                             'Request Correction',
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 14),
 
-                      // Date Picker Field
+                      // Screen 1: Date Picker Field
                       InkWell(
                         onTap: _pickDate,
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(10),
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                           decoration: BoxDecoration(
                             border: Border.all(color: Colors.grey.shade300),
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(10),
                           ),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -197,10 +377,7 @@ class _AttendanceCorrectionViewState extends State<AttendanceCorrectionView> {
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text(
-                                    'Date to Correct',
-                                    style: TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.bold),
-                                  ),
+                                  const Text('Select Date (Past 30 Days Only):', style: TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.bold)),
                                   const SizedBox(height: 2),
                                   Text(
                                     DateFormat('EEEE, dd MMM yyyy').format(_selectedDate),
@@ -208,87 +385,117 @@ class _AttendanceCorrectionViewState extends State<AttendanceCorrectionView> {
                                   ),
                                 ],
                               ),
-                              const Icon(Icons.calendar_month, color: Colors.grey),
+                              Icon(RemixIcons.calendar_event_line, color: AppColors.primary),
                             ],
                           ),
                         ),
                       ),
                       const SizedBox(height: 14),
 
-                      // Current Status & Requested Status
-                      Row(
+                      // Screen 2: Current Status & What to Correct to
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(10)),
+                        child: Row(
+                          children: [
+                            const Text('Current Status: ', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                            Text(_currentStatus, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.red)),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+
+                      const Text('What do you want to correct it to?', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                      const SizedBox(height: 6),
+                      Wrap(
+                        spacing: 8,
                         children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text('Current Status', style: TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.bold)),
-                                const SizedBox(height: 4),
-                                DropdownButtonFormField<String>(
-                                  initialValue: _currentStatus,
-                                  decoration: InputDecoration(
-                                    contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                                  ),
-                                  items: ['ABSENT', 'PRESENT', 'HALF_DAY', 'LEAVE']
-                                      .map((s) => DropdownMenuItem(value: s, child: Text(s, style: const TextStyle(fontSize: 13))))
-                                      .toList(),
-                                  onChanged: (val) {
-                                    if (val != null) setState(() => _currentStatus = val);
-                                  },
-                                ),
-                              ],
-                            ),
+                          ChoiceChip(
+                            label: const Text('Present (Full Day)'),
+                            selected: _requestedStatus == 'PRESENT',
+                            selectedColor: Colors.green.shade100,
+                            labelStyle: TextStyle(color: _requestedStatus == 'PRESENT' ? Colors.green.shade900 : Colors.black, fontWeight: FontWeight.bold, fontSize: 11),
+                            onSelected: (val) {
+                              if (val) setState(() => _requestedStatus = 'PRESENT');
+                            },
                           ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text('Requested Status', style: TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.bold)),
-                                const SizedBox(height: 4),
-                                DropdownButtonFormField<String>(
-                                  initialValue: _requestedStatus,
-                                  decoration: InputDecoration(
-                                    contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                                  ),
-                                  items: ['PRESENT', 'HALF_DAY', 'LEAVE']
-                                      .map((s) => DropdownMenuItem(value: s, child: Text(s, style: const TextStyle(fontSize: 13))))
-                                      .toList(),
-                                  onChanged: (val) {
-                                    if (val != null) setState(() => _requestedStatus = val);
-                                  },
-                                ),
-                              ],
-                            ),
+                          ChoiceChip(
+                            label: const Text('Half Day'),
+                            selected: _requestedStatus == 'HALF_DAY',
+                            selectedColor: Colors.blue.shade100,
+                            labelStyle: TextStyle(color: _requestedStatus == 'HALF_DAY' ? Colors.blue.shade900 : Colors.black, fontWeight: FontWeight.bold, fontSize: 11),
+                            onSelected: (val) {
+                              if (val) setState(() => _requestedStatus = 'HALF_DAY');
+                            },
+                          ),
+                          ChoiceChip(
+                            label: const Text('Late'),
+                            selected: _requestedStatus == 'LATE',
+                            selectedColor: Colors.orange.shade100,
+                            labelStyle: TextStyle(color: _requestedStatus == 'LATE' ? Colors.orange.shade900 : Colors.black, fontWeight: FontWeight.bold, fontSize: 11),
+                            onSelected: (val) {
+                              if (val) setState(() => _requestedStatus = 'LATE');
+                            },
                           ),
                         ],
                       ),
                       const SizedBox(height: 14),
 
-                      // Reason Text Field
+                      // Reason Text Field (Mandatory)
                       TextField(
                         controller: _reasonController,
                         maxLines: 3,
                         decoration: InputDecoration(
-                          labelText: 'Reason for Correction',
-                          alignLabelWithHint: true,
-                          hintText: 'Describe why attendance needs correction...',
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                          labelText: 'Reason (mandatory)',
+                          hintText: 'Was sick, attended from home. Doctor note attached.',
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 14),
+
+                      // Upload Supporting Doc
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('Supporting Doc (optional):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                          OutlinedButton.icon(
+                            onPressed: _pickDocument,
+                            icon: const Icon(RemixIcons.attachment_line, size: 14),
+                            label: Text(_pickedFile != null ? 'Change Doc' : '+ Add Photo / Doc', style: const TextStyle(fontSize: 12)),
+                            style: OutlinedButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
+                          ),
+                        ],
+                      ),
+                      if (_pickedFile != null) ...[
+                        const SizedBox(height: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                          decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(8)),
+                          child: Row(
+                            children: [
+                              Icon(RemixIcons.file_text_line, size: 16, color: AppColors.primary),
+                              const SizedBox(width: 8),
+                              Expanded(child: Text(_pickedFile!.name, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600), overflow: TextOverflow.ellipsis)),
+                              IconButton(
+                                icon: const Icon(RemixIcons.close_circle_line, size: 16, color: Colors.red),
+                                onPressed: () => setState(() => _pickedFile = null),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+
+                      const SizedBox(height: 18),
 
                       // Submit Button
                       SizedBox(
                         width: double.infinity,
-                        height: 46,
+                        height: 48,
                         child: ElevatedButton(
                           onPressed: _isSubmitting ? null : _submitRequest,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: theme.primaryColor,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            backgroundColor: AppColors.primary,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                           ),
                           child: _isSubmitting
                               ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
@@ -301,46 +508,72 @@ class _AttendanceCorrectionViewState extends State<AttendanceCorrectionView> {
               ),
               const SizedBox(height: 24),
 
-              // My Requests Section Title
-              Text(
-                'My Correction Requests',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
+              // My Correction Requests List & Filters
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('My Correction Requests', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  Text('${_filteredMyRequests.length} Items', style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                ],
+              ),
+              const SizedBox(height: 10),
+
+              // Filter Chips
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: ['ALL', 'PENDING', 'APPROVED', 'REJECTED'].map((st) {
+                    final isSelected = _statusFilter == st;
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: ChoiceChip(
+                        label: Text(st, style: TextStyle(fontSize: 11, color: isSelected ? Colors.white : AppColors.textPrimary, fontWeight: FontWeight.bold)),
+                        selected: isSelected,
+                        selectedColor: AppColors.primary,
+                        onSelected: (val) {
+                          if (val) {
+                            setState(() => _statusFilter = st);
+                            _fetchMyRequests();
+                          }
+                        },
+                      ),
+                    );
+                  }).toList(),
                 ),
               ),
               const SizedBox(height: 12),
 
-              // Requests List
               _isLoadingRequests
                   ? const Center(child: Padding(padding: EdgeInsets.all(24.0), child: CircularProgressIndicator()))
-                  : _myRequests.isEmpty
+                  : _filteredMyRequests.isEmpty
                       ? const Card(
                           child: Padding(
                             padding: EdgeInsets.all(24.0),
                             child: Center(
-                              child: Text('No correction requests submitted yet.', style: TextStyle(color: Colors.grey)),
+                              child: Text('No correction requests found.', style: TextStyle(color: Colors.grey)),
                             ),
                           ),
                         )
                       : ListView.builder(
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
-                          itemCount: _myRequests.length,
+                          itemCount: _filteredMyRequests.length,
                           itemBuilder: (context, index) {
-                            final req = _myRequests[index];
+                            final req = _filteredMyRequests[index];
                             final status = req['status'] ?? 'PENDING';
-                            final dateStr = req['date'] != null
-                                ? DateFormat('dd MMM yyyy').format(DateTime.parse(req['date']))
+                            final dateStr = req['attendanceDate'] != null
+                                ? DateFormat('dd MMM yyyy').format(DateTime.parse(req['attendanceDate']))
                                 : '';
 
                             return Card(
                               margin: const EdgeInsets.only(bottom: 10),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                               child: ListTile(
+                                onTap: () => _showDetailModal(req),
                                 leading: CircleAvatar(
                                   backgroundColor: _getStatusColor(status).withValues(alpha: 0.15),
                                   child: Icon(
-                                    status == 'APPROVED' ? Icons.check_circle : status == 'REJECTED' ? Icons.cancel : Icons.pending_actions,
+                                    status == 'APPROVED' ? RemixIcons.checkbox_circle_line : status == 'REJECTED' ? RemixIcons.close_circle_line : RemixIcons.time_line,
                                     color: _getStatusColor(status),
                                   ),
                                 ),
@@ -352,7 +585,7 @@ class _AttendanceCorrectionViewState extends State<AttendanceCorrectionView> {
                                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                                       decoration: BoxDecoration(
                                         color: _getStatusColor(status).withValues(alpha: 0.1),
-                                        borderRadius: BorderRadius.circular(4),
+                                        borderRadius: BorderRadius.circular(6),
                                       ),
                                       child: Text(
                                         status,
@@ -373,14 +606,10 @@ class _AttendanceCorrectionViewState extends State<AttendanceCorrectionView> {
                                       '${req['currentStatus']} → ${req['requestedStatus']}',
                                       style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.blueAccent),
                                     ),
-                                    if (req['reason'] != null) Text('Reason: ${req['reason']}', style: const TextStyle(fontSize: 12)),
-                                    if (req['reviewNote'] != null && req['reviewNote'].toString().isNotEmpty)
-                                      Text(
-                                        'HR Note: ${req['reviewNote']}',
-                                        style: const TextStyle(fontSize: 11, color: Colors.grey, fontStyle: FontStyle.italic),
-                                      ),
+                                    if (req['reason'] != null) Text('Reason: ${req['reason']}', style: const TextStyle(fontSize: 12), maxLines: 1, overflow: TextOverflow.ellipsis),
                                   ],
                                 ),
+                                trailing: const Icon(RemixIcons.arrow_right_s_line, size: 18),
                               ),
                             );
                           },

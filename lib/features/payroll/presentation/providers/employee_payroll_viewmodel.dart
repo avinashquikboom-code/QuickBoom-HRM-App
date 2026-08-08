@@ -171,6 +171,32 @@ class EmployeePayrollViewModel extends StateNotifier<EmployeePayrollState> {
       return false;
     }
   }
+
+  Future<bool> downloadPayslipByMonthYear(int month, int year) async {
+    try {
+      final token = await ApiService.getToken();
+      if (token == null) {
+        throw Exception('Authentication token not found. Please log in again.');
+      }
+
+      final baseUrl = AppUrl.baseUrl;
+      final downloadUri = Uri.parse('$baseUrl/api/mobile/payroll/slips/download?month=$month&year=$year&token=$token');
+
+      debugPrint('📥 Opening payslip download by month/year URL: $downloadUri');
+
+      if (await canLaunchUrl(downloadUri)) {
+        await launchUrl(downloadUri, mode: LaunchMode.externalApplication);
+        return true;
+      } else {
+        throw Exception('Could not open the download URL in browser.');
+      }
+    } catch (e) {
+      debugPrint('❌ Download error: $e');
+      if (!mounted) return false;
+      state = state.copyWith(errorMessage: e.toString().replaceAll('Exception: ', ''));
+      return false;
+    }
+  }
 }
 
 final employeePayrollViewModelProvider =

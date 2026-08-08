@@ -8,6 +8,8 @@ import 'package:quickboom_hrm/features/attendance/data/models/hr_attendance_reco
 import 'package:quickboom_hrm/features/attendance/presentation/providers/hr_attendance_viewmodel.dart';
 import 'package:quickboom_hrm/core/widgets/shimmer_loading.dart';
 
+import 'package:quickboom_hrm/features/attendance/presentation/screens/hr_attendance_corrections_view.dart';
+
 class HrAttendanceView extends ConsumerStatefulWidget {
   const HrAttendanceView({super.key});
 
@@ -56,6 +58,16 @@ class _HrAttendanceViewState extends ConsumerState<HrAttendanceView> {
           ),
         ),
         actions: [
+          IconButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const HRAttendanceCorrectionsView()),
+              );
+            },
+            icon: Icon(RemixIcons.edit_box_line, color: AppColors.primary),
+            tooltip: 'Attendance Corrections',
+          ),
           IconButton(
             onPressed: () => _downloadAttendanceReport(context),
             icon: Icon(RemixIcons.download_line, color: AppColors.primary),

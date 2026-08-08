@@ -25,6 +25,7 @@ import 'package:quickboom_hrm/features/attendance/presentation/providers/geofenc
 import 'package:quickboom_hrm/features/commission/presentation/providers/commission_viewmodel.dart';
 import 'package:quickboom_hrm/features/commission/presentation/screens/commission_wallet_view.dart';
 import 'package:quickboom_hrm/core/services/permission_service.dart';
+import 'package:quickboom_hrm/core/widgets/permission_protected_widget.dart';
 import 'package:quickboom_hrm/features/task/presentation/screens/employee_tasks_view.dart';
 
 
@@ -213,46 +214,61 @@ class EmployeeDashboardView extends ConsumerWidget {
                 Row(
                   children: [
                     Expanded(
-                      child: _QuickActionBubble(
-                        label: 'My Tasks',
-                        icon: RemixIcons.checkbox_line,
-                        color: AppColors.success,
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (_) => const EmployeeTasksView()),
-                          );
-                        },
+                      child: PermissionProtectedWidget(
+                        user: user,
+                        permission: PermissionService.canViewTasks,
+                        moduleName: 'My Tasks',
+                        child: _QuickActionBubble(
+                          label: 'My Tasks',
+                          icon: RemixIcons.checkbox_line,
+                          color: AppColors.success,
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (_) => const EmployeeTasksView()),
+                            );
+                          },
+                        ),
                       ),
                     ),
                     const SizedBox(width: 10),
                     Expanded(
-                      child: _QuickActionBubble(
-                        label: 'Apply Remote',
-                        icon: RemixIcons.global_line,
-                        color: AppColors.info,
-                        onTap: () {
-                          showModalBottomSheet(
-                            context: context,
-                            isScrollControlled: true,
-                            backgroundColor: Colors.transparent,
-                            builder: (_) => const _ApplyRemoteWorkBottomSheet(),
-                          );
-                        },
+                      child: PermissionProtectedWidget(
+                        user: user,
+                        permission: PermissionService.canApplyRemoteWork,
+                        moduleName: 'Remote Work',
+                        child: _QuickActionBubble(
+                          label: 'Apply Remote',
+                          icon: RemixIcons.global_line,
+                          color: AppColors.info,
+                          onTap: () {
+                            showModalBottomSheet(
+                              context: context,
+                              isScrollControlled: true,
+                              backgroundColor: Colors.transparent,
+                              builder: (_) => const _ApplyRemoteWorkBottomSheet(),
+                            );
+                          },
+                        ),
                       ),
                     ),
                     const SizedBox(width: 10),
                     Expanded(
-                      child: _QuickActionBubble(
-                        label: 'Shift Schedule',
-                        icon: RemixIcons.calendar_todo_line,
-                        color: AppColors.primary,
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (_) => const EmployeeShiftView()),
-                          );
-                        },
+                      child: PermissionProtectedWidget(
+                        user: user,
+                        permission: PermissionService.canViewShift,
+                        moduleName: 'Shift Schedule',
+                        child: _QuickActionBubble(
+                          label: 'Shift Schedule',
+                          icon: RemixIcons.calendar_todo_line,
+                          color: AppColors.primary,
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (_) => const EmployeeShiftView()),
+                            );
+                          },
+                        ),
                       ),
                     ),
                   ],
@@ -260,14 +276,17 @@ class EmployeeDashboardView extends ConsumerWidget {
 
                 const SizedBox(height: 24),
 
-                // ─── Commission Widgets (Salesman Only) ─────────────────────
-                if (PermissionService.canViewCommissionWidget(user))
-                  _CommissionWidgets(
+                // ─── Commission Widgets (Salesman Only / Permission Protected) ──────
+                PermissionProtectedWidget(
+                  user: user,
+                  permission: PermissionService.canViewCommission,
+                  moduleName: 'Commission Dashboard',
+                  child: _CommissionWidgets(
                     commissionState: commissionState,
-                  ).animate().fadeIn(delay: 100.ms),
+                  ),
+                ).animate().fadeIn(delay: 100.ms),
 
-                if (PermissionService.canViewCommissionWidget(user))
-                  const SizedBox(height: 24),
+                const SizedBox(height: 24),
 
                 // ─── Double-layered Leave Balance Gauges ───────────────────
                 _SectionTitle(title: 'Leave Balance'),
