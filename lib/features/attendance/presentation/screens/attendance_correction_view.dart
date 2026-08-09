@@ -28,6 +28,7 @@ class _AttendanceCorrectionViewState extends State<AttendanceCorrectionView> {
   bool _isSubmitting = false;
   String _statusFilter = 'ALL';
   List<dynamic> _myRequests = [];
+  String? _errorMessage;
 
   Timer? _pollingTimer;
 
@@ -51,7 +52,10 @@ class _AttendanceCorrectionViewState extends State<AttendanceCorrectionView> {
 
   Future<void> _fetchMyRequests({bool showLoading = true}) async {
     if (showLoading && _myRequests.isEmpty) {
-      setState(() => _isLoadingRequests = true);
+      setState(() {
+        _isLoadingRequests = true;
+        _errorMessage = null;
+      });
     }
     try {
       final token = await StorageService.getToken();
@@ -64,7 +68,7 @@ class _AttendanceCorrectionViewState extends State<AttendanceCorrectionView> {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
         },
-      );
+      ).timeout(const Duration(seconds: 5));
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -72,13 +76,44 @@ class _AttendanceCorrectionViewState extends State<AttendanceCorrectionView> {
           final newRequests = data['requests'] ?? data['data'] ?? [];
           if (mounted) {
             setState(() {
-              _myRequests = newRequests;
+              _myRequests = List.from(newRequests);
+              _errorMessage = null;
             });
           }
         }
+      } else if (response.statusCode == 403) {
+        final data = json.decode(response.body);
+        if (mounted) {
+          setState(() {
+            _errorMessage = data['error'] ?? 'Permission denied (403): HR must enable "Request Attendance Correction" permission.';
+          });
+        }
+      } else if (response.statusCode == 500) {
+        if (mounted) {
+          setState(() {
+            _errorMessage = 'Server error (500): Failed to load correction requests.';
+          });
+        }
+      } else {
+        if (mounted) {
+          setState(() {
+            _errorMessage = 'Failed to load correction requests (${response.statusCode}).';
+          });
+        }
+      }
+    } on TimeoutException {
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'Loading timed out (> 5s). Please check network and retry.';
+        });
       }
     } catch (e) {
       debugPrint('Error fetching my correction requests: $e');
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'Error loading correction requests: $e';
+        });
+      }
     } finally {
       if (mounted) setState(() => _isLoadingRequests = false);
     }
@@ -144,7 +179,7 @@ class _AttendanceCorrectionViewState extends State<AttendanceCorrectionView> {
           'reason': reason,
           'supportingDoc': supportingDocUrl,
         }),
-      );
+      ).timeout(const Duration(seconds: 5));
 
       final data = json.decode(response.body);
       if (response.statusCode == 200 && data['success'] == true) {
@@ -162,6 +197,12 @@ class _AttendanceCorrectionViewState extends State<AttendanceCorrectionView> {
             SnackBar(content: Text(data['error'] ?? data['message'] ?? 'Failed to submit request'), backgroundColor: AppColors.error),
           );
         }
+      }
+    } on TimeoutException {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Submission timed out (> 5s). Please check network and retry.'), backgroundColor: AppColors.error),
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -635,16 +676,66 @@ class _AttendanceCorrectionViewState extends State<AttendanceCorrectionView> {
                     ),
                   ),
                 )
+              else if (_errorMessage != null)
+                SliverPadding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  sliver: SliverToBoxAdapter(
+                    child: Card(
+                      color: Colors.red.shade50,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      child: Padding(
+                        padding: const EdgeInsets.all(20.0),
+                        child: Column(
+                          children: [
+                            Icon(RemixIcons.error_warning_line, color: Colors.red.shade700, size: 36),
+                            const SizedBox(height: 8),
+                            Text(
+                              _errorMessage!,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(color: Colors.red.shade900, fontWeight: FontWeight.bold, fontSize: 13),
+                            ),
+                            const SizedBox(height: 12),
+                            ElevatedButton.icon(
+                              onPressed: () => _fetchMyRequests(showLoading: true),
+                              icon: const Icon(RemixIcons.refresh_line, size: 16, color: Colors.white),
+                              label: const Text('Retry', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primary,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                )
               else if (_filteredMyRequests.isEmpty)
                 SliverPadding(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
                   sliver: SliverToBoxAdapter(
                     child: Card(
                       color: AppColors.surface,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       child: Padding(
                         padding: const EdgeInsets.all(24.0),
                         child: Center(
-                          child: Text('No correction requests found.', style: TextStyle(color: AppColors.textSecondary)),
+                          child: Column(
+                            children: [
+                              Icon(RemixIcons.inbox_line, size: 36, color: AppColors.textSecondary),
+                              const SizedBox(height: 8),
+                              Text(
+                                'No corrections yet.',
+                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textPrimary),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Use the form above to submit an attendance correction request.',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
