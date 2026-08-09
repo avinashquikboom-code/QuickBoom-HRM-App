@@ -26,8 +26,8 @@ import 'package:quickboom_hrm/features/commission/presentation/providers/commiss
 import 'package:quickboom_hrm/features/commission/presentation/screens/commission_wallet_view.dart';
 import 'package:quickboom_hrm/core/services/permission_service.dart';
 import 'package:quickboom_hrm/core/widgets/permission_protected_widget.dart';
+import 'package:quickboom_hrm/core/widgets/feature_protected_widget.dart';
 import 'package:quickboom_hrm/features/task/presentation/screens/employee_tasks_view.dart';
-
 
 final geofenceProvider = FutureProvider<bool>((ref) async {
   await Future.delayed(Duration.zero);
@@ -1732,15 +1732,18 @@ class _TodayPunchCardState extends ConsumerState<_TodayPunchCard> {
           ],
           const SizedBox(height: 24),
           Center(
-            child: _SimplifiedPunchButton(
-              isInteractive: isInteractive,
-              isCheckedIn: widget.isCheckedIn,
-              isInRadius: isInRadius,
-              distance: geofenceState.distance,
-              isLoading: _isPunching,
-              onPunchTriggered: () {
-                _handlePunch(context);
-              },
+            child: FeatureProtectedWidget(
+              featureName: 'punch',
+              child: _SimplifiedPunchButton(
+                isInteractive: isInteractive,
+                isCheckedIn: widget.isCheckedIn,
+                isInRadius: isInRadius,
+                distance: geofenceState.distance,
+                isLoading: _isPunching,
+                onPunchTriggered: () {
+                  _handlePunch(context);
+                },
+              ),
             ),
           ),
           if (widget.isCheckedIn && !hasCheckOut) ...[
