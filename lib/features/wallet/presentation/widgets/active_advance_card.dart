@@ -131,41 +131,54 @@ class ActiveAdvanceCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Remaining Advance',
-                    style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '₹${NumberFormat('#,##,###').format(remaining.round())}',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 22,
-                      fontWeight: FontWeight.w900,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Remaining Advance',
+                      style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 4),
+                    Text(
+                      '₹${NumberFormat('#,##,###').format(remaining.round())}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 22,
+                        fontWeight: FontWeight.w900,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
               ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  const Text(
-                    'Monthly EMI',
-                    style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '₹${NumberFormat('#,##,###').format(monthlyEmi.round())} / mo',
-                    style: const TextStyle(
-                      color: Color(0xFF38BDF8),
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    const Text(
+                      'Monthly EMI',
+                      style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 4),
+                    Text(
+                      '₹${NumberFormat('#,##,###').format(monthlyEmi.round())} / mo',
+                      style: const TextStyle(
+                        color: Color(0xFF38BDF8),
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
@@ -186,14 +199,19 @@ class ActiveAdvanceCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'Repaid: ₹${NumberFormat('#,##,###').format(paidAmount.round())} ($paidEmis of $totalEmis EMIs)',
-                  style: const TextStyle(
-                    color: Color(0xFF94A3B8),
-                    fontSize: 11,
-                    fontWeight: FontWeight.w500,
+                Expanded(
+                  child: Text(
+                    'Repaid: ₹${NumberFormat('#,##,###').format(paidAmount.round())} ($paidEmis of $totalEmis EMIs)',
+                    style: const TextStyle(
+                      color: Color(0xFF94A3B8),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
+                const SizedBox(width: 8),
                 Text(
                   '$pendingEmis Pending EMIs',
                   style: const TextStyle(
@@ -201,6 +219,8 @@ class ActiveAdvanceCard extends StatelessWidget {
                     fontSize: 11,
                     fontWeight: FontWeight.bold,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),

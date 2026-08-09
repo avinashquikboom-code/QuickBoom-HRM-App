@@ -77,14 +77,18 @@ class HrPayrollView extends ConsumerWidget {
                   const SizedBox(height: 16),
                   Row(
                     children: [
-                      _PayrollStat(
-                        label: 'Employees',
-                        value: '${stats.totalEmployees}',
+                      Expanded(
+                        child: _PayrollStat(
+                          label: 'Employees',
+                          value: '${stats.totalEmployees}',
+                        ),
                       ),
-                      const SizedBox(width: 24),
-                      _PayrollStat(
-                        label: 'Avg Salary',
-                        value: '₹${NumberFormat('#,##,###').format(avgSalary)}',
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: _PayrollStat(
+                          label: 'Avg Salary',
+                          value: '₹${NumberFormat('#,##,###').format(avgSalary)}',
+                        ),
                       ),
                     ],
                   ),

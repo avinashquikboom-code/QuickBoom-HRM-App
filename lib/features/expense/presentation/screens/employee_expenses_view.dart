@@ -183,6 +183,8 @@ class _SummaryCard extends StatelessWidget {
             label,
             style: TextStyle(
                 fontSize: 12, fontWeight: FontWeight.w600, color: color),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: 6),
           Text(
@@ -192,6 +194,8 @@ class _SummaryCard extends StatelessWidget {
               fontWeight: FontWeight.w700,
               color: color,
             ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
@@ -226,20 +230,27 @@ class _ExpenseCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Icon(_categoryIcon(expense.category),
-                      size: 16, color: AppColors.primary),
-                  const SizedBox(width: 8),
-                  Text(
-                    expense.categoryLabel,
-                    style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary),
-                  ),
-                ],
+              Expanded(
+                child: Row(
+                  children: [
+                    Icon(_categoryIcon(expense.category),
+                        size: 16, color: AppColors.primary),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        expense.categoryLabel,
+                        style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textPrimary),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
               ),
+              const SizedBox(width: 8),
               Text(
                 '₹${NumberFormat('#,##,###').format(expense.amount)}',
                 style: const TextStyle(

@@ -406,9 +406,31 @@ class _ComprehensiveAttendanceViewState extends ConsumerState<ComprehensiveAtten
             children: [
               if (record.checkIn != null) _timeBadge('In', record.checkIn, Colors.green),
               if (record.checkOut != null) _timeBadge('Out', record.checkOut, Colors.red),
-              const Spacer(),
-              Text('${record.workHours.toStringAsFixed(1)}h work', style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
-              if (record.breakMinutes > 0) Text(' | ${record.breakMinutes}m break', style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        '${record.workHours.toStringAsFixed(1)}h work',
+                        style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (record.breakMinutes > 0)
+                      Flexible(
+                        child: Text(
+                          ' | ${record.breakMinutes}m break',
+                          style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
             ],
           ),
           if (record.hasLocation)

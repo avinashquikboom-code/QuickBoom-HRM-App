@@ -349,15 +349,19 @@ class _LeaveCard extends StatelessWidget {
                 color: AppColors.textSecondary,
               ),
               const SizedBox(width: 6),
-              Text(
-                '${DateFormat('dd MMM, yyyy').format(leave.fromDate)} - ${DateFormat('dd MMM, yyyy').format(leave.toDate)}',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                  color: AppColors.textPrimary,
+              Expanded(
+                child: Text(
+                  '${DateFormat('dd MMM, yyyy').format(leave.fromDate)} - ${DateFormat('dd MMM, yyyy').format(leave.toDate)}',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.textPrimary,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
-              const Spacer(),
+              const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(

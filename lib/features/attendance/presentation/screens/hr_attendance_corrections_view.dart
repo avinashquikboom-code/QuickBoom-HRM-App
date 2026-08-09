@@ -685,7 +685,15 @@ class _HRAttendanceCorrectionsViewState extends State<HRAttendanceCorrectionsVie
                                       title: Row(
                                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                         children: [
-                                          Text(req['employeeName'] ?? req['employeeId'], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                                          Expanded(
+                                            child: Text(
+                                              req['employeeName'] ?? req['employeeId'],
+                                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
                                           _StatusChip(status: req['status'] ?? 'PENDING'),
                                         ],
                                       ),

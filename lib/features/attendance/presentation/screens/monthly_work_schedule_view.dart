@@ -237,15 +237,18 @@ class _ScheduleDayCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
-              Text(
-                DateFormat('dd MMM, yyyy').format(DateTime.parse(day['date'])),
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
+              Expanded(
+                child: Text(
+                  DateFormat('dd MMM, yyyy').format(DateTime.parse(day['date'])),
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
-              const Spacer(),
               if (isWeekend)
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -270,11 +273,15 @@ class _ScheduleDayCard extends StatelessWidget {
               children: [
                 Icon(RemixIcons.time_line, size: 16, color: AppColors.textSecondary),
                 const SizedBox(width: 8),
-                Text(
-                  '${shift['startTime']} - ${shift['endTime']}',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: AppColors.textSecondary,
+                Expanded(
+                  child: Text(
+                    '${shift['startTime']} - ${shift['endTime']}',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: AppColors.textSecondary,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],
@@ -284,11 +291,15 @@ class _ScheduleDayCard extends StatelessWidget {
               children: [
                 Icon(RemixIcons.briefcase_line, size: 16, color: AppColors.textSecondary),
                 const SizedBox(width: 8),
-                Text(
-                  shift['name'] ?? 'No shift assigned',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: AppColors.textSecondary,
+                Expanded(
+                  child: Text(
+                    shift['name'] ?? 'No shift assigned',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: AppColors.textSecondary,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],

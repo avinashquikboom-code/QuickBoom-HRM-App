@@ -564,22 +564,29 @@ class _HrWalletDetailBottomSheetState extends State<_HrWalletDetailBottomSheet> 
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    item['periodStart'] == item['periodEnd']
-                                        ? DateFormat('dd MMM yyyy').format(DateTime.parse(item['periodStart']))
-                                        : '${DateFormat('dd MMM').format(DateTime.parse(item['periodStart']))} - ${DateFormat('dd MMM yyyy').format(DateTime.parse(item['periodEnd']))}',
-                                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textPrimary),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    'Net Sales: ₹${NumberFormat('#,##,###').format(net)} (Rate: $rate%)',
-                                    style: TextStyle(color: AppColors.textSecondary, fontSize: 11),
-                                  ),
-                                ],
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      item['periodStart'] == item['periodEnd']
+                                          ? DateFormat('dd MMM yyyy').format(DateTime.parse(item['periodStart']))
+                                          : '${DateFormat('dd MMM').format(DateTime.parse(item['periodStart']))} - ${DateFormat('dd MMM yyyy').format(DateTime.parse(item['periodEnd']))}',
+                                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textPrimary),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'Net Sales: ₹${NumberFormat('#,##,###').format(net)} (Rate: $rate%)',
+                                      style: TextStyle(color: AppColors.textSecondary, fontSize: 11),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
+                                ),
                               ),
+                              const SizedBox(width: 8),
                               Text(
                                 '₹${NumberFormat('#,##,###').format(comm)}',
                                 style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary, fontSize: 14),
@@ -656,9 +663,15 @@ class _DetailRow extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label, style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
-          Text(
-            value,
-            style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 13),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              value,
+              textAlign: TextAlign.end,
+              style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 13),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
         ],
       ),

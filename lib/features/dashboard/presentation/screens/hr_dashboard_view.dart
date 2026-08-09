@@ -921,6 +921,8 @@ class _QuickActionBtn extends StatelessWidget {
                 fontWeight: FontWeight.w800,
                 color: AppColors.textPrimary,
               ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),

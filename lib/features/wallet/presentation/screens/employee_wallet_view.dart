@@ -2980,82 +2980,84 @@ class _BankDetailsSheet extends StatelessWidget {
         color: AppColors.background,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Center(
-            child: Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppColors.divider,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Linked Bank Account',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.divider,
+                  borderRadius: BorderRadius.circular(2),
                 ),
               ),
-              IconButton(
-                icon: const Icon(
-                  RemixIcons.edit_line,
-                  color: AppColors.primary,
-                ),
-                tooltip: 'Edit Bank Details',
-                onPressed: () {
-                  Navigator.pop(context);
-                  onEditPressed();
-                },
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-          _BankDetailRow(label: 'Account Holder', value: userName),
-          const SizedBox(height: 16),
-          _BankDetailRow(label: 'Bank Name', value: bankName),
-          const SizedBox(height: 16),
-          _BankDetailRow(
-            label: 'Account Number',
-            value: _maskAccountNumber(
-              accountNumber != 'Not Configured' ? accountNumber : null,
             ),
-          ),
-          const SizedBox(height: 16),
-          _BankDetailRow(label: 'IFSC Code', value: ifscCode),
-          const SizedBox(height: 16),
-          _BankDetailRow(label: 'Account Type', value: accountType),
-          const SizedBox(height: 24),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.surface,
-                foregroundColor: AppColors.textPrimary,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  side: BorderSide(color: AppColors.cardBorder),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Linked Bank Account',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                  ),
                 ),
-                elevation: 0,
-              ),
-              onPressed: () => Navigator.pop(context),
-              child: const Text(
-                'Close Details',
-                style: TextStyle(fontWeight: FontWeight.bold),
+                IconButton(
+                  icon: const Icon(
+                    RemixIcons.edit_line,
+                    color: AppColors.primary,
+                  ),
+                  tooltip: 'Edit Bank Details',
+                  onPressed: () {
+                    Navigator.pop(context);
+                    onEditPressed();
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            _BankDetailRow(label: 'Account Holder', value: userName),
+            const SizedBox(height: 16),
+            _BankDetailRow(label: 'Bank Name', value: bankName),
+            const SizedBox(height: 16),
+            _BankDetailRow(
+              label: 'Account Number',
+              value: _maskAccountNumber(
+                accountNumber != 'Not Configured' ? accountNumber : null,
               ),
             ),
-          ),
-        ],
+            const SizedBox(height: 16),
+            _BankDetailRow(label: 'IFSC Code', value: ifscCode),
+            const SizedBox(height: 16),
+            _BankDetailRow(label: 'Account Type', value: accountType),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.surface,
+                  foregroundColor: AppColors.textPrimary,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    side: BorderSide(color: AppColors.cardBorder),
+                  ),
+                  elevation: 0,
+                ),
+                onPressed: () => Navigator.pop(context),
+                child: const Text(
+                  'Close Details',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

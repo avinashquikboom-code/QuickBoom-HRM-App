@@ -22,8 +22,17 @@ class EmployeeAttendanceView extends ConsumerWidget {
     final state = ref.watch(attendanceViewModelProvider);
 
     // Calculate dynamic attendance rate
-    final totalDays = state.presentCount + state.absentCount + state.lateCount + state.halfDayCount;
-    final attendanceRate = totalDays > 0 ? (((state.presentCount + state.halfDayCount + state.lateCount * 0.8) / totalDays) * 100).round() : 100;
+    final totalDays =
+        state.presentCount +
+        state.absentCount +
+        state.lateCount +
+        state.halfDayCount;
+    final attendanceRate = totalDays > 0
+        ? (((state.presentCount + state.halfDayCount + state.lateCount * 0.8) /
+                      totalDays) *
+                  100)
+              .round()
+        : 100;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -44,7 +53,9 @@ class EmployeeAttendanceView extends ConsumerWidget {
           IconButton(
             onPressed: () => Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => const MonthlyWorkScheduleView()),
+              MaterialPageRoute(
+                builder: (context) => const MonthlyWorkScheduleView(),
+              ),
             ),
             icon: Icon(RemixIcons.calendar_line, color: AppColors.primary),
             tooltip: 'Work Schedule',
@@ -88,104 +99,62 @@ class EmployeeAttendanceView extends ConsumerWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  DateFormat('MMMM yyyy').format(DateTime.now()),
-                                  style: TextStyle(
-                                    color: AppColors.primaryLight.withValues(alpha: 0.8),
+                                  DateFormat(
+                                    'MMMM yyyy',
+                                  ).format(DateTime.now()),
+                                  style: const TextStyle(
+                                    color: Colors.white70,
                                     fontSize: 12,
                                     fontWeight: FontWeight.w700,
                                   ),
                                 ),
                                 const SizedBox(height: 2),
-                                const Text(
-                                  'Attendance Dashboard',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 16.5,
-                                    fontWeight: FontWeight.w800,
+                                const FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  alignment: Alignment.centerLeft,
+                                  child: Text(
+                                    'Attendance Dashboard',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w800,
+                                    ),
                                   ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ],
                             ),
                           ),
                           const SizedBox(width: 8),
-                          Flexible(
-                            child: FittedBox(
-                              fit: BoxFit.scaleDown,
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: Colors.white.withValues(alpha: 0.3),
+                                  width: 1,
+                                ),
+                              ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  InkWell(
-                                    onTap: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => const AttendanceCorrectionView(),
-                                        ),
-                                      );
-                                    },
-                                    borderRadius: BorderRadius.circular(16),
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                      decoration: BoxDecoration(
-                                        color: AppColors.primaryLight.withValues(alpha: 0.2),
-                                        borderRadius: BorderRadius.circular(16),
-                                        border: Border.all(
-                                          color: AppColors.primaryLight.withValues(alpha: 0.4),
-                                          width: 1,
-                                        ),
-                                      ),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: const [
-                                          Icon(
-                                            RemixIcons.edit_line,
-                                            size: 13,
-                                            color: Colors.white,
-                                          ),
-                                          SizedBox(width: 4),
-                                          Text(
-                                            'Correction',
-                                            style: TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 11,
-                                              fontWeight: FontWeight.w800,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
+                                  const Icon(
+                                    RemixIcons.award_line,
+                                    size: 13,
+                                    color: Colors.white,
                                   ),
-                                  const SizedBox(width: 8),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white.withValues(alpha: 0.08),
-                                      borderRadius: BorderRadius.circular(16),
-                                      border: Border.all(
-                                        color: Colors.white.withValues(alpha: 0.12),
-                                        width: 1,
-                                      ),
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Icon(
-                                          RemixIcons.award_line,
-                                          size: 13,
-                                          color: AppColors.primaryLight,
-                                        ),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          '$attendanceRate% Rating',
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 11,
-                                            fontWeight: FontWeight.w800,
-                                          ),
-                                        ),
-                                      ],
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    '$attendanceRate% Rating',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w800,
                                     ),
                                   ),
                                 ],
@@ -253,6 +222,82 @@ class EmployeeAttendanceView extends ConsumerWidget {
                 const SizedBox(height: 12),
                 _TodayCard(state: state),
                 _BreakSectionCard(),
+                const SizedBox(height: 16),
+
+                // ─── Attendance Correction Option Card ─────────────────────
+                InkWell(
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const AttendanceCorrectionView(),
+                    ),
+                  ),
+                  borderRadius: BorderRadius.circular(20),
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: AppColors.primary.withValues(alpha: 0.35),
+                        width: 1.5,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.primary.withValues(alpha: 0.08),
+                          blurRadius: 16,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: AppColors.primarySurface,
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: Icon(
+                            RemixIcons.edit_box_line,
+                            color: AppColors.primary,
+                            size: 24,
+                          ),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Attendance Correction',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w800,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                              const SizedBox(height: 3),
+                              Text(
+                                'Request time or status adjustments for past days',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: AppColors.textSecondary,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Icon(
+                          RemixIcons.arrow_right_s_line,
+                          color: AppColors.primary,
+                          size: 22,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
                 const SizedBox(height: 28),
 
                 // ─── Timeline History ──────────────────────────────────────
@@ -280,8 +325,13 @@ class EmployeeAttendanceView extends ConsumerWidget {
                       )
                     else
                       IconButton(
-                        onPressed: () => ref.read(attendanceViewModelProvider.notifier).fetchAttendanceData(),
-                        icon: Icon(RemixIcons.refresh_line, color: AppColors.primary),
+                        onPressed: () => ref
+                            .read(attendanceViewModelProvider.notifier)
+                            .fetchAttendanceData(),
+                        icon: Icon(
+                          RemixIcons.refresh_line,
+                          color: AppColors.primary,
+                        ),
                         tooltip: 'Refresh Attendance',
                       ),
                   ],
@@ -298,7 +348,11 @@ class EmployeeAttendanceView extends ConsumerWidget {
                     ),
                     child: Column(
                       children: [
-                        Icon(RemixIcons.calendar_line, size: 48, color: AppColors.textHint),
+                        Icon(
+                          RemixIcons.calendar_line,
+                          size: 48,
+                          color: AppColors.textHint,
+                        ),
                         const SizedBox(height: 12),
                         Text(
                           'No attendance records found',
@@ -327,14 +381,24 @@ class EmployeeAttendanceView extends ConsumerWidget {
                       .toList()
                       .asMap()
                       .entries
-                      .map(
-                        (entry) {
-                          final index = entry.key;
-                          final record = entry.value;
-                          final isLast = index == state.history.where((a) => a.status != AttendanceStatus.weekend).take(20).length - 1;
-                          return _TimelineAttendanceRow(record: record, isLast: isLast);
-                        },
-                      ),
+                      .map((entry) {
+                        final index = entry.key;
+                        final record = entry.value;
+                        final isLast =
+                            index ==
+                            state.history
+                                    .where(
+                                      (a) =>
+                                          a.status != AttendanceStatus.weekend,
+                                    )
+                                    .take(20)
+                                    .length -
+                                1;
+                        return _TimelineAttendanceRow(
+                          record: record,
+                          isLast: isLast,
+                        );
+                      }),
 
                 const SizedBox(height: 110),
               ]),
@@ -362,26 +426,26 @@ class _DashboardStatChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 6),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.04),
+        color: Colors.white.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: Colors.white.withValues(alpha: 0.08),
+          color: Colors.white.withValues(alpha: 0.2),
           width: 1,
         ),
       ),
       child: Column(
         children: [
           Container(
-            padding: const EdgeInsets.all(5),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.12),
+            padding: const EdgeInsets.all(6),
+            decoration: const BoxDecoration(
+              color: Colors.white,
               shape: BoxShape.circle,
             ),
             child: Icon(icon, color: color, size: 14),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
           Text(
             '$count',
             style: const TextStyle(
@@ -395,10 +459,10 @@ class _DashboardStatChip extends StatelessWidget {
             label,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.5),
-              fontSize: 9.5,
-              fontWeight: FontWeight.w700,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 10.5,
+              fontWeight: FontWeight.w800,
             ),
           ),
         ],
@@ -453,7 +517,9 @@ class _TodayCardState extends ConsumerState<_TodayCard> {
     setState(() => _isLoadingDistance = true);
     try {
       final position = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+        ),
       );
       final result = await DistanceService.getCurrentDistance(
         latitude: position.latitude,
@@ -508,11 +574,7 @@ class _TodayCardState extends ConsumerState<_TodayCard> {
                   color: AppColors.success,
                 ),
               ),
-              Container(
-                width: 1.5,
-                height: 44,
-                color: AppColors.divider,
-              ),
+              Container(width: 1.5, height: 44, color: AppColors.divider),
               Expanded(
                 child: _LiveTimeDisplay(
                   label: 'Check Out',
@@ -549,11 +611,7 @@ class _TodayCardState extends ConsumerState<_TodayCard> {
                       ],
                     ),
                   ),
-                Icon(
-                  RemixIcons.time_line,
-                  size: 16,
-                  color: AppColors.primary,
-                ),
+                Icon(RemixIcons.time_line, size: 16, color: AppColors.primary),
                 const SizedBox(width: 6),
                 Text(
                   hasCheckOut
@@ -585,47 +643,67 @@ class _TodayCardState extends ConsumerState<_TodayCard> {
                         isLoading: _isPunching,
                         onTap: () async {
                           if (_isPunching) return;
-                          
+
                           setState(() => _isPunching = true);
-                          debugPrint('[PUNCH] Button click: ${hasCheckIn ? "Punch Out" : "Punch In"}');
+                          debugPrint(
+                            '[PUNCH] Button click: ${hasCheckIn ? "Punch Out" : "Punch In"}',
+                          );
 
                           try {
                             // 1. Check and request location permission if needed
-                            debugPrint('[PUNCH] Checking location services and permissions');
-                            bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+                            debugPrint(
+                              '[PUNCH] Checking location services and permissions',
+                            );
+                            bool serviceEnabled =
+                                await Geolocator.isLocationServiceEnabled();
                             if (!serviceEnabled) {
-                              throw Exception('Location services are disabled. Please enable them.');
+                              throw Exception(
+                                'Location services are disabled. Please enable them.',
+                              );
                             }
 
-                            LocationPermission permission = await Geolocator.checkPermission();
+                            LocationPermission permission =
+                                await Geolocator.checkPermission();
                             if (permission == LocationPermission.denied) {
                               permission = await Geolocator.requestPermission();
                               if (permission == LocationPermission.denied) {
-                                throw Exception('Location permissions are denied.');
+                                throw Exception(
+                                  'Location permissions are denied.',
+                                );
                               }
                             }
 
-                            if (permission == LocationPermission.deniedForever) {
-                              throw Exception('Location permissions are permanently denied. Please enable them in settings.');
+                            if (permission ==
+                                LocationPermission.deniedForever) {
+                              throw Exception(
+                                'Location permissions are permanently denied. Please enable them in settings.',
+                              );
                             }
 
                             debugPrint('[PUNCH] Location fetch start');
-                            final position = await Geolocator.getCurrentPosition(
-                              locationSettings: const LocationSettings(
-                                accuracy: LocationAccuracy.high,
-                                timeLimit: Duration(seconds: 10),
-                              ),
+                            final position =
+                                await Geolocator.getCurrentPosition(
+                                  locationSettings: const LocationSettings(
+                                    accuracy: LocationAccuracy.high,
+                                    timeLimit: Duration(seconds: 10),
+                                  ),
+                                );
+                            debugPrint(
+                              '[PUNCH] Location fetch end: lat=${position.latitude}, lon=${position.longitude}',
                             );
-                            debugPrint('[PUNCH] Location fetch end: lat=${position.latitude}, lon=${position.longitude}');
 
                             // 2. If punching in, validate geofence
                             if (!hasCheckIn) {
                               debugPrint('[PUNCH] Geofence validation start');
-                              final isWithinGeofence = await ref.read(geofenceViewModelProvider.notifier).checkGeofenceStatus(
-                                latitude: position.latitude,
-                                longitude: position.longitude,
+                              final isWithinGeofence = await ref
+                                  .read(geofenceViewModelProvider.notifier)
+                                  .checkGeofenceStatus(
+                                    latitude: position.latitude,
+                                    longitude: position.longitude,
+                                  );
+                              debugPrint(
+                                '[PUNCH] Geofence validation end: isWithinGeofence = $isWithinGeofence',
                               );
-                              debugPrint('[PUNCH] Geofence validation end: isWithinGeofence = $isWithinGeofence');
 
                               if (!isWithinGeofence) {
                                 if (context.mounted) {
@@ -633,14 +711,23 @@ class _TodayCardState extends ConsumerState<_TodayCard> {
                                     SnackBar(
                                       content: Row(
                                         children: [
-                                          Icon(RemixIcons.error_warning_line, color: Colors.white),
+                                          Icon(
+                                            RemixIcons.error_warning_line,
+                                            color: Colors.white,
+                                          ),
                                           const SizedBox(width: 10),
-                                          const Expanded(child: Text('Punch blocked: You are outside the office geofence.')),
+                                          const Expanded(
+                                            child: Text(
+                                              'Punch blocked: You are outside the office geofence.',
+                                            ),
+                                          ),
                                         ],
                                       ),
                                       backgroundColor: Colors.orange,
                                       behavior: SnackBarBehavior.floating,
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
                                     ),
                                   );
                                 }
@@ -650,53 +737,84 @@ class _TodayCardState extends ConsumerState<_TodayCard> {
                             }
 
                             // 3. Trigger API request
-                            debugPrint('[PUNCH] API request start: ${hasCheckIn ? "checkOut" : "checkIn"}');
+                            debugPrint(
+                              '[PUNCH] API request start: ${hasCheckIn ? "checkOut" : "checkIn"}',
+                            );
                             final success = hasCheckIn
-                                ? await ref.read(attendanceViewModelProvider.notifier).checkOut(
-                                    viaFingerprint: false,
-                                    latitude: position.latitude,
-                                    longitude: position.longitude,
-                                  )
-                                : await ref.read(attendanceViewModelProvider.notifier).checkIn(
-                                    viaFingerprint: false,
-                                    latitude: position.latitude,
-                                    longitude: position.longitude,
-                                  );
-                            debugPrint('[PUNCH] API response: success = $success');
+                                ? await ref
+                                      .read(
+                                        attendanceViewModelProvider.notifier,
+                                      )
+                                      .checkOut(
+                                        viaFingerprint: false,
+                                        latitude: position.latitude,
+                                        longitude: position.longitude,
+                                      )
+                                : await ref
+                                      .read(
+                                        attendanceViewModelProvider.notifier,
+                                      )
+                                      .checkIn(
+                                        viaFingerprint: false,
+                                        latitude: position.latitude,
+                                        longitude: position.longitude,
+                                      );
+                            debugPrint(
+                              '[PUNCH] API response: success = $success',
+                            );
 
                             if (success) {
                               debugPrint('[PUNCH] Attendance state refresh');
                               _loadDistance();
-                              
+
                               if (context.mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
                                     content: Row(
                                       children: [
-                                        Icon(RemixIcons.checkbox_circle_line, color: Colors.white),
+                                        Icon(
+                                          RemixIcons.checkbox_circle_line,
+                                          color: Colors.white,
+                                        ),
                                         const SizedBox(width: 10),
-                                        Expanded(child: Text(hasCheckIn ? 'Checked out successfully!' : 'Checked in successfully!')),
+                                        Expanded(
+                                          child: Text(
+                                            hasCheckIn
+                                                ? 'Checked out successfully!'
+                                                : 'Checked in successfully!',
+                                          ),
+                                        ),
                                       ],
                                     ),
                                     backgroundColor: AppColors.success,
                                     behavior: SnackBarBehavior.floating,
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
                                   ),
                                 );
                               }
                             }
                           } catch (error) {
-                            debugPrint('[PUNCH] Error during punch flow: $error');
+                            debugPrint(
+                              '[PUNCH] Error during punch flow: $error',
+                            );
                             if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Row(
                                     children: [
-                                      Icon(RemixIcons.error_warning_line, color: Colors.white),
+                                      Icon(
+                                        RemixIcons.error_warning_line,
+                                        color: Colors.white,
+                                      ),
                                       const SizedBox(width: 10),
                                       Expanded(
                                         child: Text(
-                                          error.toString().replaceAll('Exception: ', ''),
+                                          error.toString().replaceAll(
+                                            'Exception: ',
+                                            '',
+                                          ),
                                           style: const TextStyle(fontSize: 14),
                                         ),
                                       ),
@@ -704,7 +822,9 @@ class _TodayCardState extends ConsumerState<_TodayCard> {
                                   ),
                                   backgroundColor: AppColors.error,
                                   behavior: SnackBarBehavior.floating,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
                                   duration: const Duration(seconds: 4),
                                 ),
                               );
@@ -723,16 +843,23 @@ class _TodayCardState extends ConsumerState<_TodayCard> {
                 // Distance Display
                 if (_distanceData != null)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
                     decoration: BoxDecoration(
-                      color: (_distanceData!['isWithinRadius'] == true
-                          ? AppColors.success
-                          : AppColors.warning).withValues(alpha: 0.08),
+                      color:
+                          (_distanceData!['isWithinRadius'] == true
+                                  ? AppColors.success
+                                  : AppColors.warning)
+                              .withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: (_distanceData!['isWithinRadius'] == true
-                            ? AppColors.success
-                            : AppColors.warning).withValues(alpha: 0.2),
+                        color:
+                            (_distanceData!['isWithinRadius'] == true
+                                    ? AppColors.success
+                                    : AppColors.warning)
+                                .withValues(alpha: 0.2),
                         width: 1,
                       ),
                     ),
@@ -771,7 +898,9 @@ class _TodayCardState extends ConsumerState<_TodayCard> {
                         height: 16,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation(AppColors.textHint),
+                          valueColor: AlwaysStoppedAnimation(
+                            AppColors.textHint,
+                          ),
                         ),
                       ),
                     ),
@@ -792,7 +921,11 @@ class _TodayCardState extends ConsumerState<_TodayCard> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(RemixIcons.checkbox_circle_fill, color: AppColors.success, size: 18),
+                  Icon(
+                    RemixIcons.checkbox_circle_fill,
+                    color: AppColors.success,
+                    size: 18,
+                  ),
                   const SizedBox(width: 8),
                   const Text(
                     'Shift Completed Successfully',
@@ -857,8 +990,6 @@ class _LiveTimeDisplay extends StatelessWidget {
   }
 }
 
-
-
 class _SimplifiedAttendancePunchButton extends StatelessWidget {
   final bool isCheckedIn;
   final bool isLoading;
@@ -877,15 +1008,13 @@ class _SimplifiedAttendancePunchButton extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
         decoration: BoxDecoration(
-          color: isCheckedIn 
-              ? Colors.red 
-              : AppColors.primary,
+          color: isCheckedIn ? Colors.red : AppColors.primary,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: (isCheckedIn 
-                  ? Colors.red 
-                  : AppColors.primary).withValues(alpha: 0.3),
+              color: (isCheckedIn ? Colors.red : AppColors.primary).withValues(
+                alpha: 0.3,
+              ),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
@@ -906,14 +1035,18 @@ class _SimplifiedAttendancePunchButton extends StatelessWidget {
               )
             else
               Icon(
-                isCheckedIn ? RemixIcons.logout_box_line : RemixIcons.login_box_line,
+                isCheckedIn
+                    ? RemixIcons.logout_box_line
+                    : RemixIcons.login_box_line,
                 color: Colors.white,
                 size: 18,
               ),
             const SizedBox(width: 8),
             Flexible(
               child: Text(
-                isLoading ? 'Processing...' : (isCheckedIn ? 'PUNCH OUT' : 'PUNCH IN'),
+                isLoading
+                    ? 'Processing...'
+                    : (isCheckedIn ? 'PUNCH OUT' : 'PUNCH IN'),
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 13,
@@ -934,10 +1067,7 @@ class _TimelineAttendanceRow extends StatelessWidget {
   final AttendanceModel record;
   final bool isLast;
 
-  const _TimelineAttendanceRow({
-    required this.record,
-    required this.isLast,
-  });
+  const _TimelineAttendanceRow({required this.record, required this.isLast});
 
   @override
   Widget build(BuildContext context) {
@@ -959,10 +1089,7 @@ class _TimelineAttendanceRow extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: statusColor,
                     shape: BoxShape.circle,
-                    border: Border.all(
-                      color: AppColors.background,
-                      width: 2,
-                    ),
+                    border: Border.all(color: AppColors.background, width: 2),
                     boxShadow: [
                       BoxShadow(
                         color: statusColor.withValues(alpha: 0.35),
@@ -973,10 +1100,7 @@ class _TimelineAttendanceRow extends StatelessWidget {
                 ),
                 if (!isLast)
                   Expanded(
-                    child: Container(
-                      width: 1.5,
-                      color: AppColors.divider,
-                    ),
+                    child: Container(width: 1.5, color: AppColors.divider),
                   ),
               ],
             ),
@@ -988,7 +1112,10 @@ class _TimelineAttendanceRow extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.only(bottom: 12),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 14,
+                ),
                 decoration: BoxDecoration(
                   color: AppColors.surface,
                   borderRadius: BorderRadius.circular(20),
@@ -1035,16 +1162,25 @@ class _TimelineAttendanceRow extends StatelessWidget {
                     Expanded(
                       child: Row(
                         children: [
-                          _TimelineTimeChip(label: 'IN', time: record.checkInLabel),
+                          _TimelineTimeChip(
+                            label: 'IN',
+                            time: record.checkInLabel,
+                          ),
                           const SizedBox(width: 16),
-                          _TimelineTimeChip(label: 'OUT', time: record.checkOutLabel),
+                          _TimelineTimeChip(
+                            label: 'OUT',
+                            time: record.checkOutLabel,
+                          ),
                         ],
                       ),
                     ),
 
                     // Status Pill
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 5,
+                      ),
                       decoration: BoxDecoration(
                         color: statusColor.withValues(alpha: 0.08),
                         borderRadius: BorderRadius.circular(14),
@@ -1064,10 +1200,14 @@ class _TimelineAttendanceRow extends StatelessWidget {
                               fontWeight: FontWeight.w800,
                             ),
                           ),
-                          if (record.status == AttendanceStatus.late && record.isLateMarkedAsHalfDay) ...[
+                          if (record.status == AttendanceStatus.late &&
+                              record.isLateMarkedAsHalfDay) ...[
                             const SizedBox(width: 4),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 4,
+                                vertical: 1,
+                              ),
                               decoration: BoxDecoration(
                                 color: AppColors.info.withValues(alpha: 0.15),
                                 borderRadius: BorderRadius.circular(6),
@@ -1149,7 +1289,10 @@ class _TimelineTimeChip extends StatelessWidget {
 
 // ─── Download Method ───────────────────────────────────────────────────────
 
-Future<void> _downloadAttendanceReport(WidgetRef ref, BuildContext context) async {
+Future<void> _downloadAttendanceReport(
+  WidgetRef ref,
+  BuildContext context,
+) async {
   try {
     // Show loading indicator
     ScaffoldMessenger.of(context).showSnackBar(
@@ -1159,8 +1302,10 @@ Future<void> _downloadAttendanceReport(WidgetRef ref, BuildContext context) asyn
       ),
     );
 
-    await ref.read(attendanceViewModelProvider.notifier).downloadMyAttendanceReport();
-    
+    await ref
+        .read(attendanceViewModelProvider.notifier)
+        .downloadMyAttendanceReport();
+
     // Show success message
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1230,7 +1375,10 @@ class _BreakSectionCard extends ConsumerWidget {
               ),
               if (activeBreak != null)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.warning.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(8),
@@ -1255,13 +1403,37 @@ class _BreakSectionCard extends ConsumerWidget {
             const SizedBox(height: 12),
             Row(
               children: [
-                Expanded(child: _BreakTypeButton(type: 'LUNCH', icon: RemixIcons.restaurant_line, label: 'Lunch')),
+                Expanded(
+                  child: _BreakTypeButton(
+                    type: 'LUNCH',
+                    icon: RemixIcons.restaurant_line,
+                    label: 'Lunch',
+                  ),
+                ),
                 const SizedBox(width: 8),
-                Expanded(child: _BreakTypeButton(type: 'TEA', icon: RemixIcons.cup_line, label: 'Tea')),
+                Expanded(
+                  child: _BreakTypeButton(
+                    type: 'TEA',
+                    icon: RemixIcons.cup_line,
+                    label: 'Tea',
+                  ),
+                ),
                 const SizedBox(width: 8),
-                Expanded(child: _BreakTypeButton(type: 'PERSONAL', icon: RemixIcons.user_smile_line, label: 'Personal')),
+                Expanded(
+                  child: _BreakTypeButton(
+                    type: 'PERSONAL',
+                    icon: RemixIcons.user_smile_line,
+                    label: 'Personal',
+                  ),
+                ),
                 const SizedBox(width: 8),
-                Expanded(child: _BreakTypeButton(type: 'MEETING', icon: RemixIcons.group_line, label: 'Meeting')),
+                Expanded(
+                  child: _BreakTypeButton(
+                    type: 'MEETING',
+                    icon: RemixIcons.group_line,
+                    label: 'Meeting',
+                  ),
+                ),
               ],
             ),
           ] else ...[
@@ -1277,11 +1449,17 @@ class _BreakSectionCard extends ConsumerWidget {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.error,
                         foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
-                      onPressed: () => ref.read(breakViewModelProvider.notifier).endBreak(),
+                      onPressed: () =>
+                          ref.read(breakViewModelProvider.notifier).endBreak(),
                       icon: const Icon(RemixIcons.stop_circle_line),
-                      label: const Text('End Break', style: TextStyle(fontWeight: FontWeight.bold)),
+                      label: const Text(
+                        'End Break',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
                     ),
                   ),
                 ],
@@ -1294,7 +1472,11 @@ class _BreakSectionCard extends ConsumerWidget {
             const SizedBox(height: 12),
             Text(
               'Today\'s Breaks History',
-              style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textSecondary),
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textSecondary,
+              ),
             ),
             const SizedBox(height: 8),
             ListView.builder(
@@ -1311,9 +1493,19 @@ class _BreakSectionCard extends ConsumerWidget {
                     children: [
                       Row(
                         children: [
-                          Icon(_getBreakIcon(b.type), size: 14, color: AppColors.primary),
+                          Icon(
+                            _getBreakIcon(b.type),
+                            size: 14,
+                            color: AppColors.primary,
+                          ),
                           const SizedBox(width: 6),
-                          Text(b.typeLabel, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+                          Text(
+                            b.typeLabel,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
                         ],
                       ),
                       Text(
@@ -1321,7 +1513,9 @@ class _BreakSectionCard extends ConsumerWidget {
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
-                          color: isEnded ? AppColors.textSecondary : AppColors.warning,
+                          color: isEnded
+                              ? AppColors.textSecondary
+                              : AppColors.warning,
                         ),
                       ),
                     ],
@@ -1380,7 +1574,11 @@ class _BreakTypeButton extends ConsumerWidget {
             const SizedBox(height: 6),
             Text(
               label,
-              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+              ),
             ),
           ],
         ),

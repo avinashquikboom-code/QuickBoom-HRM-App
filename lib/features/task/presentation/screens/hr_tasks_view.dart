@@ -144,7 +144,7 @@ class _StatCard extends StatelessWidget {
         children: [
           Text('$count', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: color)),
           const SizedBox(height: 4),
-          Text(label, style: TextStyle(fontSize: 11, color: color.withValues(alpha: 0.8), fontWeight: FontWeight.w600)),
+          Text(label, style: TextStyle(fontSize: 11, color: color.withValues(alpha: 0.8), fontWeight: FontWeight.w600), maxLines: 1, overflow: TextOverflow.ellipsis),
         ],
       ),
     );
@@ -196,8 +196,15 @@ class _HrTaskCard extends StatelessWidget {
             children: [
               Icon(RemixIcons.user_3_line, size: 14, color: AppColors.textHint),
               const SizedBox(width: 6),
-              Text(task.assignedToName, style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-              const Spacer(),
+              Expanded(
+                child: Text(
+                  task.assignedToName,
+                  style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(width: 8),
               Icon(RemixIcons.calendar_event_line, size: 14, color: AppColors.textHint),
               const SizedBox(width: 6),
               Text(

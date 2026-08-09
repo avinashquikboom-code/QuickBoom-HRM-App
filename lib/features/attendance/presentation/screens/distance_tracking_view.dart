@@ -298,8 +298,14 @@ class _DistanceTrackingViewState extends ConsumerState<DistanceTrackingView> {
               Text('${record.distance.toStringAsFixed(2)} km',
                   style: const TextStyle(fontWeight: FontWeight.w500, color: Colors.blue)),
               const SizedBox(width: 12),
-              Text(record.locationStatus,
-                  style: TextStyle(fontSize: 12, color: record.isWithinRadius ? Colors.green : Colors.orange, fontWeight: FontWeight.w500)),
+              Expanded(
+                child: Text(
+                  record.locationStatus,
+                  style: TextStyle(fontSize: 12, color: record.isWithinRadius ? Colors.green : Colors.orange, fontWeight: FontWeight.w500),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
             ],
           ),
         ],

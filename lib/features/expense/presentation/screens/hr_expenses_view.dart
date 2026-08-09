@@ -137,9 +137,9 @@ class _SummaryCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: color)),
+          Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: color), maxLines: 1, overflow: TextOverflow.ellipsis),
           const SizedBox(height: 6),
-          Text('₹${NumberFormat('#,##,###').format(amount)}', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: color)),
+          Text('₹${NumberFormat('#,##,###').format(amount)}', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: color), maxLines: 1, overflow: TextOverflow.ellipsis),
         ],
       ),
     );
@@ -169,10 +169,15 @@ class _HrExpenseCard extends ConsumerWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                expense.employeeName,
-                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: AppColors.textPrimary),
+              Expanded(
+                child: Text(
+                  expense.employeeName,
+                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: AppColors.textPrimary),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
+              const SizedBox(width: 8),
               Text(
                 '₹${NumberFormat('#,##,###').format(expense.amount)}',
                 style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: AppColors.primary),

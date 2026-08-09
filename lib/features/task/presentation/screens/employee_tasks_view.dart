@@ -344,12 +344,16 @@ class _TaskCard extends ConsumerWidget {
                           Icon(RemixIcons.folder_open_line,
                               size: 13, color: AppColors.textHint),
                           const SizedBox(width: 4),
-                          Text(
-                            task.projectName,
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.textSecondary,
+                          Flexible(
+                            child: Text(
+                              task.projectName,
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textSecondary,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                           const SizedBox(width: 16),

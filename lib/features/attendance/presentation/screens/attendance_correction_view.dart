@@ -72,11 +72,11 @@ class _AttendanceCorrectionViewState extends State<AttendanceCorrectionView> {
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        if (data['success'] == true) {
+        if (data is Map && data['success'] == true) {
           final newRequests = data['requests'] ?? data['data'] ?? [];
           if (mounted) {
             setState(() {
-              _myRequests = List.from(newRequests);
+              _myRequests = newRequests is List ? List.from(newRequests) : [];
               _errorMessage = null;
             });
           }
@@ -85,7 +85,7 @@ class _AttendanceCorrectionViewState extends State<AttendanceCorrectionView> {
         final data = json.decode(response.body);
         if (mounted) {
           setState(() {
-            _errorMessage = data['error'] ?? 'Permission denied (403): HR must enable "Request Attendance Correction" permission.';
+            _errorMessage = (data is Map ? data['error'] : null) ?? 'Permission denied (403): HR must enable "Request Attendance Correction" permission.';
           });
         }
       } else if (response.statusCode == 500) {
@@ -182,7 +182,7 @@ class _AttendanceCorrectionViewState extends State<AttendanceCorrectionView> {
       ).timeout(const Duration(seconds: 5));
 
       final data = json.decode(response.body);
-      if (response.statusCode == 200 && data['success'] == true) {
+      if (response.statusCode == 200 && data is Map && data['success'] == true) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Request submitted. HR will review within 24 hours.'), backgroundColor: AppColors.success),
@@ -192,9 +192,10 @@ class _AttendanceCorrectionViewState extends State<AttendanceCorrectionView> {
         setState(() => _pickedFile = null);
         _fetchMyRequests();
       } else {
+        final errMsg = data is Map ? (data['error'] ?? data['message']) : null;
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(data['error'] ?? data['message'] ?? 'Failed to submit request'), backgroundColor: AppColors.error),
+            SnackBar(content: Text(errMsg ?? 'Failed to submit request'), backgroundColor: AppColors.error),
           );
         }
       }
@@ -231,8 +232,8 @@ class _AttendanceCorrectionViewState extends State<AttendanceCorrectionView> {
   }
 
   void _showDetailModal(dynamic req) {
-    if (req == null) return;
-    final status = req['status'] ?? 'PENDING';
+    if (req == null || req is! Map) return;
+    final status = req['status']?.toString() ?? 'PENDING';
     String dateStr = '';
     if (req['attendanceDate'] != null) {
       final parsed = DateTime.tryParse(req['attendanceDate'].toString());
@@ -249,7 +250,11 @@ class _AttendanceCorrectionViewState extends State<AttendanceCorrectionView> {
       }
     }
 
-    final docUrl = req['supportingDoc'];
+    final docUrl = req['supportingDoc']?.toString();
+    final currentSt = req['currentStatus']?.toString() ?? 'ABSENT';
+    final requestedSt = req['requestedStatus']?.toString() ?? 'PRESENT';
+    final reasonText = req['reason']?.toString() ?? 'No reason provided';
+    final reviewNoteText = req['reviewNote']?.toString();
 
     showModalBottomSheet(
       context: context,
@@ -261,133 +266,158 @@ class _AttendanceCorrectionViewState extends State<AttendanceCorrectionView> {
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
         padding: EdgeInsets.fromLTRB(20, 20, 20, MediaQuery.of(ctx).viewInsets.bottom + 20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('Correction Detail', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
-                Row(
-                  children: [
-                    IconButton(
-                      icon: const Icon(RemixIcons.refresh_line),
-                      tooltip: 'Refresh',
-                      onPressed: () {
-                        _fetchMyRequests(showLoading: false);
-                        Navigator.pop(ctx);
-                      },
-                    ),
-                    IconButton(icon: const Icon(RemixIcons.close_line), onPressed: () => Navigator.pop(ctx)),
-                  ],
-                ),
-              ],
-            ),
-            const Divider(),
-
-            Text('Date: $dateStr', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                const Text('Current Record: ', style: TextStyle(color: Colors.grey, fontSize: 13)),
-                Text(req['currentStatus'] ?? 'ABSENT', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.red)),
-                const SizedBox(width: 12),
-                const Text('Requested: ', style: TextStyle(color: Colors.grey, fontSize: 13)),
-                Text(req['requestedStatus'] ?? 'PRESENT', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
-              ],
-            ),
-            const SizedBox(height: 14),
-
-            const Text('Reason:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-            const SizedBox(height: 4),
-            Text(req['reason'] ?? 'No reason provided', style: const TextStyle(fontSize: 13)),
-            const SizedBox(height: 14),
-
-            if (docUrl != null && docUrl.toString().isNotEmpty) ...[
-              const Text('Supporting Document:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-              const SizedBox(height: 6),
-              InkWell(
-                onTap: () async {
-                  final uri = Uri.parse(docUrl);
-                  if (await canLaunchUrl(uri)) {
-                    await launchUrl(uri, mode: LaunchMode.externalApplication);
-                  }
-                },
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
                 child: Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Correction Detail',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                    ),
                   ),
-                  child: Row(
+                  Row(
                     children: [
-                      Icon(RemixIcons.file_text_line, color: AppColors.primary),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          docUrl.toString().split('/').last,
-                          style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600, fontSize: 12),
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                      IconButton(
+                        icon: const Icon(RemixIcons.refresh_line),
+                        tooltip: 'Refresh',
+                        onPressed: () {
+                          _fetchMyRequests(showLoading: false);
+                          Navigator.pop(ctx);
+                        },
                       ),
-                      const Icon(RemixIcons.external_link_line, size: 16, color: AppColors.primary),
+                      IconButton(icon: const Icon(RemixIcons.close_line), onPressed: () => Navigator.pop(ctx)),
                     ],
                   ),
-                ),
+                ],
+              ),
+              const Divider(),
+
+              Text('Date: $dateStr', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  const Text('Current Record: ', style: TextStyle(color: Colors.grey, fontSize: 13)),
+                  Flexible(
+                    child: Text(
+                      currentSt,
+                      style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.red),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  const Text('Requested: ', style: TextStyle(color: Colors.grey, fontSize: 13)),
+                  Flexible(
+                    child: Text(
+                      requestedSt,
+                      style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 14),
-            ],
 
-            Text('Status: $status', style: TextStyle(fontWeight: FontWeight.bold, color: _getStatusColor(status))),
-            const SizedBox(height: 2),
-            Text('Applied On: $appliedDateStr', style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
+              const Text('Reason:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+              const SizedBox(height: 4),
+              Text(reasonText, style: const TextStyle(fontSize: 13)),
+              const SizedBox(height: 14),
 
-            if (req['reviewNote'] != null && req['reviewNote'].toString().isNotEmpty) ...[
-              const SizedBox(height: 10),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(color: Colors.red.shade50, borderRadius: BorderRadius.circular(8)),
-                child: Text('HR Review Note: ${req['reviewNote']}', style: TextStyle(fontSize: 12, color: Colors.red.shade900)),
-              ),
-            ],
-
-            const SizedBox(height: 20),
-
-            if (status == 'REJECTED')
-              SizedBox(
-                width: double.infinity,
-                height: 44,
-                child: ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-                  icon: const Icon(RemixIcons.refresh_line, color: Colors.white, size: 16),
-                  label: const Text('Resubmit Request', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                  onPressed: () {
-                    Navigator.pop(ctx);
-                    if (req['attendanceDate'] != null) {
-                      final parsed = DateTime.tryParse(req['attendanceDate'].toString());
-                      if (parsed != null) {
-                        setState(() => _selectedDate = parsed);
+              if (docUrl != null && docUrl.isNotEmpty) ...[
+                const Text('Supporting Document:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                const SizedBox(height: 6),
+                InkWell(
+                  onTap: () async {
+                    try {
+                      final uri = Uri.parse(docUrl);
+                      if (await canLaunchUrl(uri)) {
+                        await launchUrl(uri, mode: LaunchMode.externalApplication);
                       }
+                    } catch (e) {
+                      debugPrint('Error launching doc url: $e');
                     }
-                    setState(() {
-                      _reasonController.text = req['reason'] ?? '';
-                    });
                   },
+                  child: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(RemixIcons.file_text_line, color: AppColors.primary),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            docUrl.split('/').last,
+                            style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600, fontSize: 12),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const Icon(RemixIcons.external_link_line, size: 16, color: AppColors.primary),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
-          ],
+                const SizedBox(height: 14),
+              ],
+
+              Text('Status: $status', style: TextStyle(fontWeight: FontWeight.bold, color: _getStatusColor(status))),
+              const SizedBox(height: 2),
+              Text('Applied On: $appliedDateStr', style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
+
+              if (reviewNoteText != null && reviewNoteText.isNotEmpty) ...[
+                const SizedBox(height: 10),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(color: Colors.red.shade50, borderRadius: BorderRadius.circular(8)),
+                  child: Text('HR Review Note: $reviewNoteText', style: TextStyle(fontSize: 12, color: Colors.red.shade900)),
+                ),
+              ],
+
+              const SizedBox(height: 20),
+
+              if (status.toUpperCase() == 'REJECTED')
+                SizedBox(
+                  width: double.infinity,
+                  height: 44,
+                  child: ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                    icon: const Icon(RemixIcons.refresh_line, color: Colors.white, size: 16),
+                    label: const Text('Resubmit Request', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      if (req['attendanceDate'] != null) {
+                        final parsed = DateTime.tryParse(req['attendanceDate'].toString());
+                        if (parsed != null) {
+                          setState(() => _selectedDate = parsed);
+                        }
+                      }
+                      setState(() {
+                        _reasonController.text = req['reason']?.toString() ?? '';
+                      });
+                    },
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );
@@ -405,12 +435,19 @@ class _AttendanceCorrectionViewState extends State<AttendanceCorrectionView> {
   }
 
   List<dynamic> get _filteredMyRequests {
-    if (_statusFilter == 'ALL') return _myRequests;
-    return _myRequests.where((r) => r['status'] == _statusFilter).toList();
+    final list = _myRequests;
+    if (_statusFilter == 'ALL') return list;
+    return list.where((r) {
+      if (r == null || r is! Map) return false;
+      return r['status']?.toString().toUpperCase() == _statusFilter.toUpperCase();
+    }).toList();
   }
 
   @override
   Widget build(BuildContext context) {
+    final currentError = _errorMessage;
+    final filteredList = _filteredMyRequests;
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -462,12 +499,14 @@ class _AttendanceCorrectionViewState extends State<AttendanceCorrectionView> {
                                 children: [
                                   Icon(RemixIcons.edit_box_line, color: AppColors.primary),
                                   const SizedBox(width: 8),
-                                  Text(
-                                    'Request Correction',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16,
-                                      color: AppColors.textPrimary,
+                                  Expanded(
+                                    child: Text(
+                                      'Request Correction',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
+                                        color: AppColors.textPrimary,
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -488,20 +527,23 @@ class _AttendanceCorrectionViewState extends State<AttendanceCorrectionView> {
                                   child: Row(
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
-                                      Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            'Select Date (Past 30 Days Only):',
-                                            style: TextStyle(fontSize: 11, color: AppColors.textSecondary, fontWeight: FontWeight.bold),
-                                          ),
-                                          const SizedBox(height: 2),
-                                          Text(
-                                            DateFormat('EEEE, dd MMM yyyy').format(_selectedDate),
-                                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
-                                          ),
-                                        ],
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              'Select Date (Past 30 Days Only):',
+                                              style: TextStyle(fontSize: 11, color: AppColors.textSecondary, fontWeight: FontWeight.bold),
+                                            ),
+                                            const SizedBox(height: 2),
+                                            Text(
+                                              DateFormat('EEEE, dd MMM yyyy').format(_selectedDate),
+                                              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                                            ),
+                                          ],
+                                        ),
                                       ),
+                                      const SizedBox(width: 8),
                                       Icon(RemixIcons.calendar_event_line, color: AppColors.primary),
                                     ],
                                   ),
@@ -516,7 +558,13 @@ class _AttendanceCorrectionViewState extends State<AttendanceCorrectionView> {
                                 child: Row(
                                   children: [
                                     Text('Current Status: ', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
-                                    Text(_currentStatus, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.red)),
+                                    Expanded(
+                                      child: Text(
+                                        _currentStatus,
+                                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.red),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
                                   ],
                                 ),
                               ),
@@ -581,7 +629,10 @@ class _AttendanceCorrectionViewState extends State<AttendanceCorrectionView> {
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Text('Supporting Doc (optional):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.textPrimary)),
+                                  Expanded(
+                                    child: Text('Supporting Doc (optional):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.textPrimary)),
+                                  ),
+                                  const SizedBox(width: 8),
                                   OutlinedButton.icon(
                                     onPressed: _pickDocument,
                                     icon: const Icon(RemixIcons.attachment_line, size: 14),
@@ -599,7 +650,7 @@ class _AttendanceCorrectionViewState extends State<AttendanceCorrectionView> {
                                     children: [
                                       Icon(RemixIcons.file_text_line, size: 16, color: AppColors.primary),
                                       const SizedBox(width: 8),
-                                       Expanded(child: Text(_pickedFile?.name ?? '', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textPrimary), overflow: TextOverflow.ellipsis)),
+                                      Expanded(child: Text(_pickedFile?.name ?? '', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textPrimary), overflow: TextOverflow.ellipsis)),
                                       IconButton(
                                         icon: const Icon(RemixIcons.close_circle_line, size: 16, color: Colors.red),
                                         onPressed: () => setState(() => _pickedFile = null),
@@ -636,8 +687,11 @@ class _AttendanceCorrectionViewState extends State<AttendanceCorrectionView> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text('My Correction Requests', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textPrimary)),
-                          Text('${_filteredMyRequests.length} Items', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                          Expanded(
+                            child: Text('My Correction Requests', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textPrimary)),
+                          ),
+                          const SizedBox(width: 8),
+                          Text('${filteredList.length} Items', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
                         ],
                       ),
                       const SizedBox(height: 10),
@@ -676,7 +730,7 @@ class _AttendanceCorrectionViewState extends State<AttendanceCorrectionView> {
                     ),
                   ),
                 )
-              else if (_errorMessage != null)
+              else if (currentError != null && currentError.isNotEmpty)
                 SliverPadding(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
                   sliver: SliverToBoxAdapter(
@@ -690,7 +744,7 @@ class _AttendanceCorrectionViewState extends State<AttendanceCorrectionView> {
                             Icon(RemixIcons.error_warning_line, color: Colors.red.shade700, size: 36),
                             const SizedBox(height: 8),
                             Text(
-                              _errorMessage!,
+                              currentError,
                               textAlign: TextAlign.center,
                               style: TextStyle(color: Colors.red.shade900, fontWeight: FontWeight.bold, fontSize: 13),
                             ),
@@ -710,7 +764,7 @@ class _AttendanceCorrectionViewState extends State<AttendanceCorrectionView> {
                     ),
                   ),
                 )
-              else if (_filteredMyRequests.isEmpty)
+              else if (filteredList.isEmpty)
                 SliverPadding(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
                   sliver: SliverToBoxAdapter(
@@ -747,10 +801,11 @@ class _AttendanceCorrectionViewState extends State<AttendanceCorrectionView> {
                   sliver: SliverList(
                     delegate: SliverChildBuilderDelegate(
                       (context, index) {
-                        final req = _filteredMyRequests[index];
-                        if (req == null) return const SizedBox.shrink();
+                        if (index < 0 || index >= filteredList.length) return null;
+                        final req = filteredList[index];
+                        if (req == null || req is! Map) return const SizedBox.shrink();
 
-                        final status = req['status'] ?? 'PENDING';
+                        final status = req['status']?.toString() ?? 'PENDING';
                         String dateStr = '';
                         if (req['attendanceDate'] != null) {
                           final parsed = DateTime.tryParse(req['attendanceDate'].toString());
@@ -758,6 +813,10 @@ class _AttendanceCorrectionViewState extends State<AttendanceCorrectionView> {
                             dateStr = DateFormat('dd MMM yyyy').format(parsed);
                           }
                         }
+
+                        final currentSt = req['currentStatus']?.toString() ?? 'ABSENT';
+                        final requestedSt = req['requestedStatus']?.toString() ?? 'PRESENT';
+                        final reasonText = req['reason']?.toString();
 
                         return Card(
                           margin: const EdgeInsets.only(bottom: 10),
@@ -768,14 +827,25 @@ class _AttendanceCorrectionViewState extends State<AttendanceCorrectionView> {
                             leading: CircleAvatar(
                               backgroundColor: _getStatusColor(status).withValues(alpha: 0.15),
                               child: Icon(
-                                status == 'APPROVED' ? RemixIcons.checkbox_circle_line : status == 'REJECTED' ? RemixIcons.close_circle_line : RemixIcons.time_line,
+                                status.toUpperCase() == 'APPROVED'
+                                    ? RemixIcons.checkbox_circle_line
+                                    : status.toUpperCase() == 'REJECTED'
+                                        ? RemixIcons.close_circle_line
+                                        : RemixIcons.time_line,
                                 color: _getStatusColor(status),
                               ),
                             ),
                             title: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text(dateStr, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textPrimary)),
+                                Expanded(
+                                  child: Text(
+                                    dateStr,
+                                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textPrimary),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                                   decoration: BoxDecoration(
@@ -798,17 +868,23 @@ class _AttendanceCorrectionViewState extends State<AttendanceCorrectionView> {
                               children: [
                                 const SizedBox(height: 4),
                                 Text(
-                                  '${req['currentStatus']} → ${req['requestedStatus']}',
+                                  '$currentSt → $requestedSt',
                                   style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.blueAccent),
                                 ),
-                                if (req['reason'] != null) Text('Reason: ${req['reason']}', style: TextStyle(fontSize: 12, color: AppColors.textSecondary), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                if (reasonText != null && reasonText.isNotEmpty)
+                                  Text(
+                                    'Reason: $reasonText',
+                                    style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                               ],
                             ),
                             trailing: Icon(RemixIcons.arrow_right_s_line, size: 18, color: AppColors.textSecondary),
                           ),
                         );
                       },
-                      childCount: _filteredMyRequests.length,
+                      childCount: filteredList.length,
                     ),
                   ),
                 ),
