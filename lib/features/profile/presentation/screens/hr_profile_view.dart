@@ -12,6 +12,7 @@ import 'package:quickboom_hrm/features/profile/presentation/screens/edit_profile
 import 'package:quickboom_hrm/features/profile/presentation/screens/theme_settings_view.dart';
 import 'package:quickboom_hrm/features/profile/presentation/screens/change_password_view.dart';
 import 'package:quickboom_hrm/features/profile/presentation/screens/hr_bank_edit_requests_view.dart';
+import 'package:quickboom_hrm/features/profile/presentation/screens/feature_access_view.dart';
 
 class HrProfileView extends ConsumerStatefulWidget {
   const HrProfileView({super.key});
@@ -192,6 +193,18 @@ class _HrProfileViewState extends ConsumerState<HrProfileView> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(builder: (context) => const ChangePasswordView()),
+                    );
+                  },
+                ),
+                _buildProfileOption(
+                  context,
+                  icon: RemixIcons.key_2_line,
+                  title: 'Feature Access & Requests',
+                  subtitle: 'Manage or request module permissions',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const FeatureAccessView()),
                     );
                   },
                 ),
