@@ -166,6 +166,7 @@ class HrExpenseViewModel extends StateNotifier<HrExpenseState> {
       reviewedBy: e['reviewedBy']?.toString(),
       reviewNote: e['reviewNote']?.toString(),
       hasReceipt: e['hasReceipt'] ?? false,
+      receiptPdfUrl: e['receiptPdfUrl']?.toString(),
     );
   }
 }

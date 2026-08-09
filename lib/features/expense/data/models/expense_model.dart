@@ -16,6 +16,7 @@ class ExpenseModel {
   final String? reviewedBy;
   final String? reviewNote;
   final bool hasReceipt;
+  final String? receiptPdfUrl;
 
   const ExpenseModel({
     required this.id,
@@ -31,6 +32,7 @@ class ExpenseModel {
     this.reviewedBy,
     this.reviewNote,
     this.hasReceipt = false,
+    this.receiptPdfUrl,
   });
 
   String get categoryLabel {

@@ -110,6 +110,7 @@ class ExpenseViewModel extends StateNotifier<ExpenseState> {
       reviewedBy: e['reviewedBy']?.toString(),
       reviewNote: e['reviewNote']?.toString(),
       hasReceipt: e['hasReceipt'] ?? false,
+      receiptPdfUrl: e['receiptPdfUrl']?.toString(),
     );
   }
 

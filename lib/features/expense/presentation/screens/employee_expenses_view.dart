@@ -8,6 +8,9 @@ import 'package:quickboom_hrm/features/auth/presentation/providers/auth_viewmode
 import 'package:quickboom_hrm/features/expense/presentation/providers/expense_viewmodel.dart';
 import 'package:quickboom_hrm/core/widgets/shimmer_loading.dart';
 
+import 'package:url_launcher/url_launcher.dart';
+import 'package:quickboom_hrm/core/constants/app_url.dart';
+
 class EmployeeExpensesView extends ConsumerStatefulWidget {
   const EmployeeExpensesView({super.key});
 
@@ -266,7 +269,35 @@ class _ExpenseCard extends StatelessWidget {
               ),
               Row(
                 children: [
-                  if (expense.hasReceipt) ...[
+                  if (expense.receiptPdfUrl != null && expense.receiptPdfUrl!.isNotEmpty) ...[
+                    InkWell(
+                      onTap: () => _openReceiptPdf(context, expense.receiptPdfUrl!),
+                      borderRadius: BorderRadius.circular(6),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: AppColors.success.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: AppColors.success.withValues(alpha: 0.3)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(RemixIcons.file_text_line, size: 12, color: AppColors.success),
+                            const SizedBox(width: 4),
+                            Text(
+                              '📄 Receipt',
+                              style: TextStyle(
+                                  color: AppColors.success,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w700),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                  ] else if (expense.hasReceipt) ...[
                     Icon(RemixIcons.bill_line,
                         size: 14, color: AppColors.info),
                     const SizedBox(width: 8),
@@ -293,6 +324,21 @@ class _ExpenseCard extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  void _openReceiptPdf(BuildContext context, String relativeUrl) async {
+    final fullUrl = relativeUrl.startsWith('http')
+        ? relativeUrl
+        : '${AppUrl.baseUrl}${relativeUrl.startsWith('/') ? '' : '/'}$relativeUrl';
+    final uri = Uri.parse(fullUrl);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not open receipt PDF: $fullUrl')),
+      );
+    }
   }
 
   Color _statusColor(ExpenseStatus s) {
