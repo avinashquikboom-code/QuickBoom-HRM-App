@@ -9,8 +9,11 @@ import 'package:quickboom_hrm/features/auth/presentation/providers/auth_viewmode
 import 'package:quickboom_hrm/features/expense/presentation/providers/expense_viewmodel.dart';
 import 'package:quickboom_hrm/core/widgets/shimmer_loading.dart';
 
-import 'package:url_launcher/url_launcher.dart';
+
 import 'package:quickboom_hrm/core/constants/app_url.dart';
+import 'package:http/http.dart' as http;
+import 'package:printing/printing.dart';
+import 'package:quickboom_hrm/core/services/api_service.dart';
 
 class EmployeeExpensesView extends ConsumerStatefulWidget {
   const EmployeeExpensesView({super.key});
@@ -342,13 +345,34 @@ class _ExpenseCard extends StatelessWidget {
     final fullUrl = relativeUrl.startsWith('http')
         ? relativeUrl
         : '${AppUrl.baseUrl}${relativeUrl.startsWith('/') ? '' : '/'}$relativeUrl';
-    final uri = Uri.parse(fullUrl);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } else {
+    
+    try {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Downloading receipt...'), duration: Duration(seconds: 1)),
+      );
+
+      final token = await ApiService.getToken();
+      final response = await http.get(
+        Uri.parse(fullUrl),
+        headers: token != null ? {'Authorization': 'Bearer $token'} : null,
+      );
+
+      if (!context.mounted) return;
+
+      if (response.statusCode == 200) {
+        await Printing.sharePdf(
+          bytes: response.bodyBytes,
+          filename: 'Expense_Receipt.pdf',
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to download receipt: HTTP ${response.statusCode}')),
+        );
+      }
+    } catch (e) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not open receipt PDF: $fullUrl')),
+        SnackBar(content: Text('Error downloading receipt: $e')),
       );
     }
   }
