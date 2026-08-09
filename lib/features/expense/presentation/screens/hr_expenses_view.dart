@@ -20,10 +20,10 @@ class _HrExpensesViewState extends ConsumerState<HrExpensesView>
   late final TabController _tabCtrl;
 
   static const _tabs = [
+    ('All', 'ALL', AppColors.primary),
     ('Pending', 'PENDING', AppColors.warning),
     ('Approved', 'APPROVED', AppColors.success),
     ('Rejected', 'REJECTED', AppColors.error),
-    ('All', 'ALL', AppColors.primary),
   ];
 
   @override
