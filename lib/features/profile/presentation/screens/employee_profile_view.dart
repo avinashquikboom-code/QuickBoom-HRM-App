@@ -17,7 +17,6 @@ import 'package:quickboom_hrm/features/profile/presentation/screens/theme_settin
 import 'package:quickboom_hrm/features/profile/presentation/screens/remote_work_history_view.dart';
 import 'package:quickboom_hrm/features/profile/presentation/screens/company_policies_view.dart';
 import 'package:quickboom_hrm/features/payroll/presentation/screens/employee_payroll_view.dart';
-import 'package:quickboom_hrm/features/profile/presentation/screens/feature_access_view.dart';
 
 class EmployeeProfileView extends ConsumerStatefulWidget {
   const EmployeeProfileView({super.key});
@@ -343,18 +342,6 @@ class _EmployeeProfileViewState extends ConsumerState<EmployeeProfileView> {
                   title: 'Quick Access',
                   icon: RemixIcons.link_m,
                   children: [
-                    _ActionRow(
-                      label: 'Feature Access & Requests',
-                      icon: RemixIcons.key_2_line,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const FeatureAccessView(),
-                          ),
-                        );
-                      },
-                    ),
                     _ActionRow(
                       label: 'Company Policies & Rules',
                       icon: RemixIcons.file_list_3_line,
