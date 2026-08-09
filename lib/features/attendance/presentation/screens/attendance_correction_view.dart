@@ -275,7 +275,7 @@ class _AttendanceCorrectionViewState extends State<AttendanceCorrectionView>
 
   // ─── Detail Modal ────────────────────────────────────────────────────────────
 
-  void _showDetailModal(dynamic req) {
+  void _showDetailModal(dynamic req, {bool isFromHistoryView = false}) {
     if (req == null || req is! Map) return;
     final status = req['status']?.toString() ?? 'PENDING';
     String dateStr = '';
@@ -541,7 +541,10 @@ class _AttendanceCorrectionViewState extends State<AttendanceCorrectionView>
                             color: Colors.white,
                             fontWeight: FontWeight.bold)),
                     onPressed: () {
-                      Navigator.pop(ctx);
+                      Navigator.pop(ctx); // Close bottom sheet
+                      if (isFromHistoryView) {
+                        Navigator.pop(context); // Close history view to return to form
+                      }
                       if (req['attendanceDate'] != null) {
                         final parsed = DateTime.tryParse(
                             req['attendanceDate'].toString());
@@ -554,6 +557,9 @@ class _AttendanceCorrectionViewState extends State<AttendanceCorrectionView>
                         _resubmitRequestId = req['id']?.toString();
                         _previousRejectionReason = reviewNoteText;
                       });
+                      
+                      // Show toast message to guide the user
+                      _showSnack('Form ready for resubmission. Please provide a new reason and submit.');
                     },
                   ),
                 ),
@@ -592,7 +598,7 @@ class _AttendanceCorrectionViewState extends State<AttendanceCorrectionView>
                         builder: (_) => AttendanceCorrectionHistoryView(
                           requests: _myRequests,
                           onRefresh: () => _fetchMyRequests(showLoading: true),
-                          onShowDetail: _showDetailModal,
+                          onShowDetail: (req) => _showDetailModal(req, isFromHistoryView: true),
                         ),
                       ),
                     ),
