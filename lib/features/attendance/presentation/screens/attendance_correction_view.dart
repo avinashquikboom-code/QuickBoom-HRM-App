@@ -543,7 +543,7 @@ class _AttendanceCorrectionViewState extends State<AttendanceCorrectionView>
                     onPressed: () {
                       Navigator.pop(ctx); // Close bottom sheet
                       if (isFromHistoryView) {
-                        Navigator.pop(context); // Close history view to return to form
+                        Navigator.of(context).pop(); // Close HistoryView to reveal the form
                       }
                       if (req['attendanceDate'] != null) {
                         final parsed = DateTime.tryParse(
