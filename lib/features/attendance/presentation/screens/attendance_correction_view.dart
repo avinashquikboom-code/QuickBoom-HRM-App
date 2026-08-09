@@ -74,6 +74,9 @@ class _AttendanceCorrectionViewState extends State<AttendanceCorrectionView>
   bool _isLoadingRequests = true;
   bool _isSubmitting = false;
   List<dynamic> _myRequests = [];
+  
+  String? _resubmitRequestId;
+  String? _previousRejectionReason;
 
   Timer? _pollingTimer;
   late final AnimationController _formAnimCtrl;
@@ -194,10 +197,14 @@ class _AttendanceCorrectionViewState extends State<AttendanceCorrectionView>
             'data:image/jpeg;base64,${base64Encode(bytes)}';
       }
 
+      final isResubmitting = _resubmitRequestId != null;
+      final endpoint = isResubmitting 
+          ? '/api/mobile/attendance/correction-request/resubmit/$_resubmitRequestId'
+          : '/api/mobile/attendance/correction-request';
+
       final response = await http
           .post(
-            Uri.parse(
-                '${AppUrl.baseUrl}/api/mobile/attendance/correction-request'),
+            Uri.parse('${AppUrl.baseUrl}$endpoint'),
             headers: {
               'Authorization': 'Bearer $token',
               'Content-Type': 'application/json',
@@ -217,9 +224,15 @@ class _AttendanceCorrectionViewState extends State<AttendanceCorrectionView>
       if (response.statusCode == 200 &&
           data is Map &&
           data['success'] == true) {
-        _showSnack('Request submitted! HR will review within 24 hours.');
+        _showSnack(isResubmitting 
+            ? 'Request resubmitted! HR will review within 24 hours.' 
+            : 'Request submitted! HR will review within 24 hours.');
         _reasonController.clear();
-        setState(() => _pickedFile = null);
+        setState(() {
+          _pickedFile = null;
+          _resubmitRequestId = null;
+          _previousRejectionReason = null;
+        });
         _fetchMyRequests();
       } else {
         final errMsg =
@@ -537,8 +550,9 @@ class _AttendanceCorrectionViewState extends State<AttendanceCorrectionView>
                         }
                       }
                       setState(() {
-                        _reasonController.text =
-                            req['reason']?.toString() ?? '';
+                        _reasonController.text = ''; // Let them enter a new reason
+                        _resubmitRequestId = req['id']?.toString();
+                        _previousRejectionReason = reviewNoteText;
                       });
                     },
                   ),
@@ -702,7 +716,7 @@ class _AttendanceCorrectionViewState extends State<AttendanceCorrectionView>
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('New Correction Request',
+                      Text(_resubmitRequestId != null ? 'Resubmit Correction Request' : 'New Correction Request',
                           style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w800,
@@ -724,16 +738,43 @@ class _AttendanceCorrectionViewState extends State<AttendanceCorrectionView>
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Date picker
+                if (_resubmitRequestId != null && _previousRejectionReason != null) ...[
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: AppColors.error.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(RemixIcons.error_warning_fill, color: AppColors.error, size: 16),
+                            const SizedBox(width: 8),
+                            Text('Previous Rejection Reason', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.error, fontSize: 13)),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        Text(_previousRejectionReason!, style: TextStyle(color: AppColors.textPrimary, fontSize: 13)),
+                      ],
+                    ),
+                  ),
+                ],
+                // 1) Date Picker Field
                 _SectionLabel(label: 'Date'),
                 const SizedBox(height: 6),
                 GestureDetector(
-                  onTap: _pickDate,
+                  onTap: _resubmitRequestId != null ? null : _pickDate,
                   child: Container(
                     padding: const EdgeInsets.symmetric(
                         horizontal: 14, vertical: 14),
                     decoration: BoxDecoration(
-                      color: AppColors.background,
+                      color: _resubmitRequestId != null 
+                          ? AppColors.cardBorder.withValues(alpha: 0.3) 
+                          : AppColors.background,
                       borderRadius: BorderRadius.circular(14),
                       border:
                           Border.all(color: AppColors.cardBorder),
@@ -992,15 +1033,15 @@ class _AttendanceCorrectionViewState extends State<AttendanceCorrectionView>
                                   color: Colors.white,
                                   strokeWidth: 2),
                             )
-                          : const Row(
+                          : Row(
                               mainAxisAlignment:
                                   MainAxisAlignment.center,
                               children: [
-                                Icon(RemixIcons.send_plane_fill,
+                                const Icon(RemixIcons.send_plane_fill,
                                     color: Colors.white, size: 16),
-                                SizedBox(width: 8),
-                                Text('Submit Request',
-                                    style: TextStyle(
+                                const SizedBox(width: 8),
+                                Text(_resubmitRequestId != null ? 'Resubmit Request' : 'Submit Request',
+                                    style: const TextStyle(
                                         fontWeight: FontWeight.w700,
                                         fontSize: 15,
                                         color: Colors.white)),

@@ -7,6 +7,9 @@ import 'package:http/http.dart' as http;
 import 'package:quickboom_hrm/core/constants/app_url.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:quickboom_hrm/core/services/storage_service.dart';
+import 'package:flutter/material.dart';
+import 'package:quickboom_hrm/core/services/notification_service.dart' as quickboom_notification;
+import 'package:quickboom_hrm/features/auth/presentation/screens/login_view.dart' as quickboom_login;
 
 // Enhanced logging utility
 class ApiLogger {
@@ -382,7 +385,10 @@ class ApiService {
   static Future<bool> _tryRefreshToken() async {
     try {
       final refreshToken = await StorageService.getRefreshToken();
-      if (refreshToken == null || refreshToken.isEmpty) return false;
+      if (refreshToken == null || refreshToken.isEmpty) {
+        _forceLogout();
+        return false;
+      }
 
       final path = AppUrl.refreshToken;
       final url = Uri.parse('$_baseUrl$path');
@@ -394,7 +400,7 @@ class ApiService {
         url,
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(body),
-      );
+      ).timeout(defaultTimeout);
 
       ApiLogger.logResponse('POST', path, response.statusCode, response.body);
 
@@ -412,6 +418,22 @@ class ApiService {
     } catch (e) {
       ApiLogger.logError('POST', AppUrl.refreshToken, e.toString());
     }
+    
+    // If we reach here, refresh failed.
+    _forceLogout();
     return false;
+  }
+
+  static void _forceLogout() {
+    StorageService.clearSessionData();
+    try {
+      final context = quickboom_notification.NotificationService.navigatorKey.currentContext;
+      if (context != null && context.mounted) {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const quickboom_login.LoginView()),
+          (route) => false,
+        );
+      }
+    } catch (_) {}
   }
 }
