@@ -288,4 +288,10 @@ class AppUrl {
   // Employee – Wallet (NEW)
   // ─────────────────────────────────────────────
   static const String employeeWallet = '/api/employee/wallet';
+
+  // ─────────────────────────────────────────────
+  // Mobile – Permissions
+  // ─────────────────────────────────────────────
+  static const String permissionsMe = '/api/permissions/me';
+  static const String permissionRequest = '/api/permissions/request';
 }

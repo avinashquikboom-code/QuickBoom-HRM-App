@@ -10,6 +10,8 @@ import 'package:quickboom_hrm/features/expense/presentation/providers/expense_vi
 import 'package:quickboom_hrm/core/widgets/shimmer_loading.dart';
 
 
+import 'package:quickboom_hrm/core/widgets/permission_protected_widget.dart';
+import 'package:quickboom_hrm/core/services/permission_service.dart';
 import 'package:quickboom_hrm/core/constants/app_url.dart';
 import 'package:http/http.dart' as http;
 import 'package:printing/printing.dart';
@@ -27,6 +29,7 @@ class _EmployeeExpensesViewState extends ConsumerState<EmployeeExpensesView> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(expenseViewModelProvider);
+    final user = ref.watch(authViewModelProvider).currentUser;
 
     ref.listen<ExpenseState>(expenseViewModelProvider, (prev, next) {
       if (next.successMessage != null) {
@@ -56,12 +59,17 @@ class _EmployeeExpensesViewState extends ConsumerState<EmployeeExpensesView> {
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showAddExpenseSheet(context),
-        backgroundColor: AppColors.primary,
-        icon: Icon(RemixIcons.add_line, color: Colors.white),
-        label: const Text('Claim Expense',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+      floatingActionButton: PermissionProtectedWidget(
+        user: user,
+        permission: PermissionService.canSubmitExpenseClaim,
+        moduleName: 'Submit Expense Claim',
+        child: FloatingActionButton.extended(
+          onPressed: () => _showAddExpenseSheet(context),
+          backgroundColor: AppColors.primary,
+          icon: const Icon(RemixIcons.add_line, color: Colors.white),
+          label: const Text('Claim Expense',
+              style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+        ),
       ),
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(),

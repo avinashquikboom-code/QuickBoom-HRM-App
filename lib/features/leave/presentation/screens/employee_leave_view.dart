@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:remixicon/remixicon.dart';
 import 'package:quickboom_hrm/core/constants/app_colors.dart';
+import 'package:quickboom_hrm/core/widgets/permission_protected_widget.dart';
+import 'package:quickboom_hrm/core/services/permission_service.dart';
 import 'package:quickboom_hrm/features/leave/data/models/leave_request_model.dart';
 import 'package:quickboom_hrm/features/auth/presentation/providers/auth_viewmodel.dart';
 import 'package:quickboom_hrm/features/leave/presentation/providers/leave_viewmodel.dart';
@@ -19,6 +21,7 @@ class _EmployeeLeaveViewState extends ConsumerState<EmployeeLeaveView> {
   @override
   Widget build(BuildContext context) {
     final leaveState = ref.watch(leaveViewModelProvider);
+    final user = ref.watch(authViewModelProvider).currentUser;
 
     // Show success snackbar
     ref.listen<LeaveState>(leaveViewModelProvider, (prev, next) {
@@ -60,13 +63,18 @@ class _EmployeeLeaveViewState extends ConsumerState<EmployeeLeaveView> {
       resizeToAvoidBottomInset: false,
       floatingActionButton: Padding(
         padding: const EdgeInsets.only(bottom: 75),
-        child: FloatingActionButton.extended(
-          onPressed: () => _showApplyLeaveSheet(context),
-          backgroundColor: AppColors.primary,
-          icon: Icon(RemixIcons.add_line, color: Colors.white),
-          label: const Text(
-            'Apply Leave',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+        child: PermissionProtectedWidget(
+          user: user,
+          permission: PermissionService.canApplyLeave,
+          moduleName: 'Apply Leave',
+          child: FloatingActionButton.extended(
+            onPressed: () => _showApplyLeaveSheet(context),
+            backgroundColor: AppColors.primary,
+            icon: const Icon(RemixIcons.add_line, color: Colors.white),
+            label: const Text(
+              'Apply Leave',
+              style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+            ),
           ),
         ),
       ),

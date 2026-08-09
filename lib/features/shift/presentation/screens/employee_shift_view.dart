@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:quickboom_hrm/core/constants/app_colors.dart';
+import 'package:quickboom_hrm/core/widgets/permission_protected_widget.dart';
+import 'package:quickboom_hrm/core/services/permission_service.dart';
 import 'package:remixicon/remixicon.dart';
 import 'package:quickboom_hrm/features/shift/presentation/providers/shift_viewmodel.dart';
 import 'package:quickboom_hrm/features/auth/presentation/providers/auth_viewmodel.dart';
@@ -324,33 +326,38 @@ class EmployeeShiftView extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: hasPendingRequest ? AppColors.warning.withValues(alpha: 0.12) : AppColors.primary,
-                  foregroundColor: hasPendingRequest ? AppColors.warning : Colors.white,
-                  elevation: 0,
-                  shadowColor: Colors.transparent,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  side: hasPendingRequest ? const BorderSide(color: AppColors.warning) : BorderSide.none,
-                ),
-                onPressed: () {
-                  showModalBottomSheet(
-                    context: context,
-                    isScrollControlled: true,
-                    backgroundColor: Colors.transparent,
-                    builder: (_) => _RequestShiftChangeSheet(
-                      currentShiftName: myAssignment?.shift.name ?? 'None',
-                      hasPendingRequest: hasPendingRequest,
-                    ),
-                  );
-                },
-                icon: Icon(hasPendingRequest ? RemixIcons.time_line : RemixIcons.refresh_line, size: 18),
-                label: Text(
-                  hasPendingRequest ? 'Shift Request Pending HR Approval' : 'Request Shift Change',
-                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+            PermissionProtectedWidget(
+              user: user,
+              permission: PermissionService.canRequestShiftChange,
+              moduleName: 'Request Shift Change',
+              child: SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: hasPendingRequest ? AppColors.warning.withValues(alpha: 0.12) : AppColors.primary,
+                    foregroundColor: hasPendingRequest ? AppColors.warning : Colors.white,
+                    elevation: 0,
+                    shadowColor: Colors.transparent,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    side: hasPendingRequest ? const BorderSide(color: AppColors.warning) : BorderSide.none,
+                  ),
+                  onPressed: () {
+                    showModalBottomSheet(
+                      context: context,
+                      isScrollControlled: true,
+                      backgroundColor: Colors.transparent,
+                      builder: (_) => _RequestShiftChangeSheet(
+                        currentShiftName: myAssignment?.shift.name ?? 'None',
+                        hasPendingRequest: hasPendingRequest,
+                      ),
+                    );
+                  },
+                  icon: Icon(hasPendingRequest ? RemixIcons.time_line : RemixIcons.refresh_line, size: 18),
+                  label: Text(
+                    hasPendingRequest ? 'Shift Request Pending HR Approval' : 'Request Shift Change',
+                    style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                  ),
                 ),
               ),
             ),

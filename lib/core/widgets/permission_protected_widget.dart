@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:quickboom_hrm/core/constants/app_colors.dart';
 import 'package:quickboom_hrm/core/services/permission_service.dart';
+import 'package:quickboom_hrm/core/widgets/request_access_dialog.dart';
 import 'package:quickboom_hrm/features/auth/data/models/user_model.dart';
 
 class PermissionProtectedWidget extends StatelessWidget {
@@ -34,30 +34,13 @@ class PermissionProtectedWidget extends StatelessWidget {
       return child;
     }
 
-    // Disabled mode UI + Lock Badge + SnackBar Toast on tap
+    // Disabled mode UI + Lock Badge + Request Access Dialog on tap
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () {
-        ScaffoldMessenger.of(context).hideCurrentSnackBar();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.lock_outline, color: Colors.white, size: 20),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    'Access Restricted: You do not have permission to access $moduleName. Contact HR.',
-                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
-                  ),
-                ),
-              ],
-            ),
-            backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            duration: const Duration(seconds: 3),
-          ),
+        showDialog(
+          context: context,
+          builder: (ctx) => RequestAccessDialog(featureName: moduleName),
         );
       },
       child: Stack(
