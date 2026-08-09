@@ -17,8 +17,11 @@ class FeatureProtectedWidget extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Watch the provider state to rebuild when API completes
+    ref.watch(featureAccessProvider);
+    
     final feature = ref
-        .watch(featureAccessProvider.notifier)
+        .read(featureAccessProvider.notifier)
         .getFeature(featureName);
 
     // If not found or enabled, pass through normally

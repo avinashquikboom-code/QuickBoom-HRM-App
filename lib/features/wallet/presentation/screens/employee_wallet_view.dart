@@ -883,11 +883,11 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
   Widget _buildCommissionTab() {
     final netSales = _commissionData.fold<double>(
       0.0,
-      (sum, item) => sum + (item['netSales'] as num).toDouble(),
+      (sum, item) => sum + ((item['netSales'] as num?)?.toDouble() ?? 0.0),
     );
     final commissionEarned = _commissionData.fold<double>(
       0.0,
-      (sum, item) => sum + (item['commissionAmount'] as num).toDouble(),
+      (sum, item) => sum + ((item['commissionAmount'] as num?)?.toDouble() ?? 0.0),
     );
 
     return RefreshIndicator(
@@ -1385,6 +1385,7 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
                   Expanded(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
                           'Advance Limit',
@@ -1420,6 +1421,7 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
                       borderRadius: BorderRadius.circular(16),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
                             'Pending Claims',
@@ -1717,7 +1719,8 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
     final presentDays = (details['presentDays'] as num?)?.toInt() ?? 20;
     final halfDays = (details['halfDays'] as num?)?.toInt() ?? 2;
     final leaveDays = (details['leaveDays'] as num?)?.toInt() ?? 3;
-    final workingDays = (details['workingDays'] as num?)?.toInt() ?? 25;
+    final int rawWorkingDays = (details['workingDays'] as num?)?.toInt() ?? 25;
+    final workingDays = rawWorkingDays > 0 ? rawWorkingDays : 25;
 
     final monthNames = [
       'January', 'February', 'March', 'April', 'May', 'June',
