@@ -53,9 +53,12 @@ class HrExpenseViewModel extends StateNotifier<HrExpenseState> {
     fetchExpenses();
   }
 
-  Future<void> fetchExpenses() async {
+  Future<void> fetchExpenses({String status = 'ALL'}) async {
     try {
-      final res = await ApiService.get(AppUrl.hrExpenses);
+      final url = status == 'ALL'
+          ? AppUrl.hrExpenses
+          : '${AppUrl.hrExpenses}?status=$status';
+      final res = await ApiService.get(url);
       final data = jsonDecode(res.body);
       final List rawExpenses = data['expenses'] ?? [];
       final expenses = rawExpenses.map((e) => _parseExpense(e)).toList();

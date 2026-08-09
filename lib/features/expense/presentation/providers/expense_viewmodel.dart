@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:quickboom_hrm/core/services/api_service.dart';
 import 'package:quickboom_hrm/core/constants/app_url.dart';
 import 'package:quickboom_hrm/features/expense/data/models/expense_model.dart';
@@ -110,7 +112,8 @@ class ExpenseViewModel extends StateNotifier<ExpenseState> {
       reviewedBy: e['reviewedBy']?.toString(),
       reviewNote: e['reviewNote']?.toString(),
       hasReceipt: e['hasReceipt'] ?? false,
-      receiptPdfUrl: e['receiptPdfUrl']?.toString(),
+      // Prefer the generated PDF receipt; fall back to the raw upload URL
+      receiptPdfUrl: (e['receiptPdfUrl'] ?? e['receiptUrl'])?.toString(),
     );
   }
 
@@ -139,17 +142,35 @@ class ExpenseViewModel extends StateNotifier<ExpenseState> {
     required double amount,
     required String description,
     required DateTime date,
+    XFile? receiptFile, // actual picked file from image_picker
     bool hasReceipt = false,
   }) async {
     state = state.copyWith(isSubmitting: true, clearMessages: true);
     try {
-      final categoryStr = category.toString().split('.').last; // e.g. "travel"
+      final categoryStr = category.toString().split('.').last;
+
+      // Convert receipt image to base64 if a file was selected
+      String? imageBase64;
+      if (receiptFile != null) {
+        final bytes = await File(receiptFile.path).readAsBytes();
+        final ext = receiptFile.path.split('.').last.toLowerCase();
+        final String mime;
+        if (ext == 'png') {
+          mime = 'image/png';
+        } else if (ext == 'pdf') {
+          mime = 'application/pdf';
+        } else {
+          mime = 'image/jpeg';
+        }
+        imageBase64 = 'data:$mime;base64,${base64Encode(bytes)}';
+      }
+
       final res = await ApiService.post(AppUrl.employeeExpenses, {
         'category': categoryStr,
         'amount': amount,
         'description': description,
         'date': date.toIso8601String(),
-        'imageBase64': null, // for potential picture receipt base64 data
+        'imageBase64': imageBase64, // null if no receipt selected
       });
       final data = jsonDecode(res.body);
       final newExpense = _parseExpense(data['expense']);

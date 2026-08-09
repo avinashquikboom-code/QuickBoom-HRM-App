@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:remixicon/remixicon.dart';
 import 'package:quickboom_hrm/core/constants/app_colors.dart';
@@ -397,7 +398,46 @@ class _AddExpenseSheetState extends ConsumerState<_AddExpenseSheet> {
   final _descCtrl = TextEditingController();
   ExpenseCategory _category = ExpenseCategory.travel;
   DateTime _date = DateTime.now();
-  bool _hasReceipt = false;
+  XFile? _receiptFile; // ← actual picked file
+  final _picker = ImagePicker();
+
+  Future<void> _pickReceipt() async {
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Wrap(
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt_outlined),
+              title: const Text('Take Photo'),
+              onTap: () => Navigator.pop(ctx, ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined),
+              title: const Text('Choose from Gallery'),
+              onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+            ),
+            if (_receiptFile != null)
+              ListTile(
+                leading: Icon(Icons.delete_outline, color: AppColors.error),
+                title: Text('Remove Receipt', style: TextStyle(color: AppColors.error)),
+                onTap: () {
+                  setState(() => _receiptFile = null);
+                  Navigator.pop(ctx);
+                },
+              ),
+          ],
+        ),
+      ),
+    );
+    if (source == null) return;
+    final file = await _picker.pickImage(
+      source: source,
+      imageQuality: 80,
+      maxWidth: 1920,
+    );
+    if (file != null) setState(() => _receiptFile = file);
+  }
 
   Future<void> _submit() async {
     final amount = double.tryParse(_amountCtrl.text.trim()) ?? 0;
@@ -415,7 +455,7 @@ class _AddExpenseSheetState extends ConsumerState<_AddExpenseSheet> {
           amount: amount,
           description: _descCtrl.text.trim(),
           date: _date,
-          hasReceipt: _hasReceipt,
+          receiptFile: _receiptFile, // ← pass the picked file
         );
 
     if (mounted) Navigator.pop(context);
@@ -524,16 +564,58 @@ class _AddExpenseSheetState extends ConsumerState<_AddExpenseSheet> {
               ],
             ),
 
-            // Receipt
-            Row(
-              children: [
-                Checkbox(
-                  value: _hasReceipt,
-                  onChanged: (v) => setState(() => _hasReceipt = v ?? false),
-                  activeColor: AppColors.primary,
+            // Receipt picker
+            GestureDetector(
+              onTap: _pickReceipt,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                decoration: BoxDecoration(
+                  color: _receiptFile != null
+                      ? AppColors.success.withValues(alpha: 0.08)
+                      : AppColors.surface,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: _receiptFile != null
+                        ? AppColors.success.withValues(alpha: 0.4)
+                        : AppColors.cardBorder,
+                  ),
                 ),
-                const Text('Attach Receipt'),
-              ],
+                child: Row(
+                  children: [
+                    Icon(
+                      _receiptFile != null
+                          ? RemixIcons.checkbox_circle_fill
+                          : RemixIcons.attachment_2,
+                      size: 18,
+                      color: _receiptFile != null ? AppColors.success : AppColors.textHint,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        _receiptFile != null
+                            ? _receiptFile!.name
+                            : 'Tap to attach receipt (photo / gallery)',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: _receiptFile != null
+                              ? AppColors.success
+                              : AppColors.textSecondary,
+                          fontWeight: _receiptFile != null
+                              ? FontWeight.w600
+                              : FontWeight.normal,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (_receiptFile != null)
+                      GestureDetector(
+                        onTap: () => setState(() => _receiptFile = null),
+                        child: Icon(Icons.close, size: 16, color: AppColors.textHint),
+                      ),
+                  ],
+                ),
+              ),
             ),
 
             const SizedBox(height: 20),

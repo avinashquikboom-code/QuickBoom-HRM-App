@@ -483,6 +483,7 @@ class _AttendanceCorrectionViewState extends State<AttendanceCorrectionView> {
                 padding: const EdgeInsets.all(16.0),
                 sliver: SliverToBoxAdapter(
                   child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // New Request Form Card
