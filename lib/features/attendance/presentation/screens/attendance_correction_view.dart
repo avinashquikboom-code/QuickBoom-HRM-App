@@ -78,6 +78,7 @@ class _AttendanceCorrectionViewState extends State<AttendanceCorrectionView>
   String? _resubmitRequestId;
   String? _previousRejectionReason;
 
+  final ScrollController _scrollController = ScrollController();
   Timer? _pollingTimer;
   late final AnimationController _formAnimCtrl;
   late final Animation<double> _formFade;
@@ -103,6 +104,7 @@ class _AttendanceCorrectionViewState extends State<AttendanceCorrectionView>
     _pollingTimer?.cancel();
     _reasonController.dispose();
     _formAnimCtrl.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -552,10 +554,23 @@ class _AttendanceCorrectionViewState extends State<AttendanceCorrectionView>
                           setState(() => _selectedDate = parsed);
                         }
                       }
+                      if (req['requestedStatus'] != null) {
+                        setState(() => _requestedStatus = req['requestedStatus'].toString());
+                      }
                       setState(() {
                         _reasonController.text = ''; // Let them enter a new reason
                         _resubmitRequestId = req['id']?.toString();
                         _previousRejectionReason = reviewNoteText;
+                      });
+
+                      Future.delayed(const Duration(milliseconds: 300), () {
+                        if (_scrollController.hasClients) {
+                          _scrollController.animateTo(
+                            220.0,
+                            duration: const Duration(milliseconds: 400),
+                            curve: Curves.easeInOut,
+                          );
+                        }
                       });
                       
                       // Show toast message to guide the user
@@ -584,6 +599,7 @@ class _AttendanceCorrectionViewState extends State<AttendanceCorrectionView>
           color: AppColors.primary,
           onRefresh: () => _fetchMyRequests(showLoading: true),
           child: CustomScrollView(
+            controller: _scrollController,
             physics: const AlwaysScrollableScrollPhysics(),
             slivers: [
               // ── My Requests Summary Card ─────────────────────────────────
