@@ -450,6 +450,19 @@ class _ComprehensiveAttendanceViewState extends ConsumerState<ComprehensiveAtten
   }
 
   Widget _timeBadge(String label, String? time, Color color) {
+    String formatted = '--';
+    if (time != null && time.isNotEmpty) {
+      if (RegExp(r'(AM|PM)', caseSensitive: false).hasMatch(time)) {
+        formatted = time.trim();
+      } else {
+        final parsed = DateTime.tryParse(time);
+        if (parsed != null) {
+          formatted = DateFormat('hh:mm a').format(parsed.toLocal());
+        } else {
+          formatted = time;
+        }
+      }
+    }
     return Container(
       margin: const EdgeInsets.only(right: 8),
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -457,7 +470,7 @@ class _ComprehensiveAttendanceViewState extends ConsumerState<ComprehensiveAtten
         color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
       ),
-      child: Text('$label: ${time != null ? DateFormat('HH:mm').format(DateTime.parse(time)) : '--'}',
+      child: Text('$label: $formatted',
           style: TextStyle(fontSize: 12, color: color, fontWeight: FontWeight.w500)),
     );
   }

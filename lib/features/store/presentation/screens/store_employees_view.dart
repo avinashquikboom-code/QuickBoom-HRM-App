@@ -574,16 +574,18 @@ class _EmployeeCard extends StatelessWidget {
   }
 
   String _formatTime(String raw) {
-    // raw might be 'HH:mm:ss' or ISO
-    if (raw.contains('T')) {
-      final dt = DateTime.tryParse(raw);
-      if (dt != null) {
-        final h = dt.toLocal().hour;
-        final m = dt.toLocal().minute.toString().padLeft(2, '0');
-        final period = h >= 12 ? 'PM' : 'AM';
-        final hr = (h > 12 ? h - 12 : h == 0 ? 12 : h).toString();
-        return '$hr:$m $period';
-      }
+    if (raw.isEmpty) return '--';
+    if (RegExp(r'(AM|PM)', caseSensitive: false).hasMatch(raw)) {
+      return raw.trim();
+    }
+    final dt = DateTime.tryParse(raw);
+    if (dt != null) {
+      final local = dt.toLocal();
+      final h = local.hour;
+      final m = local.minute.toString().padLeft(2, '0');
+      final period = h >= 12 ? 'PM' : 'AM';
+      final hr = (h > 12 ? h - 12 : h == 0 ? 12 : h).toString();
+      return '$hr:$m $period';
     }
     return raw.length >= 5 ? raw.substring(0, 5) : raw;
   }
