@@ -23,6 +23,8 @@ import 'package:quickboom_hrm/features/payroll/presentation/screens/employee_pay
 import 'package:quickboom_hrm/features/wallet/presentation/screens/request_advance_view.dart';
 import 'package:quickboom_hrm/screens/commission/commission_detail_screen.dart';
 import 'package:quickboom_hrm/core/services/mobile_commission_service.dart';
+import 'package:quickboom_hrm/core/services/websocket_service.dart';
+import 'dart:async';
 
 class EmployeeWalletView extends ConsumerStatefulWidget {
   const EmployeeWalletView({super.key});
@@ -77,6 +79,8 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
     _fetchCommissionReport();
   }
 
+  StreamSubscription? _commissionSub;
+
   @override
   void initState() {
     super.initState();
@@ -88,6 +92,19 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
     });
 
     _loadWalletData();
+
+    _commissionSub = WebSocketService().commissionUpdates.listen((_) {
+      if (mounted) {
+        _loadWalletData();
+        _fetchCommissionReport();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _commissionSub?.cancel();
+    super.dispose();
   }
 
   Future<void> _fetchSalarySlip() async {
