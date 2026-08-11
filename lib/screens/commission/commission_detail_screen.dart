@@ -428,6 +428,7 @@ class _MetaRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             label,
@@ -437,12 +438,18 @@ class _MetaRow extends StatelessWidget {
               fontWeight: FontWeight.w500,
             ),
           ),
-          Text(
-            value,
-            style: TextStyle(
-              color: valueColor ?? AppColors.textPrimary,
-              fontSize: isHighlight ? 14 : 12.5,
-              fontWeight: isHighlight ? FontWeight.w800 : FontWeight.w600,
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              value,
+              textAlign: TextAlign.right,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: valueColor ?? AppColors.textPrimary,
+                fontSize: isHighlight ? 13.5 : 12.5,
+                fontWeight: isHighlight ? FontWeight.w800 : FontWeight.w600,
+              ),
             ),
           ),
         ],

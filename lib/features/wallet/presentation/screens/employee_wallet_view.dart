@@ -1318,13 +1318,40 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
                       );
                     }
 
+                    // Strict local device IST date filter
+                    final startDay = startStr.split('T')[0];
+                    final endDay = endStr.split('T')[0];
+                    final filteredList = rawList.where((tx) {
+                      final dateStr = tx['createdAt'] ?? tx['date'];
+                      if (dateStr == null) return true;
+                      final txDateLocal = DateTime.parse(dateStr.toString()).toLocal();
+                      final txDayStr = DateFormat('yyyy-MM-dd').format(txDateLocal);
+                      if (startDay == endDay) {
+                        return txDayStr == startDay;
+                      }
+                      return txDayStr.compareTo(startDay) >= 0 && txDayStr.compareTo(endDay) <= 0;
+                    }).toList();
+
+                    if (filteredList.isEmpty) {
+                      return Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(RemixIcons.receipt_line, size: 40, color: AppColors.textHint),
+                            const SizedBox(height: 8),
+                            Text('No invoices recorded for this period', style: TextStyle(color: AppColors.textSecondary)),
+                          ],
+                        ),
+                      );
+                    }
+
                     return ListView.separated(
                       padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
                       physics: const BouncingScrollPhysics(),
-                      itemCount: rawList.length,
+                      itemCount: filteredList.length,
                       separatorBuilder: (context, index) => const SizedBox(height: 10),
                       itemBuilder: (context, idx) {
-                        final tx = rawList[idx];
+                        final tx = filteredList[idx];
                         final billId = tx['billId'] ?? tx['invoiceNumber'] ?? 'TXN-${tx['id']}';
                         final amount = (tx['saleAmount'] ?? tx['amount'] ?? 0.0).toDouble();
                         final comm = (tx['commissionAmount'] ?? tx['commission'] ?? 0.0).toDouble();
