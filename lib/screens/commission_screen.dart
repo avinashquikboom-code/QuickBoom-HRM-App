@@ -8,19 +8,19 @@ import 'package:quickboom_hrm/screens/commission/commission_detail_screen.dart';
 class _PeriodOption {
   final String id;
   final String label;
-  final String billPeriod; // sent to /bills API
-  const _PeriodOption(this.id, this.label, this.billPeriod);
+  final IconData icon;
+  final String billPeriod;
+  const _PeriodOption(this.id, this.label, this.icon, this.billPeriod);
 }
 
 const List<_PeriodOption> _periods = [
-  _PeriodOption('today',         'Today',       'today'),
-  _PeriodOption('thisWeek',      'This Week',   'this_week'),
-  _PeriodOption('thisMonth',     'This Month',  'current_month'),
-  _PeriodOption('lastMonth',     'Last Month',  'previous_month'),
-  _PeriodOption('lifetime',      'All Time',    'all_time'),
+  _PeriodOption('today', 'Today', Icons.today_rounded, 'today'),
+  _PeriodOption('thisWeek', 'This Week', Icons.date_range_rounded, 'this_week'),
+  _PeriodOption('thisMonth', 'This Month', Icons.calendar_month_rounded, 'current_month'),
+  _PeriodOption('lastMonth', 'Last Month', Icons.history_rounded, 'previous_month'),
+  _PeriodOption('lifetime', 'All Time', Icons.all_inclusive_rounded, 'all_time'),
 ];
 
-// ─── Screen ─────────────────────────────────────────────────────────────────
 class CommissionScreen extends StatefulWidget {
   const CommissionScreen({super.key});
 
@@ -32,7 +32,7 @@ class _CommissionScreenState extends State<CommissionScreen> {
   late Future<CommissionSummary> _futureSummary;
   late Future<CommissionResponse> _futureBills;
 
-  String _selectedPeriodId = 'today'; // default = Today
+  String _selectedPeriodId = 'today';
   String _searchBillId = '';
   List<CommissionBill> _allBills = [];
   bool _isLoadingMore = false;
@@ -108,15 +108,24 @@ class _CommissionScreenState extends State<CommissionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF1F5F9),
+      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: const Text('My Commission',
-            style: TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: const Color(0xFF1E293B),
-        foregroundColor: Colors.white,
         elevation: 0,
+        backgroundColor: const Color(0xFF0F172A),
+        foregroundColor: Colors.white,
+        title: const Row(
+          children: [
+            Icon(Icons.account_balance_wallet_rounded, color: Color(0xFF38BDF8), size: 24),
+            SizedBox(width: 10),
+            Text(
+              'My Commission',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, letterSpacing: 0.2),
+            ),
+          ],
+        ),
       ),
       body: RefreshIndicator(
+        color: const Color(0xFF38BDF8),
         onRefresh: () async => _refresh(),
         child: FutureBuilder<CommissionSummary>(
           future: _futureSummary,
@@ -125,75 +134,117 @@ class _CommissionScreenState extends State<CommissionScreen> {
             return CustomScrollView(
               controller: _scrollCtrl,
               slivers: [
-                // ── Period Filter Chips ──────────────────────────────
-                SliverToBoxAdapter(child: _PeriodChips(
-                  periods: _periods,
-                  selectedId: _selectedPeriodId,
-                  onSelect: _selectPeriod,
-                )),
+                // ── Header Filter Chips ──────────────────────────────
+                SliverToBoxAdapter(
+                  child: _PeriodChips(
+                    periods: _periods,
+                    selectedId: _selectedPeriodId,
+                    onSelect: _selectPeriod,
+                  ),
+                ),
 
-                // ── Summary Card ─────────────────────────────────────
-                SliverToBoxAdapter(child: _SummaryCard(
-                  summary: summary,
-                  periodId: _selectedPeriodId,
-                  loading: summSnap.connectionState == ConnectionState.waiting,
-                )),
+                // ── Executive Hero Card ─────────────────────────────
+                SliverToBoxAdapter(
+                  child: _HeroSummaryCard(
+                    summary: summary,
+                    periodId: _selectedPeriodId,
+                    loading: summSnap.connectionState == ConnectionState.waiting,
+                  ),
+                ),
+
+                // ── Search & Filter Section Header ──────────────────
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Transactions Breakdown',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF1E293B),
+                          ),
+                        ),
+                        Text(
+                          _selectedPeriod.label,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.blueGrey.shade600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
 
                 // ── Search Box ───────────────────────────────────────
-                SliverToBoxAdapter(child: _SearchBox(
-                  controller: _searchCtrl,
-                  onSearch: _onSearch,
-                )),
+                SliverToBoxAdapter(
+                  child: _SearchBox(
+                    controller: _searchCtrl,
+                    onSearch: _onSearch,
+                  ),
+                ),
 
-                // ── Bills List ───────────────────────────────────────
-                SliverToBoxAdapter(child: FutureBuilder<CommissionResponse>(
-                  future: _futureBills,
-                  builder: (ctx, snap) {
-                    if (snap.connectionState == ConnectionState.waiting &&
-                        _allBills.isEmpty) {
-                      return const Padding(
-                        padding: EdgeInsets.all(48),
-                        child: Center(child: CircularProgressIndicator()),
-                      );
-                    }
-                    if (snap.hasError && _allBills.isEmpty) {
-                      return Padding(
-                        padding: const EdgeInsets.all(32),
-                        child: Center(
-                          child: Column(children: [
-                            const Icon(Icons.error_outline,
-                                size: 48, color: Colors.red),
-                            const SizedBox(height: 12),
-                            Text('${snap.error}',
-                                textAlign: TextAlign.center,
-                                style:
-                                    const TextStyle(color: Colors.red)),
-                          ]),
+                // ── Bills List Cards ─────────────────────────────────
+                SliverToBoxAdapter(
+                  child: FutureBuilder<CommissionResponse>(
+                    future: _futureBills,
+                    builder: (ctx, snap) {
+                      if (snap.connectionState == ConnectionState.waiting && _allBills.isEmpty) {
+                        return const Padding(
+                          padding: EdgeInsets.all(48),
+                          child: Center(
+                            child: CircularProgressIndicator(color: Color(0xFF0F172A)),
+                          ),
+                        );
+                      }
+
+                      if (snap.hasError && _allBills.isEmpty) {
+                        return Padding(
+                          padding: const EdgeInsets.all(32),
+                          child: Center(
+                            child: Column(
+                              children: [
+                                const Icon(Icons.error_outline_rounded, size: 48, color: Colors.redAccent),
+                                const SizedBox(height: 12),
+                                Text(
+                                  '${snap.error}',
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(color: Colors.redAccent, fontSize: 13),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }
+
+                      if (snap.hasData && _allBills.isEmpty) {
+                        _allBills = List.from(snap.data!.bills);
+                      }
+
+                      if (_allBills.isEmpty) {
+                        return _EmptyState(label: _selectedPeriod.label);
+                      }
+
+                      return _BillsListSection(
+                        bills: _allBills,
+                        hasMore: snap.data?.pagination.hasMore ?? false,
+                        isLoadingMore: _isLoadingMore,
+                        onTap: (bill) => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => CommissionDetailScreen(billId: bill.billId),
+                          ),
                         ),
                       );
-                    }
-                    if (snap.hasData && _allBills.isEmpty) {
-                      _allBills = List.from(snap.data!.bills);
-                    }
-                    if (_allBills.isEmpty) {
-                      return _EmptyState(label: _selectedPeriod.label);
-                    }
-                    return _BillsTable(
-                      bills: _allBills,
-                      hasMore: snap.data?.pagination.hasMore ?? false,
-                      isLoadingMore: _isLoadingMore,
-                      onTap: (bill) => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) =>
-                              CommissionDetailScreen(billId: bill.billId),
-                        ),
-                      ),
-                    );
-                  },
-                )),
+                    },
+                  ),
+                ),
 
-                const SliverToBoxAdapter(child: SizedBox(height: 40)),
+                const SliverToBoxAdapter(child: SizedBox(height: 48)),
               ],
             );
           },
@@ -208,49 +259,60 @@ class _PeriodChips extends StatelessWidget {
   final List<_PeriodOption> periods;
   final String selectedId;
   final ValueChanged<String> onSelect;
-  const _PeriodChips(
-      {required this.periods,
-      required this.selectedId,
-      required this.onSelect});
+
+  const _PeriodChips({
+    required this.periods,
+    required this.selectedId,
+    required this.onSelect,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: const Color(0xFF1E293B),
-      padding: const EdgeInsets.fromLTRB(12, 8, 12, 16),
+      color: const Color(0xFF0F172A),
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
         child: Row(
           children: periods.map((p) {
             final selected = p.id == selectedId;
             return Padding(
               padding: const EdgeInsets.only(right: 8),
-              child: GestureDetector(
+              child: InkWell(
                 onTap: () => onSelect(p.id),
+                borderRadius: BorderRadius.circular(20),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                   decoration: BoxDecoration(
                     color: selected
-                        ? const Color(0xFF3B82F6)
-                        : Colors.white.withValues(alpha: 0.1),
+                        ? const Color(0xFF38BDF8)
+                        : Colors.white.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
                       color: selected
-                          ? const Color(0xFF3B82F6)
-                          : Colors.white.withValues(alpha: 0.3),
+                          ? const Color(0xFF38BDF8)
+                          : Colors.white.withValues(alpha: 0.15),
                     ),
                   ),
-                  child: Text(
-                    p.label,
-                    style: TextStyle(
-                      color: selected ? Colors.white : Colors.white70,
-                      fontWeight: selected
-                          ? FontWeight.bold
-                          : FontWeight.normal,
-                      fontSize: 13,
-                    ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        p.icon,
+                        size: 14,
+                        color: selected ? const Color(0xFF0F172A) : Colors.white70,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        p.label,
+                        style: TextStyle(
+                          color: selected ? const Color(0xFF0F172A) : Colors.white70,
+                          fontWeight: selected ? FontWeight.bold : FontWeight.w500,
+                          fontSize: 12.5,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -262,16 +324,17 @@ class _PeriodChips extends StatelessWidget {
   }
 }
 
-// ─── Summary Card ─────────────────────────────────────────────────────────────
-class _SummaryCard extends StatelessWidget {
+// ─── Hero Summary Card ────────────────────────────────────────────────────────
+class _HeroSummaryCard extends StatelessWidget {
   final CommissionSummary? summary;
   final String periodId;
   final bool loading;
 
-  const _SummaryCard(
-      {required this.summary,
-      required this.periodId,
-      required this.loading});
+  const _HeroSummaryCard({
+    required this.summary,
+    required this.periodId,
+    required this.loading,
+  });
 
   Map<String, dynamic> _getPeriodData() {
     if (summary == null) return {};
@@ -281,7 +344,7 @@ class _SummaryCard extends StatelessWidget {
           'sales': summary!.today.totalSales,
           'commission': summary!.today.totalCommission,
           'bills': summary!.today.billCount,
-          'label': summary!.today.label,
+          'label': "Today's Commission",
           'pending': 0.0,
           'paid': 0.0,
         };
@@ -290,7 +353,7 @@ class _SummaryCard extends StatelessWidget {
           'sales': summary!.thisWeek.totalSales,
           'commission': summary!.thisWeek.totalCommission,
           'bills': summary!.thisWeek.billCount,
-          'label': summary!.thisWeek.label,
+          'label': "This Week's Commission",
           'pending': 0.0,
           'paid': 0.0,
         };
@@ -299,7 +362,7 @@ class _SummaryCard extends StatelessWidget {
           'sales': summary!.thisMonth.totalSales,
           'commission': summary!.thisMonth.totalCommission,
           'bills': summary!.thisMonth.billCount,
-          'label': summary!.thisMonth.label,
+          'label': summary!.thisMonth.label.isNotEmpty ? "${summary!.thisMonth.label} Commission" : "This Month's Commission",
           'pending': summary!.thisMonth.pendingCommission,
           'paid': summary!.thisMonth.paidCommission,
         };
@@ -308,7 +371,7 @@ class _SummaryCard extends StatelessWidget {
           'sales': summary!.lastMonth.totalSales,
           'commission': summary!.lastMonth.totalCommission,
           'bills': summary!.lastMonth.billCount,
-          'label': summary!.lastMonth.label,
+          'label': summary!.lastMonth.label.isNotEmpty ? "${summary!.lastMonth.label} Commission" : "Last Month's Commission",
           'pending': summary!.lastMonth.pendingCommission,
           'paid': summary!.lastMonth.paidCommission,
         };
@@ -317,7 +380,7 @@ class _SummaryCard extends StatelessWidget {
           'sales': summary!.lifetime.totalSales,
           'commission': summary!.lifetime.totalCommission,
           'bills': summary!.lifetime.billCount,
-          'label': summary!.lifetime.label,
+          'label': "All-Time Commission",
           'pending': summary!.pendingCommission,
           'paid': summary!.paidCommission,
         };
@@ -340,106 +403,150 @@ class _SummaryCard extends StatelessWidget {
       margin: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFF1E293B), Color(0xFF0F172A)],
+          colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.2),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          )
+            color: const Color(0xFF0F172A).withValues(alpha: 0.3),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
         ],
       ),
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: loading
-            ? const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(16),
-                  child: CircularProgressIndicator(color: Colors.white),
+            ? const SizedBox(
+                height: 140,
+                child: Center(
+                  child: CircularProgressIndicator(color: Color(0xFF38BDF8)),
                 ),
               )
             : Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Period label + bills count
+                  // Label & Bill Pill
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
                         label,
                         style: const TextStyle(
-                            color: Colors.white70, fontSize: 13),
+                          color: Color(0xFF94A3B8),
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                       Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 4),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.1),
+                          color: const Color(0xFF38BDF8).withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Text(
-                          '$bills bill${bills == 1 ? '' : 's'}',
-                          style: const TextStyle(
-                              color: Colors.white70, fontSize: 12),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.receipt_rounded, size: 12, color: Color(0xFF38BDF8)),
+                            const SizedBox(width: 4),
+                            Text(
+                              '$bills ${bills == 1 ? 'Bill' : 'Bills'}',
+                              style: const TextStyle(
+                                color: Color(0xFF38BDF8),
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
                   ),
 
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 14),
 
-                  // Commission (big)
-                  Text(
-                    '₹${commission.toStringAsFixed(2)}',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: -0.5,
-                    ),
+                  // Main Commission Amount
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: [
+                      const Text(
+                        '₹',
+                        style: TextStyle(
+                          color: Color(0xFF34D399),
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        commission.toStringAsFixed(2),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 34,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                    ],
                   ),
+                  const SizedBox(height: 4),
                   const Text(
-                    'Commission Earned',
-                    style:
-                        TextStyle(color: Colors.white54, fontSize: 12),
+                    'Net Commission Earned',
+                    style: TextStyle(color: Color(0xFF64748B), fontSize: 11.5),
                   ),
 
-                  const SizedBox(height: 16),
-                  Divider(
-                      color: Colors.white.withValues(alpha: 0.15),
-                      height: 1),
+                  const SizedBox(height: 18),
+                  Divider(color: Colors.white.withValues(alpha: 0.1), height: 1),
                   const SizedBox(height: 16),
 
-                  // Sales | Pending | Paid row
+                  // Breakdown Metrics Row
                   Row(
                     children: [
                       Expanded(
-                          child: _MiniStat(
-                              label: 'Sales',
-                              value:
-                                  '₹${_compact(sales)}',
-                              color: const Color(0xFF60A5FA))),
+                        child: _MetricItem(
+                          icon: Icons.shopping_bag_outlined,
+                          label: 'Net Sales',
+                          value: '₹${_compact(sales)}',
+                          color: const Color(0xFF38BDF8),
+                        ),
+                      ),
                       if (pending > 0 || paid > 0) ...[
                         Expanded(
-                            child: _MiniStat(
-                                label: 'Pending',
-                                value: '₹${pending.toStringAsFixed(0)}',
-                                color: const Color(0xFFFBBF24))),
+                          child: _MetricItem(
+                            icon: Icons.pending_actions_rounded,
+                            label: 'Pending',
+                            value: '₹${pending.toStringAsFixed(0)}',
+                            color: const Color(0xFFFBBF24),
+                          ),
+                        ),
                         Expanded(
-                            child: _MiniStat(
-                                label: 'Paid',
-                                value: '₹${paid.toStringAsFixed(0)}',
-                                color: const Color(0xFF34D399))),
-                      ] else
+                          child: _MetricItem(
+                            icon: Icons.check_circle_outline_rounded,
+                            label: 'Paid Out',
+                            value: '₹${paid.toStringAsFixed(0)}',
+                            color: const Color(0xFF34D399),
+                          ),
+                        ),
+                      ] else ...[
                         Expanded(
-                            child: _MiniStat(
-                                label: 'Rate',
-                                value: 'Auto',
-                                color: const Color(0xFF34D399))),
+                          child: _MetricItem(
+                            icon: Icons.auto_awesome_rounded,
+                            label: 'Rate',
+                            value: 'Auto (1%)',
+                            color: const Color(0xFFA78BFA),
+                          ),
+                        ),
+                        Expanded(
+                          child: _MetricItem(
+                            icon: Icons.verified_rounded,
+                            label: 'Status',
+                            value: 'Verified',
+                            color: const Color(0xFF34D399),
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ],
@@ -455,27 +562,54 @@ class _SummaryCard extends StatelessWidget {
   }
 }
 
-class _MiniStat extends StatelessWidget {
+class _MetricItem extends StatelessWidget {
+  final IconData icon;
   final String label;
   final String value;
   final Color color;
-  const _MiniStat(
-      {required this.label, required this.value, required this.color});
+
+  const _MetricItem({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return Row(
       children: [
-        Text(label,
-            style:
-                const TextStyle(color: Colors.white54, fontSize: 11)),
-        const SizedBox(height: 2),
-        Text(value,
-            style: TextStyle(
-                color: color,
-                fontSize: 15,
-                fontWeight: FontWeight.bold)),
+        Container(
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, size: 14, color: color),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 10.5),
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 1),
+              Text(
+                value,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
       ],
     );
   }
@@ -485,179 +619,95 @@ class _MiniStat extends StatelessWidget {
 class _SearchBox extends StatelessWidget {
   final TextEditingController controller;
   final VoidCallback onSearch;
+
   const _SearchBox({required this.controller, required this.onSearch});
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-      child: TextField(
-        controller: controller,
-        decoration: InputDecoration(
-          hintText: 'Search by Invoice / Bill ID…',
-          hintStyle:
-              TextStyle(color: Colors.grey.shade400, fontSize: 13),
-          prefixIcon: const Icon(Icons.search, size: 20),
-          suffixIcon: controller.text.isNotEmpty
-              ? GestureDetector(
-                  onTap: () {
-                    controller.clear();
-                    onSearch();
-                  },
-                  child: const Icon(Icons.clear, size: 18))
-              : null,
-          filled: true,
-          fillColor: Colors.white,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: BorderSide.none),
-          enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide:
-                  BorderSide(color: Colors.grey.shade200)),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
-        onSubmitted: (_) => onSearch(),
-        onChanged: (_) {},
+        child: TextField(
+          controller: controller,
+          decoration: InputDecoration(
+            hintText: 'Search by Invoice No. (e.g. LL-I-35709)…',
+            hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 12.5),
+            prefixIcon: const Icon(Icons.search_rounded, size: 20, color: Color(0xFF64748B)),
+            suffixIcon: controller.text.isNotEmpty
+                ? IconButton(
+                    icon: const Icon(Icons.cancel_rounded, size: 18, color: Colors.grey),
+                    onPressed: () {
+                      controller.clear();
+                      onSearch();
+                    },
+                  )
+                : null,
+            filled: true,
+            fillColor: Colors.white,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey.shade200),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFF38BDF8), width: 1.5),
+            ),
+          ),
+          onSubmitted: (_) => onSearch(),
+        ),
       ),
     );
   }
 }
 
-// ─── Bills Table ──────────────────────────────────────────────────────────────
-class _BillsTable extends StatelessWidget {
+// ─── Bills Card List ──────────────────────────────────────────────────────────
+class _BillsListSection extends StatelessWidget {
   final List<CommissionBill> bills;
   final bool hasMore;
   final bool isLoadingMore;
   final Function(CommissionBill) onTap;
-  const _BillsTable(
-      {required this.bills,
-      required this.hasMore,
-      required this.isLoadingMore,
-      required this.onTap});
+
+  const _BillsListSection({
+    required this.bills,
+    required this.hasMore,
+    required this.isLoadingMore,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 8,
-              offset: const Offset(0, 2))
-        ],
-      ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
         children: [
-          // Header
-          Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: Colors.grey.shade50,
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(12)),
-            ),
-            child: Row(children: [
-              const Expanded(
-                  flex: 3,
-                  child: Text('Invoice',
-                      style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                          color: Colors.black54))),
-              const Expanded(
-                  flex: 2,
-                  child: Text('Date',
-                      style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                          color: Colors.black54))),
-              const Expanded(
-                  flex: 2,
-                  child: Text('Amount',
-                      style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                          color: Colors.black54))),
-              Expanded(
-                  flex: 2,
-                  child: Text('Commssn',
-                      textAlign: TextAlign.right,
-                      style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                          color: Colors.grey.shade600))),
-            ]),
-          ),
-          Divider(height: 1, color: Colors.grey.shade200),
-
-          // Rows
-          ListView.separated(
+          ListView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             itemCount: bills.length + (hasMore || isLoadingMore ? 1 : 0),
-            separatorBuilder: (_, _) =>
-                Divider(height: 1, color: Colors.grey.shade100),
             itemBuilder: (ctx, i) {
               if (i == bills.length) {
                 return Padding(
                   padding: const EdgeInsets.all(16),
                   child: isLoadingMore
-                      ? const Center(child: CircularProgressIndicator())
+                      ? const Center(child: CircularProgressIndicator(color: Color(0xFF0F172A)))
                       : const SizedBox.shrink(),
                 );
               }
               final bill = bills[i];
-              return InkWell(
-                onTap: () => onTap(bill),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 12),
-                  child: Row(children: [
-                    Expanded(
-                      flex: 3,
-                      child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(bill.billId,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 12)),
-                            const SizedBox(height: 2),
-                            _StatusBadge(bill.status),
-                          ]),
-                    ),
-                    Expanded(
-                        flex: 2,
-                        child: Text(
-                            DateFormat('dd MMM').format(bill.date),
-                            style: const TextStyle(fontSize: 12))),
-                    Expanded(
-                        flex: 2,
-                        child: Text(
-                            '₹${bill.saleAmount.toStringAsFixed(0)}',
-                            style: const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600))),
-                    Expanded(
-                        flex: 2,
-                        child: Text(
-                            '₹${bill.commission.toStringAsFixed(2)}',
-                            textAlign: TextAlign.right,
-                            style: const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF16A34A)))),
-                  ]),
-                ),
-              );
+              return _BillCardItem(bill: bill, onTap: () => onTap(bill));
             },
           ),
         ],
@@ -666,9 +716,121 @@ class _BillsTable extends StatelessWidget {
   }
 }
 
-class _StatusBadge extends StatelessWidget {
+class _BillCardItem extends StatelessWidget {
+  final CommissionBill bill;
+  final VoidCallback onTap;
+
+  const _BillCardItem({required this.bill, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Row(
+            children: [
+              // Left Icon Avatar
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF0F172A).withValues(alpha: 0.05),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.receipt_long_rounded,
+                  color: Color(0xFF0F172A),
+                  size: 22,
+                ),
+              ),
+
+              const SizedBox(width: 12),
+
+              // Middle: Bill ID + Date + Status
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      bill.billId,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13.5,
+                        color: Color(0xFF0F172A),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 3),
+                    Row(
+                      children: [
+                        Text(
+                          DateFormat('dd MMM yyyy').format(bill.date),
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        _StatusPill(bill.status),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+
+              // Right: Sale Amount & Commission
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    '₹${bill.commission.toStringAsFixed(2)}',
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF16A34A),
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Sale: ₹${bill.saleAmount.toStringAsFixed(0)}',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.grey.shade500,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(width: 4),
+              Icon(Icons.chevron_right_rounded, size: 20, color: Colors.grey.shade400),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _StatusPill extends StatelessWidget {
   final String status;
-  const _StatusBadge(this.status);
+  const _StatusPill(this.status);
 
   @override
   Widget build(BuildContext context) {
@@ -676,25 +838,31 @@ class _StatusBadge extends StatelessWidget {
     Color bg;
     Color fg;
     String label;
+
     if (s == 'PAID') {
       bg = const Color(0xFFDCFCE7);
-      fg = const Color(0xFF16A34A);
+      fg = const Color(0xFF15803D);
       label = 'Paid';
     } else if (s == 'APPROVED') {
-      bg = const Color(0xFFDBEAFE);
-      fg = const Color(0xFF2563EB);
+      bg = const Color(0xFFE0F2FE);
+      fg = const Color(0xFF0369A1);
       label = 'Approved';
     } else {
       bg = const Color(0xFFFEF3C7);
-      fg = const Color(0xFFD97706);
+      fg = const Color(0xFFB45309);
       label = 'Pending';
     }
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration:
-          BoxDecoration(color: bg, borderRadius: BorderRadius.circular(4)),
-      child:
-          Text(label, style: TextStyle(fontSize: 9, color: fg, fontWeight: FontWeight.bold)),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(fontSize: 9.5, color: fg, fontWeight: FontWeight.bold),
+      ),
     );
   }
 }
@@ -707,24 +875,31 @@ class _EmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 64),
+      padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 24),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.receipt_long_outlined,
-              size: 64, color: Colors.grey.shade300),
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade100,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(Icons.point_of_sale_rounded, size: 48, color: Colors.grey.shade400),
+          ),
           const SizedBox(height: 16),
           Text(
-            'No bills for $label',
-            style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Colors.grey.shade500),
+            'No sales recorded for $label',
+            style: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF334155),
+            ),
           ),
           const SizedBox(height: 6),
           Text(
-            'Your sales will appear here once processed.',
-            style: TextStyle(fontSize: 13, color: Colors.grey.shade400),
+            'Your HopKid POS bills and earned commissions will appear here automatically.',
+            style: TextStyle(fontSize: 12.5, color: Colors.grey.shade500),
             textAlign: TextAlign.center,
           ),
         ],
