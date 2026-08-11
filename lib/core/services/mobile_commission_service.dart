@@ -81,13 +81,17 @@ class MobileCommissionService {
 
   static Future<Map<String, dynamic>?> getCommissionTransactions({
     String? status,
+    String? startDate,
+    String? endDate,
     int limit = 50,
     int offset = 0,
   }) async {
     try {
-      final queryParams = '?limit=$limit&offset=$offset';
-      final statusQuery = status != null ? '&status=$status' : '';
-      final response = await ApiService.get('${AppUrl.mobileCommissionTransactions}$queryParams$statusQuery');
+      var queryParams = '?limit=$limit&offset=$offset';
+      if (status != null) queryParams += '&status=$status';
+      if (startDate != null) queryParams += '&startDate=$startDate';
+      if (endDate != null) queryParams += '&endDate=$endDate';
+      final response = await ApiService.get('${AppUrl.mobileCommissionTransactions}$queryParams');
       final data = jsonDecode(response.body);
       if (data['success'] == true) {
         return data;

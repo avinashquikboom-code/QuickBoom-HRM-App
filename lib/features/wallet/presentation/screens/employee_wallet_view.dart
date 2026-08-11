@@ -21,6 +21,8 @@ import 'package:quickboom_hrm/features/expense/presentation/screens/employee_exp
 import 'package:quickboom_hrm/features/expense/presentation/providers/expense_viewmodel.dart';
 import 'package:quickboom_hrm/features/payroll/presentation/screens/employee_payroll_view.dart';
 import 'package:quickboom_hrm/features/wallet/presentation/screens/request_advance_view.dart';
+import 'package:quickboom_hrm/screens/commission/commission_detail_screen.dart';
+import 'package:quickboom_hrm/core/services/mobile_commission_service.dart';
 
 class EmployeeWalletView extends ConsumerStatefulWidget {
   const EmployeeWalletView({super.key});
@@ -1104,50 +1106,67 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
                       final comm = item['commissionAmount'] as num? ?? 0.0;
                       final net = item['netSales'] as num? ?? 0.0;
 
-                      return Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: AppColors.surface,
+                      return Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: () => _showPeriodSalesBottomSheet(context, item),
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: AppColors.cardBorder),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                          child: Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: AppColors.surface,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: AppColors.cardBorder),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text(
-                                  item['periodStart'] == item['periodEnd']
-                                      ? DateFormat('dd MMM yyyy').format(
-                                          DateTime.parse(item['periodStart']),
-                                        )
-                                      : '${DateFormat('dd MMM').format(DateTime.parse(item['periodStart']))} - ${DateFormat('dd MMM yyyy').format(DateTime.parse(item['periodEnd']))}',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 13,
-                                    color: AppColors.textPrimary,
-                                  ),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Text(
+                                          item['periodStart'] == item['periodEnd']
+                                              ? DateFormat('dd MMM yyyy').format(
+                                                  DateTime.parse(item['periodStart']),
+                                                )
+                                              : '${DateFormat('dd MMM').format(DateTime.parse(item['periodStart']))} - ${DateFormat('dd MMM yyyy').format(DateTime.parse(item['periodEnd']))}',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 13,
+                                            color: AppColors.textPrimary,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Icon(
+                                          RemixIcons.arrow_right_s_line,
+                                          size: 16,
+                                          color: AppColors.textHint,
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'Net Sales: ₹${NumberFormat('#,##,###').format(net)} (Rate: $rate%)',
+                                      style: TextStyle(
+                                        color: AppColors.textSecondary,
+                                        fontSize: 11,
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                const SizedBox(height: 4),
                                 Text(
-                                  'Net Sales: ₹${NumberFormat('#,##,###').format(net)} (Rate: $rate%)',
-                                  style: TextStyle(
-                                    color: AppColors.textSecondary,
-                                    fontSize: 11,
+                                  '₹${NumberFormat('#,##,###').format(comm)}',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.primary,
+                                    fontSize: 14,
                                   ),
                                 ),
                               ],
                             ),
-                            Text(
-                              '₹${NumberFormat('#,##,###').format(comm)}',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.primary,
-                                fontSize: 14,
-                              ),
-                            ),
-                          ],
+                          ),
                         ),
                       );
                     },
@@ -1155,6 +1174,273 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
           ),
         ],
       ),
+    );
+  }
+
+  void _showPeriodSalesBottomSheet(BuildContext context, Map<String, dynamic> item) {
+    final startStr = item['periodStart']?.toString() ?? '';
+    final endStr = item['periodEnd']?.toString() ?? startStr;
+    
+    final displayPeriod = startStr == endStr
+        ? DateFormat('dd MMMM yyyy').format(DateTime.parse(startStr))
+        : '${DateFormat('dd MMM').format(DateTime.parse(startStr))} - ${DateFormat('dd MMM yyyy').format(DateTime.parse(endStr))}';
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          height: MediaQuery.of(context).size.height * 0.75,
+          decoration: BoxDecoration(
+            color: AppColors.background,
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(24),
+              topRight: Radius.circular(24),
+            ),
+          ),
+          child: Column(
+            children: [
+              // Handle bar
+              const SizedBox(height: 12),
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.textHint.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 16),
+              // Header
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          displayPeriod,
+                          style: TextStyle(
+                            color: AppColors.textPrimary,
+                            fontSize: 17,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          'Individual Sales & Commission Invoices',
+                          style: TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                    IconButton(
+                      icon: Icon(RemixIcons.close_line, color: AppColors.textPrimary),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(height: 24),
+              // Period Stats Header Card
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppColors.cardBorder),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Total Net Sales', style: TextStyle(color: AppColors.textSecondary, fontSize: 11)),
+                            const SizedBox(height: 2),
+                            Text(
+                              '₹${NumberFormat('#,##,###.00').format((item['netSales'] as num?)?.toDouble() ?? 0.0)}',
+                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppColors.textPrimary),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(width: 1, height: 30, color: AppColors.divider),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Commission Earned', style: TextStyle(color: AppColors.primary, fontSize: 11, fontWeight: FontWeight.bold)),
+                            const SizedBox(height: 2),
+                            Text(
+                              '₹${NumberFormat('#,##,###.00').format((item['commissionAmount'] as num?)?.toDouble() ?? 0.0)}',
+                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppColors.primary),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              // Transactions list
+              Expanded(
+                child: FutureBuilder<Map<String, dynamic>?>(
+                  future: MobileCommissionService.getCommissionTransactions(
+                    startDate: startStr,
+                    endDate: endStr,
+                    limit: 100,
+                  ),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return Center(child: CircularProgressIndicator(color: AppColors.primary));
+                    }
+                    final rawList = snapshot.data?['data']?['transactions'] as List?;
+                    if (rawList == null || rawList.isEmpty) {
+                      return Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(RemixIcons.receipt_line, size: 40, color: AppColors.textHint),
+                            const SizedBox(height: 8),
+                            Text('No invoices recorded for this period', style: TextStyle(color: AppColors.textSecondary)),
+                          ],
+                        ),
+                      );
+                    }
+
+                    return ListView.separated(
+                      padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+                      physics: const BouncingScrollPhysics(),
+                      itemCount: rawList.length,
+                      separatorBuilder: (context, index) => const SizedBox(height: 10),
+                      itemBuilder: (context, idx) {
+                        final tx = rawList[idx];
+                        final billId = tx['billId'] ?? tx['invoiceNumber'] ?? 'TXN-${tx['id']}';
+                        final amount = (tx['saleAmount'] ?? tx['amount'] ?? 0.0).toDouble();
+                        final comm = (tx['commissionAmount'] ?? tx['commission'] ?? 0.0).toDouble();
+                        final rate = (tx['commissionPercent'] ?? 0.0).toDouble();
+                        final status = (tx['status'] ?? 'APPROVED').toString();
+                        final dateStr = tx['createdAt'] ?? tx['date'];
+                        final formattedDate = dateStr != null
+                            ? DateFormat('dd MMM yyyy, hh:mm a').format(DateTime.parse(dateStr.toString()))
+                            : '';
+
+                        final isPaid = status.toUpperCase() == 'PAID';
+
+                        return Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => CommissionDetailScreen(billId: billId),
+                                ),
+                              );
+                            },
+                            borderRadius: BorderRadius.circular(16),
+                            child: Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: AppColors.surface,
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(color: AppColors.cardBorder, width: 1),
+                              ),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(10),
+                                    decoration: BoxDecoration(
+                                      color: (isPaid ? AppColors.success : AppColors.primary).withValues(alpha: 0.1),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Icon(
+                                      RemixIcons.file_list_3_line,
+                                      color: isPaid ? AppColors.success : AppColors.primary,
+                                      size: 18,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          billId,
+                                          style: TextStyle(
+                                            color: AppColors.textPrimary,
+                                            fontSize: 13.5,
+                                            fontWeight: FontWeight.w800,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          'Net Sale: ₹${NumberFormat('#,##,###.00').format(amount)}',
+                                          style: TextStyle(
+                                            color: AppColors.textSecondary,
+                                            fontSize: 11.5,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                        if (formattedDate.isNotEmpty) ...[
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            formattedDate,
+                                            style: TextStyle(
+                                              color: AppColors.textHint,
+                                              fontSize: 10,
+                                            ),
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                  ),
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: [
+                                      Text(
+                                        '₹${NumberFormat('#,##,###.00').format(comm)}',
+                                        style: TextStyle(
+                                          color: isPaid ? AppColors.success : AppColors.primary,
+                                          fontSize: 14.5,
+                                          fontWeight: FontWeight.w900,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        '($rate%)',
+                                        style: TextStyle(
+                                          color: AppColors.textHint,
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
