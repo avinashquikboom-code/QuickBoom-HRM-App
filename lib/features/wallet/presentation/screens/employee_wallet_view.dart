@@ -48,11 +48,32 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
   List<dynamic> _stores = [];
 
   // Commission report state
-  DateTime _fromDate = DateTime.now().subtract(const Duration(days: 30));
+  DateTime _fromDate = DateTime.now().subtract(const Duration(days: 90));
   DateTime _toDate = DateTime.now();
   bool _isLoadingComm = false;
   List<dynamic> _commissionData = [];
   String _groupBy = 'day';
+
+  void _selectPeriodFilter(String period) {
+    final now = DateTime.now();
+    setState(() {
+      _groupBy = period;
+      if (period == 'day') {
+        // Show all past days (last 90 days) grouped day-by-day
+        _fromDate = now.subtract(const Duration(days: 90));
+        _toDate = now;
+      } else if (period == 'week') {
+        // Show all weeks (last 180 days) grouped week-by-week
+        _fromDate = now.subtract(const Duration(days: 180));
+        _toDate = now;
+      } else if (period == 'month') {
+        // Show all months (last 365 days) grouped month-by-month
+        _fromDate = DateTime(now.year - 1, now.month, 1);
+        _toDate = now;
+      }
+    });
+    _fetchCommissionReport();
+  }
 
   @override
   void initState() {
@@ -61,6 +82,7 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _fetchPayslips();
       _fetchSalarySlip();
+      _fetchCommissionReport();
     });
 
     _loadWalletData();
@@ -98,7 +120,6 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
         _bankDetails = results[1];
       });
     }
-    _fetchSalarySlip();
   }
 
   double _getCardNetSalary() {
@@ -154,8 +175,23 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
       final res = await ApiService.get(url);
       final body = jsonDecode(res.body);
       if (body['success'] == true) {
+        final list = List<dynamic>.from(body['data'] ?? []);
+        // Sort descending by periodStart so recent days/weeks/months are at top
+        list.sort((a, b) {
+          final dtA = DateTime.tryParse(a['periodStart'] ?? '') ?? DateTime(1970);
+          final dtB = DateTime.tryParse(b['periodStart'] ?? '') ?? DateTime(1970);
+          return dtB.compareTo(dtA);
+        });
+
+        // Filter out zero sales entries for cleaner list
+        final filteredList = list.where((item) {
+          final net = (item['netSales'] as num?)?.toDouble() ?? 0.0;
+          final comm = (item['commissionAmount'] as num?)?.toDouble() ?? 0.0;
+          return net > 0 || comm > 0;
+        }).toList();
+
         setState(() {
-          _commissionData = body['data'] ?? [];
+          _commissionData = filteredList.isNotEmpty ? filteredList : list;
         });
       }
     } catch (e) {
@@ -232,21 +268,7 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
     }
   }
 
-  Future<void> _selectDateRange() async {
-    final picked = await showDateRangePicker(
-      context: context,
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2100),
-      initialDateRange: DateTimeRange(start: _fromDate, end: _toDate),
-    );
-    if (picked != null) {
-      setState(() {
-        _fromDate = picked.start;
-        _toDate = picked.end;
-      });
-      _fetchCommissionReport();
-    }
-  }
+
 
   void _showRequestAdvanceSheet(BuildContext context) async {
     final advanceLimit =
@@ -928,53 +950,33 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14),
                       ),
-                      padding: const EdgeInsets.symmetric(vertical: 13),
                     ),
                   ),
                 ),
-                const SizedBox(height: 10),
-                // Date range + group-by row
+                const SizedBox(height: 14),
+                // Period Filter: Day | Week | Month
                 Row(
                   children: [
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: _selectDateRange,
-                        icon: const Icon(RemixIcons.calendar_2_line, size: 16),
-                        label: Text(
-                          '${DateFormat('dd MMM').format(_fromDate)} - ${DateFormat('dd MMM').format(_toDate)}',
-                          style: const TextStyle(fontSize: 12),
-                        ),
-                      ),
+                    _PeriodFilterChip(
+                      label: 'Day',
+                      isSelected: _groupBy == 'day',
+                      onTap: () => _selectPeriodFilter('day'),
                     ),
-                    const SizedBox(width: 10),
-                    DropdownButton<String>(
-                      value: _groupBy,
-                      onChanged: (val) {
-                        if (val != null) {
-                          setState(() => _groupBy = val);
-                          _fetchCommissionReport();
-                        }
-                      },
-                      items: const [
-                        DropdownMenuItem(
-                          value: 'day',
-                          child: Text('Daily', style: TextStyle(fontSize: 13)),
-                        ),
-                        DropdownMenuItem(
-                          value: 'week',
-                          child: Text('Weekly', style: TextStyle(fontSize: 13)),
-                        ),
-                        DropdownMenuItem(
-                          value: 'month',
-                          child: Text(
-                            'Monthly',
-                            style: TextStyle(fontSize: 13),
-                          ),
-                        ),
-                      ],
+                    const SizedBox(width: 8),
+                    _PeriodFilterChip(
+                      label: 'Week',
+                      isSelected: _groupBy == 'week',
+                      onTap: () => _selectPeriodFilter('week'),
+                    ),
+                    const SizedBox(width: 8),
+                    _PeriodFilterChip(
+                      label: 'Month',
+                      isSelected: _groupBy == 'month',
+                      onTap: () => _selectPeriodFilter('month'),
                     ),
                   ],
                 ),
+                const SizedBox(height: 14),
               ],
             ),
           ),
@@ -3105,3 +3107,55 @@ class _BankDetailRow extends StatelessWidget {
     );
   }
 }
+
+class _PeriodFilterChip extends StatelessWidget {
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _PeriodFilterChip({
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 9),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: isSelected ? AppColors.primary : AppColors.surface,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: isSelected ? AppColors.primary : AppColors.cardBorder,
+              width: isSelected ? 1.5 : 1.0,
+            ),
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: AppColors.primary.withValues(alpha: 0.25),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : null,
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              color: isSelected ? Colors.white : AppColors.textPrimary,
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+              fontSize: 13,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+

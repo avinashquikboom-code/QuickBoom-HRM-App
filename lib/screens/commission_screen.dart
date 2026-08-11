@@ -4,23 +4,6 @@ import 'package:quickboom_hrm/features/commission/data/models/commission_models.
 import 'package:quickboom_hrm/core/services/mobile_commission_service.dart';
 import 'package:quickboom_hrm/screens/commission/commission_detail_screen.dart';
 
-// ─── Period Config ─────────────────────────────────────────────────────────
-class _PeriodOption {
-  final String id;
-  final String label;
-  final IconData icon;
-  final String billPeriod;
-  const _PeriodOption(this.id, this.label, this.icon, this.billPeriod);
-}
-
-const List<_PeriodOption> _periods = [
-  _PeriodOption('today', 'Today', Icons.today_rounded, 'today'),
-  _PeriodOption('thisWeek', 'This Week', Icons.date_range_rounded, 'this_week'),
-  _PeriodOption('thisMonth', 'This Month', Icons.calendar_month_rounded, 'current_month'),
-  _PeriodOption('lastMonth', 'Last Month', Icons.history_rounded, 'previous_month'),
-  _PeriodOption('lifetime', 'All Time', Icons.all_inclusive_rounded, 'all_time'),
-];
-
 class CommissionScreen extends StatefulWidget {
   const CommissionScreen({super.key});
 
@@ -32,7 +15,6 @@ class _CommissionScreenState extends State<CommissionScreen> {
   late Future<CommissionSummary> _futureSummary;
   late Future<CommissionResponse> _futureBills;
 
-  String _selectedPeriodId = 'today';
   String _searchBillId = '';
   List<CommissionBill> _allBills = [];
   bool _isLoadingMore = false;
@@ -48,14 +30,11 @@ class _CommissionScreenState extends State<CommissionScreen> {
     _scrollCtrl.addListener(_onScroll);
   }
 
-  _PeriodOption get _selectedPeriod =>
-      _periods.firstWhere((p) => p.id == _selectedPeriodId);
-
   void _refresh() {
     setState(() {
       _futureSummary = MobileCommissionService.fetchSummary();
       _futureBills = MobileCommissionService.fetchBills(
-        period: _selectedPeriod.billPeriod,
+        period: 'today',
         billId: _searchBillId.isNotEmpty ? _searchBillId : null,
       );
       _currentPage = 0;
@@ -72,9 +51,10 @@ class _CommissionScreenState extends State<CommissionScreen> {
   Future<void> _loadMore() async {
     if (_isLoadingMore) return;
     setState(() => _isLoadingMore = true);
+
     try {
       final resp = await MobileCommissionService.fetchBills(
-        period: _selectedPeriod.billPeriod,
+        period: 'today',
         billId: _searchBillId.isNotEmpty ? _searchBillId : null,
         offset: (_currentPage + 1) * 20,
       );
@@ -86,11 +66,6 @@ class _CommissionScreenState extends State<CommissionScreen> {
     } finally {
       if (mounted) setState(() => _isLoadingMore = false);
     }
-  }
-
-  void _selectPeriod(String id) {
-    setState(() => _selectedPeriodId = id);
-    _refresh();
   }
 
   void _onSearch() {
@@ -118,7 +93,7 @@ class _CommissionScreenState extends State<CommissionScreen> {
             Icon(Icons.account_balance_wallet_rounded, color: Color(0xFF38BDF8), size: 24),
             SizedBox(width: 10),
             Text(
-              'My Commission',
+              'My Commission & Sales',
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, letterSpacing: 0.2),
             ),
           ],
@@ -134,33 +109,23 @@ class _CommissionScreenState extends State<CommissionScreen> {
             return CustomScrollView(
               controller: _scrollCtrl,
               slivers: [
-                // ── Header Filter Chips ──────────────────────────────
-                SliverToBoxAdapter(
-                  child: _PeriodChips(
-                    periods: _periods,
-                    selectedId: _selectedPeriodId,
-                    onSelect: _selectPeriod,
-                  ),
-                ),
-
-                // ── Executive Hero Card ─────────────────────────────
+                // ── Executive Hero Card (Today's Earnings) ───────────
                 SliverToBoxAdapter(
                   child: _HeroSummaryCard(
                     summary: summary,
-                    periodId: _selectedPeriodId,
                     loading: summSnap.connectionState == ConnectionState.waiting,
                   ),
                 ),
 
                 // ── Search & Filter Section Header ──────────────────
-                SliverToBoxAdapter(
+                const SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                    padding: EdgeInsets.fromLTRB(16, 8, 16, 8),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
-                          'Transactions Breakdown',
+                        Text(
+                          "Today's Transactions",
                           style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.bold,
@@ -168,11 +133,11 @@ class _CommissionScreenState extends State<CommissionScreen> {
                           ),
                         ),
                         Text(
-                          _selectedPeriod.label,
+                          'Live Sales',
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
-                            color: Colors.blueGrey.shade600,
+                            color: Color(0xFF16A34A),
                           ),
                         ),
                       ],
@@ -226,7 +191,7 @@ class _CommissionScreenState extends State<CommissionScreen> {
                       }
 
                       if (_allBills.isEmpty) {
-                        return _EmptyState(label: _selectedPeriod.label);
+                        return const _EmptyState();
                       }
 
                       return _BillsListSection(
@@ -254,150 +219,22 @@ class _CommissionScreenState extends State<CommissionScreen> {
   }
 }
 
-// ─── Period Chips ────────────────────────────────────────────────────────────
-class _PeriodChips extends StatelessWidget {
-  final List<_PeriodOption> periods;
-  final String selectedId;
-  final ValueChanged<String> onSelect;
-
-  const _PeriodChips({
-    required this.periods,
-    required this.selectedId,
-    required this.onSelect,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      color: const Color(0xFF0F172A),
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        physics: const BouncingScrollPhysics(),
-        child: Row(
-          children: periods.map((p) {
-            final selected = p.id == selectedId;
-            return Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: InkWell(
-                onTap: () => onSelect(p.id),
-                borderRadius: BorderRadius.circular(20),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: selected
-                        ? const Color(0xFF38BDF8)
-                        : Colors.white.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: selected
-                          ? const Color(0xFF38BDF8)
-                          : Colors.white.withValues(alpha: 0.15),
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        p.icon,
-                        size: 14,
-                        color: selected ? const Color(0xFF0F172A) : Colors.white70,
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        p.label,
-                        style: TextStyle(
-                          color: selected ? const Color(0xFF0F172A) : Colors.white70,
-                          fontWeight: selected ? FontWeight.bold : FontWeight.w500,
-                          fontSize: 12.5,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          }).toList(),
-        ),
-      ),
-    );
-  }
-}
-
 // ─── Hero Summary Card ────────────────────────────────────────────────────────
 class _HeroSummaryCard extends StatelessWidget {
   final CommissionSummary? summary;
-  final String periodId;
   final bool loading;
 
   const _HeroSummaryCard({
     required this.summary,
-    required this.periodId,
     required this.loading,
   });
 
-  Map<String, dynamic> _getPeriodData() {
-    if (summary == null) return {};
-    switch (periodId) {
-      case 'today':
-        return {
-          'sales': summary!.today.totalSales,
-          'commission': summary!.today.totalCommission,
-          'bills': summary!.today.billCount,
-          'label': "Today's Commission",
-          'pending': 0.0,
-          'paid': 0.0,
-        };
-      case 'thisWeek':
-        return {
-          'sales': summary!.thisWeek.totalSales,
-          'commission': summary!.thisWeek.totalCommission,
-          'bills': summary!.thisWeek.billCount,
-          'label': "This Week's Commission",
-          'pending': 0.0,
-          'paid': 0.0,
-        };
-      case 'thisMonth':
-        return {
-          'sales': summary!.thisMonth.totalSales,
-          'commission': summary!.thisMonth.totalCommission,
-          'bills': summary!.thisMonth.billCount,
-          'label': summary!.thisMonth.label.isNotEmpty ? "${summary!.thisMonth.label} Commission" : "This Month's Commission",
-          'pending': summary!.thisMonth.pendingCommission,
-          'paid': summary!.thisMonth.paidCommission,
-        };
-      case 'lastMonth':
-        return {
-          'sales': summary!.lastMonth.totalSales,
-          'commission': summary!.lastMonth.totalCommission,
-          'bills': summary!.lastMonth.billCount,
-          'label': summary!.lastMonth.label.isNotEmpty ? "${summary!.lastMonth.label} Commission" : "Last Month's Commission",
-          'pending': summary!.lastMonth.pendingCommission,
-          'paid': summary!.lastMonth.paidCommission,
-        };
-      case 'lifetime':
-        return {
-          'sales': summary!.lifetime.totalSales,
-          'commission': summary!.lifetime.totalCommission,
-          'bills': summary!.lifetime.billCount,
-          'label': "All-Time Commission",
-          'pending': summary!.pendingCommission,
-          'paid': summary!.paidCommission,
-        };
-      default:
-        return {};
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    final data = _getPeriodData();
-    final commission = (data['commission'] ?? 0.0) as double;
-    final sales = (data['sales'] ?? 0.0) as double;
-    final bills = (data['bills'] ?? 0) as int;
-    final label = (data['label'] ?? '') as String;
-    final pending = (data['pending'] ?? 0.0) as double;
-    final paid = (data['paid'] ?? 0.0) as double;
+    final todayCommission = summary?.today.totalCommission ?? 0.0;
+    final todaySales = summary?.today.totalSales ?? 0.0;
+    final todayBills = summary?.today.billCount ?? 0;
+    final monthCommission = summary?.thisMonth.totalCommission ?? 0.0;
 
     return Container(
       margin: const EdgeInsets.all(16),
@@ -428,13 +265,13 @@ class _HeroSummaryCard extends StatelessWidget {
             : Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Label & Bill Pill
+                  // Label & Today Bill Count Pill
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        label,
-                        style: const TextStyle(
+                      const Text(
+                        "Today's Commission",
+                        style: TextStyle(
                           color: Color(0xFF94A3B8),
                           fontSize: 13,
                           fontWeight: FontWeight.w500,
@@ -447,11 +284,12 @@ class _HeroSummaryCard extends StatelessWidget {
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Row(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
                             const Icon(Icons.receipt_rounded, size: 12, color: Color(0xFF38BDF8)),
                             const SizedBox(width: 4),
                             Text(
-                              '$bills ${bills == 1 ? 'Bill' : 'Bills'}',
+                              '$todayBills ${todayBills == 1 ? 'Bill' : 'Bills'} Today',
                               style: const TextStyle(
                                 color: Color(0xFF38BDF8),
                                 fontSize: 11,
@@ -466,7 +304,7 @@ class _HeroSummaryCard extends StatelessWidget {
 
                   const SizedBox(height: 14),
 
-                  // Main Commission Amount
+                  // Today's Commission Amount
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.baseline,
                     textBaseline: TextBaseline.alphabetic,
@@ -481,7 +319,7 @@ class _HeroSummaryCard extends StatelessWidget {
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        commission.toStringAsFixed(2),
+                        todayCommission.toStringAsFixed(2),
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 34,
@@ -493,7 +331,7 @@ class _HeroSummaryCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   const Text(
-                    'Net Commission Earned',
+                    'Earned Today (Resets at 00:00 IST)',
                     style: TextStyle(color: Color(0xFF64748B), fontSize: 11.5),
                   ),
 
@@ -501,52 +339,33 @@ class _HeroSummaryCard extends StatelessWidget {
                   Divider(color: Colors.white.withValues(alpha: 0.1), height: 1),
                   const SizedBox(height: 16),
 
-                  // Breakdown Metrics Row
+                  // Today's Sales & Monthly Total Row
                   Row(
                     children: [
                       Expanded(
                         child: _MetricItem(
                           icon: Icons.shopping_bag_outlined,
-                          label: 'Net Sales',
-                          value: '₹${_compact(sales)}',
+                          label: "Today's Sales",
+                          value: '₹${_compact(todaySales)}',
                           color: const Color(0xFF38BDF8),
                         ),
                       ),
-                      if (pending > 0 || paid > 0) ...[
-                        Expanded(
-                          child: _MetricItem(
-                            icon: Icons.pending_actions_rounded,
-                            label: 'Pending',
-                            value: '₹${pending.toStringAsFixed(0)}',
-                            color: const Color(0xFFFBBF24),
-                          ),
+                      Expanded(
+                        child: _MetricItem(
+                          icon: Icons.calendar_month_rounded,
+                          label: 'This Month Total',
+                          value: '₹${_compact(monthCommission)}',
+                          color: const Color(0xFFFBBF24),
                         ),
-                        Expanded(
-                          child: _MetricItem(
-                            icon: Icons.check_circle_outline_rounded,
-                            label: 'Paid Out',
-                            value: '₹${paid.toStringAsFixed(0)}',
-                            color: const Color(0xFF34D399),
-                          ),
+                      ),
+                      Expanded(
+                        child: _MetricItem(
+                          icon: Icons.verified_rounded,
+                          label: 'Rate',
+                          value: 'Auto (1%)',
+                          color: const Color(0xFF34D399),
                         ),
-                      ] else ...[
-                        Expanded(
-                          child: _MetricItem(
-                            icon: Icons.auto_awesome_rounded,
-                            label: 'Rate',
-                            value: 'Auto (1%)',
-                            color: const Color(0xFFA78BFA),
-                          ),
-                        ),
-                        Expanded(
-                          child: _MetricItem(
-                            icon: Icons.verified_rounded,
-                            label: 'Status',
-                            value: 'Verified',
-                            color: const Color(0xFF34D399),
-                          ),
-                        ),
-                      ],
+                      ),
                     ],
                   ),
                 ],
@@ -600,7 +419,7 @@ class _MetricItem extends StatelessWidget {
               const SizedBox(height: 1),
               Text(
                 value,
-                style: TextStyle(
+                style: const TextStyle(
                   color: Colors.white,
                   fontSize: 13,
                   fontWeight: FontWeight.bold,
@@ -869,8 +688,7 @@ class _StatusPill extends StatelessWidget {
 
 // ─── Empty State ──────────────────────────────────────────────────────────────
 class _EmptyState extends StatelessWidget {
-  final String label;
-  const _EmptyState({required this.label});
+  const _EmptyState();
 
   @override
   Widget build(BuildContext context) {
@@ -888,9 +706,9 @@ class _EmptyState extends StatelessWidget {
             child: Icon(Icons.point_of_sale_rounded, size: 48, color: Colors.grey.shade400),
           ),
           const SizedBox(height: 16),
-          Text(
-            'No sales recorded for $label',
-            style: const TextStyle(
+          const Text(
+            'No sales recorded today yet',
+            style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.bold,
               color: Color(0xFF334155),
