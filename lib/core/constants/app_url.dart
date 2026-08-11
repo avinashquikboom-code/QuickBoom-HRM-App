@@ -255,6 +255,8 @@ class AppUrl {
       '/api/mobile/commission/dashboard';
   static const String mobileCommissionTransactions =
       '/api/mobile/commission/transactions';
+  static const String mobileCommissionDaily =
+      '/api/mobile/commission/daily';
   static const String mobileCommissionTargets =
       '/api/mobile/commission/targets';
   static const String mobileCommissionSettlements =

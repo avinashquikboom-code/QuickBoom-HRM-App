@@ -38,6 +38,21 @@ class MobileCommissionService {
     }
   }
 
+  static Future<Map<String, dynamic>?> getDailyBills({String? date}) async {
+    try {
+      final queryParam = date != null ? '?date=$date' : '';
+      final response = await ApiService.get('${AppUrl.mobileCommissionDaily}$queryParam');
+      final data = jsonDecode(response.body);
+      if (data['success'] == true) {
+        return data;
+      }
+      return null;
+    } catch (e) {
+      dev.log('Error fetching daily bills: $e', name: 'MobileCommissionService');
+      return null;
+    }
+  }
+
   static Future<Map<String, dynamic>?> getCommissionTargets({String? status}) async {
     try {
       final statusQuery = status != null ? '?status=$status' : '';
