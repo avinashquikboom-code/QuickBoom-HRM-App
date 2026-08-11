@@ -1,6 +1,7 @@
 // Commission Data Models for Employee Mobile App
 
 class CommissionWallet {
+  final double netSalary;
   final double totalCommissionBalance;
   final double currentMonthCommission;
   final double lastMonthCommission;
@@ -11,7 +12,10 @@ class CommissionWallet {
   final MonthlyCommissionSummary monthlySummary;
   final CommissionStatistics statistics;
 
+  double get totalEarnings => netSalary + totalCommissionBalance;
+
   CommissionWallet({
+    this.netSalary = 0.0,
     required this.totalCommissionBalance,
     required this.currentMonthCommission,
     required this.lastMonthCommission,
@@ -25,6 +29,7 @@ class CommissionWallet {
 
   factory CommissionWallet.fromJson(Map<String, dynamic> json) {
     return CommissionWallet(
+      netSalary: (json['netSalary'] as num?)?.toDouble() ?? 0.0,
       totalCommissionBalance: (json['totalCommissionBalance'] as num?)?.toDouble() ?? 0.0,
       currentMonthCommission: (json['currentMonthCommission'] as num?)?.toDouble() ?? 0.0,
       lastMonthCommission: (json['lastMonthCommission'] as num?)?.toDouble() ?? 0.0,
