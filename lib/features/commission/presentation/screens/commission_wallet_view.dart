@@ -8,6 +8,7 @@ import 'package:quickboom_hrm/core/services/commission_service.dart';
 import 'package:quickboom_hrm/features/commission/data/commission_models.dart';
 import 'package:quickboom_hrm/features/commission/presentation/screens/commission_history_view.dart';
 import 'package:quickboom_hrm/features/commission/presentation/screens/commission_details_view.dart';
+import 'package:quickboom_hrm/features/commission/presentation/widgets/webhook_logs_widget.dart';
 
 class CommissionWalletView extends ConsumerStatefulWidget {
   const CommissionWalletView({super.key});
@@ -148,6 +149,13 @@ class _CommissionWalletViewState extends ConsumerState<CommissionWalletView> {
                 _CommissionStatisticsCard(
                   statistics: _walletData!.statistics,
                 ).animate(delay: 200.ms).fadeIn(duration: 400.ms),
+
+                const SizedBox(height: 24),
+
+                // ─── Webhook Activity ───
+                WebhookLogsWidget(itemsToShow: 5)
+                    .animate(delay: 250.ms)
+                    .fadeIn(duration: 400.ms),
 
                 const SizedBox(height: 24),
 
