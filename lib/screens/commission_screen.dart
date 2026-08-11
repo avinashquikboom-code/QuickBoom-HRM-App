@@ -231,164 +231,358 @@ class _HeroSummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final todayCommission = summary?.today.totalCommission ?? 0.0;
-    final todaySales = summary?.today.totalSales ?? 0.0;
-    final todayBills = summary?.today.billCount ?? 0;
-    final monthCommission = summary?.thisMonth.totalCommission ?? 0.0;
-
-    return Container(
-      margin: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+    if (loading) {
+      return const SizedBox(
+        height: 180,
+        child: Center(
+          child: CircularProgressIndicator(color: Color(0xFF0F172A)),
         ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF0F172A).withValues(alpha: 0.3),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: loading
-            ? const SizedBox(
-                height: 140,
-                child: Center(
-                  child: CircularProgressIndicator(color: Color(0xFF38BDF8)),
+      );
+    }
+
+    final today = summary?.today;
+    final thisMonth = summary?.thisMonth;
+    final latest = summary?.latestSale;
+
+    final todaySales = today?.totalSales ?? 0.0;
+    final todayComm = today?.totalCommission ?? 0.0;
+    final todayBills = today?.billCount ?? 0;
+
+    final monthSales = thisMonth?.totalSales ?? 0.0;
+    final monthComm = thisMonth?.totalCommission ?? 0.0;
+    final monthBills = thisMonth?.billCount ?? 0;
+
+    // Calculate progress percentage
+    double progressPercent = 0.0;
+    if (monthSales > 0) {
+      progressPercent = (todaySales / monthSales) * 100;
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ═════════════════════════════════════════════════════════
+          // TODAY'S PERFORMANCE CARD
+          // ═════════════════════════════════════════════════════════
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.grey.shade200),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.02),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
                 ),
-              )
-            : Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Label & Today Bill Count Pill
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        "Today's Commission",
-                        style: TextStyle(
-                          color: Color(0xFF94A3B8),
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                        ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      "Today's Performance",
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF0F172A),
                       ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF38BDF8).withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.receipt_rounded, size: 12, color: Color(0xFF38BDF8)),
-                            const SizedBox(width: 4),
-                            Text(
-                              '$todayBills ${todayBills == 1 ? 'Bill' : 'Bills'} Today',
-                              style: const TextStyle(
-                                color: Color(0xFF38BDF8),
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE0F2FE),
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 14),
-
-                  // Today's Commission Amount
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.baseline,
-                    textBaseline: TextBaseline.alphabetic,
-                    children: [
-                      const Text(
-                        '₹',
-                        style: TextStyle(
-                          color: Color(0xFF34D399),
-                          fontSize: 24,
+                      child: Text(
+                        '$todayBills ${todayBills == 1 ? 'bill' : 'bills'} today',
+                        style: const TextStyle(
+                          color: Color(0xFF0369A1),
+                          fontSize: 11,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      const SizedBox(width: 4),
-                      Text(
-                        todayCommission.toStringAsFixed(2),
+                    ),
+                  ],
+                ),
+                if (today != null && today.date.isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    today.date,
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Colors.grey.shade500,
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _PerformanceMetric(
+                        label: 'Net Sales Today',
+                        value: '₹${NumberFormat('#,##,###').format(todaySales)}',
+                        color: const Color(0xFF2563EB),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: _PerformanceMetric(
+                        label: 'Commission Today',
+                        value: '₹${NumberFormat('#,##,###.00').format(todayComm)}',
+                        color: const Color(0xFF16A34A),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // ═════════════════════════════════════════════════════════
+          // THIS MONTH'S PERFORMANCE CARD
+          // ═════════════════════════════════════════════════════════
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.grey.shade200),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.02),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      "This Month's Performance",
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF0F172A),
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFDCFCE7),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        '$monthBills ${monthBills == 1 ? 'bill' : 'bills'} total',
                         style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 34,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: -0.5,
+                          color: Color(0xFF15803D),
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
-                    ],
+                    ),
+                  ],
+                ),
+                if (thisMonth != null && thisMonth.month.isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    thisMonth.month,
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Colors.grey.shade500,
+                    ),
                   ),
-                  const SizedBox(height: 4),
+                ],
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _PerformanceMetric(
+                        label: 'Total Net Sales',
+                        value: '₹${NumberFormat('#,##,###').format(monthSales)}',
+                        color: const Color(0xFF2563EB),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: _PerformanceMetric(
+                        label: 'Total Commission',
+                        value: '₹${NumberFormat('#,##,###.00').format(monthComm)}',
+                        color: const Color(0xFF16A34A),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // ═════════════════════════════════════════════════════════
+          // MONTHLY PROGRESS BAR
+          // ═════════════════════════════════════════════════════════
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFFBEB),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFFDE68A)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Monthly Progress',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF78350F),
+                      ),
+                    ),
+                    Text(
+                      '${progressPercent.toStringAsFixed(1)}%',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFFD97706),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: (progressPercent / 100).clamp(0.0, 1.0),
+                    minHeight: 7,
+                    backgroundColor: const Color(0xFFFEF3C7),
+                    valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFD97706)),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Today is ${progressPercent.toStringAsFixed(1)}% of your monthly total sales target.',
+                  style: TextStyle(
+                    fontSize: 10.5,
+                    color: Colors.amber.shade900,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // ═════════════════════════════════════════════════════════
+          // LATEST TRANSACTION SECTION
+          // ═════════════════════════════════════════════════════════
+          if (latest != null) ...[
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.grey.shade200),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.02),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   const Text(
-                    'Earned Today (Resets at 00:00 IST)',
-                    style: TextStyle(color: Color(0xFF64748B), fontSize: 11.5),
+                    'Latest Transaction',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF0F172A),
+                    ),
                   ),
-
-                  const SizedBox(height: 18),
-                  Divider(color: Colors.white.withValues(alpha: 0.1), height: 1),
-                  const SizedBox(height: 16),
-
-                  // Today's Sales & Monthly Total Row
+                  const SizedBox(height: 12),
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Expanded(
-                        child: _MetricItem(
-                          icon: Icons.shopping_bag_outlined,
-                          label: "Today's Sales",
-                          value: '₹${_compact(todaySales)}',
-                          color: const Color(0xFF38BDF8),
-                        ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Bill ID: ${latest.billId}',
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF0F172A),
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            '${latest.displayDate} at ${latest.displayTime}',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.grey.shade500,
+                            ),
+                          ),
+                        ],
                       ),
-                      Expanded(
-                        child: _MetricItem(
-                          icon: Icons.calendar_month_rounded,
-                          label: 'This Month Total',
-                          value: '₹${_compact(monthCommission)}',
-                          color: const Color(0xFFFBBF24),
-                        ),
-                      ),
-                      Expanded(
-                        child: _MetricItem(
-                          icon: Icons.verified_rounded,
-                          label: 'Rate',
-                          value: 'Auto (1%)',
-                          color: const Color(0xFF34D399),
-                        ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            '₹${NumberFormat('#,##,###').format(latest.netAmount)}',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF0F172A),
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Commission: ₹${NumberFormat('#,##,###.00').format(latest.commission)}',
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: Color(0xFF16A34A),
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
                 ],
               ),
+            ),
+          ],
+        ],
       ),
     );
   }
-
-  String _compact(double v) {
-    if (v >= 100000) return '${(v / 100000).toStringAsFixed(1)}L';
-    if (v >= 1000) return '${(v / 1000).toStringAsFixed(1)}K';
-    return v.toStringAsFixed(0);
-  }
 }
 
-class _MetricItem extends StatelessWidget {
-  final IconData icon;
+class _PerformanceMetric extends StatelessWidget {
   final String label;
   final String value;
   final Color color;
 
-  const _MetricItem({
-    required this.icon,
+  const _PerformanceMetric({
     required this.label,
     required this.value,
     required this.color,
@@ -396,43 +590,40 @@ class _MetricItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(6),
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.12),
-            borderRadius: BorderRadius.circular(8),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withValues(alpha: 0.15)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey.shade600,
+            ),
           ),
-          child: Icon(icon, size: 14, color: color),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 10.5),
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 1),
-              Text(
-                value,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 13,
-                  fontWeight: FontWeight.bold,
-                ),
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w800,
+              color: color,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
+
+
 
 // ─── Search Box ───────────────────────────────────────────────────────────────
 class _SearchBox extends StatelessWidget {

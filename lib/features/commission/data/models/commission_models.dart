@@ -14,6 +14,7 @@ class CommissionSummary {
   final MonthlyCommission thisMonth;
   final MonthlyCommission lastMonth;
   final LifetimeCommission lifetime;
+  final LatestSale? latestSale;
 
   CommissionSummary({
     required this.totalSales,
@@ -30,6 +31,7 @@ class CommissionSummary {
     required this.thisMonth,
     required this.lastMonth,
     required this.lifetime,
+    this.latestSale,
   });
 
   factory CommissionSummary.fromJson(Map<String, dynamic> json) {
@@ -48,6 +50,39 @@ class CommissionSummary {
       thisMonth: MonthlyCommission.fromJson(json['thisMonth'] ?? json['monthlySummary'] ?? {}),
       lastMonth: MonthlyCommission.fromJson(json['lastMonth'] ?? {}),
       lifetime:  LifetimeCommission.fromJson(json['lifetime'] ?? {}),
+      latestSale: json['latestSale'] != null ? LatestSale.fromJson(json['latestSale']) : null,
+    );
+  }
+}
+
+class LatestSale {
+  final String billId;
+  final String date;
+  final String displayDate;
+  final String displayTime;
+  final double netAmount;
+  final double commission;
+  final double commissionRate;
+
+  LatestSale({
+    required this.billId,
+    required this.date,
+    required this.displayDate,
+    required this.displayTime,
+    required this.netAmount,
+    required this.commission,
+    required this.commissionRate,
+  });
+
+  factory LatestSale.fromJson(Map<String, dynamic> json) {
+    return LatestSale(
+      billId: json['billId'] ?? '',
+      date: json['date'] ?? '',
+      displayDate: json['displayDate'] ?? '',
+      displayTime: json['displayTime'] ?? '',
+      netAmount: (json['netAmount'] ?? 0).toDouble(),
+      commission: (json['commission'] ?? 0).toDouble(),
+      commissionRate: (json['commissionRate'] ?? 0).toDouble(),
     );
   }
 }
