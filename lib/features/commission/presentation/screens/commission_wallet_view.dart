@@ -205,13 +205,15 @@ class _CommissionWalletViewState extends ConsumerState<CommissionWalletView> {
     final txns = _walletData!.recentTransactions;
     final now = DateTime.now();
     final todayStart = DateTime(now.year, now.month, now.day);
+    final todayEnd = DateTime(now.year, now.month, now.day, 23, 59, 59);
     final weekMonday = now.subtract(Duration(days: now.weekday - 1));
     final weekStart = DateTime(weekMonday.year, weekMonday.month, weekMonday.day);
     final monthStart = DateTime(now.year, now.month, 1);
 
     final filteredTxns = txns.where((tx) {
       if (_selectedPeriodFilter == 'Today') {
-        return tx.generatedDate.isAfter(todayStart.subtract(const Duration(seconds: 1)));
+        return tx.generatedDate.isAfter(todayStart.subtract(const Duration(seconds: 1))) &&
+            tx.generatedDate.isBefore(todayEnd.add(const Duration(seconds: 1)));
       } else if (_selectedPeriodFilter == 'This Week') {
         return tx.generatedDate.isAfter(weekStart.subtract(const Duration(seconds: 1)));
       } else if (_selectedPeriodFilter == 'This Month') {
