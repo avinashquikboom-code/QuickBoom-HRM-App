@@ -88,17 +88,19 @@ class CommissionTransaction {
   });
 
   factory CommissionTransaction.fromJson(Map<String, dynamic> json) {
+    final rawGenDate = json['generatedDate'] ?? json['createdAt'] ?? DateTime.now().toIso8601String();
+    final rawPayDate = json['paymentDate'] ?? json['paidAt'];
     return CommissionTransaction(
-      id: json['id'] as String? ?? '',
-      invoiceNumber: json['invoiceNumber'] as String? ?? '',
-      customerName: json['customerName'] as String? ?? '',
-      billAmount: (json['billAmount'] as num?)?.toDouble() ?? 0.0,
-      commissionPercentage: (json['commissionPercentage'] as num?)?.toDouble() ?? 0.0,
-      commissionEarned: (json['commissionEarned'] as num?)?.toDouble() ?? 0.0,
-      generatedDate: DateTime.parse(json['generatedDate'] as String? ?? DateTime.now().toIso8601String()),
-      paymentDate: json['paymentDate'] != null ? DateTime.parse(json['paymentDate'] as String) : null,
-      status: json['status'] as String? ?? 'Pending',
-      remarks: json['remarks'] as String?,
+      id: (json['id'] ?? '').toString(),
+      invoiceNumber: (json['invoiceNumber'] ?? json['billId'] ?? '').toString(),
+      customerName: (json['customerName'] ?? json['notes'] ?? 'Retail Sale').toString(),
+      billAmount: (json['billAmount'] ?? json['saleAmount'] ?? 0).toDouble(),
+      commissionPercentage: (json['commissionPercentage'] ?? json['commissionPercent'] ?? 0).toDouble(),
+      commissionEarned: (json['commissionEarned'] ?? json['commissionAmount'] ?? 0).toDouble(),
+      generatedDate: DateTime.tryParse(rawGenDate.toString()) ?? DateTime.now(),
+      paymentDate: rawPayDate != null ? DateTime.tryParse(rawPayDate.toString()) : null,
+      status: (json['status'] ?? 'Pending').toString(),
+      remarks: json['remarks']?.toString() ?? json['notes']?.toString(),
     );
   }
 

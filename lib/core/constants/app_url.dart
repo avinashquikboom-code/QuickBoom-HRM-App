@@ -257,6 +257,12 @@ class AppUrl {
       '/api/mobile/commission/transactions';
   static const String mobileCommissionDaily =
       '/api/mobile/commission/daily';
+  static const String mobileCommissionSummary =
+      '/api/mobile/commission/summary';
+  static const String mobileCommissionBills =
+      '/api/mobile/commission/bills';
+  static String mobileCommissionBillDetail(String billId) =>
+      '/api/mobile/commission/bill/$billId';
   static const String mobileCommissionTargets =
       '/api/mobile/commission/targets';
   static const String mobileCommissionSettlements =
