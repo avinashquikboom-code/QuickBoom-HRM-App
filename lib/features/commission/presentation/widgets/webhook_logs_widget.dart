@@ -311,6 +311,11 @@ class _LogRow extends StatelessWidget {
     final amountStr = amount == null
         ? '—'
         : '₹${NumberFormat('#,##,###').format((amount as num).toDouble())}';
+    final commRaw = log['commissionAmount'];
+    final commAmt = commRaw != null ? (commRaw as num).toDouble() : 0.0;
+    final commStr = commAmt > 0
+        ? '₹${NumberFormat('#,##,###.##').format(commAmt)}'
+        : null;
     final eventType = (log['eventType'] ?? '—').toString();
     final time = formatTime(log['createdAt'] as String?);
 
@@ -367,6 +372,7 @@ class _LogRow extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 10),
+          // Row 2: Bill ID | Sale Amount | Time
           Row(
             children: [
               Expanded(
@@ -383,9 +389,9 @@ class _LogRow extends StatelessWidget {
                 flex: 2,
                 child: _InfoChip(
                   icon: RemixIcons.money_rupee_circle_line,
-                  label: 'Amount',
+                  label: 'Sale',
                   value: amountStr,
-                  valueColor: AppColors.success,
+                  valueColor: AppColors.textPrimary,
                 ),
               ),
               const SizedBox(width: 8),
@@ -400,6 +406,42 @@ class _LogRow extends StatelessWidget {
               ),
             ],
           ),
+          // Row 3: Commission earned chip (only when > 0)
+          if (commStr != null) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: AppColors.success.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: AppColors.success.withValues(alpha: 0.25)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(RemixIcons.coin_line, color: AppColors.success, size: 13),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Commission Earned',
+                    style: TextStyle(
+                      color: AppColors.success,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    commStr,
+                    style: TextStyle(
+                      color: AppColors.success,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );
