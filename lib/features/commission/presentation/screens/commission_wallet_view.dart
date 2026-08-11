@@ -501,17 +501,17 @@ class _CommissionBalanceCard extends StatelessWidget {
     final formattedLast = NumberFormat('#,##,###.00').format(lastMonth);
 
     return Container(
-      padding: const EdgeInsets.all(22),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(28),
         gradient: const LinearGradient(
-          colors: [Color(0xFF2E7D6E), Color(0xFF164E43)],
+          colors: [Color(0xFF1E5B4F), Color(0xFF0F3830)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF164E43).withValues(alpha: 0.35),
+            color: const Color(0xFF0F3830).withValues(alpha: 0.4),
             blurRadius: 20,
             spreadRadius: 2,
             offset: const Offset(0, 10),
@@ -521,14 +521,14 @@ class _CommissionBalanceCard extends StatelessWidget {
       child: Stack(
         children: [
           Positioned(
-            right: -50,
-            top: -50,
+            right: -40,
+            top: -40,
             child: Container(
-              width: 150,
-              height: 150,
+              width: 140,
+              height: 140,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: 0.08),
+                color: Colors.white.withValues(alpha: 0.05),
               ),
             ),
           ),
@@ -538,18 +538,18 @@ class _CommissionBalanceCard extends StatelessWidget {
               Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(10),
+                    padding: const EdgeInsets.all(9),
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(RemixIcons.wallet_3_line, color: Colors.white, size: 20),
+                    child: const Icon(RemixIcons.wallet_3_line, color: Colors.white, size: 18),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 10),
                   Text(
-                    'TOTAL EARNINGS',
+                    'TOTAL PAYOUT',
                     style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.7),
+                      color: Colors.white.withValues(alpha: 0.75),
                       fontSize: 11,
                       fontWeight: FontWeight.w800,
                       letterSpacing: 1.2,
@@ -557,122 +557,148 @@ class _CommissionBalanceCard extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 12),
               Text(
                 '₹$formattedTotal',
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 32,
                   fontWeight: FontWeight.w900,
+                  letterSpacing: -0.5,
                 ),
               ),
               const SizedBox(height: 16),
 
-              // ─── Formula Card: Net Salary + Commission = Total ───
+              // ─── Formula Banner: Net Salary + Commission = Total ───
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                 decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.18),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+                  color: Colors.white.withValues(alpha: 0.09),
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
                 ),
                 child: Row(
                   children: [
+                    // 1. Net Salary
                     Expanded(
+                      flex: 10,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             'Net Salary',
                             style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.7),
-                              fontSize: 10,
+                              color: Colors.white.withValues(alpha: 0.65),
+                              fontSize: 9.5,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
-                          const SizedBox(height: 2),
-                          Text(
-                            '₹$formattedSalary',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 12.5,
-                              fontWeight: FontWeight.w800,
+                          const SizedBox(height: 3),
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              '₹$formattedSalary',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w800,
+                              ),
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
                           ),
                         ],
                       ),
                     ),
-                    Text(
-                      '+',
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.8),
-                        fontSize: 15,
-                        fontWeight: FontWeight.w900,
+
+                    // + Badge
+                    Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.12),
+                        shape: BoxShape.circle,
                       ),
+                      child: const Icon(Icons.add_rounded, color: Colors.white, size: 14),
                     ),
+
+                    // 2. Commission
                     Expanded(
+                      flex: 10,
                       child: Padding(
-                        padding: const EdgeInsets.only(left: 6.0),
+                        padding: const EdgeInsets.only(left: 8.0),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
                               'Commission',
                               style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.7),
-                                fontSize: 10,
+                                color: Colors.white.withValues(alpha: 0.65),
+                                fontSize: 9.5,
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
-                            const SizedBox(height: 2),
-                            Text(
-                              '₹$formattedCommission',
-                              style: const TextStyle(
-                                color: Color(0xFF6EE7B7),
-                                fontSize: 12.5,
-                                fontWeight: FontWeight.w800,
+                            const SizedBox(height: 3),
+                            FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                '₹$formattedCommission',
+                                style: const TextStyle(
+                                  color: Color(0xFF34D399),
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w800,
+                                ),
                               ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
                             ),
                           ],
                         ),
                       ),
                     ),
-                    Text(
-                      '=',
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.8),
-                        fontSize: 15,
-                        fontWeight: FontWeight.w900,
+
+                    // = Badge
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: const Text(
+                        '=',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w900,
+                        ),
                       ),
                     ),
+
+                    // 3. Total
                     Expanded(
+                      flex: 10,
                       child: Padding(
-                        padding: const EdgeInsets.only(left: 6.0),
+                        padding: const EdgeInsets.only(left: 8.0),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
                               'Total',
                               style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.7),
-                                fontSize: 10,
+                                color: Colors.white.withValues(alpha: 0.65),
+                                fontSize: 9.5,
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
-                            const SizedBox(height: 2),
-                            Text(
-                              '₹$formattedTotal',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 12.5,
-                                fontWeight: FontWeight.w900,
+                            const SizedBox(height: 3),
+                            FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                '₹$formattedTotal',
+                                style: const TextStyle(
+                                  color: Color(0xFFFDE047),
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w900,
+                                ),
                               ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
                             ),
                           ],
                         ),
