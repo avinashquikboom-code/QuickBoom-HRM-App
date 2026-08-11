@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:developer' as dev;
 
@@ -23,11 +24,49 @@ class _WebhookLogsWidgetState extends State<WebhookLogsWidget> {
   List<Map<String, dynamic>> _logs = [];
   bool _loading = true;
   bool _hasError = false;
+  Timer? _timer;
 
   @override
   void initState() {
     super.initState();
     _fetchLogs();
+    // Auto-refresh every 30 seconds
+    _timer = Timer.periodic(const Duration(seconds: 30), (_) => _silentRefresh());
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  /// Refresh without showing the skeleton spinner (avoids UI flicker).
+  Future<void> _silentRefresh() async {
+    if (!mounted) return;
+    try {
+      final token = await StorageService.getToken();
+      if (token == null) return;
+      final response = await http
+          .get(
+            Uri.parse('${AppUrl.baseUrl}${AppUrl.mobileWebhookLogs}?limit=10'),
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer $token',
+            },
+          )
+          .timeout(const Duration(seconds: 20));
+      if (!mounted) return;
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        final data = body['data'];
+        setState(() {
+          _logs = List<Map<String, dynamic>>.from(data is List ? data : []);
+          _hasError = false;
+        });
+      }
+    } catch (e) {
+      dev.log('Webhook silent refresh: $e', name: 'WebhookLogsWidget');
+    }
   }
 
   Future<void> _fetchLogs() async {

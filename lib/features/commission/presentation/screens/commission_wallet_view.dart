@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:remixicon/remixicon.dart';
@@ -22,11 +23,34 @@ class _CommissionWalletViewState extends ConsumerState<CommissionWalletView> {
   bool _isLoading = true;
   bool _isError = false;
   String _errorMessage = '';
+  Timer? _timer;
+  DateTime? _lastUpdated;
 
   @override
   void initState() {
     super.initState();
     _loadCommissionWallet();
+    // Auto-refresh wallet every 60 seconds
+    _timer = Timer.periodic(const Duration(seconds: 60), (_) => _silentRefresh());
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  /// Silent background refresh — updates data without full skeleton reload.
+  Future<void> _silentRefresh() async {
+    if (!mounted) return;
+    final data = await CommissionService.fetchCommissionWallet();
+    if (mounted && data != null) {
+      setState(() {
+        _walletData = data;
+        _isError = false;
+        _lastUpdated = DateTime.now();
+      });
+    }
   }
 
   Future<void> _loadCommissionWallet() async {
@@ -43,6 +67,7 @@ class _CommissionWalletViewState extends ConsumerState<CommissionWalletView> {
         _isLoading = false;
         _isError = data == null;
         _errorMessage = data == null ? 'Failed to load commission data' : '';
+        if (data != null) _lastUpdated = DateTime.now();
       });
     }
   }
@@ -71,6 +96,41 @@ class _CommissionWalletViewState extends ConsumerState<CommissionWalletView> {
           ),
         ),
         actions: [
+          // Auto-refresh status chip
+          if (_lastUpdated != null)
+            Center(
+              child: Container(
+                margin: const EdgeInsets.only(right: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.success.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: AppColors.success.withValues(alpha: 0.3)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: BoxDecoration(
+                        color: AppColors.success,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 5),
+                    Text(
+                      'Live',
+                      style: TextStyle(
+                        color: AppColors.success,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           IconButton(
             icon: Icon(RemixIcons.history_line, color: AppColors.textPrimary),
             onPressed: () {
@@ -88,6 +148,23 @@ class _CommissionWalletViewState extends ConsumerState<CommissionWalletView> {
                 MaterialPageRoute(builder: (_) => const CommissionDetailsView()),
               );
             },
+          ),
+          // Manual refresh
+          IconButton(
+            icon: _isLoading
+                ? SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: AppColors.primary,
+                    ),
+                  )
+                : Icon(RemixIcons.refresh_line, color: AppColors.textPrimary),
+            onPressed: _isLoading ? null : _onRefresh,
+            tooltip: _lastUpdated != null
+                ? 'Updated ${_lastUpdated!.hour.toString().padLeft(2, '0')}:${_lastUpdated!.minute.toString().padLeft(2, '0')}'
+                : 'Refresh',
           ),
         ],
       ),
