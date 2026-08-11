@@ -115,8 +115,8 @@ class CommissionTransaction {
       billAmount: (json['billAmount'] ?? json['saleAmount'] ?? 0).toDouble(),
       commissionPercentage: (json['commissionPercentage'] ?? json['commissionPercent'] ?? 0).toDouble(),
       commissionEarned: (json['commissionEarned'] ?? json['commissionAmount'] ?? 0).toDouble(),
-      generatedDate: DateTime.tryParse(rawGenDate.toString()) ?? DateTime.now(),
-      paymentDate: rawPayDate != null ? DateTime.tryParse(rawPayDate.toString()) : null,
+      generatedDate: (DateTime.tryParse(rawGenDate.toString()) ?? DateTime.now()).toLocal(),
+      paymentDate: rawPayDate != null ? (DateTime.tryParse(rawPayDate.toString())?.toLocal()) : null,
       status: (json['status'] ?? 'Pending').toString(),
       remarks: json['remarks']?.toString() ?? json['notes']?.toString(),
     );
