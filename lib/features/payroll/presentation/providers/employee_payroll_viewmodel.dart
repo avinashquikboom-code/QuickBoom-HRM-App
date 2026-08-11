@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:quickboom_hrm/core/services/api_service.dart';
 import 'package:quickboom_hrm/core/constants/app_url.dart';
+import 'package:quickboom_hrm/core/services/mobile_commission_service.dart';
 
 class PayslipModel {
   final int id;
@@ -128,6 +129,46 @@ class EmployeePayrollViewModel extends StateNotifier<EmployeePayrollState> {
       final List<PayslipModel> payslips = rawPayslips
           .map((json) => PayslipModel.fromJson(json as Map<String, dynamic>))
           .toList();
+
+      if (payslips.isNotEmpty && (payslips.first.commissionEarned == null || payslips.first.commissionEarned == 0)) {
+        try {
+          final commDash = await MobileCommissionService.getCommissionDashboard();
+          if (commDash != null && commDash['data'] != null && commDash['data']['summary'] != null) {
+            final approvedComm = (commDash['data']['summary']['approvedCommission'] ?? commDash['data']['summary']['pendingCommission'] ?? 0).toDouble();
+            if (approvedComm > 0) {
+              final first = payslips.first;
+              payslips[0] = PayslipModel(
+                id: first.id,
+                employeeId: first.employeeId,
+                month: first.month,
+                year: first.year,
+                baseSalary: first.baseSalary,
+                allowance: first.allowance,
+                deductions: first.deductions,
+                netSalary: first.netSalary,
+                status: first.status,
+                employeeCode: first.employeeCode,
+                employeeName: first.employeeName,
+                designation: first.designation,
+                department: first.department,
+                officeName: first.officeName,
+                netInWords: first.netInWords,
+                createdAt: first.createdAt,
+                commissionEarned: approvedComm,
+                pendingCommission: first.pendingCommission,
+                paidCommission: first.paidCommission,
+                presentDays: first.presentDays,
+                halfDays: first.halfDays,
+                halfDayDeduction: first.halfDayDeduction,
+                leaveDays: first.leaveDays,
+                leaveDeduction: first.leaveDeduction,
+              );
+            }
+          }
+        } catch (commErr) {
+          debugPrint('Error fetching fallback commission dashboard: $commErr');
+        }
+      }
 
       if (!mounted) return;
       state = EmployeePayrollState(

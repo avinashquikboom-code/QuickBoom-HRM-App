@@ -16,17 +16,24 @@ class PayCard extends StatelessWidget {
     required this.cardNumber,
     required this.netSalary,
     required this.grossSalary,
-    this.commission,
+    this.commission = 0,
     this.monthYear,
   });
 
   @override
   Widget build(BuildContext context) {
-    final hasCommission = commission != null && commission! > 0;
-    final totalSalary = netSalary + (commission ?? 0);
+    debugPrint(
+      '[PayCard DEBUG] Commission: $commission, NetSalary: $netSalary',
+    );
+
+    final commVal = commission ?? 0;
+    final hasCommission = commVal > 0;
+    final totalSalary = netSalary + commVal;
 
     final formattedNet = NumberFormat('#,##,###').format(netSalary);
-    final formattedComm = hasCommission ? NumberFormat('#,##,###').format(commission!) : '0';
+    final formattedComm = hasCommission
+        ? '+₹${NumberFormat('#,##,###').format(commVal)}'
+        : '₹0';
     final formattedTotal = NumberFormat('#,##,###').format(totalSalary);
     final formattedGross = NumberFormat('#,##,###').format(grossSalary);
 
@@ -43,7 +50,7 @@ class PayCard extends StatelessWidget {
         boxShadow: [
           BoxShadow(
             color: const Color(0xFF1E8449).withValues(alpha: 0.35),
-            blurRadius: 16,
+            blurRadius: 18,
             spreadRadius: 1,
             offset: const Offset(0, 8),
           ),
@@ -52,7 +59,7 @@ class PayCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ─── Header: PAY CARD + Diamond Icon ───
+          // ─── Header: PAY CARD + Month/Year + Diamond Icon ───
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -70,7 +77,10 @@ class PayCard extends StatelessWidget {
                   if (monthYear != null) ...[
                     const SizedBox(width: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.white.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(6),
@@ -101,58 +111,59 @@ class PayCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
 
-          // ─── Employee Name ───
+          // ─── 1. Employee Name at Top ───
           Text(
             employeeName.toUpperCase(),
             style: const TextStyle(
               color: Colors.white,
-              fontSize: 20,
+              fontSize: 18,
               fontWeight: FontWeight.w900,
               letterSpacing: 0.8,
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 18),
 
-          // ─── Net Salary Row ───
-          _buildSalaryRow(
+          // ─── 2. NET SALARY Section ───
+          _buildSalaryBlock(
             label: 'NET SALARY',
             value: '₹$formattedNet',
-            labelColor: Colors.white.withValues(alpha: 0.9),
+            labelColor: Colors.white.withValues(alpha: 0.8),
             valueColor: Colors.white,
+            valueFontSize: 17,
           ),
+          const SizedBox(height: 14),
 
-          // ─── Commission Row ───
-          const SizedBox(height: 10),
-          _buildSalaryRow(
+          // ─── 2 & 5 & 7. + COMMISSION Section (Gold/Yellow) ───
+          _buildSalaryBlock(
             label: '+ COMMISSION',
-            value: '+ ₹$formattedComm',
+            value: formattedComm,
             labelColor: const Color(0xFFFDE047),
             valueColor: const Color(0xFFFDE047),
-            isAddition: true,
+            valueFontSize: 17,
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 10),
-            child: Container(
-              height: 1,
-              color: Colors.white.withValues(alpha: 0.25),
-            ),
-          ),
-          // ─── Total Salary (Net + Commission) ───
-          _buildSalaryRow(
-            label: 'TOTAL SALARY',
+          const SizedBox(height: 14),
+
+          // ─── Divider ───
+          Container(height: 1, color: Colors.white.withValues(alpha: 0.25)),
+          const SizedBox(height: 14),
+
+          // ─── 2 & 4. TOTAL SALARY Section (Largest & Boldest) ───
+          _buildSalaryBlock(
+            label: 'TOTAL SALARY=',
             value: '₹$formattedTotal',
-            labelColor: Colors.white,
+            labelColor: Colors.white.withValues(alpha: 0.95),
             valueColor: Colors.white,
             isBold: true,
+            valueFontSize: 26,
           ),
 
           const SizedBox(height: 20),
 
-          // ─── Footer: Gross Salary + Card No ───
+          // ─── 6. Bottom Footer: Gross Salary + Card No ───
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
@@ -218,32 +229,34 @@ class PayCard extends StatelessWidget {
     );
   }
 
-  Widget _buildSalaryRow({
+  Widget _buildSalaryBlock({
     required String label,
     required String value,
     required Color labelColor,
     required Color valueColor,
-    bool isAddition = false,
+    required double valueFontSize,
     bool isBold = false,
   }) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
           style: TextStyle(
             color: labelColor,
-            fontSize: isBold ? 13.5 : 11.5,
-            fontWeight: isBold ? FontWeight.w900 : FontWeight.w700,
-            letterSpacing: 1,
+            fontSize: isBold ? 11.5 : 10,
+            fontWeight: isBold ? FontWeight.w800 : FontWeight.w700,
+            letterSpacing: 1.5,
           ),
         ),
+        const SizedBox(height: 3),
         Text(
           value,
           style: TextStyle(
             color: valueColor,
-            fontSize: isBold ? 18 : 15,
+            fontSize: valueFontSize,
             fontWeight: isBold ? FontWeight.w900 : FontWeight.w800,
+            letterSpacing: 0.3,
           ),
         ),
       ],
