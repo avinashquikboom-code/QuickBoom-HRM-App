@@ -294,4 +294,9 @@ class AppUrl {
   // ─────────────────────────────────────────────
   static const String permissionsMe = '/api/permissions/me';
   static const String permissionRequest = '/api/permissions/request';
+
+  // ─────────────────────────────────────────────
+  // Webhook Logs (Commission)
+  // ─────────────────────────────────────────────
+  static const String webhookLogs = '/api/webhook/logs';
 }
