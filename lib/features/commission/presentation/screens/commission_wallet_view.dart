@@ -54,20 +54,26 @@ class _CommissionWalletViewState extends ConsumerState<CommissionWalletView> {
   }
 
   Future<void> _loadCommissionWallet() async {
-    setState(() {
-      _isLoading = true;
-      _isError = false;
-    });
+    if (_walletData == null) {
+      setState(() {
+        _isLoading = true;
+        _isError = false;
+      });
+    }
 
     final data = await CommissionService.fetchCommissionWallet();
 
     if (mounted) {
       setState(() {
-        _walletData = data;
+        if (data != null) {
+          _walletData = data;
+          _isError = false;
+          _lastUpdated = DateTime.now();
+        } else if (_walletData == null) {
+          _isError = true;
+          _errorMessage = 'Failed to load commission data';
+        }
         _isLoading = false;
-        _isError = data == null;
-        _errorMessage = data == null ? 'Failed to load commission data' : '';
-        if (data != null) _lastUpdated = DateTime.now();
       });
     }
   }

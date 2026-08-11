@@ -5,6 +5,7 @@ import 'package:remixicon/remixicon.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:quickboom_hrm/core/constants/app_colors.dart';
 import 'package:quickboom_hrm/features/payroll/presentation/providers/employee_payroll_viewmodel.dart';
+import 'package:quickboom_hrm/features/payroll/presentation/widgets/pay_card_widget.dart';
 
 class EmployeePayrollView extends ConsumerStatefulWidget {
   const EmployeePayrollView({super.key});
@@ -58,65 +59,77 @@ class _EmployeePayrollViewState extends ConsumerState<EmployeePayrollView> {
             : CustomScrollView(
                 physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
                 slivers: [
-                  // ─── Header Summary Card ───
+                  // ─── Header Summary Card / PayCard ───
                   SliverPadding(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     sliver: SliverToBoxAdapter(
-                      child: Container(
-                        padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          gradient: AppColors.heroGradient,
-                          borderRadius: BorderRadius.circular(24),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.primary.withValues(alpha: 0.15),
-                              blurRadius: 16,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(12),
+                      child: payrollState.payslips.isNotEmpty
+                          ? Builder(builder: (context) {
+                              final latest = payrollState.payslips.first;
+                              return PayCard(
+                                employeeName: latest.employeeName,
+                                cardNumber: 'HK${latest.employeeCode}',
+                                netSalary: latest.netSalary,
+                                grossSalary: latest.baseSalary + latest.allowance,
+                                commission: latest.commissionEarned,
+                                monthYear: '${_getMonthName(latest.month)} ${latest.year}',
+                              );
+                            }).animate().fadeIn(duration: 400.ms).slideY(begin: 0.05, end: 0)
+                          : Container(
+                              padding: const EdgeInsets.all(20),
                               decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.2),
-                                shape: BoxShape.circle,
+                                gradient: AppColors.heroGradient,
+                                borderRadius: BorderRadius.circular(24),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: AppColors.primary.withValues(alpha: 0.15),
+                                    blurRadius: 16,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
                               ),
-                              child: const Icon(
-                                RemixIcons.wallet_3_line,
-                                color: Colors.white,
-                                size: 24,
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                              child: Row(
                                 children: [
-                                  const Text(
-                                    'Payslips & Payroll',
-                                    style: TextStyle(
+                                  Container(
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withValues(alpha: 0.2),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(
+                                      RemixIcons.wallet_3_line,
                                       color: Colors.white,
-                                      fontWeight: FontWeight.w800,
-                                      fontSize: 16,
+                                      size: 24,
                                     ),
                                   ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    'View and download your official monthly payslips securely.',
-                                    style: TextStyle(
-                                      color: Colors.white.withValues(alpha: 0.8),
-                                      fontSize: 11.5,
-                                      fontWeight: FontWeight.w500,
+                                  const SizedBox(width: 16),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        const Text(
+                                          'Payslips & Payroll',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.w800,
+                                            fontSize: 16,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          'View and download your official monthly payslips securely.',
+                                          style: TextStyle(
+                                            color: Colors.white.withValues(alpha: 0.8),
+                                            fontSize: 11.5,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
                                 ],
                               ),
-                            ),
-                          ],
-                        ),
-                      ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.05, end: 0),
+                            ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.05, end: 0),
                     ),
                   ),
 
@@ -216,28 +229,47 @@ class _EmployeePayrollViewState extends ConsumerState<EmployeePayrollView> {
                                   Row(
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
-                                      Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            'Net Take-home',
-                                            style: TextStyle(
-                                              fontSize: 11,
-                                              color: cs.onSurface.withValues(alpha: 0.55),
-                                              fontWeight: FontWeight.w600,
+                                      Builder(builder: (context) {
+                                        final comm = slip.commissionEarned ?? 0;
+                                        final hasComm = comm > 0;
+                                        final totalPay = slip.netSalary + comm;
+                                        final formattedTotalPay = NumberFormat('#,##,###').format(totalPay);
+                                        final formattedCommStr = NumberFormat('#,##,###').format(comm);
+
+                                        return Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              hasComm ? 'Total Salary (Net + Comm)' : 'Net Take-home',
+                                              style: TextStyle(
+                                                fontSize: 11,
+                                                color: cs.onSurface.withValues(alpha: 0.55),
+                                                fontWeight: FontWeight.w600,
+                                              ),
                                             ),
-                                          ),
-                                          const SizedBox(height: 4),
-                                          Text(
-                                            '₹$formattedNet',
-                                            style: const TextStyle(
-                                              fontSize: 20,
-                                              fontWeight: FontWeight.w800,
-                                              color: AppColors.primary,
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              '₹$formattedTotalPay',
+                                              style: const TextStyle(
+                                                fontSize: 20,
+                                                fontWeight: FontWeight.w900,
+                                                color: AppColors.primary,
+                                              ),
                                             ),
-                                          ),
-                                        ],
-                                      ),
+                                            if (hasComm) ...[
+                                              const SizedBox(height: 2),
+                                              Text(
+                                                'Net ₹$formattedNet + Comm ₹$formattedCommStr',
+                                                style: TextStyle(
+                                                  fontSize: 10,
+                                                  color: AppColors.success,
+                                                  fontWeight: FontWeight.w700,
+                                                ),
+                                              ),
+                                            ],
+                                          ],
+                                        );
+                                      }),
                                       ElevatedButton.icon(
                                         style: ElevatedButton.styleFrom(
                                           backgroundColor: AppColors.primary,
