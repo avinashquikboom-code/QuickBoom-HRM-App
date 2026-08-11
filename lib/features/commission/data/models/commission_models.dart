@@ -7,6 +7,13 @@ class CommissionSummary {
   final double commissionRate;
   final int transactionCount;
   final DateRange period;
+  // Multi-period breakdown
+  final DailyCommission today;
+  final WeeklyCommission thisWeek;
+  final WeeklyCommission lastWeek;
+  final MonthlyCommission thisMonth;
+  final MonthlyCommission lastMonth;
+  final LifetimeCommission lifetime;
 
   CommissionSummary({
     required this.totalSales,
@@ -17,18 +24,151 @@ class CommissionSummary {
     required this.commissionRate,
     required this.transactionCount,
     required this.period,
+    required this.today,
+    required this.thisWeek,
+    required this.lastWeek,
+    required this.thisMonth,
+    required this.lastMonth,
+    required this.lifetime,
   });
 
   factory CommissionSummary.fromJson(Map<String, dynamic> json) {
     return CommissionSummary(
       totalSales: (json['totalSales'] ?? 0).toDouble(),
-      totalCommissionEarned: (json['totalCommissionEarned'] ?? json['totalCommission'] ?? 0).toDouble(),
+      totalCommissionEarned: (json['totalCommissionEarned'] ?? json['totalCommission'] ?? json['lifetimeCommission'] ?? 0).toDouble(),
       pendingCommission: (json['pendingCommission'] ?? 0).toDouble(),
       approvedCommission: (json['approvedCommission'] ?? 0).toDouble(),
       paidCommission: (json['paidCommission'] ?? 0).toDouble(),
       commissionRate: (json['commissionRate'] ?? 0).toDouble(),
       transactionCount: json['transactionCount'] ?? 0,
       period: DateRange.fromJson(json['period'] ?? {}),
+      today:     DailyCommission.fromJson(json['today'] ?? {}),
+      thisWeek:  WeeklyCommission.fromJson(json['thisWeek'] ?? {}),
+      lastWeek:  WeeklyCommission.fromJson(json['lastWeek'] ?? {}),
+      thisMonth: MonthlyCommission.fromJson(json['thisMonth'] ?? json['monthlySummary'] ?? {}),
+      lastMonth: MonthlyCommission.fromJson(json['lastMonth'] ?? {}),
+      lifetime:  LifetimeCommission.fromJson(json['lifetime'] ?? {}),
+    );
+  }
+}
+
+/// Today's commission — resets at 00:00 IST daily
+class DailyCommission {
+  final String date;
+  final double totalSales;
+  final double totalCommission;
+  final int billCount;
+  final String label;
+
+  DailyCommission({
+    required this.date,
+    required this.totalSales,
+    required this.totalCommission,
+    required this.billCount,
+    required this.label,
+  });
+
+  factory DailyCommission.fromJson(Map<String, dynamic> json) {
+    return DailyCommission(
+      date: json['date'] ?? '',
+      totalSales: (json['totalSales'] ?? 0).toDouble(),
+      totalCommission: (json['totalCommission'] ?? 0).toDouble(),
+      billCount: json['billCount'] ?? 0,
+      label: json['label'] ?? 'Today',
+    );
+  }
+}
+
+/// Weekly commission (this week or last week)
+class WeeklyCommission {
+  final String from;
+  final String to;
+  final double totalSales;
+  final double totalCommission;
+  final int billCount;
+  final String label;
+
+  WeeklyCommission({
+    required this.from,
+    required this.to,
+    required this.totalSales,
+    required this.totalCommission,
+    required this.billCount,
+    required this.label,
+  });
+
+  factory WeeklyCommission.fromJson(Map<String, dynamic> json) {
+    return WeeklyCommission(
+      from:            json['from'] ?? '',
+      to:              json['to'] ?? '',
+      totalSales:      (json['totalSales'] ?? 0).toDouble(),
+      totalCommission: (json['totalCommission'] ?? 0).toDouble(),
+      billCount:       json['billCount'] ?? 0,
+      label:           json['label'] ?? 'This Week',
+    );
+  }
+}
+
+/// Lifetime (all time) commission
+class LifetimeCommission {
+  final double totalSales;
+  final double totalCommission;
+  final int billCount;
+  final String label;
+
+  LifetimeCommission({
+    required this.totalSales,
+    required this.totalCommission,
+    required this.billCount,
+    required this.label,
+  });
+
+  factory LifetimeCommission.fromJson(Map<String, dynamic> json) {
+    return LifetimeCommission(
+      totalSales:      (json['totalSales'] ?? 0).toDouble(),
+      totalCommission: (json['totalCommission'] ?? 0).toDouble(),
+      billCount:       json['billCount'] ?? 0,
+      label:           json['label'] ?? 'All Time',
+    );
+  }
+}
+
+
+/// This month's commission — aggregated full month
+class MonthlyCommission {
+  final String month;
+  final String monthName;
+  final String year;
+  final double totalSales;
+  final double totalCommission;
+  final int billCount;
+  final double pendingCommission;
+  final double paidCommission;
+  final String label;
+
+  MonthlyCommission({
+    required this.month,
+    required this.monthName,
+    required this.year,
+    required this.totalSales,
+    required this.totalCommission,
+    required this.billCount,
+    required this.pendingCommission,
+    required this.paidCommission,
+    required this.label,
+  });
+
+  factory MonthlyCommission.fromJson(Map<String, dynamic> json) {
+    return MonthlyCommission(
+      month: json['month'] ?? '',
+      monthName: json['monthName'] ?? json['month'] ?? '',
+      year: json['year'] ?? '',
+      totalSales: (json['totalSales'] ?? json['totalSalesAmount'] ?? 0).toDouble(),
+      totalCommission: (json['totalCommission'] ?? json['totalCommissionEarned'] ?? 0).toDouble(),
+      billCount: json['billCount'] ?? json['totalBills'] ?? 0,
+      pendingCommission: (json['pendingCommission'] ?? 0).toDouble(),
+      paidCommission: (json['paidCommission'] ?? 0).toDouble(),
+      label: json['label'] ?? 'This Month',
     );
   }
 }
