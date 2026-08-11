@@ -44,7 +44,7 @@ class _WebhookLogsWidgetState extends State<WebhookLogsWidget> {
       }
       final response = await http
           .get(
-            Uri.parse('${AppUrl.baseUrl}${AppUrl.webhookLogs}?limit=10'),
+            Uri.parse('${AppUrl.baseUrl}${AppUrl.mobileWebhookLogs}?limit=10'),
             headers: {
               'Content-Type': 'application/json',
               'Authorization': 'Bearer $token',

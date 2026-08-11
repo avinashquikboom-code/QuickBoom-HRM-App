@@ -296,7 +296,9 @@ class AppUrl {
   static const String permissionRequest = '/api/permissions/request';
 
   // ─────────────────────────────────────────────
-  // Webhook Logs (Commission)
+  // Webhook Logs (Mobile – Commission)
   // ─────────────────────────────────────────────
-  static const String webhookLogs = '/api/webhook/logs';
+  /// Employee-scoped webhook log feed. Auth-protected, returns only
+  /// events belonging to the logged-in employee.
+  static const String mobileWebhookLogs = '/api/mobile/commission/webhook-logs';
 }
