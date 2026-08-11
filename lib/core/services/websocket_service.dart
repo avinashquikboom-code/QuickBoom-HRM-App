@@ -16,11 +16,14 @@ class WebSocketService {
       StreamController<Map<String, dynamic>>.broadcast();
   final StreamController<Map<String, dynamic>> _leaveUpdateController = 
       StreamController<Map<String, dynamic>>.broadcast();
+  final StreamController<Map<String, dynamic>> _commissionUpdateController = 
+      StreamController<Map<String, dynamic>>.broadcast();
 
   // Public streams
   Stream<Map<String, dynamic>> get leaveBalanceUpdates => _leaveBalanceController.stream;
   Stream<Map<String, dynamic>> get notifications => _notificationController.stream;
   Stream<Map<String, dynamic>> get leaveUpdates => _leaveUpdateController.stream;
+  Stream<Map<String, dynamic>> get commissionUpdates => _commissionUpdateController.stream;
 
   bool get isConnected => _isConnected;
 
@@ -82,6 +85,12 @@ class WebSocketService {
       _socket!.on('leaveUpdate', (data) {
         if (kDebugMode) print('Received leave update: $data');
         _leaveUpdateController.add(Map<String, dynamic>.from(data));
+      });
+
+      // Listen for commission updates
+      _socket!.on('commissionUpdate', (data) {
+        if (kDebugMode) print('Received commission update: $data');
+        _commissionUpdateController.add(Map<String, dynamic>.from(data));
       });
 
       // Handle errors

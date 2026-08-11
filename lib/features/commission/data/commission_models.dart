@@ -11,6 +11,12 @@ class CommissionWallet {
   final List<CommissionTransaction> recentTransactions;
   final MonthlyCommissionSummary monthlySummary;
   final CommissionStatistics statistics;
+  final double todaySales;
+  final double todayCommission;
+  final double thisWeekSales;
+  final double thisWeekCommission;
+  final double thisMonthSales;
+  final double thisMonthCommission;
 
   double get totalEarnings => netSalary + totalCommissionBalance;
 
@@ -25,6 +31,12 @@ class CommissionWallet {
     required this.recentTransactions,
     required this.monthlySummary,
     required this.statistics,
+    this.todaySales = 0.0,
+    this.todayCommission = 0.0,
+    this.thisWeekSales = 0.0,
+    this.thisWeekCommission = 0.0,
+    this.thisMonthSales = 0.0,
+    this.thisMonthCommission = 0.0,
   });
 
   factory CommissionWallet.fromJson(Map<String, dynamic> json) {
@@ -44,6 +56,12 @@ class CommissionWallet {
           json['monthlySummary'] as Map<String, dynamic>? ?? {}),
       statistics: CommissionStatistics.fromJson(
           json['statistics'] as Map<String, dynamic>? ?? {}),
+      todaySales: (json['today']?['totalSales'] as num?)?.toDouble() ?? 0.0,
+      todayCommission: (json['today']?['totalCommission'] as num?)?.toDouble() ?? 0.0,
+      thisWeekSales: (json['thisWeek']?['totalSales'] as num?)?.toDouble() ?? 0.0,
+      thisWeekCommission: (json['thisWeek']?['totalCommission'] as num?)?.toDouble() ?? 0.0,
+      thisMonthSales: (json['thisMonth']?['totalSales'] as num?)?.toDouble() ?? 0.0,
+      thisMonthCommission: (json['thisMonth']?['totalCommission'] as num?)?.toDouble() ?? 0.0,
     );
   }
 

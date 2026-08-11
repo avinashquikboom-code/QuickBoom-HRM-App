@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quickboom_hrm/core/services/commission_service.dart';
 import 'package:quickboom_hrm/features/commission/data/commission_models.dart';
+import 'package:quickboom_hrm/core/services/websocket_service.dart';
 
 class CommissionState {
   final CommissionWallet? wallet;
@@ -53,7 +54,26 @@ class CommissionState {
 }
 
 class CommissionViewModel extends StateNotifier<CommissionState> {
-  CommissionViewModel() : super(const CommissionState());
+  final WebSocketService _wsService = WebSocketService();
+  StreamSubscription? _commissionSubscription;
+
+  CommissionViewModel() : super(const CommissionState()) {
+    _initializeWebSocket();
+  }
+
+  void _initializeWebSocket() {
+    _commissionSubscription = _wsService.commissionUpdates.listen((data) {
+      debugPrint('⚡ WebSocket: Received commission update! Refreshing state...');
+      refreshAll();
+      fetchHistory(page: 1, limit: 20);
+    });
+  }
+
+  @override
+  void dispose() {
+    _commissionSubscription?.cancel();
+    super.dispose();
+  }
 
   // Fetch Commission Wallet
   Future<void> fetchWallet() async {

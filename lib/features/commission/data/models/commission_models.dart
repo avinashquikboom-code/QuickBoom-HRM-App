@@ -1,3 +1,17 @@
+class DateRange {
+  final String? startDate;
+  final String? endDate;
+
+  DateRange({this.startDate, this.endDate});
+
+  factory DateRange.fromJson(Map<String, dynamic> json) {
+    return DateRange(
+      startDate: json['startDate']?.toString(),
+      endDate: json['endDate']?.toString(),
+    );
+  }
+}
+
 class CommissionSummary {
   final double totalSales;
   final double totalCommissionEarned;
@@ -208,16 +222,27 @@ class MonthlyCommission {
   }
 }
 
-class DateRange {
-  final String from;
-  final String to;
+class ProductItem {
+  final String name;
+  final int quantity;
+  final double price;
+  final String? salesmanName;
 
-  DateRange({required this.from, required this.to});
+  double get total => quantity * price;
 
-  factory DateRange.fromJson(Map<String, dynamic> json) {
-    return DateRange(
-      from: json['from'] ?? '',
-      to: json['to'] ?? '',
+  ProductItem({
+    required this.name,
+    required this.quantity,
+    required this.price,
+    this.salesmanName,
+  });
+
+  factory ProductItem.fromJson(Map<String, dynamic> json) {
+    return ProductItem(
+      name: json['name'] ?? json['productName'] ?? '',
+      quantity: json['quantity'] ?? json['qty'] ?? 1,
+      price: (json['price'] ?? json['rate'] ?? json['productNetAmount'] ?? 0).toDouble(),
+      salesmanName: json['salesmanName'] ?? json['employeeName'],
     );
   }
 }
@@ -230,6 +255,14 @@ class CommissionBill {
   final DateTime date;
   final String status;
   final String? description;
+  final String? customerName;
+  final String? customerPhone;
+  final double? grossSale;
+  final double? discount;
+  final double? tax;
+  final String? storeName;
+  final String? salespersonName;
+  final List<ProductItem> products;
 
   CommissionBill({
     required this.id,
@@ -239,10 +272,21 @@ class CommissionBill {
     required this.date,
     required this.status,
     this.description,
+    this.customerName,
+    this.customerPhone,
+    this.grossSale,
+    this.discount,
+    this.tax,
+    this.storeName,
+    this.salespersonName,
+    required this.products,
   });
 
   factory CommissionBill.fromJson(Map<String, dynamic> json) {
     final rawDate = json['date'] ?? json['createdAt'] ?? DateTime.now().toIso8601String();
+    var rawProducts = json['products'] as List?;
+    List<ProductItem> prodList = rawProducts?.map((p) => ProductItem.fromJson(p)).toList() ?? [];
+
     return CommissionBill(
       id: (json['id'] ?? '').toString(),
       billId: json['billId'] ?? json['invoiceNumber'] ?? '',
@@ -251,6 +295,14 @@ class CommissionBill {
       date: DateTime.tryParse(rawDate.toString()) ?? DateTime.now(),
       status: json['status'] ?? 'APPROVED',
       description: json['description'] ?? json['notes'],
+      customerName: json['customerName'],
+      customerPhone: json['customerPhone'],
+      grossSale: json['grossSale'] != null ? (json['grossSale'] as num).toDouble() : null,
+      discount: json['discount'] != null ? (json['discount'] as num).toDouble() : null,
+      tax: json['tax'] != null ? (json['tax'] as num).toDouble() : null,
+      storeName: json['storeName'],
+      salespersonName: json['salespersonName'],
+      products: prodList,
     );
   }
 }
@@ -265,6 +317,14 @@ class CommissionDetail {
   final String? description;
   final DateTime createdAt;
   final EmployeeInfo employee;
+  final String? customerName;
+  final String? customerPhone;
+  final String? paymentMode;
+  final String? storeName;
+  final double? grossSale;
+  final double? discount;
+  final double? tax;
+  final List<ProductItem> products;
 
   CommissionDetail({
     required this.billId,
@@ -276,11 +336,22 @@ class CommissionDetail {
     this.description,
     required this.createdAt,
     required this.employee,
+    this.customerName,
+    this.customerPhone,
+    this.paymentMode,
+    this.storeName,
+    this.grossSale,
+    this.discount,
+    this.tax,
+    required this.products,
   });
 
   factory CommissionDetail.fromJson(Map<String, dynamic> json) {
     final rawDate = json['date'] ?? json['createdAt'] ?? DateTime.now().toIso8601String();
     final rawCreated = json['createdAt'] ?? rawDate;
+    var rawProducts = json['products'] as List?;
+    List<ProductItem> prodList = rawProducts?.map((p) => ProductItem.fromJson(p)).toList() ?? [];
+
     return CommissionDetail(
       billId: json['billId'] ?? '',
       saleAmount: (json['saleAmount'] ?? json['amount'] ?? 0).toDouble(),
@@ -291,6 +362,14 @@ class CommissionDetail {
       description: json['description'] ?? json['notes'],
       createdAt: DateTime.tryParse(rawCreated.toString()) ?? DateTime.now(),
       employee: EmployeeInfo.fromJson(json['employee'] ?? {}),
+      customerName: json['customerName'],
+      customerPhone: json['customerPhone'],
+      paymentMode: json['paymentMode'],
+      storeName: json['storeName'],
+      grossSale: json['grossSale'] != null ? (json['grossSale'] as num).toDouble() : null,
+      discount: json['discount'] != null ? (json['discount'] as num).toDouble() : null,
+      tax: json['tax'] != null ? (json['tax'] as num).toDouble() : null,
+      products: prodList,
     );
   }
 }

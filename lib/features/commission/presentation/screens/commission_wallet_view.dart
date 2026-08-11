@@ -9,7 +9,8 @@ import 'package:quickboom_hrm/core/services/commission_service.dart';
 import 'package:quickboom_hrm/features/commission/data/commission_models.dart';
 import 'package:quickboom_hrm/features/commission/presentation/screens/commission_history_view.dart';
 import 'package:quickboom_hrm/features/commission/presentation/screens/commission_details_view.dart';
-import 'package:quickboom_hrm/features/commission/presentation/widgets/webhook_logs_widget.dart';
+import 'package:quickboom_hrm/screens/commission/commission_detail_screen.dart';
+import 'package:quickboom_hrm/core/services/websocket_service.dart';
 
 class CommissionWalletView extends ConsumerStatefulWidget {
   const CommissionWalletView({super.key});
@@ -25,6 +26,9 @@ class _CommissionWalletViewState extends ConsumerState<CommissionWalletView> {
   String _errorMessage = '';
   Timer? _timer;
   DateTime? _lastUpdated;
+  StreamSubscription? _commissionSub;
+  int _currentCardPage = 0;
+  String _selectedPeriodFilter = 'All';
 
   @override
   void initState() {
@@ -32,11 +36,17 @@ class _CommissionWalletViewState extends ConsumerState<CommissionWalletView> {
     _loadCommissionWallet();
     // Auto-refresh wallet every 60 seconds
     _timer = Timer.periodic(const Duration(seconds: 60), (_) => _silentRefresh());
+    // Listen for WebSocket events to update wallet immediately
+    _commissionSub = WebSocketService().commissionUpdates.listen((_) {
+      debugPrint('⚡ WebSocket: Commission update received. Reloading wallet state...');
+      _silentRefresh();
+    });
   }
 
   @override
   void dispose() {
     _timer?.cancel();
+    _commissionSub?.cancel();
     super.dispose();
   }
 
@@ -191,6 +201,25 @@ class _CommissionWalletViewState extends ConsumerState<CommissionWalletView> {
       return _buildEmptyState();
     }
 
+    // Filter transactions based on selected period chip
+    final txns = _walletData!.recentTransactions;
+    final now = DateTime.now();
+    final todayStart = DateTime(now.year, now.month, now.day);
+    final weekMonday = now.subtract(Duration(days: now.weekday - 1));
+    final weekStart = DateTime(weekMonday.year, weekMonday.month, weekMonday.day);
+    final monthStart = DateTime(now.year, now.month, 1);
+
+    final filteredTxns = txns.where((tx) {
+      if (_selectedPeriodFilter == 'Today') {
+        return tx.generatedDate.isAfter(todayStart.subtract(const Duration(seconds: 1)));
+      } else if (_selectedPeriodFilter == 'This Week') {
+        return tx.generatedDate.isAfter(weekStart.subtract(const Duration(seconds: 1)));
+      } else if (_selectedPeriodFilter == 'This Month') {
+        return tx.generatedDate.isAfter(monthStart.subtract(const Duration(seconds: 1)));
+      }
+      return true;
+    }).toList();
+
     return RefreshIndicator(
       onRefresh: _onRefresh,
       color: AppColors.primary,
@@ -201,54 +230,23 @@ class _CommissionWalletViewState extends ConsumerState<CommissionWalletView> {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
-                const SizedBox(height: 8),
+                const SizedBox(height: 16),
 
-                // ─── Total Commission Balance Card ───
-                _CommissionBalanceCard(
-                  netSalary: _walletData!.netSalary,
-                  totalBalance: _walletData!.totalCommissionBalance,
-                  currentMonth: _walletData!.currentMonthCommission,
-                  lastMonth: _walletData!.lastMonthCommission,
-                ).animate().fadeIn(duration: 400.ms).scaleXY(begin: 0.95, end: 1.0),
+                // ─── Sliding Performance Carousel ───
+                _buildPerformanceCarousel()
+                    .animate().fadeIn(duration: 400.ms).scaleXY(begin: 0.98, end: 1.0),
 
                 const SizedBox(height: 20),
 
-                // ─── Commission Stats Grid ───
-                _CommissionStatsGrid(
-                  lifetimeCommission: _walletData!.lifetimeCommission,
-                  pendingCommission: _walletData!.pendingCommission,
-                  paidCommission: _walletData!.paidCommission,
-                ).animate(delay: 100.ms).fadeIn(duration: 400.ms),
-
-                const SizedBox(height: 24),
-
-                // ─── Monthly Commission Summary ───
-                _MonthlyCommissionSummary(
-                  summary: _walletData!.monthlySummary,
-                ).animate(delay: 150.ms).fadeIn(duration: 400.ms),
-
-                const SizedBox(height: 24),
-
-                // ─── Commission Statistics ───
-                _CommissionStatisticsCard(
-                  statistics: _walletData!.statistics,
-                ).animate(delay: 200.ms).fadeIn(duration: 400.ms),
-
-                const SizedBox(height: 24),
-
-                // ─── Webhook Activity ───
-                WebhookLogsWidget(itemsToShow: 5)
-                    .animate(delay: 250.ms)
-                    .fadeIn(duration: 400.ms),
-
-                const SizedBox(height: 24),
+                // ─── Choice Chips for Period Filters ───
+                _buildPeriodFilterChips(),
 
                 // ─── Recent Transactions Header ───
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'RECENT TRANSACTIONS',
+                      'INVOICE COMMISSION HISTORY',
                       style: TextStyle(
                         color: AppColors.textSecondary,
                         fontSize: 11,
@@ -273,7 +271,7 @@ class _CommissionWalletViewState extends ConsumerState<CommissionWalletView> {
                       ),
                     ),
                   ],
-                ).animate(delay: 250.ms).fadeIn(duration: 400.ms),
+                ).animate(delay: 100.ms).fadeIn(duration: 400.ms),
 
                 const SizedBox(height: 12),
               ]),
@@ -283,7 +281,7 @@ class _CommissionWalletViewState extends ConsumerState<CommissionWalletView> {
           // ─── Recent Transactions List ───
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 110),
-            sliver: _walletData!.recentTransactions.isEmpty
+            sliver: filteredTxns.isEmpty
                 ? SliverToBoxAdapter(
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 32),
@@ -297,7 +295,7 @@ class _CommissionWalletViewState extends ConsumerState<CommissionWalletView> {
                           Icon(RemixIcons.receipt_line, color: AppColors.textSecondary, size: 40),
                           const SizedBox(height: 12),
                           Text(
-                            'No sales recorded yet',
+                            'No sales recorded in this period',
                             style: TextStyle(
                               color: AppColors.textPrimary,
                               fontSize: 15,
@@ -320,16 +318,306 @@ class _CommissionWalletViewState extends ConsumerState<CommissionWalletView> {
                 : SliverList(
                     delegate: SliverChildBuilderDelegate(
                       (context, index) {
-                        final tx = _walletData!.recentTransactions[index];
+                        final tx = filteredTxns[index];
                         return _CommissionTransactionCard(
                           transaction: tx,
-                        ).animate(delay: (250 + index * 50).ms).fadeIn(duration: 400.ms).slideY(begin: 0.05, end: 0);
+                        ).animate(delay: (100 + index * 50).ms).fadeIn(duration: 400.ms).slideY(begin: 0.05, end: 0);
                       },
-                      childCount: _walletData!.recentTransactions.length,
+                      childCount: filteredTxns.length,
                     ),
                   ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildPerformanceCarousel() {
+    return Column(
+      children: [
+        SizedBox(
+          height: 160,
+          child: PageView(
+            onPageChanged: (index) {
+              setState(() {
+                _currentCardPage = index;
+              });
+            },
+            children: [
+              _buildPerformanceCard(
+                title: "TODAY'S PERFORMANCE",
+                sales: _walletData!.todaySales,
+                commission: _walletData!.todayCommission,
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF3BA38B), Color(0xFF2D8A74)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                icon: RemixIcons.calendar_event_line,
+              ),
+              _buildPerformanceCard(
+                title: "THIS WEEK'S PERFORMANCE",
+                sales: _walletData!.thisWeekSales,
+                commission: _walletData!.thisWeekCommission,
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF0F766E), Color(0xFF115E59)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                icon: RemixIcons.bar_chart_line,
+              ),
+              _buildPerformanceCard(
+                title: "THIS MONTH'S PERFORMANCE",
+                sales: _walletData!.thisMonthSales,
+                commission: _walletData!.thisMonthCommission,
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF065F46), Color(0xFF047857)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                icon: RemixIcons.bar_chart_2_line,
+              ),
+              _buildSingleAmountCard(
+                title: "PENDING COMMISSION",
+                amount: _walletData!.pendingCommission,
+                label: "Awaiting approval or payout settlement",
+                gradient: const LinearGradient(
+                  colors: [Color(0xFFD97706), Color(0xFFB45309)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                icon: RemixIcons.time_line,
+              ),
+              _buildSingleAmountCard(
+                title: "PAID COMMISSION",
+                amount: _walletData!.paidCommission,
+                label: "Successfully paid out to wallet",
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF059669), Color(0xFF047857)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                icon: RemixIcons.checkbox_circle_line,
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(5, (index) {
+            return AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              margin: const EdgeInsets.symmetric(horizontal: 4),
+              height: 6,
+              width: _currentCardPage == index ? 18 : 6,
+              decoration: BoxDecoration(
+                color: _currentCardPage == index ? AppColors.primary : AppColors.textHint.withValues(alpha: 0.4),
+                borderRadius: BorderRadius.circular(3),
+              ),
+            );
+          }),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPerformanceCard({
+    required String title,
+    required double sales,
+    required double commission,
+    required Gradient gradient,
+    required IconData icon,
+  }) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 4),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: gradient,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  color: Colors.white70,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 1.0,
+                ),
+              ),
+              Icon(icon, color: Colors.white70, size: 18),
+            ],
+          ),
+          const Spacer(),
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Net Sales',
+                      style: TextStyle(color: Colors.white60, fontSize: 10, fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '₹${NumberFormat('#,##,##0.00').format(sales)}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16.5,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(width: 1, height: 32, color: Colors.white24),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Commission',
+                      style: TextStyle(color: Colors.white60, fontSize: 10, fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '₹${NumberFormat('#,##,##0.00').format(commission)}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16.5,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSingleAmountCard({
+    required String title,
+    required double amount,
+    required String label,
+    required Gradient gradient,
+    required IconData icon,
+  }) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 4),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: gradient,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  color: Colors.white70,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 1.0,
+                ),
+              ),
+              Icon(icon, color: Colors.white70, size: 18),
+            ],
+          ),
+          const Spacer(),
+          Text(
+            '₹${NumberFormat('#,##,##0.00').format(amount)}',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 24,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: const TextStyle(
+              color: Colors.white60,
+              fontSize: 10.5,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPeriodFilterChips() {
+    final periods = ['All', 'Today', 'This Week', 'This Month'];
+    return Container(
+      height: 38,
+      margin: const EdgeInsets.only(top: 8, bottom: 20),
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: periods.length,
+        physics: const BouncingScrollPhysics(),
+        itemBuilder: (context, index) {
+          final p = periods[index];
+          final isSelected = _selectedPeriodFilter == p;
+          return Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: ChoiceChip(
+              label: Text(p),
+              selected: isSelected,
+              onSelected: (selected) {
+                if (selected) {
+                  setState(() {
+                    _selectedPeriodFilter = p;
+                  });
+                }
+              },
+              selectedColor: AppColors.primary,
+              backgroundColor: AppColors.surface,
+              labelStyle: TextStyle(
+                color: isSelected ? Colors.white : AppColors.textSecondary,
+                fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                fontSize: 12.5,
+              ),
+              elevation: isSelected ? 2 : 0,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+                side: BorderSide(
+                  color: isSelected ? Colors.transparent : AppColors.cardBorder,
+                  width: 1,
+                ),
+              ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -1157,99 +1445,115 @@ class _CommissionTransactionCard extends StatelessWidget {
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: cs.surface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.cardBorder, width: 1.5),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.cardShadow,
-            blurRadius: 8,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: (isPaid ? AppColors.success : AppColors.warning).withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  isPaid ? RemixIcons.check_line : RemixIcons.time_line,
-                  color: isPaid ? AppColors.success : AppColors.warning,
-                  size: 16,
-                ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => CommissionDetailScreen(billId: transaction.invoiceNumber),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+            );
+          },
+          borderRadius: BorderRadius.circular(20),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: cs.surface,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: AppColors.cardBorder, width: 1.5),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.cardShadow,
+                  blurRadius: 8,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
                   children: [
-                    Text(
-                      transaction.invoiceNumber,
-                      style: TextStyle(
-                        color: AppColors.textPrimary,
-                        fontSize: 13.5,
-                        fontWeight: FontWeight.w800,
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: (isPaid ? AppColors.success : AppColors.warning).withValues(alpha: 0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        isPaid ? RemixIcons.check_line : RemixIcons.time_line,
+                        color: isPaid ? AppColors.success : AppColors.warning,
+                        size: 16,
                       ),
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      transaction.customerName,
-                      style: TextStyle(
-                        color: AppColors.textHint,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            transaction.invoiceNumber,
+                            style: TextStyle(
+                              color: AppColors.textPrimary,
+                              fontSize: 13.5,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            transaction.customerName,
+                            style: TextStyle(
+                              color: AppColors.textHint,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
                       ),
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          '₹$formattedAmount',
+                          style: TextStyle(
+                            color: isPaid ? AppColors.success : AppColors.warning,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        _CommissionStatusBadge(status: transaction.status),
+                      ],
                     ),
                   ],
                 ),
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    '₹$formattedAmount',
-                    style: TextStyle(
-                      color: isPaid ? AppColors.success : AppColors.warning,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w900,
+                const SizedBox(height: 12),
+                Container(height: 1, color: AppColors.divider),
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    _TransactionDetail(
+                      label: 'Bill Amount',
+                      value: '₹$formattedBillAmount',
                     ),
-                  ),
-                  const SizedBox(height: 2),
-                  _CommissionStatusBadge(status: transaction.status),
-                ],
-              ),
-            ],
+                    _TransactionDetail(
+                      label: 'Commission',
+                      value: '${transaction.commissionPercentage.toStringAsFixed(1)}%',
+                    ),
+                    _TransactionDetail(
+                      label: 'Date',
+                      value: DateFormat('dd MMM yyyy').format(transaction.generatedDate),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: 12),
-          Container(height: 1, color: AppColors.divider),
-          const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _TransactionDetail(
-                label: 'Bill Amount',
-                value: '₹$formattedBillAmount',
-              ),
-              _TransactionDetail(
-                label: 'Commission',
-                value: '${transaction.commissionPercentage.toStringAsFixed(1)}%',
-              ),
-              _TransactionDetail(
-                label: 'Date',
-                value: DateFormat('dd MMM yyyy').format(transaction.generatedDate),
-              ),
-            ],
-          ),
-        ],
+        ),
       ),
     );
   }
