@@ -10,6 +10,7 @@ import 'package:quickboom_hrm/features/wallet/presentation/screens/employee_wall
 
 import 'package:quickboom_hrm/core/services/notification_service.dart';
 import 'package:quickboom_hrm/core/services/location_tracking_service.dart';
+import 'package:quickboom_hrm/core/services/websocket_service.dart';
 
 class EmployeeShell extends StatefulWidget {
   const EmployeeShell({super.key});
@@ -26,6 +27,7 @@ class _EmployeeShellState extends State<EmployeeShell> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       NotificationService().handlePendingNotification();
+      WebSocketService().connect();
       
       // Request always location permission & start geofencing ping service
       final allowed = await LocationTrackingService.initialize(context);

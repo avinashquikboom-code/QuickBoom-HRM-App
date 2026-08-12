@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:socket_io_client/socket_io_client.dart' as socket_io;
 import 'package:quickboom_hrm/core/services/api_service.dart';
+import 'package:quickboom_hrm/core/services/storage_service.dart';
 
 class WebSocketService {
   static final WebSocketService _instance = WebSocketService._internal();
@@ -120,10 +121,16 @@ class WebSocketService {
 
   Future<String?> _getAuthToken() async {
     try {
-      // This should match your token storage implementation
-      // You may need to adjust this based on your actual token storage
+      final apiToken = await ApiService.getToken();
+      if (apiToken != null && apiToken.isNotEmpty) {
+        return apiToken;
+      }
+      final storageToken = await StorageService.getToken();
+      if (storageToken != null && storageToken.isNotEmpty) {
+        return storageToken;
+      }
       final prefs = await ApiService.getStorage();
-      return prefs.getString('auth_token');
+      return prefs.getString('auth_token') ?? prefs.getString('emp_token') ?? prefs.getString('hr_token');
     } catch (e) {
       if (kDebugMode) print('Failed to get auth token: $e');
       return null;

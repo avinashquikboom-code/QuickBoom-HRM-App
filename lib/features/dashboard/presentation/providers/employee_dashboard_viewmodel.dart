@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quickboom_hrm/core/services/api_service.dart';
+import 'package:quickboom_hrm/core/services/websocket_service.dart';
 import 'package:quickboom_hrm/core/constants/app_url.dart';
 import 'package:quickboom_hrm/features/dashboard/data/models/announcement_model.dart';
 
@@ -167,8 +168,20 @@ class EmployeeDashboardState {
 // ─── Employee Dashboard ViewModel ──────────────────────────────────────────────
 
 class EmployeeDashboardViewModel extends StateNotifier<EmployeeDashboardState> {
+  StreamSubscription? _commissionSub;
+
   EmployeeDashboardViewModel() : super(const EmployeeDashboardState()) {
     fetchDashboard();
+    _commissionSub = WebSocketService().commissionUpdates.listen((_) {
+      debugPrint('⚡ WebSocket: Commission update received on Dashboard. Auto-refreshing metrics...');
+      fetchDashboard(month: state.selectedMonth, year: state.selectedYear);
+    });
+  }
+
+  @override
+  void dispose() {
+    _commissionSub?.cancel();
+    super.dispose();
   }
 
   Future<void> fetchDashboard({DateTime? month, DateTime? year}) async {

@@ -11,6 +11,7 @@ import 'package:remixicon/remixicon.dart';
 import 'package:quickboom_hrm/core/constants/app_colors.dart';
 import 'package:quickboom_hrm/core/constants/app_url.dart';
 import 'package:quickboom_hrm/core/services/storage_service.dart';
+import 'package:quickboom_hrm/core/services/websocket_service.dart';
 
 class WebhookLogsWidget extends StatefulWidget {
   final int itemsToShow;
@@ -25,6 +26,7 @@ class _WebhookLogsWidgetState extends State<WebhookLogsWidget> {
   bool _loading = true;
   bool _hasError = false;
   Timer? _timer;
+  StreamSubscription? _commissionSub;
 
   @override
   void initState() {
@@ -32,11 +34,16 @@ class _WebhookLogsWidgetState extends State<WebhookLogsWidget> {
     _fetchLogs();
     // Auto-refresh every 30 seconds
     _timer = Timer.periodic(const Duration(seconds: 30), (_) => _silentRefresh());
+    // Auto-refresh on real-time webhook updates
+    _commissionSub = WebSocketService().commissionUpdates.listen((_) {
+      _silentRefresh();
+    });
   }
 
   @override
   void dispose() {
     _timer?.cancel();
+    _commissionSub?.cancel();
     super.dispose();
   }
 
