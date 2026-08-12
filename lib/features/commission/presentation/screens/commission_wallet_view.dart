@@ -1616,6 +1616,10 @@ class _CommissionStatusBadge extends StatelessWidget {
         bg = AppColors.successSurface;
         text = AppColors.success;
         break;
+      case 'reversed':
+        bg = const Color(0xFFFFF1F2);
+        text = const Color(0xFFE11D48);
+        break;
       case 'pending':
       default:
         bg = AppColors.warningSurface;

@@ -744,12 +744,14 @@ class _BillCardItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isReversed = bill.status.toUpperCase() == 'REVERSED' || bill.commission < 0 || bill.billId.startsWith('CN-');
+
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: isReversed ? const Color(0xFFFECDD3) : Colors.grey.shade200),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.02),
@@ -770,12 +772,12 @@ class _BillCardItem extends StatelessWidget {
                 width: 42,
                 height: 42,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF0F172A).withValues(alpha: 0.05),
+                  color: isReversed ? const Color(0xFFFFF1F2) : const Color(0xFF0F172A).withValues(alpha: 0.05),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(
-                  Icons.receipt_long_rounded,
-                  color: Color(0xFF0F172A),
+                child: Icon(
+                  isReversed ? Icons.remove_circle_outline_rounded : Icons.receipt_long_rounded,
+                  color: isReversed ? const Color(0xFFE11D48) : const Color(0xFF0F172A),
                   size: 22,
                 ),
               ),
@@ -789,10 +791,10 @@ class _BillCardItem extends StatelessWidget {
                   children: [
                     Text(
                       bill.billId,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 13.5,
-                        color: Color(0xFF0F172A),
+                        color: isReversed ? const Color(0xFFE11D48) : const Color(0xFF0F172A),
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -820,11 +822,11 @@ class _BillCardItem extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    '₹${bill.commission.toStringAsFixed(2)}',
-                    style: const TextStyle(
+                    isReversed ? '-₹${bill.commission.abs().toStringAsFixed(2)}' : '₹${bill.commission.toStringAsFixed(2)}',
+                    style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w800,
-                      color: Color(0xFF16A34A),
+                      color: isReversed ? const Color(0xFFE11D48) : const Color(0xFF16A34A),
                     ),
                   ),
                   const SizedBox(height: 2),
@@ -859,7 +861,11 @@ class _StatusPill extends StatelessWidget {
     Color fg;
     String label;
 
-    if (s == 'PAID') {
+    if (s == 'REVERSED') {
+      bg = const Color(0xFFFFF1F2);
+      fg = const Color(0xFFE11D48);
+      label = 'Reversed';
+    } else if (s == 'PAID') {
       bg = const Color(0xFFDCFCE7);
       fg = const Color(0xFF15803D);
       label = 'Paid';
