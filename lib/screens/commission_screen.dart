@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:quickboom_hrm/features/commission/data/models/commission_models.dart';
 import 'package:quickboom_hrm/core/services/mobile_commission_service.dart';
 import 'package:quickboom_hrm/screens/commission/commission_detail_screen.dart';
+import 'package:quickboom_hrm/features/commission/presentation/widgets/webhook_logs_widget.dart';
 
 class CommissionScreen extends StatefulWidget {
   const CommissionScreen({super.key});
@@ -18,6 +19,7 @@ class _CommissionScreenState extends State<CommissionScreen> {
   String _searchBillId = '';
   List<CommissionBill> _allBills = [];
   bool _isLoadingMore = false;
+
   int _currentPage = 0;
 
   final TextEditingController _searchCtrl = TextEditingController();
@@ -34,7 +36,7 @@ class _CommissionScreenState extends State<CommissionScreen> {
     setState(() {
       _futureSummary = MobileCommissionService.fetchSummary();
       _futureBills = MobileCommissionService.fetchBills(
-        period: 'today',
+        period: 'current_month',
         billId: _searchBillId.isNotEmpty ? _searchBillId : null,
       );
       _currentPage = 0;
@@ -54,7 +56,7 @@ class _CommissionScreenState extends State<CommissionScreen> {
 
     try {
       final resp = await MobileCommissionService.fetchBills(
-        period: 'today',
+        period: 'current_month',
         billId: _searchBillId.isNotEmpty ? _searchBillId : null,
         offset: (_currentPage + 1) * 20,
       );
@@ -114,6 +116,14 @@ class _CommissionScreenState extends State<CommissionScreen> {
                   child: _HeroSummaryCard(
                     summary: summary,
                     loading: summSnap.connectionState == ConnectionState.waiting,
+                  ),
+                ),
+
+                // ── Real-time Webhook Activity Logs ──────────────────
+                const SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: WebhookLogsWidget(itemsToShow: 10),
                   ),
                 ),
 
