@@ -24,6 +24,7 @@ import 'package:quickboom_hrm/core/services/api_service.dart';
 import 'package:quickboom_hrm/features/attendance/presentation/providers/geofence_viewmodel.dart';
 import 'package:quickboom_hrm/features/commission/presentation/providers/commission_viewmodel.dart';
 import 'package:quickboom_hrm/features/commission/presentation/screens/commission_wallet_view.dart';
+import 'package:quickboom_hrm/features/commission/presentation/widgets/webhook_logs_widget.dart';
 import 'package:quickboom_hrm/core/services/permission_service.dart';
 import 'package:quickboom_hrm/core/widgets/permission_protected_widget.dart';
 import 'package:quickboom_hrm/core/widgets/feature_protected_widget.dart';
@@ -754,6 +755,8 @@ class _CommissionWidgets extends StatelessWidget {
             ],
           ),
         ),
+        const SizedBox(height: 16),
+        const WebhookLogsWidget(itemsToShow: 5),
       ],
     );
   }

@@ -11,6 +11,7 @@ import 'package:quickboom_hrm/features/commission/presentation/screens/commissio
 import 'package:quickboom_hrm/features/commission/presentation/screens/commission_details_view.dart';
 import 'package:quickboom_hrm/screens/commission/commission_detail_screen.dart';
 import 'package:quickboom_hrm/core/services/websocket_service.dart';
+import 'package:quickboom_hrm/features/commission/presentation/widgets/webhook_logs_widget.dart';
 
 class CommissionWalletView extends ConsumerStatefulWidget {
   const CommissionWalletView({super.key});
@@ -237,6 +238,9 @@ class _CommissionWalletViewState extends ConsumerState<CommissionWalletView> {
                 // ─── Sliding Performance Carousel ───
                 _buildPerformanceCarousel()
                     .animate().fadeIn(duration: 400.ms).scaleXY(begin: 0.98, end: 1.0),
+
+                // ─── Real-Time Webhook Activity Stream ───
+                const WebhookLogsWidget(itemsToShow: 5),
 
                 const SizedBox(height: 20),
 
