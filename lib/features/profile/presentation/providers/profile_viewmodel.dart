@@ -105,10 +105,11 @@ class ProfileViewModel extends StateNotifier<ProfileState> {
         salary: double.tryParse(
               emp['salaryStructure']?['monthlySalary']?.toString() ??
               emp['salaryStructure']?['grossSalary']?.toString() ??
+              emp['salaryStructure']?['basicSalary']?.toString() ??
               user['salary']?.toString() ??
               emp['salary']?.toString() ??
               ''
-            ) ?? 50000.0,
+            ) ?? 0.0,
         avatar: prof['avatarUrl']?.toString() ?? prof['avatar']?.toString(),
         storeId: emp['storeId']?.toString() ??
             (emp['store'] is Map ? emp['store']['id']?.toString() : emp['store']?.toString()),

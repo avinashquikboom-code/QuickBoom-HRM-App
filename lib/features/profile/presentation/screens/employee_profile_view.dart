@@ -282,7 +282,7 @@ class _EmployeeProfileViewState extends ConsumerState<EmployeeProfileView> {
                     _InfoRow(
                         label: 'Monthly CTC',
                         value:
-                            '₹${NumberFormat('#,##,###').format(user.salary > 0 ? user.salary : 50000.0)}',
+                            '₹${NumberFormat('#,##,###').format(user.salary)}',
                         icon: RemixIcons.money_rupee_circle_line),
                     _ActionRow(
                       label: 'View Salary History',

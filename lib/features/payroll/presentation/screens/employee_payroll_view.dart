@@ -84,8 +84,8 @@ class _EmployeePayrollViewState extends ConsumerState<EmployeePayrollView> {
                         final code = (profileUser?.employeeId.isNotEmpty == true)
                             ? profileUser!.employeeId
                             : '001';
-                        final net = profileUser?.salary ?? 15000.0;
-                        final gross = net * 1.1;
+                        final gross = profileUser?.salary ?? 0.0;
+                        final net = gross;
 
                         return PayCard(
                           employeeName: name,

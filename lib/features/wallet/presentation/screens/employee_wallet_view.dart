@@ -2031,19 +2031,23 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
     final canShowComm = (earnings['canViewCommission'] as bool?) ?? PermissionService.canViewCommissionWidget(user);
 
     final baseSalary = (earnings['baseSalary'] as num?)?.toDouble() ??
-                       (_salarySlipData?['base_salary'] as num?)?.toDouble() ?? 10000.0;
+                       (earnings['basicSalary'] as num?)?.toDouble() ??
+                       (_salarySlipData?['base_salary'] as num?)?.toDouble() ?? 0.0;
     final commission = canShowComm
         ? ((earnings['commission'] as num?)?.toDouble() ?? (_salarySlipData?['commission_amount'] as num?)?.toDouble() ?? 0.0)
         : 0.0;
-    final hra = (earnings['hra'] as num?)?.toDouble() ?? 2000.0;
-    final medical = (earnings['medical'] as num?)?.toDouble() ?? 500.0;
-    final travel = (earnings['travel'] as num?)?.toDouble() ?? 1000.0;
+    final hra = (earnings['hra'] as num?)?.toDouble() ?? 0.0;
+    final medical = (earnings['medical'] as num?)?.toDouble() ?? 0.0;
+    final travel = (earnings['travel'] as num?)?.toDouble() ?? 0.0;
     final special = (earnings['special'] as num?)?.toDouble() ?? 0.0;
     final otherBenefits = (earnings['otherBenefits'] as num?)?.toDouble() ?? (hra + medical + travel + special);
-    final grossSalary = (earnings['grossTotal'] as num?)?.toDouble() ?? (baseSalary + otherBenefits + commission);
+    final calcGross = (earnings['grossTotal'] as num?)?.toDouble() ??
+                      (_salarySlipData?['grossSalary'] as num?)?.toDouble() ??
+                      (baseSalary + otherBenefits);
+    final grossSalary = (calcGross == 0.0 && baseSalary > 0.0) ? baseSalary : calcGross;
 
-    final halfDayDeduction = (deductions['halfDayDeduction'] as num?)?.toDouble() ?? 154.0;
-    final leaveDeduction = (deductions['leaveDeduction'] as num?)?.toDouble() ?? 1155.0;
+    final halfDayDeduction = (deductions['halfDayDeduction'] as num?)?.toDouble() ?? 0.0;
+    final leaveDeduction = (deductions['leaveDeduction'] as num?)?.toDouble() ?? 0.0;
     final totalDeductions = (deductions['totalDeductions'] as num?)?.toDouble() ?? (halfDayDeduction + leaveDeduction);
 
     final netSalary = (_salarySlipData?['netSalary'] as num?)?.toDouble() ?? (grossSalary - totalDeductions);
