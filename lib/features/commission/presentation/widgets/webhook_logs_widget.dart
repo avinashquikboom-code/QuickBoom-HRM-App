@@ -349,21 +349,53 @@ class _LogRow extends StatelessWidget {
     required this.statusTheme,
   });
 
+  Map<String, dynamic> _getBadgeStyle(String eventType) {
+    final upper = eventType.toUpperCase();
+    if (upper.contains('CREDIT_NOTE')) {
+      return {
+        'bg': const Color(0xFFFFF1F2),
+        'color': const Color(0xFFE11D48),
+        'border': const Color(0xFFFECDD3),
+      };
+    }
+    if (upper.contains('EXCHANGE')) {
+      return {
+        'bg': const Color(0xFFF3E8FF),
+        'color': const Color(0xFF9333EA),
+        'border': const Color(0xFFE9D5FF),
+      };
+    }
+    if (upper.contains('INVOICE')) {
+      return {
+        'bg': const Color(0xFFECFDF5),
+        'color': const Color(0xFF059669),
+        'border': const Color(0xFFA7F3D0),
+      };
+    }
+    return {
+      'bg': const Color(0xFFEEF2FF),
+      'color': const Color(0xFF4F46E5),
+      'border': const Color(0xFFC7D2FE),
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = statusTheme(log['status'] as String?);
     final billId = (log['billId'] ?? '—').toString();
+    final invoiceNo = (log['invoiceNo'] ?? '').toString();
     final amount = log['amount'];
     final amountStr = amount == null
         ? '—'
         : '₹${NumberFormat('#,##,###').format((amount as num).toDouble())}';
     final commRaw = log['commissionAmount'];
     final commAmt = commRaw != null ? (commRaw as num).toDouble() : 0.0;
-    final commStr = commAmt > 0
-        ? '₹${NumberFormat('#,##,###.##').format(commAmt)}'
-        : null;
     final eventType = (log['eventType'] ?? '—').toString();
     final time = formatTime(log['createdAt'] as String?);
+    final badge = _getBadgeStyle(eventType);
+
+    final isReversal = commAmt < 0 || eventType.toUpperCase().contains('CREDIT_NOTE');
+    final isPositiveComm = commAmt > 0;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -381,13 +413,14 @@ class _LogRow extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF6366F1).withValues(alpha: 0.1),
+                  color: badge['bg'] as Color,
                   borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: badge['border'] as Color),
                 ),
                 child: Text(
                   eventType,
-                  style: const TextStyle(
-                    color: Color(0xFF6366F1),
+                  style: TextStyle(
+                    color: badge['color'] as Color,
                     fontSize: 9.5,
                     fontWeight: FontWeight.w800,
                     letterSpacing: 0.3,
@@ -425,8 +458,10 @@ class _LogRow extends StatelessWidget {
                 flex: 3,
                 child: _InfoChip(
                   icon: RemixIcons.receipt_line,
-                  label: 'Bill ID',
-                  value: billId.length > 14 ? '${billId.substring(0, 14)}…' : billId,
+                  label: invoiceNo.isNotEmpty ? 'CN / Inv' : 'Bill ID',
+                  value: invoiceNo.isNotEmpty
+                      ? '$billId\nInv: $invoiceNo'
+                      : (billId.length > 14 ? '${billId.substring(0, 14)}…' : billId),
                   mono: true,
                 ),
               ),
@@ -435,7 +470,7 @@ class _LogRow extends StatelessWidget {
                 flex: 2,
                 child: _InfoChip(
                   icon: RemixIcons.money_rupee_circle_line,
-                  label: 'Sale',
+                  label: 'Amount',
                   value: amountStr,
                   valueColor: AppColors.textPrimary,
                 ),
@@ -452,34 +487,46 @@ class _LogRow extends StatelessWidget {
               ),
             ],
           ),
-          // Row 3: Commission earned chip (only when > 0)
-          if (commStr != null) ...[
+          // Row 3: Commission Chip (Earned or Reversed)
+          if (isPositiveComm || isReversal) ...[
             const SizedBox(height: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: AppColors.success.withValues(alpha: 0.1),
+                color: isReversal
+                    ? const Color(0xFFFFF1F2)
+                    : AppColors.success.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: AppColors.success.withValues(alpha: 0.25)),
+                border: Border.all(
+                  color: isReversal
+                      ? const Color(0xFFFECDD3)
+                      : AppColors.success.withValues(alpha: 0.25),
+                ),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(RemixIcons.coin_line, color: AppColors.success, size: 13),
+                  Icon(
+                    isReversal ? RemixIcons.subtract_line : RemixIcons.coin_line,
+                    color: isReversal ? const Color(0xFFE11D48) : AppColors.success,
+                    size: 13,
+                  ),
                   const SizedBox(width: 6),
                   Text(
-                    'Commission Earned',
+                    isReversal ? 'Commission Reversed' : 'Commission Earned',
                     style: TextStyle(
-                      color: AppColors.success,
+                      color: isReversal ? const Color(0xFFE11D48) : AppColors.success,
                       fontSize: 10,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    commStr,
+                    isReversal
+                        ? '-₹${NumberFormat('#,##,###.##').format(commAmt.abs())}'
+                        : '+₹${NumberFormat('#,##,###.##').format(commAmt)}',
                     style: TextStyle(
-                      color: AppColors.success,
+                      color: isReversal ? const Color(0xFFE11D48) : AppColors.success,
                       fontSize: 13,
                       fontWeight: FontWeight.w900,
                     ),
