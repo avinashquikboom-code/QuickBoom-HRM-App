@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:quickboom_hrm/features/commission/data/models/commission_models.dart';
 import 'package:quickboom_hrm/core/services/mobile_commission_service.dart';
+import 'package:quickboom_hrm/core/services/websocket_service.dart';
 import 'package:quickboom_hrm/screens/commission/commission_detail_screen.dart';
 import 'package:quickboom_hrm/features/commission/presentation/widgets/webhook_logs_widget.dart';
 
@@ -15,6 +17,7 @@ class CommissionScreen extends StatefulWidget {
 class _CommissionScreenState extends State<CommissionScreen> {
   late Future<CommissionSummary> _futureSummary;
   late Future<CommissionResponse> _futureBills;
+  StreamSubscription? _commissionSub;
 
   String _searchBillId = '';
   List<CommissionBill> _allBills = [];
@@ -30,6 +33,14 @@ class _CommissionScreenState extends State<CommissionScreen> {
     super.initState();
     _refresh();
     _scrollCtrl.addListener(_onScroll);
+
+    // Listen for WebSocket events to automatically update latest invoice & credit notes
+    _commissionSub = WebSocketService().commissionUpdates.listen((data) {
+      debugPrint('⚡ WebSocket: Real-time update received on CommissionScreen (${data['eventType'] ?? 'UPDATE'}). Auto-refreshing...');
+      if (mounted) {
+        _refresh();
+      }
+    });
   }
 
   void _refresh() {
@@ -77,6 +88,7 @@ class _CommissionScreenState extends State<CommissionScreen> {
 
   @override
   void dispose() {
+    _commissionSub?.cancel();
     _scrollCtrl.dispose();
     _searchCtrl.dispose();
     super.dispose();

@@ -50,6 +50,7 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
 
   // Stores list for transaction form
   List<dynamic> _stores = [];
+  int _refreshKey = 0;
 
   // Commission report state
   DateTime _fromDate = DateTime.now().subtract(const Duration(days: 90));
@@ -72,7 +73,7 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
         _toDate = now;
       } else if (period == 'month') {
         // Show all months (last 365 days) grouped month-by-month
-        _fromDate = DateTime(now.year - 1, now.month, 1);
+        _fromDate = now.subtract(const Duration(days: 365));
         _toDate = now;
       }
     });
@@ -86,7 +87,6 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
     super.initState();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _fetchPayslips();
       _fetchSalarySlip();
       _fetchCommissionReport();
     });
@@ -95,6 +95,9 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
 
     _commissionSub = WebSocketService().commissionUpdates.listen((_) {
       if (mounted) {
+        setState(() {
+          _refreshKey++;
+        });
         _loadWalletData();
         _fetchCommissionReport();
       }
@@ -1312,6 +1315,7 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
               // Transactions list
               Expanded(
                 child: FutureBuilder<Map<String, dynamic>?>(
+                  key: ValueKey(_refreshKey),
                   future: MobileCommissionService.getCommissionTransactions(
                     startDate: startStr,
                     endDate: endStr,
