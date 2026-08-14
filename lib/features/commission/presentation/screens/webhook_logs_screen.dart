@@ -341,15 +341,42 @@ class _WebhookLogsScreenState extends State<WebhookLogsScreen> with WidgetsBindi
         final createdAt = _formatTime(log['createdAt'] as String?);
         final status = (log['status'] ?? 'SUCCESS').toString();
 
-        final isCreditNote = eventType.toUpperCase().contains('CREDIT_NOTE');
-        final isExchange = eventType.toUpperCase().contains('EXCHANGE');
+        final upper = eventType.toUpperCase();
+        final isCreditNote = upper.contains('CREDIT_NOTE');
+        final isExchange = upper.contains('EXCHANGE');
+        final isInvoiceUpdate = upper.contains('INVOICE_UPDATED');
+        final isEmployee = upper.contains('EMPLOYEE');
 
-        Color cardBg = AppColors.surface;
-        Color badgeColor = AppColors.primary;
+        Color themePrimary = const Color(0xFF059669);
+        Color themeBg = const Color(0xFFECFDF5);
+        Color themeBorder = const Color(0xFFA7F3D0);
+        IconData themeIcon = RemixIcons.shopping_bag_3_line;
+        String themeLabel = 'INVOICE CREATED';
+
         if (isCreditNote) {
-          badgeColor = AppColors.error;
+          themePrimary = const Color(0xFFE11D48);
+          themeBg = const Color(0xFFFFF1F2);
+          themeBorder = const Color(0xFFFECDD3);
+          themeIcon = RemixIcons.refund_2_line;
+          themeLabel = 'CREDIT NOTE (RETURN)';
         } else if (isExchange) {
-          badgeColor = Colors.purple;
+          themePrimary = const Color(0xFF9333EA);
+          themeBg = const Color(0xFFF3E8FF);
+          themeBorder = const Color(0xFFE9D5FF);
+          themeIcon = RemixIcons.repeat_2_line;
+          themeLabel = 'SALES EXCHANGE';
+        } else if (isInvoiceUpdate) {
+          themePrimary = const Color(0xFF0284C7);
+          themeBg = const Color(0xFFE0F2FE);
+          themeBorder = const Color(0xFFBAE6FD);
+          themeIcon = RemixIcons.file_edit_line;
+          themeLabel = 'INVOICE UPDATED';
+        } else if (isEmployee) {
+          themePrimary = const Color(0xFF2563EB);
+          themeBg = const Color(0xFFEFF6FF);
+          themeBorder = const Color(0xFFBFDBFE);
+          themeIcon = RemixIcons.user_3_line;
+          themeLabel = 'EMPLOYEE SYNC';
         }
 
         final idToPass = invoiceNo.isNotEmpty ? invoiceNo : billId;
@@ -369,12 +396,12 @@ class _WebhookLogsScreenState extends State<WebhookLogsScreen> with WidgetsBindi
             margin: const EdgeInsets.only(bottom: 12),
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: cardBg,
+              color: themeBg.withValues(alpha: 0.4),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: AppColors.cardBorder),
+              border: Border.all(color: themeBorder, width: 1.2),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.02),
+                  color: themePrimary.withValues(alpha: 0.04),
                   blurRadius: 8,
                   offset: const Offset(0, 3),
                 ),
@@ -389,35 +416,56 @@ class _WebhookLogsScreenState extends State<WebhookLogsScreen> with WidgetsBindi
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: badgeColor.withValues(alpha: 0.1),
+                      color: themeBg,
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: badgeColor.withValues(alpha: 0.3)),
+                      border: Border.all(color: themeBorder),
                     ),
-                    child: Text(
-                      eventType,
-                      style: TextStyle(
-                        color: badgeColor,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w800,
-                        fontFamily: 'monospace',
-                      ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(themeIcon, size: 12, color: themePrimary),
+                        const SizedBox(width: 4),
+                        Text(
+                          themeLabel,
+                          style: TextStyle(
+                            color: themePrimary,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.3,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
                       color: status == 'SUCCESS'
-                          ? AppColors.success.withValues(alpha: 0.1)
-                          : AppColors.error.withValues(alpha: 0.1),
+                          ? const Color(0xFFECFDF5)
+                          : const Color(0xFFFFF1F2),
                       borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      status,
-                      style: TextStyle(
-                        color: status == 'SUCCESS' ? AppColors.success : AppColors.error,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w800,
+                      border: Border.all(
+                        color: status == 'SUCCESS' ? const Color(0xFFA7F3D0) : const Color(0xFFFECDD3),
                       ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          status == 'SUCCESS' ? RemixIcons.checkbox_circle_fill : RemixIcons.close_circle_fill,
+                          size: 11,
+                          color: status == 'SUCCESS' ? const Color(0xFF059669) : const Color(0xFFE11D48),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          status,
+                          style: TextStyle(
+                            color: status == 'SUCCESS' ? const Color(0xFF059669) : const Color(0xFFE11D48),
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],

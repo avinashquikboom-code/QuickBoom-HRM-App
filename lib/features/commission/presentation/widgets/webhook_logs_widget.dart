@@ -356,6 +356,8 @@ class _LogRow extends StatelessWidget {
         'bg': const Color(0xFFFFF1F2),
         'color': const Color(0xFFE11D48),
         'border': const Color(0xFFFECDD3),
+        'icon': RemixIcons.refund_2_line,
+        'label': 'CREDIT NOTE (RETURN)',
       };
     }
     if (upper.contains('EXCHANGE')) {
@@ -363,6 +365,17 @@ class _LogRow extends StatelessWidget {
         'bg': const Color(0xFFF3E8FF),
         'color': const Color(0xFF9333EA),
         'border': const Color(0xFFE9D5FF),
+        'icon': RemixIcons.repeat_2_line,
+        'label': 'SALES EXCHANGE',
+      };
+    }
+    if (upper.contains('INVOICE_UPDATED')) {
+      return {
+        'bg': const Color(0xFFE0F2FE),
+        'color': const Color(0xFF0284C7),
+        'border': const Color(0xFFBAE6FD),
+        'icon': RemixIcons.file_edit_line,
+        'label': 'INVOICE UPDATED',
       };
     }
     if (upper.contains('INVOICE')) {
@@ -370,12 +383,25 @@ class _LogRow extends StatelessWidget {
         'bg': const Color(0xFFECFDF5),
         'color': const Color(0xFF059669),
         'border': const Color(0xFFA7F3D0),
+        'icon': RemixIcons.shopping_bag_3_line,
+        'label': 'INVOICE CREATED',
+      };
+    }
+    if (upper.contains('EMPLOYEE')) {
+      return {
+        'bg': const Color(0xFFEFF6FF),
+        'color': const Color(0xFF2563EB),
+        'border': const Color(0xFFBFDBFE),
+        'icon': RemixIcons.user_3_line,
+        'label': 'EMPLOYEE SYNC',
       };
     }
     return {
       'bg': const Color(0xFFEEF2FF),
       'color': const Color(0xFF4F46E5),
       'border': const Color(0xFFC7D2FE),
+      'icon': RemixIcons.notification_4_line,
+      'label': eventType,
     };
   }
 
@@ -414,9 +440,9 @@ class _LogRow extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 10),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
-          color: AppColors.cardBorder.withValues(alpha: 0.45),
+          color: (badge['bg'] as Color).withValues(alpha: 0.35),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.cardBorder),
+          border: Border.all(color: (badge['border'] as Color), width: 1.2),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -424,21 +450,27 @@ class _LogRow extends StatelessWidget {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: badge['bg'] as Color,
-                  borderRadius: BorderRadius.circular(6),
+                  borderRadius: BorderRadius.circular(8),
                   border: Border.all(color: badge['border'] as Color),
                 ),
-                child: Text(
-                  eventType,
-                  style: TextStyle(
-                    color: badge['color'] as Color,
-                    fontSize: 9.5,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.3,
-                    fontFamily: 'monospace',
-                  ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(badge['icon'] as IconData, size: 12, color: badge['color'] as Color),
+                    const SizedBox(width: 4),
+                    Text(
+                      badge['label'] as String,
+                      style: TextStyle(
+                        color: badge['color'] as Color,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.3,
+                      ),
+                    ),
+                  ],
                 ),
               ),
               const Spacer(),
