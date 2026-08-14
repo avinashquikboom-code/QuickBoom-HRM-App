@@ -12,6 +12,7 @@ import 'package:quickboom_hrm/features/attendance/presentation/providers/break_v
 import 'package:quickboom_hrm/features/attendance/presentation/providers/geofence_viewmodel.dart';
 import 'package:quickboom_hrm/features/attendance/presentation/screens/monthly_work_schedule_view.dart';
 import 'package:quickboom_hrm/features/attendance/presentation/screens/attendance_correction_view.dart';
+import 'package:quickboom_hrm/features/attendance/presentation/screens/attendance_report_view.dart';
 import 'package:quickboom_hrm/core/widgets/shimmer_loading.dart';
 
 class EmployeeAttendanceView extends ConsumerWidget {
@@ -50,6 +51,16 @@ class EmployeeAttendanceView extends ConsumerWidget {
           ),
         ),
         actions: [
+          IconButton(
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const AttendanceReportView(),
+              ),
+            ),
+            icon: Icon(RemixIcons.file_chart_line, color: AppColors.primary),
+            tooltip: 'Attendance Report UI',
+          ),
           IconButton(
             onPressed: () => Navigator.push(
               context,

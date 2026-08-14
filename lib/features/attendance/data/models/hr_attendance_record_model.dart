@@ -8,10 +8,15 @@ class HrAttendanceRecord {
   final String employeeCode;
   final String employeeName;
   final String designation;
+  final String? department;
   final String? officeName;
+  final String? shiftName;
   final bool isOnBreak;
   final DateTime? breakStartTime;
   final int totalBreakSeconds;
+  final int lateByMinutes;
+  final int earlyExitMinutes;
+  final String? notes;
 
   HrAttendanceRecord({
     required this.id,
@@ -23,15 +28,23 @@ class HrAttendanceRecord {
     required this.employeeCode,
     required this.employeeName,
     required this.designation,
+    this.department,
     this.officeName,
+    this.shiftName,
     required this.isOnBreak,
     this.breakStartTime,
     required this.totalBreakSeconds,
+    this.lateByMinutes = 0,
+    this.earlyExitMinutes = 0,
+    this.notes,
   });
 
   factory HrAttendanceRecord.fromJson(Map<String, dynamic> json) {
     final emp = json['employee'] ?? {};
     final office = json['office'] ?? {};
+    final dept = json['department'] ?? emp['department'] ?? {};
+    final shift = json['shift'] ?? {};
+
     return HrAttendanceRecord(
       id: json['id']?.toString() ?? '',
       date: json['date']?.toString() ?? '',
@@ -42,10 +55,15 @@ class HrAttendanceRecord {
       employeeCode: emp['employeeCode']?.toString() ?? emp['employeeId']?.toString() ?? '',
       employeeName: '${emp['firstName'] ?? ''} ${emp['lastName'] ?? ''}'.trim(),
       designation: emp['designation']?.toString() ?? 'Employee',
+      department: dept['name']?.toString() ?? dept.toString(),
       officeName: office['name']?.toString(),
+      shiftName: shift['name']?.toString() ?? json['shiftName']?.toString(),
       isOnBreak: json['isOnBreak'] as bool? ?? false,
       breakStartTime: json['breakStartTime'] != null ? DateTime.tryParse(json['breakStartTime'].toString())?.toLocal() : null,
-      totalBreakSeconds: json['totalBreakSeconds'] as int? ?? 0,
+      totalBreakSeconds: json['totalBreakSeconds'] as int? ?? (json['totalBreakDuration'] as int? ?? 0),
+      lateByMinutes: json['lateByMinutes'] as int? ?? 0,
+      earlyExitMinutes: json['earlyExitMinutes'] as int? ?? 0,
+      notes: json['notes']?.toString() ?? json['remarks']?.toString(),
     );
   }
 
@@ -62,7 +80,7 @@ class HrAttendanceRecord {
     return 'EE';
   }
 
-  // Get status tag color matching Admin Panel
+  // Get status tag label
   String get statusLabel {
     switch (status.toUpperCase()) {
       case 'PRESENT':
@@ -73,6 +91,13 @@ class HrAttendanceRecord {
         return 'Late';
       case 'HALF_DAY':
         return 'Half Day';
+      case 'LEAVE':
+        return 'Leave';
+      case 'HOLIDAY':
+        return 'Holiday';
+      case 'WEEKEND':
+      case 'WEEK_OFF':
+        return 'Week Off';
       case 'REMOTE':
         return 'Remote';
       default:
@@ -126,10 +151,15 @@ class HrAttendanceRecord {
     String? employeeCode,
     String? employeeName,
     String? designation,
+    String? department,
     String? officeName,
+    String? shiftName,
     bool? isOnBreak,
     DateTime? breakStartTime,
     int? totalBreakSeconds,
+    int? lateByMinutes,
+    int? earlyExitMinutes,
+    String? notes,
   }) {
     return HrAttendanceRecord(
       id: id ?? this.id,
@@ -141,10 +171,15 @@ class HrAttendanceRecord {
       employeeCode: employeeCode ?? this.employeeCode,
       employeeName: employeeName ?? this.employeeName,
       designation: designation ?? this.designation,
+      department: department ?? this.department,
       officeName: officeName ?? this.officeName,
+      shiftName: shiftName ?? this.shiftName,
       isOnBreak: isOnBreak ?? this.isOnBreak,
       breakStartTime: breakStartTime ?? this.breakStartTime,
       totalBreakSeconds: totalBreakSeconds ?? this.totalBreakSeconds,
+      lateByMinutes: lateByMinutes ?? this.lateByMinutes,
+      earlyExitMinutes: earlyExitMinutes ?? this.earlyExitMinutes,
+      notes: notes ?? this.notes,
     );
   }
 }
