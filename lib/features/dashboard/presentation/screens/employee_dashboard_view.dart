@@ -29,6 +29,7 @@ import 'package:quickboom_hrm/core/services/permission_service.dart';
 import 'package:quickboom_hrm/core/widgets/permission_protected_widget.dart';
 import 'package:quickboom_hrm/core/widgets/feature_protected_widget.dart';
 import 'package:quickboom_hrm/core/providers/feature_access_provider.dart';
+import 'package:quickboom_hrm/core/utils/navigation_guard.dart';
 import 'package:quickboom_hrm/features/task/presentation/screens/employee_tasks_view.dart';
 
 final geofenceProvider = FutureProvider<bool>((ref) async {
@@ -226,9 +227,12 @@ class EmployeeDashboardView extends ConsumerWidget {
                           icon: RemixIcons.checkbox_line,
                           color: AppColors.success,
                           onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (_) => const EmployeeTasksView()),
+                            NavigationGuard.pushProtected(
+                              context: context,
+                              ref: ref,
+                              permissionKey: PermissionService.canViewTasks,
+                              moduleName: 'My Tasks',
+                              page: const EmployeeTasksView(),
                             );
                           },
                         ),
@@ -266,9 +270,12 @@ class EmployeeDashboardView extends ConsumerWidget {
                           icon: RemixIcons.calendar_todo_line,
                           color: AppColors.primary,
                           onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (_) => const EmployeeShiftView()),
+                            NavigationGuard.pushProtected(
+                              context: context,
+                              ref: ref,
+                              permissionKey: PermissionService.canViewShift,
+                              moduleName: 'Shift Schedule',
+                              page: const EmployeeShiftView(),
                             );
                           },
                         ),

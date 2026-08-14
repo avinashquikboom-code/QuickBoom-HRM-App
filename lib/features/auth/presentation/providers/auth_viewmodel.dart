@@ -482,6 +482,15 @@ class AuthViewModel extends StateNotifier<AuthState> {
         final prof  = userMap['profile']  as Map<String, dynamic>? ?? {};
         final uRole = (userMap['role'] ?? 'EMPLOYEE').toString().toUpperCase();
 
+        Map<String, bool>? perms;
+        final rawPerms = profileData['permissions'] ?? userMap['permissions'] ?? userMap['userPermission']?['permissions'];
+        if (rawPerms is Map) {
+          perms = {};
+          rawPerms.forEach((k, v) {
+            if (v is bool) perms![k.toString()] = v;
+          });
+        }
+
         final parsedUser = UserModel(
           id:          emp['id']?.toString() ?? userMap['id'].toString(),
           employeeId:  emp['employeeCode']?.toString() ?? userMap['id'].toString(),
@@ -513,6 +522,7 @@ class AuthViewModel extends StateNotifier<AuthState> {
           ifscCode:    emp['ifscCode']?.toString(),
           accountType: emp['accountType']?.toString(),
           branchName:  emp['branchName']?.toString(),
+          permissions: perms,
         );
 
         UserModel hydratedUser = parsedUser;
@@ -579,6 +589,29 @@ class AuthViewModel extends StateNotifier<AuthState> {
 
   void clearError() {
     state = state.copyWith(clearError: true);
+  }
+
+  Future<void> refreshUserPermissions() async {
+    try {
+      final res = await ApiService.get(AppUrl.myPermissions);
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        if (data is Map<String, dynamic> && state.currentUser != null) {
+          final rawPerms = data['permissions'] ?? data;
+          if (rawPerms is Map) {
+            final Map<String, bool> updatedPerms = {};
+            rawPerms.forEach((k, v) {
+              if (v is bool) updatedPerms[k.toString()] = v;
+            });
+            final updatedUser = state.currentUser!.copyWith(permissions: updatedPerms);
+            state = state.copyWith(currentUser: updatedUser);
+            debugPrint('🔄 [AUTH] Refreshed user permissions live: ${updatedPerms.length} keys');
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('⚠️ Error refreshing user permissions: $e');
+    }
   }
 
   void logout() {

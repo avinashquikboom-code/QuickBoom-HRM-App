@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quickboom_hrm/core/constants/app_url.dart';
 import 'package:quickboom_hrm/core/services/api_service.dart';
 import 'package:quickboom_hrm/core/services/websocket_service.dart';
+import 'package:quickboom_hrm/features/auth/presentation/providers/auth_viewmodel.dart';
 import 'package:http/http.dart' as http;
 
 class FeatureAccess {
@@ -30,17 +31,32 @@ class FeatureAccess {
       validUntil: json['validUntil'] as String?,
     );
   }
+
+  bool get isCurrentlyValid {
+    if (!enabled) return false;
+    final now = DateTime.now();
+    if (validFrom != null) {
+      final from = DateTime.tryParse(validFrom!);
+      if (from != null && now.isBefore(from)) return false;
+    }
+    if (validUntil != null) {
+      final until = DateTime.tryParse(validUntil!);
+      if (until != null && now.isAfter(until)) return false;
+    }
+    return true;
+  }
 }
 
 final featureAccessProvider =
     StateNotifierProvider<FeatureAccessNotifier, List<FeatureAccess>>((ref) {
-      return FeatureAccessNotifier();
+      return FeatureAccessNotifier(ref);
     });
 
 class FeatureAccessNotifier extends StateNotifier<List<FeatureAccess>> {
+  final Ref ref;
   StreamSubscription? _permissionSubscription;
 
-  FeatureAccessNotifier() : super([]) {
+  FeatureAccessNotifier(this.ref) : super([]) {
     fetchFeatures();
     _listenToRealTimeUpdates();
   }
@@ -48,6 +64,7 @@ class FeatureAccessNotifier extends StateNotifier<List<FeatureAccess>> {
   void _listenToRealTimeUpdates() {
     _permissionSubscription = WebSocketService().permissionUpdates.listen((event) {
       fetchFeatures();
+      ref.read(authViewModelProvider.notifier).refreshUserPermissions();
     });
   }
 
@@ -82,9 +99,21 @@ class FeatureAccessNotifier extends StateNotifier<List<FeatureAccess>> {
 
   FeatureAccess? getFeature(String name) {
     try {
-      return state.firstWhere(
+      final feature = state.firstWhere(
         (f) => f.name.toLowerCase() == name.toLowerCase(),
       );
+
+      if (!feature.isCurrentlyValid) {
+        return FeatureAccess(
+          name: feature.name,
+          enabled: false,
+          reason: 'Access time window has expired or is not active yet',
+          validFrom: feature.validFrom,
+          validUntil: feature.validUntil,
+        );
+      }
+
+      return feature;
     } catch (e) {
       return null;
     }
@@ -110,11 +139,14 @@ class FeatureAccessNotifier extends StateNotifier<List<FeatureAccess>> {
         body: jsonEncode({
           'featureName': name,
           'reason': reason,
+          'requestedFromDate': fromDate,
+          'requestedToDate': toDate,
         }),
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         fetchFeatures();
+        ref.read(authViewModelProvider.notifier).refreshUserPermissions();
         return true;
       }
       return false;

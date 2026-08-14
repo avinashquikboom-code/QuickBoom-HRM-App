@@ -41,6 +41,7 @@ class AppUrl {
   static const String forgotPassword = '/api/mobile/auth/forgot-password';
   static const String verifyIdentifier = '/api/mobile/auth/verify-identifier';
   static const String resetPassword = '/api/mobile/auth/reset-password';
+  static const String myPermissions = '/api/permissions/my-permissions';
   static const String commissionReport = '/api/commission/report';
 
   // ─────────────────────────────────────────────
