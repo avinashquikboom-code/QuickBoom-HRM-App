@@ -15,7 +15,8 @@ import 'package:quickboom_hrm/features/commission/presentation/widgets/webhook_l
 import 'package:quickboom_hrm/core/utils/ist_date_utils.dart';
 
 class CommissionWalletView extends ConsumerStatefulWidget {
-  const CommissionWalletView({super.key});
+  final bool embedMode;
+  const CommissionWalletView({super.key, this.embedMode = false});
 
   @override
   ConsumerState<CommissionWalletView> createState() => _CommissionWalletViewState();
@@ -112,9 +113,11 @@ class _CommissionWalletViewState extends ConsumerState<CommissionWalletView> wit
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.background,
-        elevation: 0,
+      appBar: widget.embedMode
+          ? null
+          : AppBar(
+              backgroundColor: AppColors.background,
+              elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
         title: Text(
@@ -384,24 +387,13 @@ class _CommissionWalletViewState extends ConsumerState<CommissionWalletView> wit
                 ),
                 icon: RemixIcons.time_line,
               ),
-              _buildSingleAmountCard(
-                title: "PAID COMMISSION",
-                amount: _walletData!.paidCommission,
-                label: "Successfully paid out to wallet",
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF059669), Color(0xFF047857)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                icon: RemixIcons.checkbox_circle_line,
-              ),
             ],
           ),
         ),
         const SizedBox(height: 12),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: List.generate(5, (index) {
+          children: List.generate(4, (index) {
             return AnimatedContainer(
               duration: const Duration(milliseconds: 300),
               margin: const EdgeInsets.symmetric(horizontal: 4),
