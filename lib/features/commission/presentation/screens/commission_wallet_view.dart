@@ -30,6 +30,7 @@ class _CommissionWalletViewState extends ConsumerState<CommissionWalletView> {
   StreamSubscription? _commissionSub;
   int _currentCardPage = 0;
   String _selectedPeriodFilter = 'All';
+  final PageController _cardPageController = PageController();
 
   @override
   void initState() {
@@ -48,6 +49,7 @@ class _CommissionWalletViewState extends ConsumerState<CommissionWalletView> {
   void dispose() {
     _timer?.cancel();
     _commissionSub?.cancel();
+    _cardPageController.dispose();
     super.dispose();
   }
 
@@ -344,6 +346,7 @@ class _CommissionWalletViewState extends ConsumerState<CommissionWalletView> {
         SizedBox(
           height: 160,
           child: PageView(
+            controller: _cardPageController,
             onPageChanged: (index) {
               setState(() {
                 _currentCardPage = index;
@@ -583,47 +586,146 @@ class _CommissionWalletViewState extends ConsumerState<CommissionWalletView> {
 
   Widget _buildPeriodFilterChips() {
     final periods = ['All', 'Today', 'This Week', 'This Month'];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          height: 38,
+          margin: const EdgeInsets.only(top: 8, bottom: 12),
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: periods.length,
+            physics: const BouncingScrollPhysics(),
+            itemBuilder: (context, index) {
+              final p = periods[index];
+              final isSelected = _selectedPeriodFilter == p;
+              return Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: ChoiceChip(
+                  label: Text(p),
+                  selected: isSelected,
+                  onSelected: (selected) {
+                    if (selected) {
+                      setState(() {
+                        _selectedPeriodFilter = p;
+                      });
+                      if (_cardPageController.hasClients) {
+                        if (p == 'Today') {
+                          _cardPageController.animateToPage(0, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+                        } else if (p == 'This Week') {
+                          _cardPageController.animateToPage(1, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+                        } else if (p == 'This Month') {
+                          _cardPageController.animateToPage(2, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+                        }
+                      }
+                    }
+                  },
+                  selectedColor: AppColors.primary,
+                  backgroundColor: AppColors.surface,
+                  labelStyle: TextStyle(
+                    color: isSelected ? Colors.white : AppColors.textSecondary,
+                    fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                    fontSize: 12.5,
+                  ),
+                  elevation: isSelected ? 2 : 0,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    side: BorderSide(
+                      color: isSelected ? Colors.transparent : AppColors.cardBorder,
+                      width: 1,
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+        _buildPeriodSummaryCard(),
+      ],
+    );
+  }
+
+  Widget _buildPeriodSummaryCard() {
+    String label = 'All Transactions';
+    double sales = 0.0;
+    double commission = 0.0;
+
+    if (_selectedPeriodFilter == 'Today') {
+      label = "Today's Performance";
+      sales = _walletData?.todaySales ?? 0.0;
+      commission = _walletData?.todayCommission ?? 0.0;
+    } else if (_selectedPeriodFilter == 'This Week') {
+      label = "This Week's Performance";
+      sales = _walletData?.thisWeekSales ?? 0.0;
+      commission = _walletData?.thisWeekCommission ?? 0.0;
+    } else if (_selectedPeriodFilter == 'This Month') {
+      label = "This Month's Performance";
+      sales = _walletData?.thisMonthSales ?? 0.0;
+      commission = _walletData?.thisMonthCommission ?? 0.0;
+    } else {
+      sales = _walletData?.recentTransactions.fold(0.0, (sum, tx) => sum! + tx.billAmount) ?? 0.0;
+      commission = _walletData?.recentTransactions.fold(0.0, (sum, tx) => sum! + tx.commissionEarned) ?? 0.0;
+    }
+
     return Container(
-      height: 38,
-      margin: const EdgeInsets.only(top: 8, bottom: 20),
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        itemCount: periods.length,
-        physics: const BouncingScrollPhysics(),
-        itemBuilder: (context, index) {
-          final p = periods[index];
-          final isSelected = _selectedPeriodFilter == p;
-          return Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: ChoiceChip(
-              label: Text(p),
-              selected: isSelected,
-              onSelected: (selected) {
-                if (selected) {
-                  setState(() {
-                    _selectedPeriodFilter = p;
-                  });
-                }
-              },
-              selectedColor: AppColors.primary,
-              backgroundColor: AppColors.surface,
-              labelStyle: TextStyle(
-                color: isSelected ? Colors.white : AppColors.textSecondary,
-                fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                fontSize: 12.5,
-              ),
-              elevation: isSelected ? 2 : 0,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-                side: BorderSide(
-                  color: isSelected ? Colors.transparent : AppColors.cardBorder,
-                  width: 1,
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppColors.primary.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label.toUpperCase(),
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.primary,
+                  letterSpacing: 0.8,
                 ),
               ),
-            ),
-          );
-        },
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  Text(
+                    'Net Sales: ',
+                    style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                  ),
+                  Text(
+                    '₹${NumberFormat('#,##,###.00').format(sales)}',
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                'COMMISSION',
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.success,
+                  letterSpacing: 0.8,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                '₹${NumberFormat('#,##,###.00').format(commission)}',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: AppColors.success),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

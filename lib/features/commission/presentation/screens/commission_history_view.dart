@@ -19,6 +19,7 @@ class _CommissionHistoryViewState extends ConsumerState<CommissionHistoryView> {
   final ScrollController _scrollController = ScrollController();
   int _currentPage = 1;
   String? _selectedStatus;
+  String _selectedPeriodFilter = 'All';
   String? _searchQuery;
   final TextEditingController _searchController = TextEditingController();
 
@@ -141,7 +142,7 @@ class _CommissionHistoryViewState extends ConsumerState<CommissionHistoryView> {
         children: [
           // Search Bar
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
             child: Container(
               decoration: BoxDecoration(
                 color: AppColors.surface,
@@ -174,6 +175,47 @@ class _CommissionHistoryViewState extends ConsumerState<CommissionHistoryView> {
               ),
             ),
           ),
+          // Period Choice Chips
+          Container(
+            height: 38,
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              children: ['All', 'Today', 'This Week', 'This Month'].map((p) {
+                final isSelected = _selectedPeriodFilter == p;
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: ChoiceChip(
+                    label: Text(p),
+                    selected: isSelected,
+                    onSelected: (selected) {
+                      if (selected) {
+                        setState(() {
+                          _selectedPeriodFilter = p;
+                        });
+                      }
+                    },
+                    selectedColor: AppColors.primary,
+                    backgroundColor: AppColors.surface,
+                    labelStyle: TextStyle(
+                      color: isSelected ? Colors.white : AppColors.textSecondary,
+                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                      fontSize: 12,
+                    ),
+                    elevation: isSelected ? 2 : 0,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      side: BorderSide(
+                        color: isSelected ? Colors.transparent : AppColors.cardBorder,
+                        width: 1,
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
           // History List
           Expanded(
             child: RefreshIndicator(
@@ -201,19 +243,50 @@ class _CommissionHistoryViewState extends ConsumerState<CommissionHistoryView> {
       return _buildEmptyState();
     }
 
+    final allTxns = state.history!.transactions;
+    final now = DateTime.now();
+    final todayStart = DateTime(now.year, now.month, now.day);
+    final todayEnd = DateTime(now.year, now.month, now.day, 23, 59, 59);
+    final weekMonday = now.subtract(Duration(days: now.weekday - 1));
+    final weekStart = DateTime(weekMonday.year, weekMonday.month, weekMonday.day);
+    final monthStart = DateTime(now.year, now.month, 1);
+
+    final filteredTxns = allTxns.where((tx) {
+      if (_searchQuery != null && _searchQuery!.isNotEmpty) {
+        final q = _searchQuery!.toLowerCase();
+        final matchInvoice = tx.invoiceNumber.toLowerCase().contains(q);
+        final matchCustomer = tx.customerName.toLowerCase().contains(q);
+        if (!matchInvoice && !matchCustomer) return false;
+      }
+
+      if (_selectedPeriodFilter == 'Today') {
+        return tx.generatedDate.isAfter(todayStart.subtract(const Duration(seconds: 1))) &&
+            tx.generatedDate.isBefore(todayEnd.add(const Duration(seconds: 1)));
+      } else if (_selectedPeriodFilter == 'This Week') {
+        return tx.generatedDate.isAfter(weekStart.subtract(const Duration(seconds: 1)));
+      } else if (_selectedPeriodFilter == 'This Month') {
+        return tx.generatedDate.isAfter(monthStart.subtract(const Duration(seconds: 1)));
+      }
+      return true;
+    }).toList();
+
+    if (filteredTxns.isEmpty) {
+      return _buildEmptyState();
+    }
+
     return ListView.builder(
       controller: _scrollController,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      itemCount: state.history!.transactions.length + (state.isLoadingHistory ? 1 : 0),
+      itemCount: filteredTxns.length + (state.isLoadingHistory ? 1 : 0),
       itemBuilder: (context, index) {
-        if (index == state.history!.transactions.length) {
+        if (index == filteredTxns.length) {
           return const Padding(
             padding: EdgeInsets.all(16),
             child: Center(child: CircularProgressIndicator()),
           );
         }
 
-        final transaction = state.history!.transactions[index];
+        final transaction = filteredTxns[index];
         return _CommissionTransactionTile(transaction: transaction)
             .animate()
             .fadeIn(delay: (index * 50).ms)

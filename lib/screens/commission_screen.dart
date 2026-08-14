@@ -20,6 +20,7 @@ class _CommissionScreenState extends State<CommissionScreen> {
   StreamSubscription? _commissionSub;
 
   String _searchBillId = '';
+  String _selectedPeriod = 'today';
   List<CommissionBill> _allBills = [];
   bool _isLoadingMore = false;
 
@@ -47,7 +48,7 @@ class _CommissionScreenState extends State<CommissionScreen> {
     setState(() {
       _futureSummary = MobileCommissionService.fetchSummary();
       _futureBills = MobileCommissionService.fetchBills(
-        period: 'current_month',
+        period: _selectedPeriod,
         billId: _searchBillId.isNotEmpty ? _searchBillId : null,
       );
       _currentPage = 0;
@@ -67,7 +68,7 @@ class _CommissionScreenState extends State<CommissionScreen> {
 
     try {
       final resp = await MobileCommissionService.fetchBills(
-        period: 'current_month',
+        period: _selectedPeriod,
         billId: _searchBillId.isNotEmpty ? _searchBillId : null,
         offset: (_currentPage + 1) * 20,
       );
@@ -140,21 +141,27 @@ class _CommissionScreenState extends State<CommissionScreen> {
                 ),
 
                 // ── Search & Filter Section Header ──────────────────
-                const SliverToBoxAdapter(
+                SliverToBoxAdapter(
                   child: Padding(
-                    padding: EdgeInsets.fromLTRB(16, 8, 16, 8),
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          "Today's Transactions",
-                          style: TextStyle(
+                          _selectedPeriod == 'today'
+                              ? "Today's Transactions"
+                              : (_selectedPeriod == 'this_week'
+                                  ? "This Week's Transactions"
+                                  : (_selectedPeriod == 'current_month'
+                                      ? "This Month's Transactions"
+                                      : "All Transactions")),
+                          style: const TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.bold,
                             color: Color(0xFF1E293B),
                           ),
                         ),
-                        Text(
+                        const Text(
                           'Live Sales',
                           style: TextStyle(
                             fontSize: 12,
@@ -162,6 +169,23 @@ class _CommissionScreenState extends State<CommissionScreen> {
                             color: Color(0xFF16A34A),
                           ),
                         ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                // ── Period Choice Chips ──────────────────────────────
+                SliverToBoxAdapter(
+                  child: Container(
+                    height: 38,
+                    margin: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+                    child: ListView(
+                      scrollDirection: Axis.horizontal,
+                      children: [
+                        _buildPeriodChip(label: 'Today', periodKey: 'today'),
+                        _buildPeriodChip(label: 'This Week', periodKey: 'this_week'),
+                        _buildPeriodChip(label: 'This Month', periodKey: 'current_month'),
+                        _buildPeriodChip(label: 'All Time', periodKey: 'all_time'),
                       ],
                     ),
                   ),
@@ -235,6 +259,41 @@ class _CommissionScreenState extends State<CommissionScreen> {
               ],
             );
           },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPeriodChip({required String label, required String periodKey}) {
+    final isSelected = _selectedPeriod == periodKey;
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: ChoiceChip(
+        label: Text(label),
+        selected: isSelected,
+        onSelected: (selected) {
+          if (selected) {
+            setState(() {
+              _selectedPeriod = periodKey;
+            });
+            _refresh();
+          }
+        },
+        selectedColor: const Color(0xFF0F172A),
+        backgroundColor: Colors.white,
+        labelStyle: TextStyle(
+          color: isSelected ? Colors.white : const Color(0xFF475569),
+          fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+          fontSize: 12,
+        ),
+        elevation: isSelected ? 2 : 0,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(
+            color: isSelected ? Colors.transparent : Colors.grey.shade300,
+            width: 1,
+          ),
         ),
       ),
     );
