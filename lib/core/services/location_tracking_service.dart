@@ -27,7 +27,7 @@ class LocationTrackingService {
           ],
         ),
         content: const Text(
-          'HopKid HRM requires background location access to verify geofence boundaries for automatic attendance marking and branch entry/exit alerts. Please choose "Allow all the time" in the system settings.',
+          'HopKid requires background location access to verify geofence boundaries for automatic attendance marking and branch entry/exit alerts. Please choose "Allow all the time" in the system settings.',
         ),
         actions: [
           TextButton(
@@ -101,7 +101,7 @@ class LocationTrackingService {
       forceLocationManager: false,
       intervalDuration: const Duration(minutes: 5),
       foregroundNotificationConfig: const ForegroundNotificationConfig(
-        notificationText: "HopKid HRM tracks your location for geofencing compliance.",
+        notificationText: "HopKid tracks your location for geofencing compliance.",
         notificationTitle: "Background Tracking Active",
       ),
     );

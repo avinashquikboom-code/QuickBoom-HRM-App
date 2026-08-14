@@ -156,7 +156,7 @@ class _SplashViewState extends ConsumerState<SplashView> {
                 .shimmer(duration: 1000.ms, color: AppColors.primary.withValues(alpha: 0.3)),
             SizedBox(height: r.h(24)),
             Text(
-              'HRM',
+              'HOPKID',
               style: TextStyle(
                 color: const Color(0xFF14473C),
                 fontSize: r.sp(36),

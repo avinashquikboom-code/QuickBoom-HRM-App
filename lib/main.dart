@@ -53,7 +53,7 @@ class HrmApp extends ConsumerWidget {
     AppColors.updateTheme(isDark);
 
     return MaterialApp(
-      title: 'HRM',
+      title: 'HOPKID',
       navigatorKey: NotificationService.navigatorKey,
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
