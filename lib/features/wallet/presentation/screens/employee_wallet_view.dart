@@ -913,7 +913,7 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
             ),
             tabs: const [
               Tab(text: 'Salary & Advance'),
-              Tab(text: 'Commission & Sales'),
+              Tab(text: 'Commission Overview'),
             ],
           ),
         ),

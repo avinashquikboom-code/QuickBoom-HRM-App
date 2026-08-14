@@ -118,7 +118,7 @@ class _CommissionScreenState extends State<CommissionScreen> with WidgetsBinding
             Icon(Icons.account_balance_wallet_rounded, color: Color(0xFF38BDF8), size: 24),
             SizedBox(width: 10),
             Text(
-              'My Commission & Sales',
+              'Commission Overview',
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, letterSpacing: 0.2),
             ),
           ],
