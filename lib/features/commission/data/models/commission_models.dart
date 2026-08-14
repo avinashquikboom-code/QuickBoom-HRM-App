@@ -222,6 +222,26 @@ class MonthlyCommission {
   }
 }
 
+double _parseDouble(dynamic val, [double defaultValue = 0.0]) {
+  if (val == null) return defaultValue;
+  if (val is num) return val.toDouble();
+  if (val is String) {
+    final cleaned = val.replaceAll(',', '').trim();
+    return double.tryParse(cleaned) ?? defaultValue;
+  }
+  return defaultValue;
+}
+
+int _parseInt(dynamic val, [int defaultValue = 0]) {
+  if (val == null) return defaultValue;
+  if (val is num) return val.toInt();
+  if (val is String) {
+    final cleaned = val.replaceAll(',', '').trim();
+    return int.tryParse(cleaned) ?? defaultValue;
+  }
+  return defaultValue;
+}
+
 class ProductItem {
   final String name;
   final int quantity;
@@ -239,10 +259,10 @@ class ProductItem {
 
   factory ProductItem.fromJson(Map<String, dynamic> json) {
     return ProductItem(
-      name: json['name'] ?? json['productName'] ?? '',
-      quantity: json['quantity'] ?? json['qty'] ?? 1,
-      price: (json['price'] ?? json['rate'] ?? json['productNetAmount'] ?? 0).toDouble(),
-      salesmanName: json['salesmanName'] ?? json['employeeName'],
+      name: (json['name'] ?? json['productName'] ?? '').toString(),
+      quantity: _parseInt(json['quantity'] ?? json['qty'], 1),
+      price: _parseDouble(json['price'] ?? json['rate'] ?? json['productNetAmount']),
+      salesmanName: json['salesmanName']?.toString() ?? json['employeeName']?.toString(),
     );
   }
 }
@@ -289,19 +309,19 @@ class CommissionBill {
 
     return CommissionBill(
       id: (json['id'] ?? '').toString(),
-      billId: json['billId'] ?? json['invoiceNumber'] ?? '',
-      saleAmount: (json['saleAmount'] ?? json['amount'] ?? 0).toDouble(),
-      commission: (json['commission'] ?? json['commissionAmount'] ?? 0).toDouble(),
+      billId: (json['billId'] ?? json['invoiceNumber'] ?? '').toString(),
+      saleAmount: _parseDouble(json['saleAmount'] ?? json['amount']),
+      commission: _parseDouble(json['commission'] ?? json['commissionAmount']),
       date: (DateTime.tryParse(rawDate.toString()) ?? DateTime.now()).toLocal(),
-      status: json['status'] ?? 'APPROVED',
-      description: json['description'] ?? json['notes'],
-      customerName: json['customerName'],
-      customerPhone: json['customerPhone'],
-      grossSale: json['grossSale'] != null ? (json['grossSale'] as num).toDouble() : null,
-      discount: json['discount'] != null ? (json['discount'] as num).toDouble() : null,
-      tax: json['tax'] != null ? (json['tax'] as num).toDouble() : null,
-      storeName: json['storeName'],
-      salespersonName: json['salespersonName'],
+      status: (json['status'] ?? 'APPROVED').toString(),
+      description: json['description']?.toString() ?? json['notes']?.toString(),
+      customerName: json['customerName']?.toString(),
+      customerPhone: json['customerPhone']?.toString(),
+      grossSale: json['grossSale'] != null ? _parseDouble(json['grossSale']) : null,
+      discount: json['discount'] != null ? _parseDouble(json['discount']) : null,
+      tax: json['tax'] != null ? _parseDouble(json['tax']) : null,
+      storeName: json['storeName']?.toString(),
+      salespersonName: json['salespersonName']?.toString(),
       products: prodList,
     );
   }
@@ -353,22 +373,22 @@ class CommissionDetail {
     List<ProductItem> prodList = rawProducts?.map((p) => ProductItem.fromJson(p)).toList() ?? [];
 
     return CommissionDetail(
-      billId: json['billId'] ?? '',
-      saleAmount: (json['saleAmount'] ?? json['amount'] ?? 0).toDouble(),
-      commissionRate: (json['commissionRate'] ?? json['commissionPercent'] ?? 0).toDouble(),
-      commissionAmount: (json['commissionAmount'] ?? json['commission'] ?? 0).toDouble(),
+      billId: (json['billId'] ?? '').toString(),
+      saleAmount: _parseDouble(json['saleAmount'] ?? json['amount']),
+      commissionRate: _parseDouble(json['commissionRate'] ?? json['commissionPercent']),
+      commissionAmount: _parseDouble(json['commissionAmount'] ?? json['commission']),
       date: (DateTime.tryParse(rawDate.toString()) ?? DateTime.now()).toLocal(),
-      status: json['status'] ?? 'APPROVED',
-      description: json['description'] ?? json['notes'],
+      status: (json['status'] ?? 'APPROVED').toString(),
+      description: json['description']?.toString() ?? json['notes']?.toString(),
       createdAt: (DateTime.tryParse(rawCreated.toString()) ?? DateTime.now()).toLocal(),
       employee: EmployeeInfo.fromJson(json['employee'] ?? {}),
-      customerName: json['customerName'],
-      customerPhone: json['customerPhone'],
-      paymentMode: json['paymentMode'],
-      storeName: json['storeName'],
-      grossSale: json['grossSale'] != null ? (json['grossSale'] as num).toDouble() : null,
-      discount: json['discount'] != null ? (json['discount'] as num).toDouble() : null,
-      tax: json['tax'] != null ? (json['tax'] as num).toDouble() : null,
+      customerName: json['customerName']?.toString(),
+      customerPhone: json['customerPhone']?.toString(),
+      paymentMode: json['paymentMode']?.toString(),
+      storeName: json['storeName']?.toString(),
+      grossSale: json['grossSale'] != null ? _parseDouble(json['grossSale']) : null,
+      discount: json['discount'] != null ? _parseDouble(json['discount']) : null,
+      tax: json['tax'] != null ? _parseDouble(json['tax']) : null,
       products: prodList,
     );
   }

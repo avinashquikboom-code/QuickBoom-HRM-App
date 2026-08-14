@@ -13,7 +13,8 @@ class CommissionDetailsView extends ConsumerStatefulWidget {
   const CommissionDetailsView({super.key});
 
   @override
-  ConsumerState<CommissionDetailsView> createState() => _CommissionDetailsViewState();
+  ConsumerState<CommissionDetailsView> createState() =>
+      _CommissionDetailsViewState();
 }
 
 class _CommissionDetailsViewState extends ConsumerState<CommissionDetailsView> {
@@ -105,9 +106,13 @@ class _CommissionDetailsViewState extends ConsumerState<CommissionDetailsView> {
             ),
           ).animate().fadeIn(delay: 200.ms),
           const SizedBox(height: 12),
-          ...details.monthlyBreakdown.map((monthly) => _MonthlyBreakdownCard(
-                monthly: monthly,
-              ).animate().fadeIn(delay: (200 + details.monthlyBreakdown.indexOf(monthly) * 50).ms)),
+          ...details.monthlyBreakdown.map(
+            (monthly) =>
+                _MonthlyBreakdownCard(monthly: monthly).animate().fadeIn(
+                  delay:
+                      (200 + details.monthlyBreakdown.indexOf(monthly) * 50).ms,
+                ),
+          ),
 
           const SizedBox(height: 16),
 
@@ -121,9 +126,11 @@ class _CommissionDetailsViewState extends ConsumerState<CommissionDetailsView> {
             ),
           ).animate().fadeIn(delay: 300.ms),
           const SizedBox(height: 12),
-          ...details.topPerformingBills.map((bill) => _TopBillCard(
-                bill: bill,
-              ).animate().fadeIn(delay: (300 + details.topPerformingBills.indexOf(bill) * 50).ms)),
+          ...details.topPerformingBills.map(
+            (bill) => _TopBillCard(bill: bill).animate().fadeIn(
+              delay: (300 + details.topPerformingBills.indexOf(bill) * 50).ms,
+            ),
+          ),
 
           const SizedBox(height: 24),
         ],
@@ -177,7 +184,11 @@ class _CommissionDetailsViewState extends ConsumerState<CommissionDetailsView> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(RemixIcons.bar_chart_box_line, size: 48, color: AppColors.textHint),
+          Icon(
+            RemixIcons.bar_chart_box_line,
+            size: 48,
+            color: AppColors.textHint,
+          ),
           const SizedBox(height: 16),
           Text(
             'No commission details available',
@@ -203,76 +214,108 @@ class _EmployeeInfoCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
       decoration: BoxDecoration(
-        gradient: AppColors.primaryGradient,
-        borderRadius: BorderRadius.circular(20),
+        gradient: const LinearGradient(
+          colors: [Color(0xFF2E8B75), Color(0xFF1E6F5C)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(22),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withValues(alpha: 0.3),
-            blurRadius: 20,
+            color: const Color(0xFF1E6F5C).withValues(alpha: 0.35),
+            blurRadius: 18,
             offset: const Offset(0, 8),
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(RemixIcons.user_line, color: Colors.white, size: 24),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      name,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      designation,
-                      style: TextStyle(
-                        color: AppColors.primaryLight.withValues(alpha: 0.8),
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
+          // Avatar Icon Container
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            width: 52,
+            height: 52,
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8),
+              color: Colors.white.withValues(alpha: 0.18),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.3),
+                width: 1.2,
+              ),
             ),
-            child: Row(
+            child: const Icon(
+              RemixIcons.user_3_line,
+              color: Colors.white,
+              size: 26,
+            ),
+          ),
+          const SizedBox(width: 16),
+          // Info Details
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(RemixIcons.id_card_line, color: AppColors.primaryLight, size: 16),
-                const SizedBox(width: 8),
                 Text(
-                  'ID: $employeeId',
-                  style: TextStyle(
-                    color: AppColors.primaryLight,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
+                  name.toUpperCase(),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                if (designation.isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    designation,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.85),
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.18),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.3),
+                      width: 1,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        RemixIcons.id_card_line,
+                        color: Colors.white,
+                        size: 13,
+                      ),
+                      const SizedBox(width: 5),
+                      Text(
+                        'ID: $employeeId',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.3,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -337,7 +380,8 @@ class _PerformanceSummaryCard extends StatelessWidget {
               Expanded(
                 child: _StatItem(
                   label: 'Commission Earned',
-                  value: '₹${statistics.totalCommissionEarned.toStringAsFixed(0)}',
+                  value:
+                      '₹${statistics.totalCommissionEarned.toStringAsFixed(0)}',
                   icon: RemixIcons.percent_line,
                   color: AppColors.primary,
                 ),
@@ -346,7 +390,8 @@ class _PerformanceSummaryCard extends StatelessWidget {
               Expanded(
                 child: _StatItem(
                   label: 'Avg/Bill',
-                  value: '₹${statistics.averageCommissionPerBill.toStringAsFixed(0)}',
+                  value:
+                      '₹${statistics.averageCommissionPerBill.toStringAsFixed(0)}',
                   icon: RemixIcons.bar_chart_line,
                   color: AppColors.warning,
                 ),
@@ -452,7 +497,11 @@ class _MonthlyBreakdownCard extends StatelessWidget {
               color: AppColors.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(RemixIcons.calendar_line, color: AppColors.primary, size: 20),
+            child: Icon(
+              RemixIcons.calendar_line,
+              color: AppColors.primary,
+              size: 20,
+            ),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -478,10 +527,7 @@ class _MonthlyBreakdownCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    Text(
-                      '•',
-                      style: TextStyle(color: AppColors.textHint),
-                    ),
+                    Text('•', style: TextStyle(color: AppColors.textHint)),
                     const SizedBox(width: 8),
                     Text(
                       '₹${monthly.salesAmount.toStringAsFixed(0)} sales',
@@ -508,10 +554,7 @@ class _MonthlyBreakdownCard extends StatelessWidget {
               ),
               Text(
                 'Commission',
-                style: TextStyle(
-                  color: AppColors.textHint,
-                  fontSize: 10,
-                ),
+                style: TextStyle(color: AppColors.textHint, fontSize: 10),
               ),
             ],
           ),
@@ -538,7 +581,8 @@ class _TopBillCard extends StatelessWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => CommissionDetailScreen(billId: bill.invoiceNumber),
+                  builder: (_) =>
+                      CommissionDetailScreen(billId: bill.invoiceNumber),
                 ),
               );
             }
@@ -553,63 +597,64 @@ class _TopBillCard extends StatelessWidget {
             ),
             child: Row(
               children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: AppColors.success.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(RemixIcons.trophy_line, color: AppColors.success, size: 20),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  bill.invoiceNumber,
-                  style: TextStyle(
-                    color: AppColors.textPrimary,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w800,
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.success.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    RemixIcons.trophy_line,
+                    color: AppColors.success,
+                    size: 20,
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  bill.customerName,
-                  style: TextStyle(
-                    color: AppColors.textSecondary,
-                    fontSize: 11,
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        bill.invoiceNumber,
+                        style: TextStyle(
+                          color: AppColors.textPrimary,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        bill.customerName,
+                        style: TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
                   ),
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      '₹${bill.commissionEarned.toStringAsFixed(0)}',
+                      style: TextStyle(
+                        color: AppColors.success,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    Text(
+                      DateFormat('dd MMM').format(bill.date),
+                      style: TextStyle(color: AppColors.textHint, fontSize: 10),
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                '₹${bill.commissionEarned.toStringAsFixed(0)}',
-                style: TextStyle(
-                  color: AppColors.success,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              Text(
-                DateFormat('dd MMM').format(bill.date),
-                style: TextStyle(
-                  color: AppColors.textHint,
-                  fontSize: 10,
-                ),
-              ),
-            ],
-          ),
-        ],
+        ),
       ),
-    ),
-  ),
-),
-);
+    );
   }
 }

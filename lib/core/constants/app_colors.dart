@@ -9,6 +9,7 @@ class AppColors {
   static const Color primaryLight = Color(0xFF5BBDA6);
   static const Color primarySurface = Color(0xFFE8F5F2);
   static const Color primarySurfaceDeep = Color(0xFFD1ECE5);
+  static const Color white = Color(0xFFFFFFFF);
 
   // Dynamic colors (non-const static fields)
   static Color background = const Color(0xFFF0F4F3);
@@ -72,6 +73,7 @@ class AppColors {
       background = const Color(0xFF0F172A);
       surface = const Color(0xFF1E293B);
       textPrimary = const Color(0xFFFFFFFF);
+
       textSecondary = const Color(0xFF94A3B8);
       textHint = const Color(0xFF64748B);
       divider = const Color(0xFF334155);
