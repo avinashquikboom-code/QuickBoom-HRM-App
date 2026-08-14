@@ -101,16 +101,20 @@ class AttendanceModel {
 
   String get checkInLabel {
     if (checkIn == null) return '--';
-    final h = checkIn!.hour.toString().padLeft(2, '0');
+    final period = checkIn!.hour >= 12 ? 'PM' : 'AM';
+    final hour12 = checkIn!.hour % 12 == 0 ? 12 : checkIn!.hour % 12;
+    final h = hour12.toString().padLeft(2, '0');
     final m = checkIn!.minute.toString().padLeft(2, '0');
-    return '$h:$m';
+    return '$h:$m $period';
   }
 
   String get checkOutLabel {
     if (checkOut == null) return '--';
-    final h = checkOut!.hour.toString().padLeft(2, '0');
+    final period = checkOut!.hour >= 12 ? 'PM' : 'AM';
+    final hour12 = checkOut!.hour % 12 == 0 ? 12 : checkOut!.hour % 12;
+    final h = hour12.toString().padLeft(2, '0');
     final m = checkOut!.minute.toString().padLeft(2, '0');
-    return '$h:$m';
+    return '$h:$m $period';
   }
 
   String get statusLabel {
