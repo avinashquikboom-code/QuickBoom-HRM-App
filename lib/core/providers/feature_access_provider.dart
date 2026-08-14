@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quickboom_hrm/core/constants/app_url.dart';
 import 'package:quickboom_hrm/core/services/api_service.dart';
+import 'package:quickboom_hrm/core/services/websocket_service.dart';
 import 'package:http/http.dart' as http;
 
 class FeatureAccess {
@@ -36,8 +38,23 @@ final featureAccessProvider =
     });
 
 class FeatureAccessNotifier extends StateNotifier<List<FeatureAccess>> {
+  StreamSubscription? _permissionSubscription;
+
   FeatureAccessNotifier() : super([]) {
     fetchFeatures();
+    _listenToRealTimeUpdates();
+  }
+
+  void _listenToRealTimeUpdates() {
+    _permissionSubscription = WebSocketService().permissionUpdates.listen((event) {
+      fetchFeatures();
+    });
+  }
+
+  @override
+  void dispose() {
+    _permissionSubscription?.cancel();
+    super.dispose();
   }
 
   Future<void> fetchFeatures() async {
@@ -59,7 +76,7 @@ class FeatureAccessNotifier extends StateNotifier<List<FeatureAccess>> {
         }
       }
     } catch (e) {
-      // Ignore
+      // Ignore network failures gracefully
     }
   }
 
@@ -83,7 +100,7 @@ class FeatureAccessNotifier extends StateNotifier<List<FeatureAccess>> {
       final token = await ApiService.getToken();
       if (token == null) return false;
 
-      final url = Uri.parse('${AppUrl.baseUrl}/mobile/features/access-request');
+      final url = Uri.parse('${AppUrl.baseUrl}/mobile/access-requests');
       final response = await http.post(
         url,
         headers: {
@@ -93,18 +110,16 @@ class FeatureAccessNotifier extends StateNotifier<List<FeatureAccess>> {
         body: jsonEncode({
           'featureName': name,
           'reason': reason,
-          'requestedFromDate': fromDate,
-          'requestedToDate': toDate,
         }),
       );
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        return data['success'] == true;
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        fetchFeatures();
+        return true;
       }
+      return false;
     } catch (e) {
-      // Ignore
+      return false;
     }
-    return false;
   }
 }

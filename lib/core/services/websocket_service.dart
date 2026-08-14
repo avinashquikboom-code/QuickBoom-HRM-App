@@ -19,12 +19,15 @@ class WebSocketService {
       StreamController<Map<String, dynamic>>.broadcast();
   final StreamController<Map<String, dynamic>> _commissionUpdateController = 
       StreamController<Map<String, dynamic>>.broadcast();
+  final StreamController<Map<String, dynamic>> _permissionUpdateController = 
+      StreamController<Map<String, dynamic>>.broadcast();
 
   // Public streams
   Stream<Map<String, dynamic>> get leaveBalanceUpdates => _leaveBalanceController.stream;
   Stream<Map<String, dynamic>> get notifications => _notificationController.stream;
   Stream<Map<String, dynamic>> get leaveUpdates => _leaveUpdateController.stream;
   Stream<Map<String, dynamic>> get commissionUpdates => _commissionUpdateController.stream;
+  Stream<Map<String, dynamic>> get permissionUpdates => _permissionUpdateController.stream;
 
   bool get isConnected => _isConnected;
 
@@ -94,53 +97,47 @@ class WebSocketService {
         _commissionUpdateController.add(Map<String, dynamic>.from(data));
       });
 
+      // Listen for permission updates
+      _socket!.on('permissionUpdate', (data) {
+        if (kDebugMode) print('Received permission update: $data');
+        _permissionUpdateController.add(Map<String, dynamic>.from(data));
+      });
+
       // Handle errors
       _socket!.on('error', (error) {
         if (kDebugMode) print('WebSocket error: $error');
       });
 
     } catch (e) {
-      if (kDebugMode) print('Failed to connect WebSocket: $e');
+      if (kDebugMode) print('Error initializing WebSocket: $e');
       _isConnected = false;
     }
   }
 
   void disconnect() {
-    if (_socket != null) {
-      _socket!.disconnect();
-      _socket = null;
-    }
+    _socket?.disconnect();
+    _socket?.dispose();
+    _socket = null;
     _isConnected = false;
-  }
-
-  void requestRealTimeData(String type) {
-    if (_socket != null && _isConnected) {
-      _socket!.emit('requestRealTimeData', {'type': type});
-    }
+    if (kDebugMode) print('WebSocket disconnected and disposed');
   }
 
   Future<String?> _getAuthToken() async {
     try {
-      final apiToken = await ApiService.getToken();
-      if (apiToken != null && apiToken.isNotEmpty) {
-        return apiToken;
-      }
-      final storageToken = await StorageService.getToken();
-      if (storageToken != null && storageToken.isNotEmpty) {
-        return storageToken;
-      }
-      final prefs = await ApiService.getStorage();
-      return prefs.getString('auth_token') ?? prefs.getString('emp_token') ?? prefs.getString('hr_token');
+      final token = await StorageService.getToken();
+      return token;
     } catch (e) {
-      if (kDebugMode) print('Failed to get auth token: $e');
+      if (kDebugMode) print('Error getting auth token for WebSocket: $e');
       return null;
     }
   }
 
   void dispose() {
+    disconnect();
     _leaveBalanceController.close();
     _notificationController.close();
     _leaveUpdateController.close();
-    disconnect();
+    _commissionUpdateController.close();
+    _permissionUpdateController.close();
   }
 }

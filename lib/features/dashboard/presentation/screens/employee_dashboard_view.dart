@@ -28,6 +28,7 @@ import 'package:quickboom_hrm/features/commission/presentation/widgets/webhook_l
 import 'package:quickboom_hrm/core/services/permission_service.dart';
 import 'package:quickboom_hrm/core/widgets/permission_protected_widget.dart';
 import 'package:quickboom_hrm/core/widgets/feature_protected_widget.dart';
+import 'package:quickboom_hrm/core/providers/feature_access_provider.dart';
 import 'package:quickboom_hrm/features/task/presentation/screens/employee_tasks_view.dart';
 
 final geofenceProvider = FutureProvider<bool>((ref) async {
@@ -50,14 +51,14 @@ class EmployeeDashboardView extends ConsumerWidget {
     final dashboardState = ref.watch(employeeDashboardViewModelProvider);
     final holidayState = ref.watch(holidayViewModelProvider);
     final commissionState = ref.watch(commissionViewModelProvider);
-    final announcements = dashboardState.announcements;
     final now = DateTime.now();
 
     return Scaffold(
       backgroundColor: AppColors.background,
       body: RefreshIndicator(
         onRefresh: () async {
-          await Future.wait([
+          await Future.wait<dynamic>([
+            ref.read(featureAccessProvider.notifier).fetchFeatures(),
             ref.read(attendanceViewModelProvider.notifier).fetchAttendanceData(),
             ref.read(leaveViewModelProvider.notifier).fetchLeaves(),
             ref.read(notificationViewModelProvider.notifier).fetchNotifications(),
@@ -669,17 +670,7 @@ class EmployeeDashboardView extends ConsumerWidget {
                   const SizedBox(height: 12),
                 ],
 
-                // ─── Editorial Announcements Feed ──────────────────────────
-                _SectionTitle(title: 'Announcements Feed'),
-                const SizedBox(height: 12),
-                ...announcements.map(
-                  (a) => Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: _AnnouncementTile(announcement: a),
-                  ),
-                ),
-
-                const SizedBox(height: 110),
+                const SizedBox(height: 24),
               ]),
             ),
           ),
