@@ -7,6 +7,7 @@ import 'package:quickboom_hrm/core/constants/app_colors.dart';
 import 'package:quickboom_hrm/core/widgets/shimmer_loading.dart';
 import 'package:quickboom_hrm/features/commission/data/commission_models.dart';
 import 'package:quickboom_hrm/features/commission/presentation/providers/commission_viewmodel.dart';
+import 'package:quickboom_hrm/screens/commission/commission_detail_screen.dart';
 
 class CommissionDetailsView extends ConsumerStatefulWidget {
   const CommissionDetailsView({super.key});
@@ -529,14 +530,29 @@ class _TopBillCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.cardBorder),
-      ),
-      child: Row(
-        children: [
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            if (bill.invoiceNumber.isNotEmpty) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => CommissionDetailScreen(billId: bill.invoiceNumber),
+                ),
+              );
+            }
+          },
+          borderRadius: BorderRadius.circular(16),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppColors.cardBorder),
+            ),
+            child: Row(
+              children: [
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
@@ -591,6 +607,9 @@ class _TopBillCard extends StatelessWidget {
           ),
         ],
       ),
-    );
+    ),
+  ),
+),
+);
   }
 }

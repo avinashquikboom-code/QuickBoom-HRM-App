@@ -12,6 +12,8 @@ import 'package:quickboom_hrm/core/constants/app_colors.dart';
 import 'package:quickboom_hrm/core/constants/app_url.dart';
 import 'package:quickboom_hrm/core/services/storage_service.dart';
 import 'package:quickboom_hrm/core/services/websocket_service.dart';
+import 'package:quickboom_hrm/features/commission/presentation/screens/webhook_logs_screen.dart';
+import 'package:quickboom_hrm/screens/commission/commission_detail_screen.dart';
 
 class WebhookLogsWidget extends StatefulWidget {
   final int itemsToShow;
@@ -310,11 +312,9 @@ class _WebhookLogsWidgetState extends State<WebhookLogsWidget> {
                 ),
               ),
               onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Full webhook logs available in the Admin Panel'),
-                    behavior: SnackBarBehavior.floating,
-                  ),
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const WebhookLogsScreen()),
                 );
               },
               child: Row(
@@ -397,17 +397,30 @@ class _LogRow extends StatelessWidget {
     final isReversal = commAmt < 0 || eventType.toUpperCase().contains('CREDIT_NOTE');
     final isPositiveComm = commAmt > 0;
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        color: AppColors.cardBorder.withValues(alpha: 0.45),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.cardBorder),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+    final idToPass = invoiceNo.isNotEmpty ? invoiceNo : billId;
+
+    return GestureDetector(
+      onTap: () {
+        if (idToPass.isNotEmpty && idToPass != '—') {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => CommissionDetailScreen(billId: idToPass),
+            ),
+          );
+        }
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: AppColors.cardBorder.withValues(alpha: 0.45),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.cardBorder),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
           Row(
             children: [
               Container(
@@ -537,7 +550,8 @@ class _LogRow extends StatelessWidget {
           ],
         ],
       ),
-    );
+    ),
+);
   }
 }
 

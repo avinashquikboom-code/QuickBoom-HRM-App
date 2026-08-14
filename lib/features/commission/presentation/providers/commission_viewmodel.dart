@@ -59,6 +59,7 @@ class CommissionViewModel extends StateNotifier<CommissionState> {
 
   CommissionViewModel() : super(const CommissionState()) {
     _initializeWebSocket();
+    fetchWallet();
   }
 
   void _initializeWebSocket() {
@@ -105,10 +106,12 @@ class CommissionViewModel extends StateNotifier<CommissionState> {
     String? endDate,
     String? month,
   }) async {
-    state = state.copyWith(isLoadingHistory: true, errorMessage: null);
+    if (page == 1) {
+      state = state.copyWith(isLoadingHistory: true, errorMessage: null);
+    }
     try {
-      debugPrint('🔄 Fetching commission history...');
-      final history = await CommissionService.fetchCommissionHistory(
+      debugPrint('🔄 Fetching commission history (page $page)...');
+      final newHistory = await CommissionService.fetchCommissionHistory(
         page: page,
         limit: limit,
         status: status,
@@ -116,17 +119,43 @@ class CommissionViewModel extends StateNotifier<CommissionState> {
         endDate: endDate,
         month: month,
       );
-      state = state.copyWith(
-        history: history,
-        isLoadingHistory: false,
-        errorMessage: history == null ? 'Failed to load commission history' : null,
-      );
+
+      if (newHistory != null) {
+        if (page > 1 && state.history != null) {
+          final updatedTxns = [
+            ...state.history!.transactions,
+            ...newHistory.transactions,
+          ];
+          final combinedHistory = CommissionHistory(
+            transactions: updatedTxns,
+            totalCount: newHistory.totalCount,
+            currentPage: newHistory.currentPage,
+            totalPages: newHistory.totalPages,
+          );
+          state = state.copyWith(
+            history: combinedHistory,
+            isLoadingHistory: false,
+            errorMessage: null,
+          );
+        } else {
+          state = state.copyWith(
+            history: newHistory,
+            isLoadingHistory: false,
+            errorMessage: null,
+          );
+        }
+      } else {
+        state = state.copyWith(
+          isLoadingHistory: false,
+          errorMessage: state.history == null ? 'Failed to load commission history' : null,
+        );
+      }
       debugPrint('✅ Commission history loaded');
     } catch (e) {
       debugPrint('❌ Error fetching commission history: $e');
       state = state.copyWith(
         isLoadingHistory: false,
-        errorMessage: 'Failed to load commission history',
+        errorMessage: state.history == null ? 'Failed to load commission history' : null,
       );
     }
   }

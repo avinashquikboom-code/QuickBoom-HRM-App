@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:remixicon/remixicon.dart';
@@ -7,6 +8,9 @@ import 'package:quickboom_hrm/core/constants/app_colors.dart';
 import 'package:quickboom_hrm/core/widgets/shimmer_loading.dart';
 import 'package:quickboom_hrm/features/commission/data/commission_models.dart';
 import 'package:quickboom_hrm/features/commission/presentation/providers/commission_viewmodel.dart';
+import 'package:quickboom_hrm/core/utils/ist_date_utils.dart';
+import 'package:quickboom_hrm/screens/commission/commission_detail_screen.dart';
+import 'package:quickboom_hrm/core/services/websocket_service.dart';
 
 class CommissionHistoryView extends ConsumerStatefulWidget {
   const CommissionHistoryView({super.key});
@@ -15,23 +19,41 @@ class CommissionHistoryView extends ConsumerStatefulWidget {
   ConsumerState<CommissionHistoryView> createState() => _CommissionHistoryViewState();
 }
 
-class _CommissionHistoryViewState extends ConsumerState<CommissionHistoryView> {
+class _CommissionHistoryViewState extends ConsumerState<CommissionHistoryView> with WidgetsBindingObserver {
   final ScrollController _scrollController = ScrollController();
   int _currentPage = 1;
   String? _selectedStatus;
   String _selectedPeriodFilter = 'All';
   String? _searchQuery;
   final TextEditingController _searchController = TextEditingController();
+  StreamSubscription? _commissionSub;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _loadHistory();
     _scrollController.addListener(_onScroll);
+
+    // Auto-refresh history on WebSocket updates
+    _commissionSub = WebSocketService().commissionUpdates.listen((_) {
+      debugPrint('⚡ WebSocket: Real-time update in CommissionHistoryView');
+      if (mounted) _loadHistory();
+    });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      debugPrint('⚡ App resumed: Refreshing CommissionHistoryView');
+      _loadHistory();
+    }
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _commissionSub?.cancel();
     _scrollController.dispose();
     _searchController.dispose();
     super.dispose();
@@ -66,52 +88,6 @@ class _CommissionHistoryViewState extends ConsumerState<CommissionHistoryView> {
     await _loadHistory();
   }
 
-  void _showFilterDialog() {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Filter by Status'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _FilterOption(
-              label: 'All',
-              value: null,
-              selected: _selectedStatus == null,
-              onTap: () {
-                setState(() => _selectedStatus = null);
-                Navigator.pop(ctx);
-                _loadHistory();
-              },
-            ),
-            _FilterOption(
-              label: 'Pending',
-              value: 'Pending',
-              selected: _selectedStatus == 'Pending',
-              onTap: () {
-                setState(() => _selectedStatus = 'Pending');
-                Navigator.pop(ctx);
-                _loadHistory();
-              },
-            ),
-            _FilterOption(
-              label: 'Paid',
-              value: 'Paid',
-              selected: _selectedStatus == 'Paid',
-              onTap: () {
-                setState(() => _selectedStatus = 'Paid');
-                Navigator.pop(ctx);
-                _loadHistory();
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(commissionViewModelProvider);
@@ -131,12 +107,6 @@ class _CommissionHistoryViewState extends ConsumerState<CommissionHistoryView> {
             fontWeight: FontWeight.w800,
           ),
         ),
-        actions: [
-          IconButton(
-            icon: Icon(RemixIcons.filter_3_line, color: AppColors.textPrimary),
-            onPressed: _showFilterDialog,
-          ),
-        ],
       ),
       body: Column(
         children: [
@@ -244,12 +214,6 @@ class _CommissionHistoryViewState extends ConsumerState<CommissionHistoryView> {
     }
 
     final allTxns = state.history!.transactions;
-    final now = DateTime.now();
-    final todayStart = DateTime(now.year, now.month, now.day);
-    final todayEnd = DateTime(now.year, now.month, now.day, 23, 59, 59);
-    final weekMonday = now.subtract(Duration(days: now.weekday - 1));
-    final weekStart = DateTime(weekMonday.year, weekMonday.month, weekMonday.day);
-    final monthStart = DateTime(now.year, now.month, 1);
 
     final filteredTxns = allTxns.where((tx) {
       if (_searchQuery != null && _searchQuery!.isNotEmpty) {
@@ -260,12 +224,11 @@ class _CommissionHistoryViewState extends ConsumerState<CommissionHistoryView> {
       }
 
       if (_selectedPeriodFilter == 'Today') {
-        return tx.generatedDate.isAfter(todayStart.subtract(const Duration(seconds: 1))) &&
-            tx.generatedDate.isBefore(todayEnd.add(const Duration(seconds: 1)));
+        return IstDateUtils.isToday(tx.generatedDate);
       } else if (_selectedPeriodFilter == 'This Week') {
-        return tx.generatedDate.isAfter(weekStart.subtract(const Duration(seconds: 1)));
+        return IstDateUtils.isLast7Days(tx.generatedDate);
       } else if (_selectedPeriodFilter == 'This Month') {
-        return tx.generatedDate.isAfter(monthStart.subtract(const Duration(seconds: 1)));
+        return IstDateUtils.isCurrentMonth(tx.generatedDate);
       }
       return true;
     }).toList();
@@ -363,102 +326,122 @@ class _CommissionTransactionTile extends StatelessWidget {
     final isPaid = transaction.status.toLowerCase() == 'paid';
     final statusColor = isPaid ? AppColors.success : AppColors.warning;
 
+    final billIdToPass = transaction.invoiceNumber.isNotEmpty
+        ? transaction.invoiceNumber
+        : 'TXN-${transaction.id}';
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.cardBorder),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => CommissionDetailScreen(billId: billIdToPass),
+              ),
+            );
+          },
+          borderRadius: BorderRadius.circular(16),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppColors.cardBorder),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      transaction.invoiceNumber,
-                      style: TextStyle(
-                        color: AppColors.textPrimary,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w800,
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            transaction.invoiceNumber,
+                            style: TextStyle(
+                              color: AppColors.textPrimary,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            transaction.customerName,
+                            style: TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      transaction.customerName,
-                      style: TextStyle(
-                        color: AppColors.textSecondary,
-                        fontSize: 12,
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: statusColor.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        transaction.status,
+                        style: TextStyle(
+                          color: statusColor,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
                   ],
                 ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: statusColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _InfoRow(
+                        label: 'Bill Amount',
+                        value: '₹${transaction.billAmount.toStringAsFixed(2)}',
+                        icon: RemixIcons.money_dollar_box_line,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: _InfoRow(
+                        label: 'Commission',
+                        value: '₹${transaction.commissionEarned.toStringAsFixed(2)}',
+                        icon: RemixIcons.percent_line,
+                        valueColor: AppColors.primary,
+                      ),
+                    ),
+                  ],
                 ),
-                child: Text(
-                  transaction.status,
-                  style: TextStyle(
-                    color: statusColor,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                  ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _InfoRow(
+                        label: 'Commission %',
+                        value: '${transaction.commissionPercentage.toStringAsFixed(1)}%',
+                        icon: RemixIcons.pie_chart_line,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: _InfoRow(
+                        label: 'Generated',
+                        value: DateFormat('dd MMM yyyy').format(transaction.generatedDate),
+                        icon: RemixIcons.calendar_line,
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: _InfoRow(
-                  label: 'Bill Amount',
-                  value: '₹${transaction.billAmount.toStringAsFixed(2)}',
-                  icon: RemixIcons.money_dollar_box_line,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: _InfoRow(
-                  label: 'Commission',
-                  value: '₹${transaction.commissionEarned.toStringAsFixed(2)}',
-                  icon: RemixIcons.percent_line,
-                  valueColor: AppColors.primary,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: _InfoRow(
-                  label: 'Commission %',
-                  value: '${transaction.commissionPercentage.toStringAsFixed(1)}%',
-                  icon: RemixIcons.pie_chart_line,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: _InfoRow(
-                  label: 'Generated',
-                  value: DateFormat('dd MMM yyyy').format(transaction.generatedDate),
-                  icon: RemixIcons.calendar_line,
-                ),
-              ),
-            ],
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -506,50 +489,6 @@ class _InfoRow extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _FilterOption extends StatelessWidget {
-  final String label;
-  final String? value;
-  final bool selected;
-  final VoidCallback onTap;
-
-  const _FilterOption({
-    required this.label,
-    required this.value,
-    required this.selected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        decoration: BoxDecoration(
-          color: selected ? AppColors.primary.withValues(alpha: 0.1) : Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Row(
-          children: [
-            if (selected)
-              Icon(RemixIcons.checkbox_circle_fill, color: AppColors.primary, size: 20)
-            else
-              Icon(RemixIcons.checkbox_blank_circle_line, color: AppColors.textHint, size: 20),
-            const SizedBox(width: 12),
-            Text(
-              label,
-              style: TextStyle(
-                color: selected ? AppColors.primary : AppColors.textPrimary,
-                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

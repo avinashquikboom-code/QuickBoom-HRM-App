@@ -63,6 +63,7 @@ class EmployeeDashboardView extends ConsumerWidget {
             ref.read(notificationViewModelProvider.notifier).fetchNotifications(),
             ref.read(employeeDashboardViewModelProvider.notifier).fetchDashboard(),
             ref.read(holidayViewModelProvider.notifier).fetchHolidays(),
+            ref.read(commissionViewModelProvider.notifier).fetchWallet(),
           ]);
         },
         color: AppColors.primary,

@@ -12,6 +12,7 @@ import 'package:quickboom_hrm/features/commission/presentation/screens/commissio
 import 'package:quickboom_hrm/screens/commission/commission_detail_screen.dart';
 import 'package:quickboom_hrm/core/services/websocket_service.dart';
 import 'package:quickboom_hrm/features/commission/presentation/widgets/webhook_logs_widget.dart';
+import 'package:quickboom_hrm/core/utils/ist_date_utils.dart';
 
 class CommissionWalletView extends ConsumerStatefulWidget {
   const CommissionWalletView({super.key});
@@ -20,7 +21,7 @@ class CommissionWalletView extends ConsumerStatefulWidget {
   ConsumerState<CommissionWalletView> createState() => _CommissionWalletViewState();
 }
 
-class _CommissionWalletViewState extends ConsumerState<CommissionWalletView> {
+class _CommissionWalletViewState extends ConsumerState<CommissionWalletView> with WidgetsBindingObserver {
   CommissionWallet? _walletData;
   bool _isLoading = true;
   bool _isError = false;
@@ -35,6 +36,7 @@ class _CommissionWalletViewState extends ConsumerState<CommissionWalletView> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _loadCommissionWallet();
     // Auto-refresh wallet every 60 seconds
     _timer = Timer.periodic(const Duration(seconds: 60), (_) => _silentRefresh());
@@ -46,7 +48,16 @@ class _CommissionWalletViewState extends ConsumerState<CommissionWalletView> {
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      debugPrint('⚡ App resumed: Refreshing CommissionWalletView...');
+      _silentRefresh();
+    }
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _timer?.cancel();
     _commissionSub?.cancel();
     _cardPageController.dispose();
@@ -168,23 +179,6 @@ class _CommissionWalletViewState extends ConsumerState<CommissionWalletView> {
               );
             },
           ),
-          // Manual refresh
-          IconButton(
-            icon: _isLoading
-                ? SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: AppColors.primary,
-                    ),
-                  )
-                : Icon(RemixIcons.refresh_line, color: AppColors.textPrimary),
-            onPressed: _isLoading ? null : _onRefresh,
-            tooltip: _lastUpdated != null
-                ? 'Updated ${_lastUpdated!.hour.toString().padLeft(2, '0')}:${_lastUpdated!.minute.toString().padLeft(2, '0')}'
-                : 'Refresh',
-          ),
         ],
       ),
       body: _buildBody(isDark),
@@ -204,23 +198,16 @@ class _CommissionWalletViewState extends ConsumerState<CommissionWalletView> {
       return _buildEmptyState();
     }
 
-    // Filter transactions based on selected period chip
+    // Filter transactions based on selected period chip in IST
     final txns = _walletData!.recentTransactions;
-    final now = DateTime.now();
-    final todayStart = DateTime(now.year, now.month, now.day);
-    final todayEnd = DateTime(now.year, now.month, now.day, 23, 59, 59);
-    final weekMonday = now.subtract(Duration(days: now.weekday - 1));
-    final weekStart = DateTime(weekMonday.year, weekMonday.month, weekMonday.day);
-    final monthStart = DateTime(now.year, now.month, 1);
 
     final filteredTxns = txns.where((tx) {
       if (_selectedPeriodFilter == 'Today') {
-        return tx.generatedDate.isAfter(todayStart.subtract(const Duration(seconds: 1))) &&
-            tx.generatedDate.isBefore(todayEnd.add(const Duration(seconds: 1)));
+        return IstDateUtils.isToday(tx.generatedDate);
       } else if (_selectedPeriodFilter == 'This Week') {
-        return tx.generatedDate.isAfter(weekStart.subtract(const Duration(seconds: 1)));
+        return IstDateUtils.isLast7Days(tx.generatedDate);
       } else if (_selectedPeriodFilter == 'This Month') {
-        return tx.generatedDate.isAfter(monthStart.subtract(const Duration(seconds: 1)));
+        return IstDateUtils.isCurrentMonth(tx.generatedDate);
       }
       return true;
     }).toList();

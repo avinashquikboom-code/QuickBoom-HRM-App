@@ -14,7 +14,7 @@ class CommissionScreen extends StatefulWidget {
   State<CommissionScreen> createState() => _CommissionScreenState();
 }
 
-class _CommissionScreenState extends State<CommissionScreen> {
+class _CommissionScreenState extends State<CommissionScreen> with WidgetsBindingObserver {
   late Future<CommissionSummary> _futureSummary;
   late Future<CommissionResponse> _futureBills;
   StreamSubscription? _commissionSub;
@@ -32,6 +32,7 @@ class _CommissionScreenState extends State<CommissionScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _refresh();
     _scrollCtrl.addListener(_onScroll);
 
@@ -42,6 +43,23 @@ class _CommissionScreenState extends State<CommissionScreen> {
         _refresh();
       }
     });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      debugPrint('⚡ App resumed: Refreshing CommissionScreen...');
+      _refresh();
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _commissionSub?.cancel();
+    _scrollCtrl.dispose();
+    _searchCtrl.dispose();
+    super.dispose();
   }
 
   void _refresh() {
@@ -85,14 +103,6 @@ class _CommissionScreenState extends State<CommissionScreen> {
   void _onSearch() {
     setState(() => _searchBillId = _searchCtrl.text.trim());
     _refresh();
-  }
-
-  @override
-  void dispose() {
-    _commissionSub?.cancel();
-    _scrollCtrl.dispose();
-    _searchCtrl.dispose();
-    super.dispose();
   }
 
   @override
