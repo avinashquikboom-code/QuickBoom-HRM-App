@@ -1,4 +1,4 @@
-enum AttendanceStatus { present, absent, halfDay, late, holiday, weekend }
+enum AttendanceStatus { present, absent, halfDay, late, holiday, weekend, leave }
 
 class AttendanceModel {
   final String id;
@@ -131,6 +131,8 @@ class AttendanceModel {
         return 'Holiday';
       case AttendanceStatus.weekend:
         return 'Weekend';
+      case AttendanceStatus.leave:
+        return 'Leave';
     }
   }
 }

@@ -38,9 +38,7 @@ class AttendanceState {
 
   int get presentCount => history
       .where(
-        (a) =>
-            a.status == AttendanceStatus.present ||
-            a.status == AttendanceStatus.late,
+        (a) => a.status == AttendanceStatus.present,
       )
       .length;
 
@@ -66,23 +64,23 @@ class AttendanceViewModel extends StateNotifier<AttendanceState> {
     try {
       debugPrint('🔄 Fetching attendance data...');
       
-      // Use the new mobile API endpoint for today's attendance with clientTimestamp and timezone query params
       final currentTime = DateTime.now();
       final todayRes = await ApiService.get(
         '${AppUrl.attendanceToday}?clientTimestamp=${Uri.encodeComponent(currentTime.toUtc().toIso8601String())}&timezone=${Uri.encodeComponent(currentTime.timeZoneName)}',
       );
       final todayData = jsonDecode(todayRes.body);
-      debugPrint('📊 Today\'s attendance response: ${todayRes.body}');
       
       final rawToday = todayData['data'];
       final todayRecord = rawToday != null ? _parseRecord(rawToday) : null;
       
-      // Use the new mobile API endpoint for history
-      final historyRes = await ApiService.get(AppUrl.attendanceHistory);
+      // Calculate current month date range bounds for synthesized dashboard history
+      final firstDayStr = DateTime(currentTime.year, currentTime.month, 1).toIso8601String().split('T')[0];
+      final lastDayStr = DateTime(currentTime.year, currentTime.month + 1, 0).toIso8601String().split('T')[0];
+
+      final historyRes = await ApiService.get('${AppUrl.hrTodayAttendance}?from=$firstDayStr&to=$lastDayStr&limit=500');
       final historyData = jsonDecode(historyRes.body);
-      debugPrint('📚 History response: ${historyRes.body}');
       
-      final List rawHistory = historyData['data']?['attendances'] ?? [];
+      final List rawHistory = (historyData is Map) ? (historyData['records'] ?? historyData['attendances'] ?? []) : [];
       final history = rawHistory.map((h) => _parseRecord(h)).toList();
 
       if (!mounted) return;
@@ -93,7 +91,7 @@ class AttendanceViewModel extends StateNotifier<AttendanceState> {
         isLoading: false,
       );
       
-      debugPrint('✅ Attendance data updated successfully');
+      debugPrint('✅ Attendance data updated successfully: ${history.length} date records.');
     } catch (e) {
       debugPrint('❌ Error fetching attendance data: $e');
       if (mounted) {
@@ -307,6 +305,8 @@ class AttendanceViewModel extends StateNotifier<AttendanceState> {
   AttendanceStatus _parseStatus(String status) {
     switch (status.toUpperCase()) {
       case 'PRESENT':
+      case 'HOLIDAY_WORKED':
+      case 'WEEKLY_OFF_WORKED':
         return AttendanceStatus.present;
       case 'ABSENT':
         return AttendanceStatus.absent;
@@ -315,9 +315,16 @@ class AttendanceViewModel extends StateNotifier<AttendanceState> {
       case 'HALF_DAY':
         return AttendanceStatus.halfDay;
       case 'WEEKEND':
+      case 'WEEK_OFF':
+      case 'WEEKLY_OFF':
+      case 'SUNDAY':
         return AttendanceStatus.weekend;
       case 'HOLIDAY':
         return AttendanceStatus.holiday;
+      case 'LEAVE':
+      case 'PAID_LEAVE':
+      case 'UNPAID_LEAVE':
+        return AttendanceStatus.leave;
       default:
         return AttendanceStatus.absent;
     }
