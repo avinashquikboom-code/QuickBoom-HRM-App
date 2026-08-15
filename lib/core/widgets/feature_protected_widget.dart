@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quickboom_hrm/core/providers/feature_access_provider.dart';
-import 'package:quickboom_hrm/core/widgets/request_access_dialog.dart';
+import 'package:quickboom_hrm/core/widgets/access_restricted_bottom_sheet.dart';
 
 class FeatureProtectedWidget extends ConsumerWidget {
   final String featureName;
@@ -25,7 +25,6 @@ class FeatureProtectedWidget extends ConsumerWidget {
         .getFeature(featureName);
 
     // If not found or enabled, pass through normally
-    // (Assuming default is enabled if backend doesn't explicitly restrict, or we just rely on state)
     final hasAccess = feature == null || feature.enabled;
 
     if (hasAccess) {
@@ -39,40 +38,21 @@ class FeatureProtectedWidget extends ConsumerWidget {
       return child;
     }
 
-    // Disabled mode UI + Lock Badge + Request Access Dialog on tap
+    // Disabled mode UI + Lock Badge + Access Restricted Bottom Sheet on tap
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () {
-        showDialog(
-          context: context,
-          builder: (ctx) => RequestAccessDialog(featureName: featureName),
-        );
+        AccessRestrictedBottomSheet.show(context, featureName);
       },
       child: Stack(
         alignment: Alignment.center,
         children: [
           ColorFiltered(
             colorFilter: const ColorFilter.matrix(<double>[
-              0.2126,
-              0.7152,
-              0.0722,
-              0,
-              0,
-              0.2126,
-              0.7152,
-              0.0722,
-              0,
-              0,
-              0.2126,
-              0.7152,
-              0.0722,
-              0,
-              0,
-              0,
-              0,
-              0,
-              0.45,
-              0,
+              0.2126, 0.7152, 0.0722, 0, 0,
+              0.2126, 0.7152, 0.0722, 0, 0,
+              0.2126, 0.7152, 0.0722, 0, 0,
+              0,      0,      0,      0.45, 0,
             ]),
             child: IgnorePointer(child: child),
           ),
@@ -101,4 +81,3 @@ class FeatureProtectedWidget extends ConsumerWidget {
     );
   }
 }
-

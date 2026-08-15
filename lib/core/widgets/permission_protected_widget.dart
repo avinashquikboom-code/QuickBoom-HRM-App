@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:quickboom_hrm/core/services/permission_service.dart';
-import 'package:quickboom_hrm/core/widgets/request_access_dialog.dart';
+import 'package:quickboom_hrm/core/widgets/access_restricted_bottom_sheet.dart';
 import 'package:quickboom_hrm/features/auth/data/models/user_model.dart';
 
 class PermissionProtectedWidget extends StatelessWidget {
@@ -34,14 +34,11 @@ class PermissionProtectedWidget extends StatelessWidget {
       return child;
     }
 
-    // Disabled mode UI + Lock Badge + Request Access Dialog on tap
+    // Disabled mode UI + Lock Badge + Access Restricted Bottom Sheet on tap
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () {
-        showDialog(
-          context: context,
-          builder: (ctx) => RequestAccessDialog(featureName: moduleName),
-        );
+        AccessRestrictedBottomSheet.show(context, moduleName);
       },
       child: Stack(
         alignment: Alignment.center,
