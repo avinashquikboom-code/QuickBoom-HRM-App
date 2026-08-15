@@ -1177,31 +1177,37 @@ class _TimeBox extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 10, color: iconColor),
-            const SizedBox(width: 3),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 8.5,
-                fontWeight: FontWeight.w800,
-                color: AppColors.textHint,
-                letterSpacing: 0.4,
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 10, color: iconColor),
+              const SizedBox(width: 2),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 8.5,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.textHint,
+                  letterSpacing: 0.3,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
         const SizedBox(height: 4),
-        Text(
-          timeStr,
-          style: TextStyle(
-            fontSize: isHighlighted ? 12.5 : 11.5,
-            fontWeight: isHighlighted ? FontWeight.w900 : FontWeight.w700,
-            color: isHighlighted ? AppColors.primary : AppColors.textPrimary,
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            timeStr,
+            style: TextStyle(
+              fontSize: isHighlighted ? 12.5 : 11.5,
+              fontWeight: isHighlighted ? FontWeight.w900 : FontWeight.w700,
+              color: isHighlighted ? AppColors.primary : AppColors.textPrimary,
+            ),
+            textAlign: TextAlign.center,
           ),
-          textAlign: TextAlign.center,
         ),
       ],
     );
