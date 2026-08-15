@@ -1077,20 +1077,38 @@ class _StatusChip extends StatelessWidget {
         label = 'Half Day';
         break;
       case 'LEAVE':
+      case 'PAID_LEAVE':
         color = const Color(0xFF2563EB);
         bg = const Color(0xFFDBEAFE);
-        label = 'Leave';
+        label = 'Paid Leave';
+        break;
+      case 'UNPAID_LEAVE':
+        color = const Color(0xFFEA580C);
+        bg = const Color(0xFFFFEDD5);
+        label = 'Unpaid Leave';
         break;
       case 'HOLIDAY':
         color = const Color(0xFF7C3AED);
         bg = const Color(0xFFF5F3FF);
         label = 'Holiday';
         break;
+      case 'HOLIDAY_WORKED':
+        color = const Color(0xFF0D9488);
+        bg = const Color(0xFFCCFBF1);
+        label = 'Holiday Worked';
+        break;
+      case 'WEEKLY_OFF_WORKED':
+        color = const Color(0xFF0284C7);
+        bg = const Color(0xFFE0F2FE);
+        label = 'Weekly Off Worked';
+        break;
       case 'WEEKEND':
       case 'WEEK_OFF':
+      case 'WEEKLY_OFF':
+      case 'SUNDAY':
         color = const Color(0xFF64748B);
         bg = const Color(0xFFF1F5F9);
-        label = 'Week Off';
+        label = 'Weekly Off';
         break;
       default:
         color = AppColors.textSecondary;
