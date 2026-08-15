@@ -158,15 +158,118 @@ class PermissionService {
     }
   }
 
+  // Normalize permission keys across Web Admin Panel and Mobile App
+  static String normalizePermissionKey(String key) {
+    final clean = key.trim();
+    if (clean.startsWith('canView') ||
+        clean.startsWith('canLog') ||
+        clean.startsWith('canApply') ||
+        clean.startsWith('canSubmit') ||
+        clean.startsWith('canRequest') ||
+        clean.startsWith('canPunch') ||
+        clean.startsWith('canTake') ||
+        clean.startsWith('canDownload') ||
+        clean.startsWith('canComplete') ||
+        clean.startsWith('canCancel') ||
+        clean.startsWith('canEdit') ||
+        clean.startsWith('canChange')) {
+      return clean;
+    }
+    switch (clean.toLowerCase()) {
+      case 'view_salary_slip':
+      case 'salary_slip':
+      case 'salary':
+      case 'wallet':
+        return canViewSalary;
+      case 'view_attendance_calendar':
+      case 'attendance':
+      case 'attendance_calendar':
+        return canViewAttendance;
+      case 'view_commission_dashboard':
+      case 'commission':
+      case 'commission_dashboard':
+        return canViewCommission;
+      case 'view_expense_claims':
+      case 'expenses':
+      case 'expense_claims':
+        return canViewExpenses;
+      case 'view_leave_balance':
+      case 'leave':
+      case 'leave_balance':
+        return canViewLeaveBalance;
+      case 'view_assigned_tasks':
+      case 'tasks':
+      case 'assigned_tasks':
+        return canViewTasks;
+      case 'view_shift_schedule':
+      case 'shift':
+      case 'shift_guidelines':
+        return canViewShiftGuidelines;
+      case 'view_remote_work_status':
+      case 'remote_work':
+        return canViewRemoteWorkStatus;
+      default:
+        return clean;
+    }
+  }
+
+  static List<String> _getAliases(String key) {
+    final norm = normalizePermissionKey(key);
+    switch (norm) {
+      case canViewSalary:
+        return ['view_salary_slip', 'salary_slip', 'salary', 'wallet', 'canViewSalary'];
+      case canViewAttendance:
+        return ['view_attendance_calendar', 'attendance', 'attendance_calendar', 'canViewAttendance'];
+      case canViewCommission:
+        return ['view_commission_dashboard', 'commission', 'commission_dashboard', 'canViewCommission'];
+      case canViewExpenses:
+        return ['view_expense_claims', 'expenses', 'expense_claims', 'canViewExpenses'];
+      case canViewLeaveBalance:
+        return ['view_leave_balance', 'leave', 'leave_balance', 'canViewLeaveBalance'];
+      case canViewTasks:
+        return ['view_assigned_tasks', 'tasks', 'assigned_tasks', 'canViewTasks'];
+      case canViewShiftGuidelines:
+        return ['view_shift_schedule', 'shift', 'shift_guidelines', 'canViewShiftGuidelines'];
+      case canViewRemoteWorkStatus:
+        return ['view_remote_work_status', 'remote_work', 'canViewRemoteWorkStatus'];
+      default:
+        return [key, norm];
+    }
+  }
+
   // Check if user has specific permission
   static bool hasPermission(UserModel? user, String permission) {
     if (user == null) return false;
-    if (user.permissions != null && user.permissions!.containsKey(permission)) {
-      return user.permissions![permission] ?? true;
+
+    final perms = user.permissions;
+    if (perms != null && perms.isNotEmpty) {
+      // 1. Direct key lookup
+      if (perms.containsKey(permission)) {
+        return perms[permission] ?? false;
+      }
+
+      // 2. Normalized key lookup
+      final normKey = normalizePermissionKey(permission);
+      if (perms.containsKey(normKey)) {
+        return perms[normKey] ?? false;
+      }
+
+      // 3. Alias list lookup (if any alias is explicitly false, deny access)
+      final aliases = _getAliases(permission);
+      for (final alias in aliases) {
+        if (perms.containsKey(alias)) {
+          return perms[alias] ?? false;
+        }
+      }
     }
+
     final defaultMap = getDefaultPermissions(user.role);
     if (defaultMap.containsKey(permission)) {
       return defaultMap[permission] ?? true;
+    }
+    final normKey = normalizePermissionKey(permission);
+    if (defaultMap.containsKey(normKey)) {
+      return defaultMap[normKey] ?? true;
     }
     return true;
   }
