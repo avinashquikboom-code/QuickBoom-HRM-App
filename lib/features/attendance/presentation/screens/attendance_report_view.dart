@@ -145,12 +145,12 @@ class _AttendanceReportViewState extends ConsumerState<AttendanceReportView> {
 
     // Calculate Summary KPI Stats
     final totalCount = filteredRecords.length;
-    final presentCount = filteredRecords.where((r) => r.status.toUpperCase() == 'PRESENT').length;
+    final presentCount = filteredRecords.where((r) => r.status.toUpperCase() == 'PRESENT' || r.status.toUpperCase() == 'HOLIDAY_WORKED' || r.status.toUpperCase() == 'WEEKLY_OFF_WORKED').length;
     final lateCount = filteredRecords.where((r) => r.status.toUpperCase() == 'LATE').length;
     final halfDayCount = filteredRecords.where((r) => r.status.toUpperCase() == 'HALF_DAY').length;
     final absentCount = filteredRecords.where((r) => r.status.toUpperCase() == 'ABSENT').length;
-    final leaveCount = filteredRecords.where((r) => r.status.toUpperCase() == 'LEAVE').length;
-    final holidayCount = filteredRecords.where((r) => r.status.toUpperCase() == 'HOLIDAY').length;
+    final leaveCount = filteredRecords.where((r) => r.status.toUpperCase() == 'LEAVE' || r.status.toUpperCase() == 'PAID_LEAVE' || r.status.toUpperCase() == 'UNPAID_LEAVE').length;
+    final holidayCount = filteredRecords.where((r) => r.status.toUpperCase() == 'HOLIDAY' || r.status.toUpperCase() == 'WEEKLY_OFF' || r.status.toUpperCase() == 'WEEKEND' || r.status.toUpperCase() == 'SUNDAY').length;
 
     // Calculate Average Working Hours
     double totalWorkSec = 0;
@@ -895,7 +895,7 @@ class _AttendanceReportCard extends StatelessWidget {
   String _formatDate(String dateStr) {
     try {
       final d = DateTime.parse(dateStr);
-      return DateFormat('dd MMM yyyy').format(d);
+      return DateFormat('dd MMM yyyy (EEEE)').format(d);
     } catch (_) {
       return dateStr;
     }
