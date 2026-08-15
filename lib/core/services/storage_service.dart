@@ -89,23 +89,17 @@ class StorageService {
     try {
       final prefs = await _getPrefs();
       final role = prefs.getString(_activeRoleKey);
-      if (role == 'HR') {
-        return await _secureStorage.read(key: _hrTokenKey);
-      } else if (role == 'EMPLOYEE') {
-        return await _secureStorage.read(key: _empTokenKey);
+      if (role == 'HR' || role == 'ADMIN' || role == 'SUPER_ADMIN' || role == 'PLATFORM_ADMIN') {
+        final hrToken = await _secureStorage.read(key: _hrTokenKey);
+        if (hrToken != null && hrToken.isNotEmpty) return hrToken;
       }
-
-      // Fallback if active role is not set: check if either token is present
+      
       final empToken = await _secureStorage.read(key: _empTokenKey);
-      if (empToken != null && empToken.isNotEmpty) {
-        await prefs.setString(_activeRoleKey, 'EMPLOYEE');
-        return empToken;
-      }
-      final hrToken = await _secureStorage.read(key: _hrTokenKey);
-      if (hrToken != null && hrToken.isNotEmpty) {
-        await prefs.setString(_activeRoleKey, 'HR');
-        return hrToken;
-      }
+      if (empToken != null && empToken.isNotEmpty) return empToken;
+
+      final hrFallback = await _secureStorage.read(key: _hrTokenKey);
+      if (hrFallback != null && hrFallback.isNotEmpty) return hrFallback;
+
       return null;
     } catch (e) {
       debugPrint('❌ Failed to read token: $e');
@@ -118,23 +112,17 @@ class StorageService {
     try {
       final prefs = await _getPrefs();
       final role = prefs.getString(_activeRoleKey);
-      if (role == 'HR') {
-        return await _secureStorage.read(key: _hrRefreshTokenKey);
-      } else if (role == 'EMPLOYEE') {
-        return await _secureStorage.read(key: _empRefreshTokenKey);
+      if (role == 'HR' || role == 'ADMIN' || role == 'SUPER_ADMIN' || role == 'PLATFORM_ADMIN') {
+        final hrRefresh = await _secureStorage.read(key: _hrRefreshTokenKey);
+        if (hrRefresh != null && hrRefresh.isNotEmpty) return hrRefresh;
       }
 
-      // Fallback if active role is not set: check if either token is present
-      final empRefreshToken = await _secureStorage.read(key: _empRefreshTokenKey);
-      if (empRefreshToken != null && empRefreshToken.isNotEmpty) {
-        await prefs.setString(_activeRoleKey, 'EMPLOYEE');
-        return empRefreshToken;
-      }
-      final hrRefreshToken = await _secureStorage.read(key: _hrRefreshTokenKey);
-      if (hrRefreshToken != null && hrRefreshToken.isNotEmpty) {
-        await prefs.setString(_activeRoleKey, 'HR');
-        return hrRefreshToken;
-      }
+      final empRefresh = await _secureStorage.read(key: _empRefreshTokenKey);
+      if (empRefresh != null && empRefresh.isNotEmpty) return empRefresh;
+
+      final hrRefreshFallback = await _secureStorage.read(key: _hrRefreshTokenKey);
+      if (hrRefreshFallback != null && hrRefreshFallback.isNotEmpty) return hrRefreshFallback;
+
       return null;
     } catch (e) {
       debugPrint('❌ Failed to read refresh token: $e');
