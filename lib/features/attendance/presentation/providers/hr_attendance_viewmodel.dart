@@ -180,12 +180,21 @@ class HrAttendanceViewModel extends StateNotifier<HrAttendanceState> {
       final res = await ApiService.get(url);
       final data = jsonDecode(res.body);
 
-      final List rawRecords = data['records'] ?? data['attendances'] ?? [];
+      if (res.statusCode == 403 || (data is Map && data['success'] == false)) {
+        if (!mounted) return;
+        state = state.copyWith(
+          isLoading: false,
+          errorMessage: (data is Map ? data['message'] : null) ?? 'Access denied. You do not have permission to view attendance reports.',
+        );
+        return;
+      }
+
+      final List rawRecords = (data is Map) ? (data['records'] ?? data['attendances'] ?? []) : [];
       final records = rawRecords.map((r) => HrAttendanceRecord.fromJson(r)).toList();
       final joined = await _joinWithHopKidEmployees(records);
 
       if (!mounted) return;
-      state = state.copyWith(records: joined, isLoading: false);
+      state = state.copyWith(records: joined, isLoading: false, clearError: true);
       debugPrint('✅ HR attendance history fetched: ${records.length} records.');
     } catch (e) {
       debugPrint('❌ Error fetching HR attendance history: $e');
@@ -289,12 +298,21 @@ class HrAttendanceViewModel extends StateNotifier<HrAttendanceState> {
       final res = await ApiService.get(url);
       final data = jsonDecode(res.body);
 
-      final List rawRecords = data['records'] ?? [];
+      if (res.statusCode == 403 || (data is Map && data['success'] == false)) {
+        if (!mounted) return;
+        state = state.copyWith(
+          isLoading: false,
+          errorMessage: (data is Map ? data['message'] : null) ?? 'Access denied. You do not have permission to view attendance data.',
+        );
+        return;
+      }
+
+      final List rawRecords = (data is Map) ? (data['records'] ?? data['attendances'] ?? []) : [];
       final records = rawRecords.map((r) => HrAttendanceRecord.fromJson(r)).toList();
       final joined = await _joinWithHopKidEmployees(records);
 
       if (!mounted) return;
-      state = state.copyWith(records: joined, isLoading: false);
+      state = state.copyWith(records: joined, isLoading: false, clearError: true);
       debugPrint('✅ All employees attendance fetched: ${records.length} records.');
     } catch (e) {
       debugPrint('❌ Error fetching all employees attendance: $e');
