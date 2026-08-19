@@ -707,15 +707,17 @@ class _AttendanceReportCard extends StatelessWidget {
                         ),
                         softWrap: true,
                       ),
-                      const SizedBox(height: 2),
-                      Text(
-                        '${record.employeeCode}  •  ${record.designation}',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.textSecondary,
+                      if (record.designation.isNotEmpty) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          record.designation,
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.textSecondary,
+                          ),
                         ),
-                      ),
+                      ],
                     ],
                   ),
                 ),

@@ -434,15 +434,17 @@ class _AttendanceCard extends StatelessWidget {
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 1),
-                    Text(
-                      '${record.designation} · ${record.employeeCode}',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: AppColors.textSecondary,
+                    if (record.designation.isNotEmpty) ...[
+                      const SizedBox(height: 1),
+                      Text(
+                        record.designation,
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: AppColors.textSecondary,
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
+                    ],
                   ],
                 ),
               ),

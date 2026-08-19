@@ -14,6 +14,9 @@ import 'package:quickboom_hrm/features/attendance/presentation/screens/monthly_w
 import 'package:quickboom_hrm/features/attendance/presentation/screens/attendance_correction_view.dart';
 import 'package:quickboom_hrm/features/attendance/presentation/screens/attendance_report_view.dart';
 import 'package:quickboom_hrm/core/widgets/shimmer_loading.dart';
+import 'package:quickboom_hrm/core/services/permission_service.dart';
+import 'package:quickboom_hrm/core/widgets/access_restricted_bottom_sheet.dart';
+import 'package:quickboom_hrm/features/auth/presentation/providers/auth_viewmodel.dart';
 
 class EmployeeAttendanceView extends ConsumerWidget {
   const EmployeeAttendanceView({super.key});
@@ -237,12 +240,19 @@ class EmployeeAttendanceView extends ConsumerWidget {
 
                 // ─── Attendance Correction Option Card ─────────────────────
                 InkWell(
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const AttendanceCorrectionView(),
-                    ),
-                  ),
+                  onTap: () {
+                    final user = ref.read(authViewModelProvider).currentUser;
+                    if (!PermissionService.hasPermission(user, PermissionService.canRequestAttendanceCorrection)) {
+                      AccessRestrictedBottomSheet.show(context, 'Attendance Correction');
+                      return;
+                    }
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const AttendanceCorrectionView(),
+                      ),
+                    );
+                  },
                   borderRadius: BorderRadius.circular(20),
                   child: Container(
                     padding: const EdgeInsets.all(16),
@@ -654,6 +664,13 @@ class _TodayCardState extends ConsumerState<_TodayCard> {
                         isLoading: _isPunching,
                         onTap: () async {
                           if (_isPunching) return;
+
+                          // Permission check
+                          final user = ref.read(authViewModelProvider).currentUser;
+                          if (!PermissionService.hasPermission(user, PermissionService.canPunchInOut)) {
+                            AccessRestrictedBottomSheet.show(context, 'Punch In / Out');
+                            return;
+                          }
 
                           setState(() => _isPunching = true);
                           debugPrint(
