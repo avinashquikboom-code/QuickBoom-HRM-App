@@ -65,33 +65,50 @@ class AttendanceViewModel extends StateNotifier<AttendanceState> {
       debugPrint('🔄 Fetching attendance data...');
       
       final currentTime = DateTime.now();
-      final todayRes = await ApiService.get(
-        '${AppUrl.attendanceToday}?clientTimestamp=${Uri.encodeComponent(currentTime.toUtc().toIso8601String())}&timezone=${Uri.encodeComponent(currentTime.timeZoneName)}',
-      );
-      final todayData = jsonDecode(todayRes.body);
+      AttendanceModel? todayRecord;
       
-      final rawToday = todayData['data'];
-      final todayRecord = rawToday != null ? _parseRecord(rawToday) : null;
-      
-      // Calculate current month date range bounds for synthesized dashboard history
-      final firstDayStr = DateTime(currentTime.year, currentTime.month, 1).toIso8601String().split('T')[0];
-      final lastDayStr = DateTime(currentTime.year, currentTime.month + 1, 0).toIso8601String().split('T')[0];
+      try {
+        final todayRes = await ApiService.get(
+          '${AppUrl.attendanceToday}?clientTimestamp=${Uri.encodeComponent(currentTime.toUtc().toIso8601String())}&timezone=${Uri.encodeComponent(currentTime.timeZoneName)}',
+        );
+        final todayData = jsonDecode(todayRes.body);
+        final rawToday = todayData['data'];
+        if (rawToday != null && rawToday is Map<String, dynamic>) {
+          todayRecord = _parseRecord(rawToday);
+        }
+      } catch (e) {
+        debugPrint('⚠️ Error fetching today attendance: $e');
+      }
 
-      final historyRes = await ApiService.get('${AppUrl.hrTodayAttendance}?from=$firstDayStr&to=$lastDayStr&limit=500');
-      final historyData = jsonDecode(historyRes.body);
-      
-      final List rawHistory = (historyData is Map) ? (historyData['records'] ?? historyData['attendances'] ?? []) : [];
-      final history = rawHistory.map((h) => _parseRecord(h)).toList();
+      List<AttendanceModel> history = [];
+      try {
+        final historyRes = await ApiService.get(
+          '${AppUrl.attendanceHistory}&month=${currentTime.month}&year=${currentTime.year}',
+        );
+        final historyData = jsonDecode(historyRes.body);
+        final List rawHistory = (historyData is Map)
+            ? (historyData['data']?['attendances'] ?? historyData['records'] ?? historyData['attendances'] ?? [])
+            : [];
+        history = rawHistory.whereType<Map<String, dynamic>>().map((h) => _parseRecord(h)).toList();
+      } catch (e) {
+        debugPrint('⚠️ Error fetching attendance history: $e');
+        history = state.history;
+      }
 
       if (!mounted) return;
+      final finalTodayRecord = todayRecord ?? state.todayRecord;
+      final isCurrentlyCheckedIn = finalTodayRecord != null &&
+          finalTodayRecord.checkIn != null &&
+          finalTodayRecord.checkOut == null;
+
       state = AttendanceState(
-        todayRecord: todayRecord,
-        isCheckedIn: todayRecord != null && todayRecord.checkIn != null && todayRecord.checkOut == null,
+        todayRecord: finalTodayRecord,
+        isCheckedIn: isCurrentlyCheckedIn,
         history: history,
         isLoading: false,
       );
       
-      debugPrint('✅ Attendance data updated successfully: ${history.length} date records.');
+      debugPrint('✅ Attendance data updated successfully: isCheckedIn=$isCurrentlyCheckedIn, checkIn=${finalTodayRecord?.checkIn}');
     } catch (e) {
       debugPrint('❌ Error fetching attendance data: $e');
       if (mounted) {
@@ -119,21 +136,47 @@ class AttendanceViewModel extends StateNotifier<AttendanceState> {
     debugPrint('📍 GPS Position: lat=$lat, lon=$lon');
 
     debugPrint('[PUNCH] API request start: checkIn');
-    final response = await ApiService.post(AppUrl.attendancePunchIn, {
-      'latitude': lat,
-      'longitude': lon,
-      'notes': viaFingerprint ? 'Punched in via Fingerprint' : 'Punched in via mobile app',
-      'clientTimestamp': currentTime.toUtc().toIso8601String(),
-      'timezone': currentTime.timeZoneName,
-      'isFingerprint': viaFingerprint,
-    });
+    try {
+      final response = await ApiService.post(AppUrl.attendancePunchIn, {
+        'latitude': lat,
+        'longitude': lon,
+        'notes': viaFingerprint ? 'Punched in via Fingerprint' : 'Punched in via mobile app',
+        'clientTimestamp': currentTime.toUtc().toIso8601String(),
+        'timezone': currentTime.timeZoneName,
+        'isFingerprint': viaFingerprint,
+      });
 
-    debugPrint('✅ Punch-in API response: ${response.body}');
-    debugPrint('[PUNCH] API response: success');
-    
-    debugPrint('[PUNCH] Attendance state refresh');
-    await fetchAttendanceData();
-    return true;
+      debugPrint('✅ Punch-in API response: ${response.body}');
+      debugPrint('[PUNCH] API response: success');
+      
+      try {
+        final resData = jsonDecode(response.body);
+        if (resData is Map && resData['data'] != null && resData['data'] is Map<String, dynamic>) {
+          final record = _parseRecord(resData['data']);
+          if (record.checkIn != null) {
+            state = state.copyWith(
+              todayRecord: record,
+              isCheckedIn: record.checkOut == null,
+              isLoading: false,
+            );
+          }
+        }
+      } catch (e) {
+        debugPrint('⚠️ Error parsing punch-in response data: $e');
+      }
+
+      debugPrint('[PUNCH] Attendance state refresh');
+      await fetchAttendanceData();
+      return true;
+    } on ApiException catch (e) {
+      debugPrint('❌ Punch-in ApiException: $e');
+      await fetchAttendanceData();
+      rethrow;
+    } catch (e) {
+      debugPrint('❌ Punch-in generic error: $e');
+      await fetchAttendanceData();
+      rethrow;
+    }
   }
 
   Future<bool> checkOut({bool viaFingerprint = false, double? latitude, double? longitude, String? notes}) async {
@@ -155,21 +198,41 @@ class AttendanceViewModel extends StateNotifier<AttendanceState> {
     debugPrint('📍 GPS Position: lat=$lat, lon=$lon');
 
     debugPrint('[PUNCH] API request start: checkOut');
-    final response = await ApiService.post(AppUrl.attendancePunchOut, {
-      'latitude': lat,
-      'longitude': lon,
-      'notes': notes ?? (viaFingerprint ? 'Punched out via Fingerprint' : 'Punched out via mobile app'),
-      'clientTimestamp': currentTime.toUtc().toIso8601String(),
-      'timezone': currentTime.timeZoneName,
-      'isFingerprint': viaFingerprint,
-    });
+    try {
+      final response = await ApiService.post(AppUrl.attendancePunchOut, {
+        'latitude': lat,
+        'longitude': lon,
+        'notes': notes ?? (viaFingerprint ? 'Punched out via Fingerprint' : 'Punched out via mobile app'),
+        'clientTimestamp': currentTime.toUtc().toIso8601String(),
+        'timezone': currentTime.timeZoneName,
+        'isFingerprint': viaFingerprint,
+      });
 
-    debugPrint('✅ Punch-out API response: ${response.body}');
-    debugPrint('[PUNCH] API response: success');
-    
-    debugPrint('[PUNCH] Attendance state refresh');
-    await fetchAttendanceData();
-    return true;
+      debugPrint('✅ Punch-out API response: ${response.body}');
+      debugPrint('[PUNCH] API response: success');
+      
+      try {
+        final resData = jsonDecode(response.body);
+        if (resData is Map && resData['data'] != null && resData['data'] is Map<String, dynamic>) {
+          final record = _parseRecord(resData['data']);
+          state = state.copyWith(
+            todayRecord: record,
+            isCheckedIn: false,
+            isLoading: false,
+          );
+        }
+      } catch (e) {
+        debugPrint('⚠️ Error parsing punch-out response data: $e');
+      }
+
+      debugPrint('[PUNCH] Attendance state refresh');
+      await fetchAttendanceData();
+      return true;
+    } catch (e) {
+      debugPrint('❌ Punch-out error: $e');
+      await fetchAttendanceData();
+      rethrow;
+    }
   }
 
   /// Returns the device's current GPS position, requesting permission if needed.
@@ -286,16 +349,23 @@ class AttendanceViewModel extends StateNotifier<AttendanceState> {
 
     final officeData = data['office'];
 
+    int totalBreakSecs = 0;
+    if (data['totalBreakSeconds'] is num) {
+      totalBreakSecs = (data['totalBreakSeconds'] as num).toInt();
+    } else if (data['breakTime'] is Map && data['breakTime']['seconds'] is num) {
+      totalBreakSecs = (data['breakTime']['seconds'] as num).toInt();
+    }
+
     return AttendanceModel(
-      id: data['id'].toString(),
-      employeeId: data['employeeId'].toString(),
+      id: data['id']?.toString() ?? '',
+      employeeId: data['employeeId']?.toString() ?? '',
       date: parsedDate,
       status: _parseStatus(data['status']?.toString() ?? 'ABSENT'),
       checkIn: data['checkIn'] != null ? DateTime.tryParse(data['checkIn'].toString())?.toLocal() : null,
       checkOut: data['checkOut'] != null ? DateTime.tryParse(data['checkOut'].toString())?.toLocal() : null,
       isOnBreak: data['isOnBreak'] ?? false,
       breakStartTime: data['breakStartTime'] != null ? DateTime.tryParse(data['breakStartTime'].toString())?.toLocal() : null,
-      totalBreakDuration: Duration(seconds: data['totalBreakSeconds'] ?? 0),
+      totalBreakDuration: Duration(seconds: totalBreakSecs),
       officeLat: officeData?['latitude'] != null ? (officeData['latitude'] as num).toDouble() : null,
       officeLon: officeData?['longitude'] != null ? (officeData['longitude'] as num).toDouble() : null,
       isLateMarkedAsHalfDay: data['isLateMarkedAsHalfDay'] ?? false,
