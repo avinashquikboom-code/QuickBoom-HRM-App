@@ -17,6 +17,9 @@ import 'package:quickboom_hrm/features/profile/presentation/screens/theme_settin
 import 'package:quickboom_hrm/features/profile/presentation/screens/remote_work_history_view.dart';
 import 'package:quickboom_hrm/features/profile/presentation/screens/company_policies_view.dart';
 import 'package:quickboom_hrm/features/payroll/presentation/screens/employee_payroll_view.dart';
+import 'package:quickboom_hrm/core/services/permission_service.dart';
+import 'package:quickboom_hrm/core/utils/navigation_guard.dart';
+import 'package:quickboom_hrm/core/widgets/access_restricted_bottom_sheet.dart';
 
 class EmployeeProfileView extends ConsumerStatefulWidget {
   const EmployeeProfileView({super.key});
@@ -139,7 +142,14 @@ class _EmployeeProfileViewState extends ConsumerState<EmployeeProfileView> {
                             bottom: 0,
                             right: 0,
                             child: GestureDetector(
-                              onTap: () => _showAvatarOptions(context, ref),
+                              onTap: () {
+                                final u = ref.read(authViewModelProvider).currentUser;
+                                if (!PermissionService.hasPermission(u, PermissionService.canEditAvatar)) {
+                                  AccessRestrictedBottomSheet.show(context, 'Edit Avatar');
+                                  return;
+                                }
+                                _showAvatarOptions(context, ref);
+                              },
                               child: Container(
                                 padding: const EdgeInsets.all(6),
                                 decoration: BoxDecoration(
@@ -288,11 +298,12 @@ class _EmployeeProfileViewState extends ConsumerState<EmployeeProfileView> {
                       label: 'View Salary History',
                       icon: RemixIcons.file_list_3_line,
                       onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const EmployeePayrollView(),
-                          ),
+                        NavigationGuard.pushProtected(
+                          context: context,
+                          ref: ref,
+                          permissionKey: PermissionService.canViewSalary,
+                          moduleName: 'Salary History',
+                          page: const EmployeePayrollView(),
                         );
                       },
                     ),
@@ -346,11 +357,12 @@ class _EmployeeProfileViewState extends ConsumerState<EmployeeProfileView> {
                       label: 'Company Policies & Rules',
                       icon: RemixIcons.file_list_3_line,
                       onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const CompanyPoliciesView(),
-                          ),
+                        NavigationGuard.pushProtected(
+                          context: context,
+                          ref: ref,
+                          permissionKey: PermissionService.canViewShiftGuidelines,
+                          moduleName: 'Company Policies',
+                          page: const CompanyPoliciesView(),
                         );
                       },
                     ),
@@ -358,11 +370,12 @@ class _EmployeeProfileViewState extends ConsumerState<EmployeeProfileView> {
                       label: 'Edit Profile',
                       icon: RemixIcons.edit_line,
                       onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const EditProfileView(),
-                          ),
+                        NavigationGuard.pushProtected(
+                          context: context,
+                          ref: ref,
+                          permissionKey: PermissionService.canViewProfile,
+                          moduleName: 'Edit Profile',
+                          page: const EditProfileView(),
                         );
                       },
                     ),
@@ -370,11 +383,12 @@ class _EmployeeProfileViewState extends ConsumerState<EmployeeProfileView> {
                       label: 'Submit & Track Expenses',
                       icon: RemixIcons.bill_line,
                       onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const EmployeeExpensesView(),
-                          ),
+                        NavigationGuard.pushProtected(
+                          context: context,
+                          ref: ref,
+                          permissionKey: PermissionService.canViewExpenses,
+                          moduleName: 'Expenses',
+                          page: const EmployeeExpensesView(),
                         );
                       },
                     ),
@@ -382,11 +396,12 @@ class _EmployeeProfileViewState extends ConsumerState<EmployeeProfileView> {
                       label: 'Weekly Shift Schedule',
                       icon: RemixIcons.time_line,
                       onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const EmployeeShiftView(),
-                          ),
+                        NavigationGuard.pushProtected(
+                          context: context,
+                          ref: ref,
+                          permissionKey: PermissionService.canViewShift,
+                          moduleName: 'Shift Schedule',
+                          page: const EmployeeShiftView(),
                         );
                       },
                     ),
@@ -394,11 +409,12 @@ class _EmployeeProfileViewState extends ConsumerState<EmployeeProfileView> {
                       label: 'Remote Work History',
                       icon: RemixIcons.global_line,
                       onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const RemoteWorkHistoryView(),
-                          ),
+                        NavigationGuard.pushProtected(
+                          context: context,
+                          ref: ref,
+                          permissionKey: PermissionService.canViewRemoteWorkStatus,
+                          moduleName: 'Remote Work',
+                          page: const RemoteWorkHistoryView(),
                         );
                       },
                     ),
@@ -406,11 +422,12 @@ class _EmployeeProfileViewState extends ConsumerState<EmployeeProfileView> {
                       label: 'Change Password',
                       icon: RemixIcons.lock_line,
                       onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const ChangePasswordView(),
-                          ),
+                        NavigationGuard.pushProtected(
+                          context: context,
+                          ref: ref,
+                          permissionKey: PermissionService.canChangePassword,
+                          moduleName: 'Change Password',
+                          page: const ChangePasswordView(),
                         );
                       },
                     ),
