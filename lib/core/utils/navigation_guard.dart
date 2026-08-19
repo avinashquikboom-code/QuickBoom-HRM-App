@@ -32,8 +32,12 @@ class NavigationGuard {
       );
     }
 
-    // Permission Denied: Show Access Restricted dialog / bottom sheet and block route push
-    AccessRestrictedBottomSheet.show(context, moduleName);
+    // Permission Denied: Show Access Required bottom sheet and block route push
+    AccessRestrictedBottomSheet.show(
+      context,
+      moduleName,
+      permissionKey: permissionKey,
+    );
 
     return null;
   }

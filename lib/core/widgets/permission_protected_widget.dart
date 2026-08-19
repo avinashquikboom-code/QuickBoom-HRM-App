@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:quickboom_hrm/core/services/permission_service.dart';
-import 'package:quickboom_hrm/core/widgets/access_restricted_bottom_sheet.dart';
+import 'package:quickboom_hrm/core/widgets/locked_feature_card.dart';
 import 'package:quickboom_hrm/features/auth/data/models/user_model.dart';
 
 class PermissionProtectedWidget extends StatelessWidget {
@@ -21,58 +20,12 @@ class PermissionProtectedWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hasAccess = PermissionService.hasPermission(user, permission);
-
-    if (hasAccess) {
-      if (onTap != null) {
-        return GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: onTap,
-          child: child,
-        );
-      }
-      return child;
-    }
-
-    // Disabled mode UI + Lock Badge + Access Restricted Bottom Sheet on tap
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: () {
-        AccessRestrictedBottomSheet.show(context, moduleName);
-      },
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          ColorFiltered(
-            colorFilter: const ColorFilter.matrix(<double>[
-              0.2126, 0.7152, 0.0722, 0, 0,
-              0.2126, 0.7152, 0.0722, 0, 0,
-              0.2126, 0.7152, 0.0722, 0, 0,
-              0,      0,      0,      0.45, 0,
-            ]),
-            child: IgnorePointer(
-              child: child,
-            ),
-          ),
-          Positioned(
-            top: 6,
-            right: 6,
-            child: Container(
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.75),
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.white.withValues(alpha: 0.5), width: 1),
-              ),
-              child: const Icon(
-                Icons.lock_rounded,
-                size: 12,
-                color: Colors.white,
-              ),
-            ),
-          ),
-        ],
-      ),
+    return LockedFeatureCard.wrapper(
+      user: user,
+      permissionKey: permission,
+      moduleName: moduleName,
+      onTap: onTap,
+      child: child,
     );
   }
 }

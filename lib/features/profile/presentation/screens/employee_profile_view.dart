@@ -19,7 +19,7 @@ import 'package:quickboom_hrm/features/profile/presentation/screens/company_poli
 import 'package:quickboom_hrm/features/payroll/presentation/screens/employee_payroll_view.dart';
 import 'package:quickboom_hrm/core/services/permission_service.dart';
 import 'package:quickboom_hrm/core/utils/navigation_guard.dart';
-import 'package:quickboom_hrm/core/widgets/access_restricted_bottom_sheet.dart';
+import 'package:quickboom_hrm/core/widgets/permission_protected_widget.dart';
 
 class EmployeeProfileView extends ConsumerStatefulWidget {
   const EmployeeProfileView({super.key});
@@ -141,26 +141,24 @@ class _EmployeeProfileViewState extends ConsumerState<EmployeeProfileView> {
                           Positioned(
                             bottom: 0,
                             right: 0,
-                            child: GestureDetector(
-                              onTap: () {
-                                final u = ref.read(authViewModelProvider).currentUser;
-                                if (!PermissionService.hasPermission(u, PermissionService.canEditAvatar)) {
-                                  AccessRestrictedBottomSheet.show(context, 'Edit Avatar');
-                                  return;
-                                }
-                                _showAvatarOptions(context, ref);
-                              },
-                              child: Container(
-                                padding: const EdgeInsets.all(6),
-                                decoration: BoxDecoration(
-                                  color: AppColors.primary,
-                                  shape: BoxShape.circle,
-                                  border: Border.all(color: cs.surface, width: 2),
-                                ),
-                                child: const Icon(
-                                  RemixIcons.camera_line,
-                                  color: Colors.white,
-                                  size: 14,
+                            child: PermissionProtectedWidget(
+                              user: user,
+                              permission: PermissionService.canEditAvatar,
+                              moduleName: 'Edit Avatar',
+                              child: GestureDetector(
+                                onTap: () => _showAvatarOptions(context, ref),
+                                child: Container(
+                                  padding: const EdgeInsets.all(6),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primary,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: cs.surface, width: 2),
+                                  ),
+                                  child: const Icon(
+                                    RemixIcons.camera_line,
+                                    color: Colors.white,
+                                    size: 14,
+                                  ),
                                 ),
                               ),
                             ),
@@ -294,18 +292,23 @@ class _EmployeeProfileViewState extends ConsumerState<EmployeeProfileView> {
                         value:
                             '₹${NumberFormat('#,##,###').format(user.salary)}',
                         icon: RemixIcons.money_rupee_circle_line),
-                    _ActionRow(
-                      label: 'View Salary History',
-                      icon: RemixIcons.file_list_3_line,
-                      onTap: () {
-                        NavigationGuard.pushProtected(
-                          context: context,
-                          ref: ref,
-                          permissionKey: PermissionService.canViewSalary,
-                          moduleName: 'Salary History',
-                          page: const EmployeePayrollView(),
-                        );
-                      },
+                    PermissionProtectedWidget(
+                      user: user,
+                      permission: PermissionService.canViewSalary,
+                      moduleName: 'Salary History',
+                      child: _ActionRow(
+                        label: 'View Salary History',
+                        icon: RemixIcons.file_list_3_line,
+                        onTap: () {
+                          NavigationGuard.pushProtected(
+                            context: context,
+                            ref: ref,
+                            permissionKey: PermissionService.canViewSalary,
+                            moduleName: 'Salary History',
+                            page: const EmployeePayrollView(),
+                          );
+                        },
+                      ),
                     ),
                   ],
                 ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.05, end: 0),
@@ -353,83 +356,113 @@ class _EmployeeProfileViewState extends ConsumerState<EmployeeProfileView> {
                   title: 'Quick Access',
                   icon: RemixIcons.link_m,
                   children: [
-                    _ActionRow(
-                      label: 'Company Policies & Rules',
-                      icon: RemixIcons.file_list_3_line,
-                      onTap: () {
-                        NavigationGuard.pushProtected(
-                          context: context,
-                          ref: ref,
-                          permissionKey: PermissionService.canViewShiftGuidelines,
-                          moduleName: 'Company Policies',
-                          page: const CompanyPoliciesView(),
-                        );
-                      },
+                    PermissionProtectedWidget(
+                      user: user,
+                      permission: PermissionService.canViewShiftGuidelines,
+                      moduleName: 'Company Policies',
+                      child: _ActionRow(
+                        label: 'Company Policies & Rules',
+                        icon: RemixIcons.file_list_3_line,
+                        onTap: () {
+                          NavigationGuard.pushProtected(
+                            context: context,
+                            ref: ref,
+                            permissionKey: PermissionService.canViewShiftGuidelines,
+                            moduleName: 'Company Policies',
+                            page: const CompanyPoliciesView(),
+                          );
+                        },
+                      ),
                     ),
-                    _ActionRow(
-                      label: 'Edit Profile',
-                      icon: RemixIcons.edit_line,
-                      onTap: () {
-                        NavigationGuard.pushProtected(
-                          context: context,
-                          ref: ref,
-                          permissionKey: PermissionService.canViewProfile,
-                          moduleName: 'Edit Profile',
-                          page: const EditProfileView(),
-                        );
-                      },
+                    PermissionProtectedWidget(
+                      user: user,
+                      permission: PermissionService.canViewProfile,
+                      moduleName: 'Edit Profile',
+                      child: _ActionRow(
+                        label: 'Edit Profile',
+                        icon: RemixIcons.edit_line,
+                        onTap: () {
+                          NavigationGuard.pushProtected(
+                            context: context,
+                            ref: ref,
+                            permissionKey: PermissionService.canViewProfile,
+                            moduleName: 'Edit Profile',
+                            page: const EditProfileView(),
+                          );
+                        },
+                      ),
                     ),
-                    _ActionRow(
-                      label: 'Submit & Track Expenses',
-                      icon: RemixIcons.bill_line,
-                      onTap: () {
-                        NavigationGuard.pushProtected(
-                          context: context,
-                          ref: ref,
-                          permissionKey: PermissionService.canViewExpenses,
-                          moduleName: 'Expenses',
-                          page: const EmployeeExpensesView(),
-                        );
-                      },
+                    PermissionProtectedWidget(
+                      user: user,
+                      permission: PermissionService.canViewExpenses,
+                      moduleName: 'Expenses',
+                      child: _ActionRow(
+                        label: 'Submit & Track Expenses',
+                        icon: RemixIcons.bill_line,
+                        onTap: () {
+                          NavigationGuard.pushProtected(
+                            context: context,
+                            ref: ref,
+                            permissionKey: PermissionService.canViewExpenses,
+                            moduleName: 'Expenses',
+                            page: const EmployeeExpensesView(),
+                          );
+                        },
+                      ),
                     ),
-                    _ActionRow(
-                      label: 'Weekly Shift Schedule',
-                      icon: RemixIcons.time_line,
-                      onTap: () {
-                        NavigationGuard.pushProtected(
-                          context: context,
-                          ref: ref,
-                          permissionKey: PermissionService.canViewShift,
-                          moduleName: 'Shift Schedule',
-                          page: const EmployeeShiftView(),
-                        );
-                      },
+                    PermissionProtectedWidget(
+                      user: user,
+                      permission: PermissionService.canViewShift,
+                      moduleName: 'Shift Schedule',
+                      child: _ActionRow(
+                        label: 'Weekly Shift Schedule',
+                        icon: RemixIcons.time_line,
+                        onTap: () {
+                          NavigationGuard.pushProtected(
+                            context: context,
+                            ref: ref,
+                            permissionKey: PermissionService.canViewShift,
+                            moduleName: 'Shift Schedule',
+                            page: const EmployeeShiftView(),
+                          );
+                        },
+                      ),
                     ),
-                    _ActionRow(
-                      label: 'Remote Work History',
-                      icon: RemixIcons.global_line,
-                      onTap: () {
-                        NavigationGuard.pushProtected(
-                          context: context,
-                          ref: ref,
-                          permissionKey: PermissionService.canViewRemoteWorkStatus,
-                          moduleName: 'Remote Work',
-                          page: const RemoteWorkHistoryView(),
-                        );
-                      },
+                    PermissionProtectedWidget(
+                      user: user,
+                      permission: PermissionService.canViewRemoteWorkStatus,
+                      moduleName: 'Remote Work',
+                      child: _ActionRow(
+                        label: 'Remote Work History',
+                        icon: RemixIcons.global_line,
+                        onTap: () {
+                          NavigationGuard.pushProtected(
+                            context: context,
+                            ref: ref,
+                            permissionKey: PermissionService.canViewRemoteWorkStatus,
+                            moduleName: 'Remote Work',
+                            page: const RemoteWorkHistoryView(),
+                          );
+                        },
+                      ),
                     ),
-                    _ActionRow(
-                      label: 'Change Password',
-                      icon: RemixIcons.lock_line,
-                      onTap: () {
-                        NavigationGuard.pushProtected(
-                          context: context,
-                          ref: ref,
-                          permissionKey: PermissionService.canChangePassword,
-                          moduleName: 'Change Password',
-                          page: const ChangePasswordView(),
-                        );
-                      },
+                    PermissionProtectedWidget(
+                      user: user,
+                      permission: PermissionService.canChangePassword,
+                      moduleName: 'Change Password',
+                      child: _ActionRow(
+                        label: 'Change Password',
+                        icon: RemixIcons.lock_line,
+                        onTap: () {
+                          NavigationGuard.pushProtected(
+                            context: context,
+                            ref: ref,
+                            permissionKey: PermissionService.canChangePassword,
+                            moduleName: 'Change Password',
+                            page: const ChangePasswordView(),
+                          );
+                        },
+                      ),
                     ),
                     _ActionRow(
                       label: 'Theme Settings',

@@ -158,6 +158,14 @@ class PermissionService {
     }
   }
 
+  static bool _parseBool(dynamic val) {
+    if (val == null) return false;
+    if (val is bool) return val;
+    if (val is num) return val == 1;
+    final str = val.toString().trim().toLowerCase();
+    return str == 'true' || str == '1';
+  }
+
   // Normalize permission keys across Web Admin Panel and Mobile App
   static String normalizePermissionKey(String key) {
     final clean = key.trim();
@@ -203,6 +211,9 @@ class PermissionService {
         return canViewTasks;
       case 'view_shift_schedule':
       case 'shift':
+      case 'shift_schedule':
+        return canViewShift;
+      case 'view_shift_guidelines':
       case 'shift_guidelines':
         return canViewShiftGuidelines;
       case 'view_remote_work_status':
@@ -228,8 +239,10 @@ class PermissionService {
         return ['view_leave_balance', 'leave', 'leave_balance', 'canViewLeaveBalance'];
       case canViewTasks:
         return ['view_assigned_tasks', 'tasks', 'assigned_tasks', 'canViewTasks'];
+      case canViewShift:
+        return ['view_shift_schedule', 'shift', 'shift_schedule', 'canViewShift'];
       case canViewShiftGuidelines:
-        return ['view_shift_schedule', 'shift', 'shift_guidelines', 'canViewShiftGuidelines'];
+        return ['view_shift_guidelines', 'shift_guidelines', 'canViewShiftGuidelines'];
       case canViewRemoteWorkStatus:
         return ['view_remote_work_status', 'remote_work', 'canViewRemoteWorkStatus'];
       default:
@@ -245,20 +258,20 @@ class PermissionService {
     if (perms != null && perms.isNotEmpty) {
       // 1. Direct key lookup
       if (perms.containsKey(permission)) {
-        return perms[permission] ?? false;
+        return _parseBool(perms[permission]);
       }
 
       // 2. Normalized key lookup
       final normKey = normalizePermissionKey(permission);
       if (perms.containsKey(normKey)) {
-        return perms[normKey] ?? false;
+        return _parseBool(perms[normKey]);
       }
 
-      // 3. Alias list lookup (if any alias is explicitly false, deny access)
+      // 3. Alias list lookup
       final aliases = _getAliases(permission);
       for (final alias in aliases) {
         if (perms.containsKey(alias)) {
-          return perms[alias] ?? false;
+          return _parseBool(perms[alias]);
         }
       }
     }
