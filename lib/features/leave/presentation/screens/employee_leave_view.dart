@@ -84,91 +84,110 @@ class _EmployeeLeaveViewState extends ConsumerState<EmployeeLeaveView> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ─── Leave Balance Cards ─────────────────────────────────────
-            Text(
-              'Leave Balance',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                Expanded(
-                  child: _BalanceCard(
-                    label: 'Casual',
-                    remaining: leaveState.balance.casualRemaining,
-                    total: leaveState.balance.casualTotal,
-                    color: AppColors.info,
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: _BalanceCard(
-                    label: 'Sick',
-                    remaining: leaveState.balance.sickRemaining,
-                    total: leaveState.balance.sickTotal,
-                    color: AppColors.error,
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: _BalanceCard(
-                    label: 'Earned',
-                    remaining: leaveState.balance.earnedRemaining,
-                    total: leaveState.balance.earnedTotal,
-                    color: AppColors.warning,
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 24),
-
-            // ─── Leave History ────────────────────────────────────────────
-            Text(
-              'Leave History',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 10),
-
-            if (leaveState.isLoading)
-              Column(
+            // ─── Leave Balance Cards (Permission Protected) ──────────────
+            PermissionProtectedWidget(
+              user: user,
+              permission: PermissionService.canViewLeaveBalance,
+              moduleName: 'Leave Balance',
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  ShimmerLoading(
-                    height: 80,
-                    width: double.infinity,
-                    borderRadius: BorderRadius.circular(16),
+                  Text(
+                    'Leave Balance',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                    ),
                   ),
-                  const SizedBox(height: 12),
-                  ShimmerLoading(
-                    height: 80,
-                    width: double.infinity,
-                    borderRadius: BorderRadius.circular(16),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _BalanceCard(
+                          label: 'Casual',
+                          remaining: leaveState.balance.casualRemaining,
+                          total: leaveState.balance.casualTotal,
+                          color: AppColors.info,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: _BalanceCard(
+                          label: 'Sick',
+                          remaining: leaveState.balance.sickRemaining,
+                          total: leaveState.balance.sickTotal,
+                          color: AppColors.error,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: _BalanceCard(
+                          label: 'Earned',
+                          remaining: leaveState.balance.earnedRemaining,
+                          total: leaveState.balance.earnedTotal,
+                          color: AppColors.warning,
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 12),
-                  ShimmerLoading(
-                    height: 80,
-                    width: double.infinity,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
+                  const SizedBox(height: 24),
                 ],
-              )
-            else if (leaveState.myLeaves.isEmpty)
-              const _EmptyState()
-            else
-              ...leaveState.myLeaves.map(
-                (leave) => Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: _LeaveCard(leave: leave),
-                ),
               ),
+            ),
+
+            // ─── Leave History (Permission Protected) ─────────────────────
+            PermissionProtectedWidget(
+              user: user,
+              permission: PermissionService.canViewLeaveHistory,
+              moduleName: 'Leave History',
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Leave History',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+
+                  if (leaveState.isLoading)
+                    Column(
+                      children: [
+                        ShimmerLoading(
+                          height: 80,
+                          width: double.infinity,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        const SizedBox(height: 12),
+                        ShimmerLoading(
+                          height: 80,
+                          width: double.infinity,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        const SizedBox(height: 12),
+                        ShimmerLoading(
+                          height: 80,
+                          width: double.infinity,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ],
+                    )
+                  else if (leaveState.myLeaves.isEmpty)
+                    const _EmptyState()
+                  else
+                    ...leaveState.myLeaves.map(
+                      (leave) => Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: _LeaveCard(leave: leave),
+                      ),
+                    ),
+                ],
+              ),
+            ),
 
             const SizedBox(height: 110),
           ],

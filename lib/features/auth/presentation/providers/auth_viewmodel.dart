@@ -572,6 +572,7 @@ class AuthViewModel extends StateNotifier<AuthState> {
 
         state = AuthState(currentUser: hydratedUser);
         _syncFcmTokenInBackground();
+        refreshUserPermissions();
         return true;
       }
     } catch (e) {

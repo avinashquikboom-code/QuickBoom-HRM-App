@@ -299,50 +299,59 @@ class EmployeeDashboardView extends ConsumerWidget {
                 const SizedBox(height: 24),
 
                 // ─── Double-layered Leave Balance Gauges ───────────────────
-                _SectionTitle(title: 'Leave Balance'),
-                const SizedBox(height: 12),
-                LayoutBuilder(
-                  builder: (context, constraints) {
-                    final width = constraints.maxWidth;
-                    final columns = width < 380 ? 2 : (width > 600 ? 4 : 3);
-                    final itemWidth = (width - (columns - 1) * 12) / columns;
-                    return Wrap(
-                      spacing: 12,
-                      runSpacing: 12,
-                      children: [
-                        SizedBox(
-                          width: itemWidth,
-                          child: _LeaveBalanceCard(
-                            label: 'Casual',
-                            used: leaveState.balance.casualUsed,
-                            total: leaveState.balance.casualTotal,
-                            color: AppColors.info,
-                          ),
-                        ),
-                        SizedBox(
-                          width: itemWidth,
-                          child: _LeaveBalanceCard(
-                            label: 'Sick',
-                            used: leaveState.balance.sickUsed,
-                            total: leaveState.balance.sickTotal,
-                            color: AppColors.error,
-                          ),
-                        ),
-                        SizedBox(
-                          width: itemWidth,
-                          child: _LeaveBalanceCard(
-                            label: 'Earned',
-                            used: leaveState.balance.earnedUsed,
-                            total: leaveState.balance.earnedTotal,
-                            color: AppColors.warning,
-                          ),
-                        ),
-                      ],
-                    );
-                  },
+                PermissionProtectedWidget(
+                  user: user,
+                  permission: PermissionService.canViewLeaveBalance,
+                  moduleName: 'Leave Balance',
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _SectionTitle(title: 'Leave Balance'),
+                      const SizedBox(height: 12),
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          final width = constraints.maxWidth;
+                          final columns = width < 380 ? 2 : (width > 600 ? 4 : 3);
+                          final itemWidth = (width - (columns - 1) * 12) / columns;
+                          return Wrap(
+                            spacing: 12,
+                            runSpacing: 12,
+                            children: [
+                              SizedBox(
+                                width: itemWidth,
+                                child: _LeaveBalanceCard(
+                                  label: 'Casual',
+                                  used: leaveState.balance.casualUsed,
+                                  total: leaveState.balance.casualTotal,
+                                  color: AppColors.info,
+                                ),
+                              ),
+                              SizedBox(
+                                width: itemWidth,
+                                child: _LeaveBalanceCard(
+                                  label: 'Sick',
+                                  used: leaveState.balance.sickUsed,
+                                  total: leaveState.balance.sickTotal,
+                                  color: AppColors.error,
+                                ),
+                              ),
+                              SizedBox(
+                                width: itemWidth,
+                                child: _LeaveBalanceCard(
+                                  label: 'Earned',
+                                  used: leaveState.balance.earnedUsed,
+                                  total: leaveState.balance.earnedTotal,
+                                  color: AppColors.warning,
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 24),
+                    ],
+                  ),
                 ).animate().fadeIn(delay: 100.ms),
-
-                const SizedBox(height: 24),
 
                 _UpcomingWidget(
                   upcomingData: dashboardState.upcomingData,

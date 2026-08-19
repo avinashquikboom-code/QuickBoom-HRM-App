@@ -1,7 +1,12 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:remixicon/remixicon.dart';
 import 'package:quickboom_hrm/core/constants/app_colors.dart';
+import 'package:quickboom_hrm/core/services/permission_service.dart';
+import 'package:quickboom_hrm/core/widgets/access_restricted_bottom_sheet.dart';
+import 'package:quickboom_hrm/features/auth/presentation/providers/auth_viewmodel.dart';
 import 'package:quickboom_hrm/features/dashboard/presentation/screens/employee_dashboard_view.dart';
 import 'package:quickboom_hrm/features/attendance/presentation/screens/employee_attendance_view.dart';
 import 'package:quickboom_hrm/features/leave/presentation/screens/employee_leave_view.dart';
@@ -12,15 +17,17 @@ import 'package:quickboom_hrm/core/services/notification_service.dart';
 import 'package:quickboom_hrm/core/services/location_tracking_service.dart';
 import 'package:quickboom_hrm/core/services/websocket_service.dart';
 
-class EmployeeShell extends StatefulWidget {
+class EmployeeShell extends ConsumerStatefulWidget {
   const EmployeeShell({super.key});
 
   @override
-  State<EmployeeShell> createState() => _EmployeeShellState();
+  ConsumerState<EmployeeShell> createState() => _EmployeeShellState();
 }
 
-class _EmployeeShellState extends State<EmployeeShell> {
+class _EmployeeShellState extends ConsumerState<EmployeeShell> {
   int _currentIndex = 0;
+  StreamSubscription? _permissionWsSub;
+  StreamSubscription? _notifSub;
 
   @override
   void initState() {
@@ -35,6 +42,77 @@ class _EmployeeShellState extends State<EmployeeShell> {
         LocationTrackingService.startTracking();
       }
     });
+
+    // Listen for real-time permission updates from WebSocket
+    _permissionWsSub = WebSocketService().permissionUpdates.listen((_) {
+      ref.read(authViewModelProvider.notifier).refreshUserPermissions();
+    });
+
+    // Listen for real-time push notification stream
+    _notifSub = NotificationService.notificationStream.listen((event) {
+      if (event['type'] == 'PERMISSIONS_UPDATED') {
+        ref.read(authViewModelProvider.notifier).refreshUserPermissions();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _permissionWsSub?.cancel();
+    _notifSub?.cancel();
+    super.dispose();
+  }
+
+  void _onSelectTab(int index) {
+    final user = ref.read(authViewModelProvider).currentUser;
+
+    if (index == 1) {
+      final canAccessAttend = PermissionService.hasAnyPermission(user, [
+        PermissionService.canViewAttendance,
+        PermissionService.canViewBreakHistory,
+        PermissionService.canPunchInOut,
+        PermissionService.canRequestAttendanceCorrection,
+      ]);
+      if (!canAccessAttend) {
+        AccessRestrictedBottomSheet.show(context, 'Attendance');
+        return;
+      }
+    } else if (index == 2) {
+      final canAccessWallet = PermissionService.hasAnyPermission(user, [
+        PermissionService.canViewSalary,
+        PermissionService.canViewCommission,
+        PermissionService.canViewExpenses,
+        PermissionService.canRequestSalaryAdvance,
+        PermissionService.canViewWallet,
+      ]);
+      if (!canAccessWallet) {
+        AccessRestrictedBottomSheet.show(context, 'Wallet & Salary');
+        return;
+      }
+    } else if (index == 3) {
+      final canAccessLeave = PermissionService.hasAnyPermission(user, [
+        PermissionService.canViewLeaveBalance,
+        PermissionService.canViewLeaveHistory,
+        PermissionService.canApplyLeave,
+        PermissionService.canViewHolidays,
+      ]);
+      if (!canAccessLeave) {
+        AccessRestrictedBottomSheet.show(context, 'Leave & Holidays');
+        return;
+      }
+    } else if (index == 4) {
+      final canAccessProfile = PermissionService.hasAnyPermission(user, [
+        PermissionService.canViewProfile,
+        PermissionService.canEditAvatar,
+        PermissionService.canChangePassword,
+      ]);
+      if (!canAccessProfile) {
+        AccessRestrictedBottomSheet.show(context, 'Profile');
+        return;
+      }
+    }
+
+    setState(() => _currentIndex = index);
   }
 
   Widget _buildPage(int index) {
@@ -66,7 +144,7 @@ class _EmployeeShellState extends State<EmployeeShell> {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: () => setState(() => _currentIndex = index),
+          onTap: () => _onSelectTab(index),
           borderRadius: BorderRadius.circular(16),
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 6),
@@ -120,7 +198,7 @@ class _EmployeeShellState extends State<EmployeeShell> {
           ],
         ),
         child: FloatingActionButton(
-          onPressed: () => setState(() => _currentIndex = 2),
+          onPressed: () => _onSelectTab(2),
           elevation: 0,
           hoverElevation: 0,
           focusElevation: 0,

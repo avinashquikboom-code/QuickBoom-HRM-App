@@ -103,6 +103,11 @@ class WebSocketService {
         _permissionUpdateController.add(Map<String, dynamic>.from(data));
       });
 
+      _socket!.on('permissions_updated', (data) {
+        if (kDebugMode) print('Received permissions_updated: $data');
+        _permissionUpdateController.add(Map<String, dynamic>.from(data));
+      });
+
       // Handle errors
       _socket!.on('error', (error) {
         if (kDebugMode) print('WebSocket error: $error');
