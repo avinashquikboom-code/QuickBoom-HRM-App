@@ -152,7 +152,7 @@ class LockedFeatureCard extends StatelessWidget {
       return content;
     }
 
-    // Locked UI presentation: Greyscale + 45% Opacity + Dark Lock Badge
+    // Locked UI presentation: Greyscale + 50% Opacity + Dark Lock Badge Overlay
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () {
@@ -163,35 +163,43 @@ class LockedFeatureCard extends StatelessWidget {
         );
       },
       child: Stack(
-        alignment: Alignment.center,
+        clipBehavior: Clip.none,
         children: [
           ColorFiltered(
             colorFilter: const ColorFilter.matrix(<double>[
               0.2126, 0.7152, 0.0722, 0, 0,
               0.2126, 0.7152, 0.0722, 0, 0,
               0.2126, 0.7152, 0.0722, 0, 0,
-              0,      0,      0,      0.45, 0,
+              0,      0,      0,      0.50, 0,
             ]),
             child: IgnorePointer(
               child: content,
             ),
           ),
           Positioned(
-            top: 6,
-            right: 6,
+            top: -8,
+            right: 8,
             child: Container(
-              padding: const EdgeInsets.all(4),
+              width: 34,
+              height: 34,
               decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.8),
+                color: const Color(0xFF1E293B),
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.5),
-                  width: 1,
+                  color: Colors.white.withValues(alpha: 0.4),
+                  width: 1.5,
                 ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.35),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
               child: const Icon(
                 Icons.lock_rounded,
-                size: 12,
+                size: 16,
                 color: Colors.white,
               ),
             ),
