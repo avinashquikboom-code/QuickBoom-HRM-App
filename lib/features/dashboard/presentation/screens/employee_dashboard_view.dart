@@ -183,11 +183,12 @@ class EmployeeDashboardView extends ConsumerWidget {
               AnimatedNotificationBell(
                 unreadCount: notifState.unreadCount,
                 onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const NotificationsView(),
-                    ),
+                  NavigationGuard.pushProtected(
+                    context: context,
+                    ref: ref,
+                    permissionKey: PermissionService.canViewNotifications,
+                    moduleName: 'Notifications',
+                    page: const NotificationsView(),
                   );
                 },
               ),
@@ -699,13 +700,13 @@ class EmployeeDashboardView extends ConsumerWidget {
 
 // ─── Sub Widgets ──────────────────────────────────────────────────────────────
 
-class _CommissionWidgets extends StatelessWidget {
+class _CommissionWidgets extends ConsumerWidget {
   final CommissionState commissionState;
 
   const _CommissionWidgets({required this.commissionState});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -724,9 +725,12 @@ class _CommissionWidgets extends StatelessWidget {
                 icon: RemixIcons.money_dollar_circle_line,
                 color: AppColors.success,
                 onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const CommissionWalletView()),
+                  NavigationGuard.pushProtected(
+                    context: context,
+                    ref: ref,
+                    permissionKey: PermissionService.canViewCommission,
+                    moduleName: 'Commission Wallet',
+                    page: const CommissionWalletView(),
                   );
                 },
               ),
@@ -739,9 +743,12 @@ class _CommissionWidgets extends StatelessWidget {
                 icon: RemixIcons.time_line,
                 color: AppColors.warning,
                 onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const CommissionWalletView()),
+                  NavigationGuard.pushProtected(
+                    context: context,
+                    ref: ref,
+                    permissionKey: PermissionService.canViewCommission,
+                    moduleName: 'Commission Wallet',
+                    page: const CommissionWalletView(),
                   );
                 },
               ),
@@ -754,9 +761,12 @@ class _CommissionWidgets extends StatelessWidget {
                 icon: RemixIcons.checkbox_circle_line,
                 color: AppColors.primary,
                 onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const CommissionWalletView()),
+                  NavigationGuard.pushProtected(
+                    context: context,
+                    ref: ref,
+                    permissionKey: PermissionService.canViewCommission,
+                    moduleName: 'Commission Wallet',
+                    page: const CommissionWalletView(),
                   );
                 },
               ),

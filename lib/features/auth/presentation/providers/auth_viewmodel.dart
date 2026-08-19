@@ -477,10 +477,10 @@ class AuthViewModel extends StateNotifier<AuthState> {
         final profileRes = await ApiService.get(AppUrl.employeeProfile);
         final profileData = jsonDecode(profileRes.body);
 
-        final userMap = profileData['user'] as Map<String, dynamic>;
-        final emp   = userMap['employee'] as Map<String, dynamic>? ?? {};
-        final prof  = userMap['profile']  as Map<String, dynamic>? ?? {};
-        final uRole = (userMap['role'] ?? 'EMPLOYEE').toString().toUpperCase();
+        final userMap = profileData['user'] as Map<String, dynamic>? ?? {};
+        final emp   = (profileData['employee'] ?? userMap['employee']) as Map<String, dynamic>? ?? {};
+        final prof  = (profileData['profile'] ?? userMap['profile'])  as Map<String, dynamic>? ?? {};
+        final uRole = (userMap['role'] ?? profileData['role'] ?? 'EMPLOYEE').toString().toUpperCase();
 
         Map<String, bool>? perms;
         final rawPerms = profileData['permissions'] ?? userMap['permissions'] ?? userMap['userPermission']?['permissions'];
@@ -492,12 +492,13 @@ class AuthViewModel extends StateNotifier<AuthState> {
         }
 
         final parsedUser = UserModel(
-          id:          emp['id']?.toString() ?? userMap['id'].toString(),
-          employeeId:  emp['employeeCode']?.toString() ?? userMap['id'].toString(),
+          id:          emp['id']?.toString() ?? userMap['id']?.toString() ?? profileData['id']?.toString() ?? '',
+          employeeId:  emp['employeeCode']?.toString() ?? userMap['employeeCode']?.toString() ?? userMap['id']?.toString() ?? '',
           name:        prof['fullName']?.toString() ?? 
+                       emp['name']?.toString() ??
                        '${emp['firstName'] ?? ''} ${emp['lastName'] ?? ''}'.trim(),
           email:       prof['email']?.toString() ?? userMap['email']?.toString() ?? '',
-          phone:       prof['phone']?.toString() ?? '',
+          phone:       prof['phone']?.toString() ?? emp['mobileNumber']?.toString() ?? '',
           role:        (uRole == 'HR' || uRole == 'SUPER_ADMIN' || uRole == 'ADMIN' || uRole == 'PLATFORM_ADMIN')
               ? UserRole.hrManager
               : uRole == 'SALESMAN'
