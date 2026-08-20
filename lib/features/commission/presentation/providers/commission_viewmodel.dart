@@ -122,10 +122,15 @@ class CommissionViewModel extends StateNotifier<CommissionState> {
 
       if (newHistory != null) {
         if (page > 1 && state.history != null) {
-          final updatedTxns = [
-            ...state.history!.transactions,
-            ...newHistory.transactions,
-          ];
+          final existingIds = <String>{};
+          final updatedTxns = <CommissionTransaction>[];
+          for (final t in [...state.history!.transactions, ...newHistory.transactions]) {
+            final key = t.id.isNotEmpty ? t.id : t.invoiceNumber;
+            if (!existingIds.contains(key)) {
+              existingIds.add(key);
+              updatedTxns.add(t);
+            }
+          }
           final combinedHistory = CommissionHistory(
             transactions: updatedTxns,
             totalCount: newHistory.totalCount,
