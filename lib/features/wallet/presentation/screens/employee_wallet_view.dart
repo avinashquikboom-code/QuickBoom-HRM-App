@@ -298,6 +298,10 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
         (_advanceData?['advanceLimit'] as num?)?.toDouble() ?? 25000.0;
     final activeAdvance =
         _advanceData?['activeAdvance'] as Map<String, dynamic>?;
+    final rawAdvances = _advanceData?['advances'] as List<dynamic>?;
+    final allAdvances = rawAdvances
+        ?.map((e) => Map<String, dynamic>.from(e as Map))
+        .toList();
 
     final result = await Navigator.push(
       context,
@@ -305,6 +309,7 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
         builder: (context) => RequestAdvanceView(
           maxLimit: advanceLimit,
           activeAdvance: activeAdvance,
+          allAdvances: allAdvances,
         ),
       ),
     );
@@ -1459,57 +1464,72 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
                           'Advance Limit',
                           style: TextStyle(
                             color: AppColors.textSecondary,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                         const SizedBox(height: 6),
                         Text(
                           '₹${NumberFormat('#,##,###').format((_advanceData?['advanceLimit'] as num?)?.toDouble() ?? 25000.0)}',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontWeight: FontWeight.bold,
-                            fontSize: 20,
-                            color: Color(0xFF9333EA), // Purple color
+                            fontSize: 16,
+                            color: AppColors.textPrimary,
                           ),
                         ),
                       ],
                     ),
                   ),
-                  Container(width: 1, height: 40, color: AppColors.divider),
+                  Container(width: 1, height: 36, color: AppColors.divider),
                   Expanded(
-                    child: InkWell(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const EmployeeExpensesView(),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Used Advance',
+                          style: TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
                           ),
-                        );
-                      },
-                      borderRadius: BorderRadius.circular(16),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            'Pending Claims',
-                            style: TextStyle(
-                              color: AppColors.textSecondary,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                            ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          '₹${NumberFormat('#,##,###').format((_advanceData?['usedAmount'] ?? _advanceData?['usedAdvance'] as num?)?.toDouble() ?? 0.0)}',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            color: Color(0xFFF59E0B),
                           ),
-                          const SizedBox(height: 6),
-                          Text(
-                            '₹${NumberFormat('#,##,###').format(pendingClaims)}',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 20,
-                              color: Color(0xFFF59E0B), // Orange color
-                            ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(width: 1, height: 36, color: AppColors.divider),
+                  Expanded(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Remaining',
+                          style: TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
                           ),
-                        ],
-                      ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          '₹${NumberFormat('#,##,###').format((_advanceData?['remainingAmount'] ?? _advanceData?['remainingAdvance'] as num?)?.toDouble() ?? ((_advanceData?['advanceLimit'] as num?)?.toDouble() ?? 25000.0))}',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            color: Color(0xFF10B981),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
@@ -1784,7 +1804,9 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
 
     final halfDayDeduction = (deductions['halfDayDeduction'] as num?)?.toDouble() ?? 0.0;
     final leaveDeduction = (deductions['leaveDeduction'] as num?)?.toDouble() ?? 0.0;
-    final totalDeductions = (deductions['totalDeductions'] as num?)?.toDouble() ?? (halfDayDeduction + leaveDeduction);
+    final advanceDeduction = (deductions['advanceDeduction'] as num?)?.toDouble() ??
+                             (_salarySlipData?['advanceDeduction'] as num?)?.toDouble() ?? 0.0;
+    final totalDeductions = (deductions['totalDeductions'] as num?)?.toDouble() ?? (halfDayDeduction + leaveDeduction + advanceDeduction);
 
     final netSalary = (_salarySlipData?['netSalary'] as num?)?.toDouble() ?? (grossSalary - totalDeductions);
 
@@ -1899,7 +1921,7 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
                   children: [
                     Row(
                       children: [
-                        const Icon(Icons.arrow_upward, color: Colors.green, size: 18),
+                        const Icon(Icons.account_balance_wallet, color: Colors.green, size: 18),
                         const SizedBox(width: 8),
                         const Text(
                           'EARNINGS',
@@ -1921,12 +1943,15 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
                 padding: const EdgeInsets.symmetric(horizontal: 8.0),
                 child: Column(
                   children: [
-                    _buildSalaryDetailRow('Base Salary', '₹${NumberFormat('#,##,###').format(baseSalary)}'),
-                    if (canShowComm)
-                      _buildSalaryDetailRow('Commission', '₹${NumberFormat('#,##,###').format(commission)}', valueColor: Colors.green),
-                    _buildSalaryDetailRow('Other Benefits', '₹${NumberFormat('#,##,###').format(otherBenefits)}'),
+                    _buildSalaryDetailRow('Basic Salary', '₹${NumberFormat('#,##,###').format(baseSalary)}'),
+                    if (hra > 0) _buildSalaryDetailRow('HRA', '₹${NumberFormat('#,##,###').format(hra)}'),
+                    if (medical > 0) _buildSalaryDetailRow('Medical Allowance', '₹${NumberFormat('#,##,###').format(medical)}'),
+                    if (travel > 0) _buildSalaryDetailRow('Travel Allowance', '₹${NumberFormat('#,##,###').format(travel)}'),
+                    if (special > 0) _buildSalaryDetailRow('Special Allowance', '₹${NumberFormat('#,##,###').format(special)}'),
+                    if (canShowComm && commission > 0)
+                      _buildSalaryDetailRow('Commission Earned', '₹${NumberFormat('#,##,###').format(commission)}', valueColor: Colors.green),
                     const Divider(height: 12),
-                    _buildSalaryDetailRow('GROSS TOTAL', '₹${NumberFormat('#,##,###').format(grossSalary)}', isBold: true, valueColor: Colors.green),
+                    _buildSalaryDetailRow('GROSS EARNINGS', '₹${NumberFormat('#,##,###').format(grossSalary)}', isBold: true),
                   ],
                 ),
               ),
@@ -1948,7 +1973,7 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
                   children: [
                     Row(
                       children: [
-                        const Icon(Icons.arrow_downward, color: Colors.red, size: 18),
+                        const Icon(Icons.remove_circle_outline, color: Colors.red, size: 18),
                         const SizedBox(width: 8),
                         const Text(
                           'DEDUCTIONS',
@@ -1970,8 +1995,12 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
                 padding: const EdgeInsets.symmetric(horizontal: 8.0),
                 child: Column(
                   children: [
-                    _buildSalaryDetailRow('Half Days ($halfDays × ₹${(baseSalary / workingDays / 2).round()})', '₹(${NumberFormat('#,##,###').format(halfDayDeduction)})', valueColor: Colors.red),
-                    _buildSalaryDetailRow('Leaves ($leaveDays × ₹${(baseSalary / workingDays).round()})', '₹(${NumberFormat('#,##,###').format(leaveDeduction)})', valueColor: Colors.red),
+                    if (halfDayDeduction > 0)
+                      _buildSalaryDetailRow('Half Days ($halfDays × ₹${(baseSalary / workingDays / 2).round()})', '₹(${NumberFormat('#,##,###').format(halfDayDeduction)})', valueColor: Colors.red),
+                    if (leaveDeduction > 0)
+                      _buildSalaryDetailRow('Leaves ($leaveDays × ₹${(baseSalary / workingDays).round()})', '₹(${NumberFormat('#,##,###').format(leaveDeduction)})', valueColor: Colors.red),
+                    if (advanceDeduction > 0)
+                      _buildSalaryDetailRow('Advance Salary Deduction', '₹(${NumberFormat('#,##,###').format(advanceDeduction)})', valueColor: Colors.red),
                     const Divider(height: 12),
                     _buildSalaryDetailRow('TOTAL DEDUCTIONS', '₹(${NumberFormat('#,##,###').format(totalDeductions)})', isBold: true, valueColor: Colors.red),
                   ],

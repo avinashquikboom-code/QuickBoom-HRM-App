@@ -33,26 +33,50 @@ class _RequestAdvanceViewState extends State<RequestAdvanceView> {
   bool _isLoadingData = false;
   String? _error;
 
-  late double _maxLimit;
+  double _totalLimit = 0.0;
+  double _usedAmount = 0.0;
+  double _remainingLimit = 0.0;
   Map<String, dynamic>? _activeAdvance;
   List<Map<String, dynamic>> _allAdvances = [];
 
   @override
   void initState() {
     super.initState();
-    _maxLimit = widget.maxLimit;
+    _totalLimit = widget.maxLimit;
+    _remainingLimit = widget.maxLimit;
     _activeAdvance = widget.activeAdvance;
     if (widget.allAdvances != null) {
       _allAdvances = List<Map<String, dynamic>>.from(widget.allAdvances!);
     }
 
     _repaymentMonths = 1;
-    final defaultAmt = _maxLimit >= 10000.0 ? 10000.0 : _maxLimit;
-    _amount = (defaultAmt / 1000).round() * 1000.0;
-    if (_amount < 0.0) _amount = 0.0;
-    _amountCtrl.text = _amount == 0.0 ? '' : NumberFormat('#,##,###').format(_amount);
-
+    _calculateInitialLimits();
     _fetchWalletData();
+  }
+
+  void _calculateInitialLimits() {
+    if (_allAdvances.isNotEmpty) {
+      final pendingSum = _allAdvances
+          .where((a) => a['status'] == 'PENDING')
+          .fold<double>(0.0, (sum, a) => sum + ((a['amount'] as num?)?.toDouble() ?? 0.0));
+      final approvedSum = _allAdvances
+          .where((a) => a['status'] == 'APPROVED')
+          .fold<double>(0.0, (sum, a) => sum + (((a['remainingAmount'] ?? a['amount']) as num?)?.toDouble() ?? 0.0));
+      _usedAmount = pendingSum + approvedSum;
+      _remainingLimit = (_totalLimit - _usedAmount).clamp(0.0, _totalLimit);
+    } else {
+      _usedAmount = 0.0;
+      _remainingLimit = _totalLimit;
+    }
+
+    if (_remainingLimit > 0) {
+      final defaultAmt = _remainingLimit >= 5000.0 ? 5000.0 : _remainingLimit;
+      _amount = defaultAmt;
+      _amountCtrl.text = _amount == 0.0 ? '' : NumberFormat('#,##,###').format(_amount);
+    } else {
+      _amount = 0.0;
+      _amountCtrl.text = '';
+    }
   }
 
   Future<void> _fetchWalletData() async {
@@ -64,13 +88,42 @@ class _RequestAdvanceViewState extends State<RequestAdvanceView> {
 
     if (wallet != null) {
       setState(() {
-        _maxLimit = (wallet['advanceLimit'] as num?)?.toDouble() ?? _maxLimit;
+        _totalLimit = (wallet['advanceLimit'] as num?)?.toDouble() ?? _totalLimit;
         _activeAdvance = wallet['activeAdvance'] as Map<String, dynamic>?;
         if (wallet['advances'] != null) {
           _allAdvances = (wallet['advances'] as List<dynamic>)
               .map((e) => Map<String, dynamic>.from(e as Map))
               .toList();
         }
+
+        // Authoritative values from backend
+        if (wallet['usedAmount'] != null) {
+          _usedAmount = (wallet['usedAmount'] as num).toDouble();
+        } else if (wallet['usedAdvance'] != null) {
+          _usedAmount = (wallet['usedAdvance'] as num).toDouble();
+        } else {
+          final pendingSum = _allAdvances
+              .where((a) => a['status'] == 'PENDING')
+              .fold<double>(0.0, (sum, a) => sum + ((a['amount'] as num?)?.toDouble() ?? 0.0));
+          final approvedSum = _allAdvances
+              .where((a) => a['status'] == 'APPROVED')
+              .fold<double>(0.0, (sum, a) => sum + (((a['remainingAmount'] ?? a['amount']) as num?)?.toDouble() ?? 0.0));
+          _usedAmount = pendingSum + approvedSum;
+        }
+
+        if (wallet['remainingAmount'] != null) {
+          _remainingLimit = (wallet['remainingAmount'] as num).toDouble();
+        } else if (wallet['remainingAdvanceLimit'] != null) {
+          _remainingLimit = (wallet['remainingAdvanceLimit'] as num).toDouble();
+        } else {
+          _remainingLimit = (_totalLimit - _usedAmount).clamp(0.0, _totalLimit);
+        }
+
+        if (_amount > _remainingLimit) {
+          _amount = _remainingLimit;
+          _amountCtrl.text = _amount == 0.0 ? '' : NumberFormat('#,##,###').format(_amount);
+        }
+
         _isLoadingData = false;
       });
     } else {
@@ -91,8 +144,8 @@ class _RequestAdvanceViewState extends State<RequestAdvanceView> {
     final val = double.tryParse(cleanStr) ?? 0.0;
 
     setState(() {
-      if (val > _maxLimit) {
-        _amount = _maxLimit;
+      if (val > _remainingLimit) {
+        _amount = _remainingLimit;
       } else {
         _amount = val;
       }
@@ -116,15 +169,23 @@ class _RequestAdvanceViewState extends State<RequestAdvanceView> {
   }
 
   Future<void> _submitRequest() async {
+    if (_isSubmitting) return; // Prevent rapid duplicate taps
     setState(() => _error = null);
-    final amt = _amount;
-    if (amt <= 0) {
-      setState(() => _error = 'Please select a valid amount');
+
+    if (_remainingLimit <= 0) {
+      setState(() => _error = 'Advance salary limit exhausted. You have no remaining advance salary balance.');
       return;
     }
-    if (amt > _maxLimit) {
+
+    final amt = _amount;
+    if (amt <= 0) {
+      setState(() => _error = 'Please enter a valid amount greater than ₹0');
+      return;
+    }
+    if (amt > _remainingLimit) {
+      final formattedRem = NumberFormat('#,##,###').format(_remainingLimit);
       setState(
-        () => _error = 'Amount exceeds your limit of ₹${NumberFormat('#,##,###').format(_maxLimit)}',
+        () => _error = 'You can apply for a maximum of ₹$formattedRem. Your remaining advance salary limit is ₹$formattedRem.',
       );
       return;
     }
@@ -238,9 +299,10 @@ class _RequestAdvanceViewState extends State<RequestAdvanceView> {
 
   @override
   Widget build(BuildContext context) {
-    final maxVal = _maxLimit <= 0 ? 1000.0 : _maxLimit;
-    final divisions = maxVal > 1000 ? (maxVal / 1000).floor() : 1;
+    final maxVal = _remainingLimit <= 0 ? 1000.0 : _remainingLimit;
+    final divisions = _remainingLimit > 1000 ? (_remainingLimit / 1000).floor() : 1;
     final monthlyEmiPreview = _repaymentMonths > 0 ? (_amount / _repaymentMonths) : _amount;
+    final isExhausted = _remainingLimit <= 0;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -268,6 +330,124 @@ class _RequestAdvanceViewState extends State<RequestAdvanceView> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // ─── Cumulative Advance Limit Overview Card ───
+            Container(
+              padding: const EdgeInsets.all(18),
+              margin: const EdgeInsets.only(bottom: 20),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: AppColors.cardBorder),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.03),
+                    blurRadius: 16,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      children: [
+                        Text(
+                          'Advance Limit',
+                          style: TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          '₹${NumberFormat('#,##,###').format(_totalLimit)}',
+                          style: TextStyle(
+                            color: AppColors.textPrimary,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(width: 1, height: 36, color: AppColors.divider),
+                  Expanded(
+                    child: Column(
+                      children: [
+                        Text(
+                          'Used Advance',
+                          style: TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          '₹${NumberFormat('#,##,###').format(_usedAmount)}',
+                          style: const TextStyle(
+                            color: Color(0xFFF59E0B),
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(width: 1, height: 36, color: AppColors.divider),
+                  Expanded(
+                    child: Column(
+                      children: [
+                        Text(
+                          'Remaining',
+                          style: TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          '₹${NumberFormat('#,##,###').format(_remainingLimit)}',
+                          style: TextStyle(
+                            color: isExhausted ? const Color(0xFFEF4444) : const Color(0xFF10B981),
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Limit Exhausted Banner
+            if (isExhausted) ...[
+              Container(
+                padding: const EdgeInsets.all(14),
+                margin: const EdgeInsets.only(bottom: 20),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEF4444).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFEF4444).withValues(alpha: 0.3)),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(RemixIcons.lock_line, color: Color(0xFFEF4444), size: 20),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Advance salary limit exhausted. You have no remaining advance salary balance.',
+                        style: TextStyle(color: Color(0xFFEF4444), fontSize: 12, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+
             // Active Advance EMI Plan Card
             if (_activeAdvance != null) ...[
               ActiveAdvanceCard(advance: _activeAdvance!),
@@ -287,7 +467,7 @@ class _RequestAdvanceViewState extends State<RequestAdvanceView> {
                 child: Row(
                   children: [
                     const Icon(RemixIcons.error_warning_line, color: AppColors.error, size: 20),
-                    const SizedBox(width: 12),
+                    SizedBox(width: 12),
                     Expanded(
                       child: Text(
                         _error!,
@@ -330,9 +510,9 @@ class _RequestAdvanceViewState extends State<RequestAdvanceView> {
                         ),
                       ),
                       Text(
-                        'Max: ₹${NumberFormat('#,##,###').format(_maxLimit)}',
-                        style: const TextStyle(
-                          color: Color(0xFF9333EA),
+                        'Available: ₹${NumberFormat('#,##,###').format(_remainingLimit)}',
+                        style: TextStyle(
+                          color: isExhausted ? const Color(0xFFEF4444) : const Color(0xFF9333EA),
                           fontSize: 12,
                           fontWeight: FontWeight.w800,
                         ),
@@ -343,31 +523,32 @@ class _RequestAdvanceViewState extends State<RequestAdvanceView> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     decoration: BoxDecoration(
-                      color: AppColors.background,
+                      color: isExhausted ? AppColors.background.withValues(alpha: 0.5) : AppColors.background,
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(color: AppColors.cardBorder),
                     ),
                     child: Row(
                       children: [
-                        const Text(
+                        Text(
                           '₹ ',
                           style: TextStyle(
                             fontSize: 26,
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFF9333EA),
+                            color: isExhausted ? AppColors.textSecondary : const Color(0xFF9333EA),
                           ),
                         ),
                         Expanded(
                           child: TextField(
                             controller: _amountCtrl,
+                            enabled: !isExhausted,
                             keyboardType: TextInputType.number,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 26,
                               fontWeight: FontWeight.bold,
-                              color: Color(0xFF1E293B),
+                              color: isExhausted ? AppColors.textSecondary : const Color(0xFF1E293B),
                             ),
-                            decoration: const InputDecoration(
-                              hintText: '0',
+                            decoration: InputDecoration(
+                              hintText: isExhausted ? 'Limit Reached' : '0',
                               border: InputBorder.none,
                               contentPadding: EdgeInsets.zero,
                               isDense: true,
@@ -381,30 +562,32 @@ class _RequestAdvanceViewState extends State<RequestAdvanceView> {
                   const SizedBox(height: 20),
 
                   // Slider
-                  SliderTheme(
-                    data: SliderThemeData(
-                      activeTrackColor: const Color(0xFF9333EA),
-                      inactiveTrackColor: const Color(0xFFE2E8F0),
-                      thumbColor: const Color(0xFF9333EA),
-                      overlayColor: const Color(0xFF9333EA).withValues(alpha: 0.2),
-                      trackHeight: 6,
-                      thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 10),
+                  if (!isExhausted) ...[
+                    SliderTheme(
+                      data: SliderThemeData(
+                        activeTrackColor: const Color(0xFF9333EA),
+                        inactiveTrackColor: const Color(0xFFE2E8F0),
+                        thumbColor: const Color(0xFF9333EA),
+                        overlayColor: const Color(0xFF9333EA).withValues(alpha: 0.2),
+                        trackHeight: 6,
+                        thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 10),
+                      ),
+                      child: Slider(
+                        value: _amount.clamp(0.0, maxVal),
+                        min: 0.0,
+                        max: maxVal,
+                        divisions: divisions > 0 ? divisions : 1,
+                        onChanged: _onSliderChanged,
+                      ),
                     ),
-                    child: Slider(
-                      value: _amount.clamp(0.0, maxVal),
-                      min: 0.0,
-                      max: maxVal,
-                      divisions: divisions > 0 ? divisions : 1,
-                      onChanged: _onSliderChanged,
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('₹0', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11, fontWeight: FontWeight.bold)),
+                        Text('₹${NumberFormat('#,##,###').format(_remainingLimit)}', style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11, fontWeight: FontWeight.bold)),
+                      ],
                     ),
-                  ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('₹0', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11, fontWeight: FontWeight.bold)),
-                      Text('₹${NumberFormat('#,##,###').format(_maxLimit)}', style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11, fontWeight: FontWeight.bold)),
-                    ],
-                  ),
+                  ],
                 ],
               ),
             ),
@@ -562,12 +745,12 @@ class _RequestAdvanceViewState extends State<RequestAdvanceView> {
               width: double.infinity,
               height: 54,
               child: ElevatedButton(
-                onPressed: _isSubmitting ? null : _submitRequest,
+                onPressed: (_isSubmitting || isExhausted) ? null : _submitRequest,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF9333EA),
-                  foregroundColor: Colors.white,
-                  elevation: 4,
-                  shadowColor: const Color(0xFF9333EA).withValues(alpha: 0.4),
+                  backgroundColor: isExhausted ? AppColors.divider : const Color(0xFF9333EA),
+                  foregroundColor: isExhausted ? AppColors.textSecondary : Colors.white,
+                  elevation: isExhausted ? 0 : 4,
+                  shadowColor: isExhausted ? Colors.transparent : const Color(0xFF9333EA).withValues(alpha: 0.4),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(18),
                   ),
@@ -578,14 +761,14 @@ class _RequestAdvanceViewState extends State<RequestAdvanceView> {
                         height: 24,
                         child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
                       )
-                    : const Row(
+                    : Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(RemixIcons.send_plane_fill, size: 18),
-                          SizedBox(width: 10),
+                          Icon(isExhausted ? RemixIcons.lock_line : RemixIcons.send_plane_fill, size: 18),
+                          const SizedBox(width: 10),
                           Text(
-                            'Submit Advance Request',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+                            isExhausted ? 'Advance Limit Reached' : 'Submit Advance Request',
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
                           ),
                         ],
                       ),
