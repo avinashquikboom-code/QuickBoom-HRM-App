@@ -31,6 +31,8 @@ class PayslipModel {
   final double? halfDayDeduction;
   final int? leaveDays;
   final double? leaveDeduction;
+  final double? advanceDeduction;
+  final double? expenseReimbursement;
 
   PayslipModel({
     required this.id,
@@ -57,6 +59,8 @@ class PayslipModel {
     this.halfDayDeduction,
     this.leaveDays,
     this.leaveDeduction,
+    this.advanceDeduction,
+    this.expenseReimbursement,
   });
 
   factory PayslipModel.fromJson(Map<String, dynamic> json) {
@@ -85,6 +89,8 @@ class PayslipModel {
       halfDayDeduction: (json['halfDayDeduction'] as num?)?.toDouble(),
       leaveDays: (json['leaveDays'] as num?)?.toInt(),
       leaveDeduction: (json['leaveDeduction'] as num?)?.toDouble(),
+      advanceDeduction: (json['advanceDeduction'] as num?)?.toDouble() ?? (json['deductions'] is Map ? (json['deductions']['advanceDeduction'] as num?)?.toDouble() : null),
+      expenseReimbursement: (json['expenseReimbursement'] as num?)?.toDouble() ?? (json['approvedExpenses'] as num?)?.toDouble() ?? (json['approvedExpenseAmount'] as num?)?.toDouble() ?? (json['earnings'] is Map ? (json['earnings']['expenseReimbursement'] as num?)?.toDouble() : null),
     );
   }
 }

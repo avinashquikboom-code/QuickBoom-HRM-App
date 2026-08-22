@@ -1796,17 +1796,59 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
     final medical = (earnings['medical'] as num?)?.toDouble() ?? 0.0;
     final travel = (earnings['travel'] as num?)?.toDouble() ?? 0.0;
     final special = (earnings['special'] as num?)?.toDouble() ?? 0.0;
+    final expenseReimbursement = (earnings['expenseReimbursement'] as num?)?.toDouble() ??
+                                 (earnings['approvedExpenses'] as num?)?.toDouble() ??
+                                 (earnings['approvedExpenseAmount'] as num?)?.toDouble() ??
+                                 (_salarySlipData?['expenseReimbursement'] as num?)?.toDouble() ??
+                                 (_salarySlipData?['approvedExpenses'] as num?)?.toDouble() ??
+                                 (_salarySlipData?['approvedExpenseAmount'] as num?)?.toDouble() ?? 0.0;
+    final List<Map<String, dynamic>> categoryExpenses = [];
+    final rawExpenses = (earnings['expenses'] as List?) ??
+                        (earnings['expensesByCategory'] as List?) ??
+                        (_salarySlipData?['expenses'] as List?) ??
+                        (_salarySlipData?['expensesByCategory'] as List?);
+    if (rawExpenses != null) {
+      for (final item in rawExpenses) {
+        if (item is Map) {
+          final cat = (item['category'] ?? item['name'] ?? 'Other').toString();
+          final amt = (item['amount'] as num?)?.toDouble() ?? 0.0;
+          if (amt > 0) {
+            categoryExpenses.add({'category': cat, 'amount': amt});
+          }
+        }
+      }
+    } else {
+      final rawCatMap = (earnings['expenseCategories'] as Map?) ??
+                        (_salarySlipData?['expenseCategories'] as Map?);
+      if (rawCatMap != null) {
+        rawCatMap.forEach((k, v) {
+          final amt = (v as num?)?.toDouble() ?? 0.0;
+          if (amt > 0) {
+            categoryExpenses.add({'category': k.toString(), 'amount': amt});
+          }
+        });
+      }
+    }
+
     final otherBenefits = (earnings['otherBenefits'] as num?)?.toDouble() ?? (hra + medical + travel + special);
     final calcGross = (earnings['grossTotal'] as num?)?.toDouble() ??
                       (_salarySlipData?['grossSalary'] as num?)?.toDouble() ??
-                      (baseSalary + otherBenefits);
+                      (baseSalary + otherBenefits + expenseReimbursement);
     final grossSalary = (calcGross == 0.0 && baseSalary > 0.0) ? baseSalary : calcGross;
 
-    final halfDayDeduction = (deductions['halfDayDeduction'] as num?)?.toDouble() ?? 0.0;
-    final leaveDeduction = (deductions['leaveDeduction'] as num?)?.toDouble() ?? 0.0;
+    final halfDayDeduction = (deductions['halfDayDeduction'] as num?)?.toDouble() ??
+                             (_salarySlipData?['halfDayDeduction'] as num?)?.toDouble() ?? 0.0;
+    final leaveDeduction = (deductions['leaveDeduction'] as num?)?.toDouble() ??
+                           (_salarySlipData?['leaveDeduction'] as num?)?.toDouble() ?? 0.0;
     final advanceDeduction = (deductions['advanceDeduction'] as num?)?.toDouble() ??
                              (_salarySlipData?['advanceDeduction'] as num?)?.toDouble() ?? 0.0;
-    final totalDeductions = (deductions['totalDeductions'] as num?)?.toDouble() ?? (halfDayDeduction + leaveDeduction + advanceDeduction);
+    final otherDeduction = (deductions['otherDeductions'] as num?)?.toDouble() ??
+                           (deductions['otherDeduction'] as num?)?.toDouble() ??
+                           (_salarySlipData?['otherDeduction'] as num?)?.toDouble() ??
+                           (_salarySlipData?['otherDeductions'] as num?)?.toDouble() ?? 0.0;
+    final totalDeductions = (deductions['totalDeductions'] as num?)?.toDouble() ??
+                            (_salarySlipData?['deductionsTotal'] as num?)?.toDouble() ??
+                            (halfDayDeduction + leaveDeduction + advanceDeduction + otherDeduction);
 
     final netSalary = (_salarySlipData?['netSalary'] as num?)?.toDouble() ?? (grossSalary - totalDeductions);
 
@@ -1942,6 +1984,7 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 8.0),
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _buildSalaryDetailRow('Basic Salary', '₹${NumberFormat('#,##,###').format(baseSalary)}'),
                     if (hra > 0) _buildSalaryDetailRow('HRA', '₹${NumberFormat('#,##,###').format(hra)}'),
@@ -1950,6 +1993,49 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
                     if (special > 0) _buildSalaryDetailRow('Special Allowance', '₹${NumberFormat('#,##,###').format(special)}'),
                     if (canShowComm && commission > 0)
                       _buildSalaryDetailRow('Commission Earned', '₹${NumberFormat('#,##,###').format(commission)}', valueColor: Colors.green),
+                    if (categoryExpenses.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      const Text(
+                        'EXPENSES',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.5,
+                          color: Colors.green,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      for (final exp in categoryExpenses)
+                        _buildSalaryDetailRow(
+                          '${exp['category']} Expense',
+                          '₹${NumberFormat('#,##,###').format(exp['amount'])}',
+                          valueColor: Colors.green,
+                        ),
+                      _buildSalaryDetailRow(
+                        'Total Approved Expenses',
+                        '₹${NumberFormat('#,##,###').format(expenseReimbursement)}',
+                        isBold: true,
+                        valueColor: Colors.green,
+                      ),
+                    ] else if (expenseReimbursement > 0) ...[
+                      const SizedBox(height: 8),
+                      const Text(
+                        'EXPENSES',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.5,
+                          color: Colors.green,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      _buildSalaryDetailRow(
+                        'Total Approved Expenses',
+                        '₹${NumberFormat('#,##,###').format(expenseReimbursement)}',
+                        isBold: true,
+                        valueColor: Colors.green,
+                      ),
+                    ],
                     const Divider(height: 12),
                     _buildSalaryDetailRow('GROSS EARNINGS', '₹${NumberFormat('#,##,###').format(grossSalary)}', isBold: true),
                   ],
@@ -1995,14 +2081,12 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
                 padding: const EdgeInsets.symmetric(horizontal: 8.0),
                 child: Column(
                   children: [
-                    if (halfDayDeduction > 0)
-                      _buildSalaryDetailRow('Half Days ($halfDays × ₹${(baseSalary / workingDays / 2).round()})', '₹(${NumberFormat('#,##,###').format(halfDayDeduction)})', valueColor: Colors.red),
-                    if (leaveDeduction > 0)
-                      _buildSalaryDetailRow('Leaves ($leaveDays × ₹${(baseSalary / workingDays).round()})', '₹(${NumberFormat('#,##,###').format(leaveDeduction)})', valueColor: Colors.red),
+                    _buildSalaryDetailRow('Half Days ($halfDays × ₹${(baseSalary / workingDays / 2).round()})', '₹(${NumberFormat('#,##,###').format(halfDayDeduction)})', valueColor: Colors.red),
+                    _buildSalaryDetailRow('Leaves ($leaveDays × ₹${(baseSalary / workingDays).round()})', '₹(${NumberFormat('#,##,###').format(leaveDeduction)})', valueColor: Colors.red),
                     if (advanceDeduction > 0)
-                      _buildSalaryDetailRow('Advance Salary Deduction', '₹(${NumberFormat('#,##,###').format(advanceDeduction)})', valueColor: Colors.red),
-                    const Divider(height: 12),
-                    _buildSalaryDetailRow('TOTAL DEDUCTIONS', '₹(${NumberFormat('#,##,###').format(totalDeductions)})', isBold: true, valueColor: Colors.red),
+                      _buildSalaryDetailRow('Advance Deduction', '₹(${NumberFormat('#,##,###').format(advanceDeduction)})', valueColor: Colors.red),
+                    if (otherDeduction > 0)
+                      _buildSalaryDetailRow('Other Deduction', '₹(${NumberFormat('#,##,###').format(otherDeduction)})', valueColor: Colors.red),
                   ],
                 ),
               ),

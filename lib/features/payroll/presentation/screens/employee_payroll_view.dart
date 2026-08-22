@@ -425,6 +425,31 @@ class _EmployeePayrollViewState extends ConsumerState<EmployeePayrollView> {
                                             ],
                                           ),
                                         ],
+                                        if ((slip.advanceDeduction != null && slip.advanceDeduction! > 0) || (slip.expenseReimbursement != null && slip.expenseReimbursement! > 0)) ...[
+                                          const SizedBox(height: 8),
+                                          Divider(
+                                            height: 1,
+                                            color: isDark ? const Color(0xFF334155) : AppColors.cardBorder,
+                                          ),
+                                          const SizedBox(height: 8),
+                                          Row(
+                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              if (slip.expenseReimbursement != null && slip.expenseReimbursement! > 0)
+                                                _SalaryComponent(
+                                                  label: 'Approved Expenses',
+                                                  value: '+₹${slip.expenseReimbursement!.toStringAsFixed(2)}',
+                                                  isCommission: true,
+                                                ),
+                                              if (slip.advanceDeduction != null && slip.advanceDeduction! > 0)
+                                                _SalaryComponent(
+                                                  label: 'Advance Deduction',
+                                                  value: '-₹${slip.advanceDeduction!.toStringAsFixed(2)}',
+                                                  isDeduction: true,
+                                                ),
+                                            ],
+                                          ),
+                                        ],
                                       ],
                                     ),
                                   ),
