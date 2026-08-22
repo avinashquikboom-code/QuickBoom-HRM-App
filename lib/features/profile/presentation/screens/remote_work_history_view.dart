@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:remixicon/remixicon.dart';
 import 'package:quickboom_hrm/core/constants/app_colors.dart';
 import 'package:quickboom_hrm/core/services/api_service.dart';
+import 'package:quickboom_hrm/features/dashboard/presentation/screens/employee_dashboard_view.dart';
 
 class RemoteWorkHistoryView extends StatefulWidget {
   const RemoteWorkHistoryView({super.key});
@@ -316,6 +317,43 @@ class _RemoteWorkHistoryViewState extends State<RemoteWorkHistoryView> {
                                         ),
                                       ),
                                     ],
+                                    if (status.toUpperCase() == 'REJECTED') ...[
+                                      const SizedBox(height: 14),
+                                      SizedBox(
+                                        width: double.infinity,
+                                        child: ElevatedButton.icon(
+                                          onPressed: () {
+                                            showModalBottomSheet(
+                                              context: context,
+                                              isScrollControlled: true,
+                                              backgroundColor: Colors.transparent,
+                                              builder: (_) => ApplyRemoteWorkBottomSheet(
+                                                requestId: req['id']?.toString(),
+                                                initialFromDate: fromDt,
+                                                initialToDate: toDt,
+                                                initialReason: req['reason']?.toString(),
+                                                onSuccess: _fetchRequests,
+                                              ),
+                                            );
+                                          },
+                                          icon: const Icon(RemixIcons.restart_line, size: 16, color: Colors.white),
+                                          label: const Text(
+                                            'Resubmit Request',
+                                            style: TextStyle(
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w700,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: AppColors.primary,
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                            padding: const EdgeInsets.symmetric(vertical: 10),
+                                            elevation: 0,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ],
                                 ),
                               ),
@@ -323,6 +361,24 @@ class _RemoteWorkHistoryViewState extends State<RemoteWorkHistoryView> {
                           );
                         },
                       ),
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          showModalBottomSheet(
+            context: context,
+            isScrollControlled: true,
+            backgroundColor: Colors.transparent,
+            builder: (_) => ApplyRemoteWorkBottomSheet(
+              onSuccess: _fetchRequests,
+            ),
+          );
+        },
+        backgroundColor: AppColors.primary,
+        icon: const Icon(RemixIcons.add_line, color: Colors.white),
+        label: const Text(
+          'Apply Remote',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
       ),
     );
   }

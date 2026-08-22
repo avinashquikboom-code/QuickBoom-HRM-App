@@ -905,7 +905,9 @@ class _TodayCardState extends ConsumerState<_TodayCard> {
                         ),
                         const SizedBox(width: 6),
                         Text(
-                          '${_distanceData!['distance']?.toStringAsFixed(2) ?? '0.0'} km from office',
+                          _distanceData!['isWithinRadius'] == true && ((_distanceData!['distance'] ?? 0) == 0)
+                              ? (_distanceData!['officeName'] ?? 'Within work location')
+                              : '${_distanceData!['distance']?.toStringAsFixed(2) ?? '0.0'} km from ${_distanceData!['officeName'] ?? 'office'}',
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w700,

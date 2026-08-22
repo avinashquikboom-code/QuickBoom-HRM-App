@@ -254,7 +254,7 @@ class EmployeeDashboardView extends ConsumerWidget {
                               context: context,
                               isScrollControlled: true,
                               backgroundColor: Colors.transparent,
-                              builder: (_) => const _ApplyRemoteWorkBottomSheet(),
+                              builder: (_) => const ApplyRemoteWorkBottomSheet(),
                             );
                           },
                         ),
@@ -3434,18 +3434,44 @@ class _HalfSelectionCard extends StatelessWidget {
   }
 }
 
-class _ApplyRemoteWorkBottomSheet extends StatefulWidget {
-  const _ApplyRemoteWorkBottomSheet();
+class ApplyRemoteWorkBottomSheet extends StatefulWidget {
+  final String? requestId;
+  final DateTime? initialFromDate;
+  final DateTime? initialToDate;
+  final String? initialReason;
+  final VoidCallback? onSuccess;
+
+  const ApplyRemoteWorkBottomSheet({
+    super.key,
+    this.requestId,
+    this.initialFromDate,
+    this.initialToDate,
+    this.initialReason,
+    this.onSuccess,
+  });
 
   @override
-  State<_ApplyRemoteWorkBottomSheet> createState() => _ApplyRemoteWorkBottomSheetState();
+  State<ApplyRemoteWorkBottomSheet> createState() => _ApplyRemoteWorkBottomSheetState();
 }
 
-class _ApplyRemoteWorkBottomSheetState extends State<_ApplyRemoteWorkBottomSheet> {
-  DateTime _fromDate = DateTime.now();
-  DateTime _toDate = DateTime.now();
-  final TextEditingController _reasonController = TextEditingController(text: 'Working remotely / Work from home');
+class _ApplyRemoteWorkBottomSheetState extends State<ApplyRemoteWorkBottomSheet> {
+  late DateTime _fromDate;
+  late DateTime _toDate;
+  late final TextEditingController _reasonController;
   bool _isSubmitting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _fromDate = widget.initialFromDate ?? DateTime.now();
+    _toDate = widget.initialToDate ?? DateTime.now();
+    if (_toDate.isBefore(_fromDate)) {
+      _toDate = _fromDate;
+    }
+    _reasonController = TextEditingController(
+      text: widget.initialReason ?? 'Working remotely / Work from home',
+    );
+  }
 
   @override
   void dispose() {
@@ -3499,24 +3525,36 @@ class _ApplyRemoteWorkBottomSheetState extends State<_ApplyRemoteWorkBottomSheet
     setState(() => _isSubmitting = true);
 
     try {
+      final payload = <String, dynamic>{
+        'fromDate': DateFormat('yyyy-MM-dd').format(_fromDate),
+        'toDate': DateFormat('yyyy-MM-dd').format(_toDate),
+        'reason': _reasonController.text.trim(),
+      };
+      if (widget.requestId != null && widget.requestId!.isNotEmpty) {
+        payload['requestId'] = widget.requestId;
+      }
+
       await ApiService.post(
         '/api/mobile/remote-work/apply',
-        {
-          'fromDate': DateFormat('yyyy-MM-dd').format(_fromDate),
-          'toDate': DateFormat('yyyy-MM-dd').format(_toDate),
-          'reason': _reasonController.text.trim(),
-        },
+        payload,
       );
 
       if (mounted) {
         Navigator.pop(context);
+        widget.onSuccess?.call();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Row(
+            content: Row(
               children: [
-                Icon(RemixIcons.checkbox_circle_fill, color: Colors.white),
-                SizedBox(width: 10),
-                Expanded(child: Text('Remote work request submitted for HR approval!')),
+                const Icon(RemixIcons.checkbox_circle_fill, color: Colors.white),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    widget.requestId != null
+                        ? 'Remote work request resubmitted for HR approval!'
+                        : 'Remote work request submitted for HR approval!',
+                  ),
+                ),
               ],
             ),
             backgroundColor: AppColors.success,
@@ -3543,6 +3581,7 @@ class _ApplyRemoteWorkBottomSheetState extends State<_ApplyRemoteWorkBottomSheet
 
   @override
   Widget build(BuildContext context) {
+    final isResubmit = widget.requestId != null && widget.requestId!.isNotEmpty;
     return Container(
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom + 24,
@@ -3586,7 +3625,7 @@ class _ApplyRemoteWorkBottomSheetState extends State<_ApplyRemoteWorkBottomSheet
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Apply Remote Work',
+                      isResubmit ? 'Resubmit Remote Work' : 'Apply Remote Work',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w800,
@@ -3706,14 +3745,14 @@ class _ApplyRemoteWorkBottomSheetState extends State<_ApplyRemoteWorkBottomSheet
                       height: 24,
                       child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
                     )
-                  : const Row(
+                  : Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(RemixIcons.send_plane_fill, size: 18, color: Colors.white),
-                        SizedBox(width: 8),
+                        const Icon(RemixIcons.send_plane_fill, size: 18, color: Colors.white),
+                        const SizedBox(width: 8),
                         Text(
-                          'Submit Remote Request',
-                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Colors.white),
+                          isResubmit ? 'Resubmit Remote Request' : 'Submit Remote Request',
+                          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Colors.white),
                         ),
                       ],
                     ),
@@ -3724,3 +3763,4 @@ class _ApplyRemoteWorkBottomSheetState extends State<_ApplyRemoteWorkBottomSheet
     );
   }
 }
+

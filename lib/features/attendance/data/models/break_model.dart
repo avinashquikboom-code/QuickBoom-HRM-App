@@ -48,14 +48,20 @@ class BreakModel {
 
   String get durationLabel {
     final d = duration;
-    if (d.isNegative) return '0s';
-    if (d.inHours == 0) {
-      if (d.inMinutes == 0) {
-        return '${d.inSeconds}s';
-      }
-      return '${d.inMinutes}m ${d.inSeconds.remainder(60)}s';
+    if (d.isNegative) return '0 sec';
+    final totalSeconds = d.inSeconds;
+    if (totalSeconds < 60) {
+      return '$totalSeconds sec';
+    } else if (totalSeconds < 3600) {
+      final mins = totalSeconds ~/ 60;
+      final remainderSecs = totalSeconds % 60;
+      return '${mins}m ${remainderSecs}s';
+    } else {
+      final hours = totalSeconds ~/ 3600;
+      final mins = (totalSeconds % 3600) ~/ 60;
+      final remainderSecs = totalSeconds % 60;
+      return '${hours}h ${mins}m ${remainderSecs}s';
     }
-    return '${d.inHours}h ${d.inMinutes.remainder(60)}m';
   }
 
   String get typeLabel {
