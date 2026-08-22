@@ -1788,14 +1788,16 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
 
     final baseSalary = (earnings['baseSalary'] as num?)?.toDouble() ??
                        (earnings['basicSalary'] as num?)?.toDouble() ??
+                       (_salarySlipData?['baseSalary'] as num?)?.toDouble() ??
+                       (_salarySlipData?['basicSalary'] as num?)?.toDouble() ??
                        (_salarySlipData?['base_salary'] as num?)?.toDouble() ?? 0.0;
     final commission = canShowComm
         ? ((earnings['commission'] as num?)?.toDouble() ?? (_salarySlipData?['commission_amount'] as num?)?.toDouble() ?? 0.0)
         : 0.0;
-    final hra = (earnings['hra'] as num?)?.toDouble() ?? 0.0;
-    final medical = (earnings['medical'] as num?)?.toDouble() ?? 0.0;
-    final travel = (earnings['travel'] as num?)?.toDouble() ?? 0.0;
-    final special = (earnings['special'] as num?)?.toDouble() ?? 0.0;
+    final hra = (earnings['hra'] as num?)?.toDouble() ?? (_salarySlipData?['hra'] as num?)?.toDouble() ?? 0.0;
+    final medical = (earnings['medical'] as num?)?.toDouble() ?? (_salarySlipData?['medical'] as num?)?.toDouble() ?? 0.0;
+    final travel = (earnings['travel'] as num?)?.toDouble() ?? (_salarySlipData?['travel'] as num?)?.toDouble() ?? 0.0;
+    final special = (earnings['special'] as num?)?.toDouble() ?? (_salarySlipData?['special'] as num?)?.toDouble() ?? 0.0;
     final expenseReimbursement = (earnings['expenseReimbursement'] as num?)?.toDouble() ??
                                  (earnings['approvedExpenses'] as num?)?.toDouble() ??
                                  (earnings['approvedExpenseAmount'] as num?)?.toDouble() ??
@@ -1841,7 +1843,9 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
     final leaveDeduction = (deductions['leaveDeduction'] as num?)?.toDouble() ??
                            (_salarySlipData?['leaveDeduction'] as num?)?.toDouble() ?? 0.0;
     final advanceDeduction = (deductions['advanceDeduction'] as num?)?.toDouble() ??
-                             (_salarySlipData?['advanceDeduction'] as num?)?.toDouble() ?? 0.0;
+                             (deductions['advance_deduction'] as num?)?.toDouble() ??
+                             (_salarySlipData?['advanceDeduction'] as num?)?.toDouble() ??
+                             (_salarySlipData?['advance_deduction'] as num?)?.toDouble() ?? 0.0;
     final otherDeduction = (deductions['otherDeductions'] as num?)?.toDouble() ??
                            (deductions['otherDeduction'] as num?)?.toDouble() ??
                            (_salarySlipData?['otherDeduction'] as num?)?.toDouble() ??
@@ -1852,11 +1856,17 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
 
     final netSalary = (_salarySlipData?['netSalary'] as num?)?.toDouble() ?? (grossSalary - totalDeductions);
 
-    final presentDays = (details['presentDays'] as num?)?.toInt() ?? 20;
-    final halfDays = (details['halfDays'] as num?)?.toInt() ?? 2;
-    final leaveDays = (details['leaveDays'] as num?)?.toInt() ?? 3;
-    final int rawWorkingDays = (details['workingDays'] as num?)?.toInt() ?? 25;
-    final workingDays = rawWorkingDays > 0 ? rawWorkingDays : 25;
+    final presentDays = (details['presentDays'] as num?)?.toInt() ??
+                        (_salarySlipData?['presentDays'] as num?)?.toInt() ?? 0;
+    final halfDays = (details['halfDays'] as num?)?.toInt() ??
+                     (_salarySlipData?['halfDays'] as num?)?.toInt() ?? 0;
+    final leaveDays = (details['unpaidLeaveDays'] as num?)?.toInt() ??
+                      (details['leaveDays'] as num?)?.toInt() ??
+                      (_salarySlipData?['unpaidLeaveDays'] as num?)?.toInt() ??
+                      (_salarySlipData?['leaveDays'] as num?)?.toInt() ?? 0;
+    final int rawWorkingDays = (details['workingDays'] as num?)?.toInt() ??
+                               (_salarySlipData?['workingDays'] as num?)?.toInt() ?? 26;
+    final workingDays = rawWorkingDays > 0 ? rawWorkingDays : 26;
 
     final monthNames = [
       'January', 'February', 'March', 'April', 'May', 'June',
@@ -1986,13 +1996,11 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildSalaryDetailRow('Basic Salary', '₹${NumberFormat('#,##,###').format(baseSalary)}'),
-                    if (hra > 0) _buildSalaryDetailRow('HRA', '₹${NumberFormat('#,##,###').format(hra)}'),
-                    if (medical > 0) _buildSalaryDetailRow('Medical Allowance', '₹${NumberFormat('#,##,###').format(medical)}'),
-                    if (travel > 0) _buildSalaryDetailRow('Travel Allowance', '₹${NumberFormat('#,##,###').format(travel)}'),
-                    if (special > 0) _buildSalaryDetailRow('Special Allowance', '₹${NumberFormat('#,##,###').format(special)}'),
+                    _buildSalaryDetailRow('Base Salary', '₹${NumberFormat('#,##,###').format(baseSalary)}'),
                     if (canShowComm && commission > 0)
-                      _buildSalaryDetailRow('Commission Earned', '₹${NumberFormat('#,##,###').format(commission)}', valueColor: Colors.green),
+                      _buildSalaryDetailRow('Commission', '₹${NumberFormat('#,##,###').format(commission)}', valueColor: Colors.green),
+                    if (otherBenefits > 0)
+                      _buildSalaryDetailRow('Other Benefits', '₹${NumberFormat('#,##,###').format(otherBenefits)}'),
                     if (categoryExpenses.isNotEmpty) ...[
                       const SizedBox(height: 8),
                       const Text(
@@ -2012,7 +2020,7 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
                           valueColor: Colors.green,
                         ),
                       _buildSalaryDetailRow(
-                        'Total Approved Expenses',
+                        'TOTAL EXPENSES',
                         '₹${NumberFormat('#,##,###').format(expenseReimbursement)}',
                         isBold: true,
                         valueColor: Colors.green,
@@ -2030,14 +2038,14 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
                       ),
                       const SizedBox(height: 4),
                       _buildSalaryDetailRow(
-                        'Total Approved Expenses',
+                        'TOTAL EXPENSES',
                         '₹${NumberFormat('#,##,###').format(expenseReimbursement)}',
                         isBold: true,
                         valueColor: Colors.green,
                       ),
                     ],
                     const Divider(height: 12),
-                    _buildSalaryDetailRow('GROSS EARNINGS', '₹${NumberFormat('#,##,###').format(grossSalary)}', isBold: true),
+                    _buildSalaryDetailRow('GROSS TOTAL', '₹${NumberFormat('#,##,###').format(grossSalary)}', isBold: true),
                   ],
                 ),
               ),
@@ -2083,9 +2091,11 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
                   children: [
                     _buildSalaryDetailRow('Half Days ($halfDays × ₹${(baseSalary / workingDays / 2).round()})', '₹(${NumberFormat('#,##,###').format(halfDayDeduction)})', valueColor: Colors.red),
                     _buildSalaryDetailRow('Leaves ($leaveDays × ₹${(baseSalary / workingDays).round()})', '₹(${NumberFormat('#,##,###').format(leaveDeduction)})', valueColor: Colors.red),
-                    _buildSalaryDetailRow('Advance Deduction', '₹(${NumberFormat('#,##,###').format(advanceDeduction)})', valueColor: Colors.red),
+                    _buildSalaryDetailRow('Advance Salary', '₹(${NumberFormat('#,##,###').format(advanceDeduction)})', valueColor: Colors.red),
                     if (otherDeduction > 0)
-                      _buildSalaryDetailRow('Other Deduction', '₹(${NumberFormat('#,##,###').format(otherDeduction)})', valueColor: Colors.red),
+                      _buildSalaryDetailRow('Other Deductions', '₹(${NumberFormat('#,##,###').format(otherDeduction)})', valueColor: Colors.red),
+                    const Divider(height: 12),
+                    _buildSalaryDetailRow('TOTAL DEDUCTIONS', '₹(${NumberFormat('#,##,###').format(totalDeductions)})', isBold: true, valueColor: Colors.red),
                   ],
                 ),
               ),
