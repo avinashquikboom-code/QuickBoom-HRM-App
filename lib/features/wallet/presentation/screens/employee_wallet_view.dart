@@ -2083,8 +2083,7 @@ class _EmployeeWalletViewState extends ConsumerState<EmployeeWalletView> {
                   children: [
                     _buildSalaryDetailRow('Half Days ($halfDays × ₹${(baseSalary / workingDays / 2).round()})', '₹(${NumberFormat('#,##,###').format(halfDayDeduction)})', valueColor: Colors.red),
                     _buildSalaryDetailRow('Leaves ($leaveDays × ₹${(baseSalary / workingDays).round()})', '₹(${NumberFormat('#,##,###').format(leaveDeduction)})', valueColor: Colors.red),
-                    if (advanceDeduction > 0)
-                      _buildSalaryDetailRow('Advance Deduction', '₹(${NumberFormat('#,##,###').format(advanceDeduction)})', valueColor: Colors.red),
+                    _buildSalaryDetailRow('Advance Deduction', '₹(${NumberFormat('#,##,###').format(advanceDeduction)})', valueColor: Colors.red),
                     if (otherDeduction > 0)
                       _buildSalaryDetailRow('Other Deduction', '₹(${NumberFormat('#,##,###').format(otherDeduction)})', valueColor: Colors.red),
                   ],
